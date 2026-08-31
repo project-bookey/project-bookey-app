@@ -28,7 +28,9 @@ export default function HomeScreen() {
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
 
-  const refreshing = reading.isFetching || banners.isFetching;
+  const refreshing =
+    reading.isFetching || want.isFetching || stats.isFetching ||
+    banners.isFetching || popular.isFetching || recommended.isFetching;
   const refetchAll = () => {
     reading.refetch(); want.refetch(); stats.refetch();
     banners.refetch(); popular.refetch(); recommended.refetch();
