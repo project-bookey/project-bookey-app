@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { HeaderBackLogo } from '@/components/LogoHome';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { useTheme } from '@/theme';
@@ -18,7 +19,7 @@ export default function RootLayout() {
   const restore = useAuth((s) => s.restore);
   const status = useAuth((s) => s.status);
   const [ready, setReady] = useState(false);
-  const { mode, colors } = useTheme();
+  const { colors } = useTheme();
 
   useEffect(() => {
     restore().finally(() => setReady(true));
@@ -31,13 +32,15 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+        {/* 크롬이 모드 무관 블랙이므로 상태바도 항상 밝은 아이콘 */}
+        <StatusBar style="light" />
         <Stack
           screenOptions={{
-            headerStyle: { backgroundColor: colors.bg },
+            headerStyle: { backgroundColor: colors.chrome },
             headerShadowVisible: false,
-            headerTintColor: colors.text,
+            headerTintColor: colors.onChrome,
             headerTitleStyle: { fontWeight: '700' },
+            headerLeft: () => <HeaderBackLogo />,
             contentStyle: { backgroundColor: colors.bg },
           }}
         >
