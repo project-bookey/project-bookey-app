@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 
 import { LogoHome } from '@/components/LogoHome';
+import { NotificationBell } from '@/components/home/NotificationBell';
 import { useTheme, sans, spacing } from '@/theme';
 
 /**
@@ -20,6 +21,8 @@ export default function TabsLayout() {
         headerTitleContainerStyle: { paddingLeft: spacing.md },
         headerLeft: () => <LogoHome />,
         headerLeftContainerStyle: { paddingLeft: spacing.lg },
+        headerRight: () => <NotificationBell />,
+        headerRightContainerStyle: { paddingRight: spacing.lg },
         tabBarActiveTintColor: colors.onChrome,
         tabBarInactiveTintColor: colors.onChromeFaint,
         tabBarLabelStyle: { fontFamily: sans.bold, fontSize: 11.5, letterSpacing: 0.2 },

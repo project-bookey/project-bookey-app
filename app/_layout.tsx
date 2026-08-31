@@ -54,6 +54,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="search" options={{ title: '도서 검색' }} />
+          <Stack.Screen name="notifications" options={{ title: '알림' }} />
           <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
           <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
           <Stack.Screen name="club/create" options={{ title: '모임 만들기' }} />
