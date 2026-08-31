@@ -40,5 +40,3 @@ yarn-error.*
 /ios
 /android
 
-# ── 생성물 (OpenAPI → TS)
-src/api/generated.ts
