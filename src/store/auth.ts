@@ -9,6 +9,7 @@ type AuthState = {
   status: 'loading' | 'authenticated' | 'anonymous';
   restore: () => Promise<void>;
   devLogin: (handle: string, nickname?: string) => Promise<void>;
+  googleLogin: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: Me) => void;
 };
@@ -34,6 +35,12 @@ export const useAuth = create<AuthState>((set) => ({
 
   devLogin: async (handle, nickname) => {
     const result = await authApi.devLogin(handle, nickname);
+    await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+    set({ user: result.user, status: 'authenticated' });
+  },
+
+  googleLogin: async (idToken) => {
+    const result = await authApi.socialLogin('GOOGLE', idToken);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     set({ user: result.user, status: 'authenticated' });
   },

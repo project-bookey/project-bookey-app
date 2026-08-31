@@ -6,6 +6,12 @@ import type {
 } from './types';
 
 export const authApi = {
+  socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO' | 'DEV', token: string, nickname?: string) =>
+    api<TokenResponse>('/api/v1/auth/social', {
+      method: 'POST',
+      auth: false,
+      body: { provider, token, nickname },
+    }),
   devLogin: (token: string, nickname?: string) =>
     api<TokenResponse>('/api/v1/auth/social', {
       method: 'POST',
