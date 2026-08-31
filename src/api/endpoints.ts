@@ -6,16 +6,16 @@ import type {
 } from './types';
 
 export const authApi = {
-  devLogin: (token: string, nickname?: string) =>
-    api<TokenResponse>('/api/v1/auth/social', {
-      method: 'POST',
-      auth: false,
-      body: { provider: 'DEV', token, nickname },
-    }),
-  logout: () => api<void>('/api/v1/auth/logout', { method: 'POST' }),
-  me: () => api<Me>('/api/v1/me'),
+  socialLogin: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string, nickname?: string) =>
+    api<TokenResponse>("/api/v1/auth/social", { method: "POST", auth: false, body: { provider, token, nickname } }),
+  emailLogin: (email: string, password: string) =>
+    api<TokenResponse>("/api/v1/auth/login", { method: "POST", auth: false, body: { email, password } }),
+  emailSignup: (email: string, password: string, nickname: string) =>
+    api<TokenResponse>("/api/v1/auth/signup", { method: "POST", auth: false, body: { email, password, nickname } }),
+  logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
+  me: () => api<Me>("/api/v1/me"),
   updateProfile: (body: { nickname?: string; avatarUrl?: string }) =>
-    api<Me>('/api/v1/me', { method: 'PATCH', body }),
+    api<Me>("/api/v1/me", { method: "PATCH", body }),
 };
 
 export const bookApi = {
