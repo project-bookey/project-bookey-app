@@ -33,7 +33,7 @@ export function HeroContinue({ record, streakLine, loading, onContinue, onDetail
         <Text style={[typeScale.body, { color: colors.textMuted, textAlign: 'center' }]}>
           책을 등록하고 목표일을 정하면{'\n'}페이스가 밀릴 때 알려드립니다.
         </Text>
-        <Pressable onPress={onSearch} style={[styles.cta, { backgroundColor: colors.accent }]}>
+        <Pressable onPress={onSearch} style={[styles.cta, { backgroundColor: colors.accent }]} accessibilityRole="button">
           <Text style={[typeScale.label, { color: colors.onAccent }]}>책 찾기</Text>
         </Pressable>
       </View>
@@ -75,10 +75,10 @@ export function HeroContinue({ record, streakLine, loading, onContinue, onDetail
             <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
           </View>
           <View style={styles.ctaRow}>
-            <Pressable onPress={() => onContinue(record)} style={[styles.cta, { backgroundColor: darkColors.accent }]}>
+            <Pressable onPress={() => onContinue(record)} style={[styles.cta, { backgroundColor: darkColors.accent }]} accessibilityRole="button">
               <Text style={[typeScale.label, { color: darkColors.onAccent }]}>▶ 이어서 읽기</Text>
             </Pressable>
-            <Pressable onPress={() => onDetail(record)} style={[styles.cta, styles.ghost]}>
+            <Pressable onPress={() => onDetail(record)} style={[styles.cta, styles.ghost]} accessibilityRole="button">
               <Text style={[typeScale.label, { color: darkColors.text }]}>상세</Text>
             </Pressable>
           </View>
