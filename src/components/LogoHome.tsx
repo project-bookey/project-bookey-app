@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 
-import { useTheme } from '@/theme';
+import { useTheme, spacing } from '@/theme';
 
 /**
  * 헤더 좌측 로고 — 어느 화면에서든 누르면 홈으로 간다.
@@ -31,7 +31,7 @@ export function HeaderBackLogo() {
   const router = useRouter();
   const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: spacing.md }}>
       {router.canGoBack() && (
         <Pressable
           onPress={() => router.back()}
