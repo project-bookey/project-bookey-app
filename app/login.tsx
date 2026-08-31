@@ -3,11 +3,11 @@ import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View,
+  KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
-import { Button, Field, OrnamentDivider, Rule, Screen } from '@/components/ui';
+import { Button, Field, Rule, Screen } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { colors, fonts, spacing, type } from '@/theme';
 
@@ -16,15 +16,17 @@ WebBrowser.maybeCompleteAuthSession();
 /**
  * 로그인.
  * Google은 로그인과 최초 가입을 같은 흐름으로 처리한다.
- * 개발용 로그인은 DEV_LOGIN_ENABLED=true인 백엔드에서만 성공한다.
  */
 export default function LoginScreen() {
   const router = useRouter();
-  const devLogin = useAuth((s) => s.devLogin);
   const googleLogin = useAuth((s) => s.googleLogin);
-  const [handle, setHandle] = useState('tester');
-  const [nickname, setNickname] = useState('테스터');
-  const [devLoading, setDevLoading] = useState(false);
+  const emailLogin = useAuth((s) => s.emailLogin);
+  const emailSignup = useAuth((s) => s.emailSignup);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [isSignup, setIsSignup] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,9 @@ export default function LoginScreen() {
   }), []);
 
   const hasGoogleClient = Boolean(
-    googleClientIds.webClientId || googleClientIds.iosClientId || googleClientIds.androidClientId,
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+      || process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+      || process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
   );
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
@@ -64,16 +68,20 @@ export default function LoginScreen() {
       .finally(() => setGoogleLoading(false));
   }, [googleLogin, response, router]);
 
-  const submitDevLogin = async () => {
-    setDevLoading(true);
+  const submitEmail = async () => {
+    setEmailLoading(true);
     setError(null);
     try {
-      await devLogin(handle.trim(), nickname.trim());
+      if (isSignup) {
+        await emailSignup(email.trim(), password, nickname.trim());
+      } else {
+        await emailLogin(email.trim(), password);
+      }
       router.replace('/(tabs)/home');
     } catch (e) {
-      setError(e instanceof Error ? e.message : '로그인에 실패했습니다.');
+      setError(e instanceof Error ? e.message : '인증에 실패했습니다.');
     } finally {
-      setDevLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -122,39 +130,35 @@ export default function LoginScreen() {
             {error ? <Text style={styles.fieldError}>{error}</Text> : null}
           </View>
 
-          <OrnamentDivider />
-
-          <View style={styles.devPanel}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setError(null)}
-              style={styles.devHeader}
-            >
-              <Text style={styles.devTitle}>개발용 로그인</Text>
-              <Text style={styles.devBadge}>DEV</Text>
-            </Pressable>
-            <Field
-              label="개발용 계정 ID"
-              value={handle}
-              onChangeText={setHandle}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="tester"
-              hint="같은 ID로 다시 로그인하면 같은 계정으로 들어갑니다."
-            />
-            <Field
-              label="닉네임"
-              value={nickname}
-              onChangeText={setNickname}
-              placeholder="테스터"
-            />
-            <Button
-              label="개발 계정으로 시작"
-              onPress={submitDevLogin}
-              loading={devLoading}
-              variant="outline"
-            />
-          </View>
+          <Field
+            label="이메일"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="you@example.com"
+          />
+          {isSignup ? (
+            <Field label="닉네임" value={nickname} onChangeText={setNickname} placeholder="독서가" />
+          ) : null}
+          <Field
+            label="비밀번호"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholder="8자 이상"
+          />
+          <Button
+            label={isSignup ? "이메일로 회원가입" : "이메일로 로그인"}
+            onPress={submitEmail}
+            loading={emailLoading}
+          />
+          <Button
+            label={isSignup ? "로그인으로 돌아가기" : "처음 가입하기"}
+            onPress={() => { setIsSignup(!isSignup); setError(null); }}
+            variant="ghost"
+          />
 
           <View style={styles.footer}>
             <Rule />
@@ -194,27 +198,6 @@ const styles = StyleSheet.create({
   },
   panelTitle: { ...type.title, color: colors.ink },
   panelCopy: { ...type.body, color: colors.textMuted, lineHeight: 22 },
-  devPanel: {
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-  },
-  devHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  devTitle: { ...type.subtitle, color: colors.ink },
-  devBadge: {
-    ...type.caption,
-    color: colors.textMuted,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
   fieldError: { ...type.caption, color: colors.danger, lineHeight: 17 },
   footer: { gap: spacing.md },
   meta: { ...type.caption, color: colors.textFaint, fontVariant: ['tabular-nums'] },

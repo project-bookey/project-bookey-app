@@ -8,7 +8,8 @@ type AuthState = {
   user: Me | null;
   status: 'loading' | 'authenticated' | 'anonymous';
   restore: () => Promise<void>;
-  devLogin: (handle: string, nickname?: string) => Promise<void>;
+  emailLogin: (email: string, password: string) => Promise<void>;
+  emailSignup: (email: string, password: string, nickname: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: Me) => void;
@@ -33,10 +34,16 @@ export const useAuth = create<AuthState>((set) => ({
     }
   },
 
-  devLogin: async (handle, nickname) => {
-    const result = await authApi.devLogin(handle, nickname);
+  emailLogin: async (email, password) => {
+    const result = await authApi.emailLogin(email, password);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
-    set({ user: result.user, status: 'authenticated' });
+    set({ user: result.user, status: "authenticated" });
+  },
+
+  emailSignup: async (email, password, nickname) => {
+    const result = await authApi.emailSignup(email, password, nickname);
+    await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+    set({ user: result.user, status: "authenticated" });
   },
 
   googleLogin: async (idToken) => {
