@@ -1,27 +1,30 @@
 import { Tabs } from 'expo-router';
 
-import { useTheme, hairline } from '@/theme';
+import { LogoHome } from '@/components/LogoHome';
+import { useTheme, spacing } from '@/theme';
 
 /**
  * 탭 구조 (§6 IA — MVP 5탭: 홈 / 서재 / 모임 / 기록 / 프로필).
  * 아이콘 없이 글자만 둔다. 라벨이 곧 표지판 역할을 한다.
- * 색은 useTheme() 으로 받아 시스템 라이트/다크 모드를 그대로 따른다.
+ * 헤더·탭바 크롬은 모드 무관 블랙 원톤, 좌상단 로고가 홈 버튼이다.
  */
 export default function TabsLayout() {
   const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
+        headerStyle: { backgroundColor: colors.chrome },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: '700', color: colors.text, letterSpacing: -0.3 },
-        tabBarActiveTintColor: colors.text,
-        tabBarInactiveTintColor: colors.textFaint,
+        headerTitleStyle: { fontWeight: '700', color: colors.onChrome, letterSpacing: -0.3 },
+        headerTitleAlign: 'left',
+        headerLeft: () => <LogoHome />,
+        headerLeftContainerStyle: { paddingLeft: spacing.lg },
+        tabBarActiveTintColor: colors.onChrome,
+        tabBarInactiveTintColor: colors.onChromeFaint,
         tabBarLabelStyle: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2 },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopWidth: hairline,
-          borderTopColor: colors.line,
+          backgroundColor: colors.chrome,
+          borderTopWidth: 0,
           height: 58,
           paddingTop: 8,
           paddingBottom: 8,
@@ -30,7 +33,7 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tabs.Screen name="home" options={{ title: '홈' }} />
+      <Tabs.Screen name="home" options={{ title: '홈', headerTitle: '' }} />
       <Tabs.Screen name="library" options={{ title: '서재' }} />
       <Tabs.Screen name="clubs" options={{ title: '모임' }} />
       <Tabs.Screen name="record" options={{ title: '기록' }} />

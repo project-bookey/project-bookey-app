@@ -32,6 +32,12 @@ export type ColorTokens = {
   scrimDim: string;
   /** 포스터 하단→투명 그라데이션 색 스톱. 렌더링은 화면 작업 때 expo-linear-gradient 로. */
   scrimStops: readonly [string, string];
+  /** 헤더·탭바 크롬 — 모드 무관 블랙 고정 (브랜드 결정) */
+  chrome: string;
+  /** 크롬 위 텍스트·활성 탭 */
+  onChrome: string;
+  /** 크롬 위 비활성 탭 */
+  onChromeFaint: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
@@ -54,6 +60,9 @@ export const darkColors: ColorTokens = {
   dangerSoft: '#3A1714',
   scrimDim: 'rgba(0,0,0,0.55)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
+  chrome: '#000000',
+  onChrome: '#F5F5F5',
+  onChromeFaint: '#737373',
 };
 
 export const lightColors: ColorTokens = {
@@ -74,6 +83,9 @@ export const lightColors: ColorTokens = {
   dangerSoft: '#FBE4E1',
   scrimDim: 'rgba(0,0,0,0.45)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
+  chrome: '#000000',
+  onChrome: '#F5F5F5',
+  onChromeFaint: '#737373',
 };
 
 /** 엘리베이션 — 다크는 밝기 단계로 대체(그림자 없음), 라이트만 카드 그림자 1종. */
