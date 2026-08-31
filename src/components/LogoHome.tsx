@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 
-import { useTheme, spacing } from '@/theme';
+import { useTheme, sans, spacing } from '@/theme';
 
 /**
  * 헤더 좌측 로고 — 어느 화면에서든 누르면 홈으로 간다.
@@ -40,7 +40,7 @@ export function HeaderBackLogo() {
           accessibilityLabel="뒤로"
           style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 10 })}
         >
-          <Text style={{ color: colors.onChrome, fontSize: 30, fontWeight: '600', lineHeight: 34 }}>‹</Text>
+          <Text style={{ color: colors.onChrome, fontFamily: sans.semiBold, fontSize: 30, lineHeight: 34 }}>‹</Text>
         </Pressable>
       )}
       <LogoHome />
