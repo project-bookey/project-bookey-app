@@ -19,8 +19,8 @@ export default function HomeScreen() {
   const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
   const stats = useQuery({ queryKey: ['stats', 30], queryFn: () => statsApi.summary(30) });
   const banners = useQuery({ queryKey: ['banners'], queryFn: bannerApi.list });
-  const popular = useQuery({ queryKey: ['books', 'popular'], queryFn: () => bookApi.popular() });
-  const recommended = useQuery({ queryKey: ['books', 'recommended'], queryFn: () => bookApi.recommended() });
+  const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
+  const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
 
   const records = reading.data?.content ?? [];
   const hero = pickHero(records);
@@ -53,7 +53,7 @@ export default function HomeScreen() {
         streakLine={streakLine}
         loading={reading.isLoading}
         onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
-        onDetail={(r) => router.push(`/book/${r.book?.id}?recordId=${r.id}`)}
+        onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         onSearch={() => router.push('/search')}
       />
 

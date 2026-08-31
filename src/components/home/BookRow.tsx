@@ -35,7 +35,7 @@ export function BookRow({ title, books, loading, onPressBook, onPressAll }: {
       <View style={styles.header}>
         <Text style={[typeScale.section, { color: colors.text }]}>{title}</Text>
         {onPressAll ? (
-          <Pressable onPress={onPressAll} hitSlop={8}>
+          <Pressable onPress={onPressAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
             <Text style={[typeScale.label, { color: colors.textMuted }]}>전체보기 ›</Text>
           </Pressable>
         ) : null}
@@ -55,7 +55,7 @@ export function BookRow({ title, books, loading, onPressBook, onPressAll }: {
           keyExtractor={(b) => b.key}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <Pressable onPress={() => onPressBook(item)} style={styles.item}>
+            <Pressable onPress={() => onPressBook(item)} style={styles.item} accessibilityRole="button" accessibilityLabel={item.title}>
               <View style={[styles.cover, { backgroundColor: colors.surfaceRaised }]}>
                 {item.coverUrl ? (
                   <Image source={{ uri: item.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
     minWidth: 22,
     alignItems: 'center',
     paddingVertical: 2,
+    paddingHorizontal: 6,
     borderBottomRightRadius: radius.sm,
   },
   track: {
