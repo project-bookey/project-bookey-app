@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.ink,
   },
-  startButtonLabel: { ...type.label, color: '#FFFFFF', letterSpacing: 0.3 },
+  startButtonLabel: { ...type.label, color: colors.bg, letterSpacing: 0.3 },
   notificationRow: { padding: spacing.lg, gap: 3 },
   notificationTitle: { ...type.label, color: colors.ink },
   notificationBody: { ...type.caption, color: colors.textMuted, lineHeight: 17 },

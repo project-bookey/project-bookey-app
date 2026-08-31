@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  checkboxMark: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  checkboxMark: { color: colors.bg, fontSize: 11, fontWeight: '700' },
   filterLabel: { ...type.label, color: colors.text },
   myPage: { fontSize: 12, color: colors.textFaint },
   list: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl },
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   reactionOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   reactionText: { fontSize: 11, color: colors.textMuted, fontWeight: '600' },
-  reactionTextOn: { color: '#FFFFFF' },
+  reactionTextOn: { color: colors.bg },
   commentCount: { ...type.caption, color: colors.textFaint },
   comments: {
     borderTopWidth: hairline,
