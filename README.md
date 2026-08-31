@@ -3,8 +3,8 @@
 bookey 모바일 앱 — iOS / Android (Expo, React Native).
 
 관련 저장소
-- **[project-bookey-backend](https://github.com/Jay-0315/project-bookey-backend)** — 백엔드 API, 기획서
-- **[project-bookey-admin](https://github.com/Jay-0315/project-bookey-admin)** — 관리자 백오피스
+- **[project-bookey-backend](https://github.com/project-bookey/project-bookey-backend)** — 백엔드 API
+- **[project-bookey-admin](https://github.com/project-bookey/project-bookey-admin)** — 관리자 백오피스
 
 ## 구성
 
