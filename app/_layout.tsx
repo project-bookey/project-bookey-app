@@ -39,7 +39,7 @@ export default function RootLayout() {
             headerStyle: { backgroundColor: colors.chrome },
             headerShadowVisible: false,
             headerTintColor: colors.onChrome,
-            headerTitleStyle: { fontWeight: '700', fontSize: 17 },
+            headerTitleStyle: { fontWeight: '600', fontSize: 20 },
             headerLeft: () => <HeaderBackLogo />,
             contentStyle: { backgroundColor: colors.bg },
           }}
