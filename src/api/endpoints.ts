@@ -1,7 +1,7 @@
 import { api } from './client';
 import type {
-  BookSummary, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  LibrarySummary, Me, Notification, NudgeMessageKey, Page, ReadingRecord, ReadingStatus,
+  Banner, BookSummary, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
+  LibrarySummary, Me, Notification, NudgeMessageKey, Page, PopularBook, ReadingRecord, ReadingStatus,
   Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
 } from './types';
 
@@ -26,6 +26,8 @@ export const bookApi = {
     api<BookSummary>('/api/v1/books', { method: 'POST', body }),
   reviews: (bookId: number, verifiedOnly = false) =>
     api<Page<Review>>(`/api/v1/books/${bookId}/reviews`, { query: { verifiedOnly } }),
+  popular: (size = 20) => api<PopularBook[]>('/api/v1/books/popular', { query: { size } }),
+  recommended: (size = 20) => api<BookSummary[]>('/api/v1/books/recommended', { query: { size } }),
 };
 
 export const libraryApi = {
@@ -102,6 +104,10 @@ export const notificationApi = {
   open: (id: number) => api<void>(`/api/v1/notifications/${id}/open`, { method: 'POST' }),
   updateSettings: (body: Record<string, unknown>) =>
     api<void>('/api/v1/notifications/settings', { method: 'PATCH', body }),
+};
+
+export const bannerApi = {
+  list: () => api<Banner[]>('/api/v1/banners', { auth: false }),
 };
 
 export const reviewApi = {

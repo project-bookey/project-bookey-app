@@ -29,6 +29,10 @@ export type ReadingRecord = Schemas['ReadingRecordView'];
 export type LibrarySummary = Schemas['LibrarySummary'];
 export type ReadingStatus = NonNullable<ReadingRecord['status']>;
 
+// ── 홈 콘텐츠 ────────────────────────────────────────────
+export type Banner = Schemas['BannerView'];
+export type PopularBook = Schemas['PopularBookView'];
+
 // ── 세션 · 통계 ──────────────────────────────────────────
 export type Session = Schemas['SessionView'];
 export type SessionEndResult = Schemas['SessionEndResult'];
