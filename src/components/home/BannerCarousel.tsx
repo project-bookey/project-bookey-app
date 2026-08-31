@@ -24,7 +24,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const open = (banner: Banner) => {
     if (!banner.linkUrl) return;
     if (/^https?:\/\//.test(banner.linkUrl)) {
-      Linking.openURL(banner.linkUrl);
+      Linking.openURL(banner.linkUrl).catch(() => {});
     } else {
       router.push(banner.linkUrl as never);
     }
@@ -43,7 +43,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => open(item)}
-              style={[styles.card, { width, backgroundColor: item.bgColor ?? colors.surfaceRaised }]}
+              style={[styles.card, { width, backgroundColor: item.bgColor ?? darkColors.surfaceRaised }]} // 배너는 모드 무관 어두운 영역 — 폴백도 다크 고정
             >
               {item.imageUrl ? (
                 <>
