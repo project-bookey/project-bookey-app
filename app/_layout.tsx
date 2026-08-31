@@ -6,7 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { colors } from '@/theme';
+import { useTheme } from '@/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +18,7 @@ export default function RootLayout() {
   const restore = useAuth((s) => s.restore);
   const status = useAuth((s) => s.status);
   const [ready, setReady] = useState(false);
+  const { mode, colors } = useTheme();
 
   useEffect(() => {
     restore().finally(() => setReady(true));
@@ -30,7 +31,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: colors.bg },
