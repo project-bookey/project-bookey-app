@@ -19,7 +19,7 @@ export function LogoHome() {
     >
       <Image
         source={require('../../assets/logo-dark.png')}
-        style={{ width: 32, height: 32 }}
+        style={{ width: 40, height: 40 }}
         resizeMode="contain"
       />
     </Pressable>
@@ -40,7 +40,7 @@ export function HeaderBackLogo() {
           accessibilityLabel="뒤로"
           style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 10 })}
         >
-          <Text style={{ color: colors.onChrome, fontSize: 26, fontWeight: '600', lineHeight: 30 }}>‹</Text>
+          <Text style={{ color: colors.onChrome, fontSize: 30, fontWeight: '600', lineHeight: 34 }}>‹</Text>
         </Pressable>
       )}
       <LogoHome />

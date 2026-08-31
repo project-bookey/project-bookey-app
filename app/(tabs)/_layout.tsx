@@ -15,7 +15,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.chrome },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: '700', fontSize: 17, color: colors.onChrome, letterSpacing: -0.3 },
+        headerTitleStyle: { fontWeight: '600', fontSize: 20, color: colors.onChrome, letterSpacing: -0.2 },
         headerTitleAlign: 'left',
         headerTitleContainerStyle: { paddingLeft: spacing.md },
         headerLeft: () => <LogoHome />,
