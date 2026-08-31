@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -7,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HeaderBackLogo } from '@/components/LogoHome';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { useTheme } from '@/theme';
+import { useTheme, sans } from '@/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,12 +21,18 @@ export default function RootLayout() {
   const status = useAuth((s) => s.status);
   const [ready, setReady] = useState(false);
   const { colors } = useTheme();
+  const [fontsLoaded] = useFonts({
+    'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
+    'Pretendard-Bold': require('../assets/fonts/Pretendard-Bold.otf'),
+    'Pretendard-ExtraBold': require('../assets/fonts/Pretendard-ExtraBold.otf'),
+  });
 
   useEffect(() => {
     restore().finally(() => setReady(true));
   }, [restore]);
 
-  if (!ready || status === 'loading') {
+  if (!ready || !fontsLoaded || status === 'loading') {
     return <Loading />;
   }
 
@@ -39,7 +46,7 @@ export default function RootLayout() {
             headerStyle: { backgroundColor: colors.chrome },
             headerShadowVisible: false,
             headerTintColor: colors.onChrome,
-            headerTitleStyle: { fontWeight: '600', fontSize: 20 },
+            headerTitleStyle: { fontFamily: sans.semiBold, fontSize: 20 },
             headerLeft: () => <HeaderBackLogo />,
             contentStyle: { backgroundColor: colors.bg },
           }}

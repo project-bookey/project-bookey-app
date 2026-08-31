@@ -3,7 +3,7 @@
  * 새 코드: 색은 useTheme() 으로 받고, 모드 무관 토큰은 정적 import 한다.
  * 설계 문서: docs/superpowers/specs/2026-08-31-design-tokens-design.md
  */
-export { spacing, radius, typeScale, motion, layout, hairline, statusLabel } from './tokens';
+export { spacing, radius, sans, typeScale, motion, layout, hairline, statusLabel } from './tokens';
 export { darkColors, lightColors, cardShadow, getLagStyle, getPaceStyle } from './palette';
 export type { ColorTokens, ThemeMode } from './palette';
 export { useTheme } from './useTheme';
@@ -30,7 +30,7 @@ export const type = {
   eyebrow: legacyType.overline,
 } as const;
 
-/** @deprecated 시스템 폰트를 씁니다 — fontFamily 를 지정하지 마세요. */
+/** @deprecated 새 코드는 sans(Pretendard) 를 쓰세요. 레거시 화면은 시스템 폰트로 둔다. */
 export const fonts = { serif: undefined, mono: undefined } as { serif?: string; mono?: string };
 
 /** @deprecated 다크는 그림자를 쓰지 않습니다. useTheme().cardShadow 를 사용하세요. */

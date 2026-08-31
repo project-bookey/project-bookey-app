@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 
 import { LogoHome } from '@/components/LogoHome';
-import { useTheme, spacing } from '@/theme';
+import { useTheme, sans, spacing } from '@/theme';
 
 /**
  * 탭 구조 (§6 IA — MVP 5탭: 홈 / 서재 / 모임 / 기록 / 프로필).
@@ -15,14 +15,14 @@ export default function TabsLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.chrome },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: '600', fontSize: 20, color: colors.onChrome, letterSpacing: -0.2 },
+        headerTitleStyle: { fontFamily: sans.semiBold, fontSize: 20, color: colors.onChrome, letterSpacing: -0.2 },
         headerTitleAlign: 'left',
         headerTitleContainerStyle: { paddingLeft: spacing.md },
         headerLeft: () => <LogoHome />,
         headerLeftContainerStyle: { paddingLeft: spacing.lg },
         tabBarActiveTintColor: colors.onChrome,
         tabBarInactiveTintColor: colors.onChromeFaint,
-        tabBarLabelStyle: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.2 },
+        tabBarLabelStyle: { fontFamily: sans.bold, fontSize: 11.5, letterSpacing: 0.2 },
         tabBarStyle: {
           backgroundColor: colors.chrome,
           borderTopWidth: 0,
