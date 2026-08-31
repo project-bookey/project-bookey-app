@@ -273,7 +273,7 @@ function CheckpointGrid({ checkpoints }: { checkpoints: Checkpoint[] }) {
               <Text
                 style={[
                   styles.gridMarkText,
-                  state === 'met' && { color: '#FFFFFF' },
+                  state === 'met' && { color: colors.bg },
                   state === 'missed' && { color: colors.danger },
                 ]}
               >

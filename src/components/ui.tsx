@@ -84,7 +84,7 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'primary' ? '#FFFFFF' : colors.ink} />
+        <ActivityIndicator size="small" color={variant === 'primary' ? colors.bg : colors.ink} />
       ) : (
         <Text
           style={[
@@ -224,7 +224,7 @@ export function EmptyState({ title, description, action }: {
 export function Loading() {
   return (
     <View style={styles.loading}>
-      <ActivityIndicator size="small" color={colors.ink} />
+      <ActivityIndicator size="small" color={colors.text} />
     </View>
   );
 }
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.35 },
   buttonLabel: { ...type.label, color: colors.ink },
   buttonLabelSm: { fontSize: 11.5 },
-  buttonLabelPrimary: { color: '#FFFFFF' },
+  buttonLabelPrimary: { color: colors.bg },
   buttonLabelDanger: { color: colors.danger },
   tag: {
     paddingHorizontal: 7,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   segmentDivider: { borderLeftWidth: hairline, borderLeftColor: colors.line },
   segmentActive: { backgroundColor: colors.ink },
   segmentLabel: { ...type.label, fontSize: 12, color: colors.textMuted },
-  segmentLabelActive: { color: '#FFFFFF' },
+  segmentLabelActive: { color: colors.bg },
   toggleTrack: {
     width: 46,
     height: 26,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.textFaint,
   },
-  toggleKnobOn: { backgroundColor: '#FFFFFF', alignSelf: 'flex-end' },
+  toggleKnobOn: { backgroundColor: colors.bg, alignSelf: 'flex-end' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   toggleLabel: { ...type.label, color: colors.ink },
   toggleDescription: { ...type.caption, color: colors.textFaint, lineHeight: 16 },
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     lineHeight: 21,
   },
-  loading: { paddingVertical: spacing.xxl, alignItems: 'center' },
+  loading: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' },
   rule: { height: hairline, backgroundColor: colors.line },
   keyValue: {
     flexDirection: 'row',
