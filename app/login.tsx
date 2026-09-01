@@ -15,7 +15,7 @@ import { brandGradientStops, darkColors, hairline, radius, sans, spacing, typeSc
 
 WebBrowser.maybeCompleteAuthSession();
 
-/** 애플 모듈은 iOS에서만 로드 (웹·안드로이드 번들에서 배제, Expo Go 미포함 대비 try/catch). */
+/** 애플 모듈은 iOS에서만 실행 로드 (번들엔 포함되나 다른 플랫폼에선 실행되지 않음, Expo Go 미포함 대비 try/catch). */
 let Apple: typeof import('expo-apple-authentication') | null = null;
 if (Platform.OS === 'ios') {
   try {
@@ -192,6 +192,10 @@ export default function LoginScreen() {
               autoCorrect={false}
               placeholder="이메일"
               placeholderTextColor={darkColors.textFaint}
+              accessibilityLabel="이메일"
+              textContentType="emailAddress"
+              autoComplete="email"
+              inputMode="email"
             />
             {isSignup ? (
               <TextInput
@@ -200,6 +204,8 @@ export default function LoginScreen() {
                 onChangeText={setNickname}
                 placeholder="닉네임"
                 placeholderTextColor={darkColors.textFaint}
+                accessibilityLabel="닉네임"
+                textContentType="nickname"
               />
             ) : null}
             <TextInput
@@ -209,6 +215,9 @@ export default function LoginScreen() {
               secureTextEntry
               placeholder="비밀번호 (8자 이상)"
               placeholderTextColor={darkColors.textFaint}
+              accessibilityLabel="비밀번호"
+              textContentType={isSignup ? 'newPassword' : 'password'}
+              autoComplete={isSignup ? 'new-password' : 'current-password'}
             />
             <Pressable
               onPress={submitEmail}
@@ -230,7 +239,7 @@ export default function LoginScreen() {
                 {isSignup ? '이미 계정이 있어요 · 로그인' : '처음이신가요? 이메일로 가입하기'}
               </Text>
             </Pressable>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
           </View>
 
           {hasSocial ? (
