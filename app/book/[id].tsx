@@ -12,7 +12,7 @@ import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, Verificatio
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { formatDuration, formatRelative, percent } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
-import { darkColors, getLagStyle, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { brandGradientStops, darkColors, getLagStyle, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
 const VERIFICATION_LABEL: Record<VerificationLevel, string> = {
   VERIFIED_FULL: '완독 검증',
@@ -209,9 +209,6 @@ export default function BookDetailScreen() {
   );
 }
 
-/** 표지 없는 책의 히어로 기본 배경 — 브랜드 틸 딥 그라데이션 (중간 색 = darkColors.accentSoft). */
-const FALLBACK_BG_STOPS = ['#1B4A3E', darkColors.accentSoft, '#0D1F1B'] as const;
-
 /** 풀블리드 히어로 — 블러 표지 배경, 표지는 좌측·간단한 소개는 좌하단. 오버레이는 darkColors 고정. */
 function Hero({ info, description }: { info?: BookSummary; description?: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -221,7 +218,7 @@ function Hero({ info, description }: { info?: BookSummary; description?: string 
         <Image source={{ uri: info.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={16} />
       ) : (
         <LinearGradient
-          colors={[...FALLBACK_BG_STOPS]}
+          colors={[...brandGradientStops]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
