@@ -5,7 +5,8 @@ import { NotificationBell } from '@/components/home/NotificationBell';
 import { useTheme, sans, spacing } from '@/theme';
 
 /**
- * 탭 구조 (§6 IA — MVP 5탭: 홈 / 서재 / 모임 / 기록 / 프로필).
+ * 탭 구조 — 4탭: 홈 / 서재 / 모임 / 프로필 (§6 IA의 기록 탭은 프로필로 통합,
+ * 2026-09-01 스펙 docs/superpowers/specs/2026-09-01-record-in-profile-design.md).
  * 아이콘 없이 글자만 둔다. 라벨이 곧 표지판 역할을 한다.
  * 헤더·탭바 크롬은 모드 무관 블랙 원톤, 좌상단 로고가 홈 버튼이다.
  */
@@ -40,7 +41,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="home" options={{ title: '홈', headerTitle: '' }} />
       <Tabs.Screen name="library" options={{ title: '서재' }} />
       <Tabs.Screen name="clubs" options={{ title: '모임' }} />
-      <Tabs.Screen name="record" options={{ title: '기록' }} />
       <Tabs.Screen name="profile" options={{ title: '프로필' }} />
     </Tabs>
   );
