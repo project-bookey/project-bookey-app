@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -32,7 +32,16 @@ export default function ClubCreateScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const library = useQuery({ queryKey: ['library', 'all'], queryFn: () => libraryApi.list() });
-  const candidates = (library.data?.content ?? []).filter((r) => r.book);
+  const candidates = useMemo(() => {
+    const byBookId = new Map<number, ReadingRecord>();
+    for (const record of library.data?.content ?? []) {
+      const id = record.book?.id;
+      if (id != null && !byBookId.has(id)) {
+        byBookId.set(id, record);
+      }
+    }
+    return [...byBookId.values()];
+  }, [library.data?.content]);
 
   const today = new Date();
   const endsAt = new Date(today.getTime() + Number(weeks) * 7 * 86400000);
@@ -90,7 +99,7 @@ export default function ClubCreateScreen() {
               const selected = record.book!.id === bookId;
               return (
                 <Pressable
-                  key={record.id}
+                  key={record.book!.id}
                   onPress={() => setBookId(record.book!.id)}
                   style={[styles.bookRow, selected && styles.bookRowSelected]}
                 >
