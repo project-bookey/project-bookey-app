@@ -134,6 +134,10 @@ export default function LoginScreen() {
   };
 
   const submitKakao = async () => {
+    if (!hasKakaoClient) {
+      setError('카카오 로그인 키가 아직 설정되지 않았습니다. (.env.local의 EXPO_PUBLIC_KAKAO_REST_KEY)');
+      return;
+    }
     setSocialLoading('KAKAO');
     setError(null);
     try {
@@ -149,6 +153,10 @@ export default function LoginScreen() {
   };
 
   const submitGoogle = async () => {
+    if (!hasGoogleClient) {
+      setError('Google 로그인 키가 아직 설정되지 않았습니다. (.env.local의 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)');
+      return;
+    }
     setSocialLoading('GOOGLE');
     setError(null);
     try {
@@ -160,7 +168,6 @@ export default function LoginScreen() {
   };
 
   const showApple = Boolean(Apple) && appleAvailable;
-  const hasSocial = showApple || hasKakaoClient || hasGoogleClient;
   const busy = emailLoading || socialLoading != null;
 
   return (
@@ -247,13 +254,11 @@ export default function LoginScreen() {
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
           </View>
 
-          {hasSocial ? (
-            <View style={styles.divider}>
-              <View style={styles.dividerRule} />
-              <Text style={styles.dividerLabel}>또는</Text>
-              <View style={styles.dividerRule} />
-            </View>
-          ) : null}
+          <View style={styles.divider}>
+            <View style={styles.dividerRule} />
+            <Text style={styles.dividerLabel}>또는</Text>
+            <View style={styles.dividerRule} />
+          </View>
 
           <View style={styles.social}>
             {showApple && Apple ? (
@@ -265,30 +270,26 @@ export default function LoginScreen() {
                 onPress={submitApple}
               />
             ) : null}
-            {hasKakaoClient ? (
-              <Pressable
-                onPress={submitKakao}
-                disabled={busy || !kakao.ready}
-                style={({ pressed }) => [styles.kakaoButton, (pressed || busy) && styles.pressed]}
-                accessibilityRole="button"
-              >
-                {socialLoading === 'KAKAO'
-                  ? <ActivityIndicator color="#191919" />
-                  : <Text style={styles.kakaoLabel}>카카오로 계속하기</Text>}
-              </Pressable>
-            ) : null}
-            {hasGoogleClient ? (
-              <Pressable
-                onPress={submitGoogle}
-                disabled={busy || !googleRequest}
-                style={({ pressed }) => [styles.googleButton, (pressed || busy) && styles.pressed]}
-                accessibilityRole="button"
-              >
-                {socialLoading === 'GOOGLE'
-                  ? <ActivityIndicator color={darkColors.text} />
-                  : <Text style={styles.googleLabel}>Google로 계속하기</Text>}
-              </Pressable>
-            ) : null}
+            <Pressable
+              onPress={submitKakao}
+              disabled={busy}
+              style={({ pressed }) => [styles.kakaoButton, (pressed || busy) && styles.pressed]}
+              accessibilityRole="button"
+            >
+              {socialLoading === 'KAKAO'
+                ? <ActivityIndicator color="#191919" />
+                : <Text style={styles.kakaoLabel}>카카오로 계속하기</Text>}
+            </Pressable>
+            <Pressable
+              onPress={submitGoogle}
+              disabled={busy}
+              style={({ pressed }) => [styles.googleButton, (pressed || busy) && styles.pressed]}
+              accessibilityRole="button"
+            >
+              {socialLoading === 'GOOGLE'
+                ? <ActivityIndicator color={darkColors.text} />
+                : <Text style={styles.googleLabel}>Google로 계속하기</Text>}
+            </Pressable>
           </View>
 
           {__DEV__ ? (
