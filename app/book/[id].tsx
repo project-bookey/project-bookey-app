@@ -493,7 +493,7 @@ function ProgressEditor({ rid, progress, colors }: {
         <View pointerEvents="none" style={[styles.track, dragging && styles.trackActive, { backgroundColor: colors.line }]}>
           <View style={[styles.fill, { width: `${Math.round(ratio * 100)}%`, backgroundColor: colors.accent }]} />
         </View>
-        {dragging ? (
+        {total > 0 ? (
           <View pointerEvents="none" style={[styles.thumb, { left: `${ratio * 100}%`, backgroundColor: colors.accent }]} />
         ) : null}
       </View>
