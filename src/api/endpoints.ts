@@ -120,7 +120,7 @@ export const reviewApi = {
 };
 
 export const challengeApi = {
-  create: (body: { readingRecordId: number; budgetSec: number }) =>
+  create: (body: { readingRecordId?: number; bookId?: number; budgetSec: number }) =>
     api<Challenge>('/api/v1/challenges', { method: 'POST', body }),
   active: () => api<Challenge[]>('/api/v1/challenges/active'),
   get: (id: number) => api<Challenge>(`/api/v1/challenges/${id}`),
