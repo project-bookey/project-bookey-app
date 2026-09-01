@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
+import { ReactNode, useRef } from 'react';
 import {
-  ActivityIndicator, Pressable, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
+  ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, TextInput, TextInputProps,
+  View, ViewStyle,
 } from 'react-native';
 
 import { colors, elevation, fonts, hairline, ornament, radius, spacing, type } from '@/theme';
@@ -54,6 +55,8 @@ export function OrnamentDivider() {
   );
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function Button({
   label, onPress, variant = 'primary', disabled, loading, style, size = 'md',
 }: {
@@ -66,21 +69,36 @@ export function Button({
   size?: 'sm' | 'md';
 }) {
   const isDisabled = disabled || loading;
+  // 눌림 효과 — 스프링 스케일 다운(96%) + 스케일에 연동해 살짝 어두워짐
+  const scale = useRef(new Animated.Value(1)).current;
+  const springTo = (toValue: number) =>
+    Animated.spring(scale, {
+      toValue,
+      friction: 4,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       onPress={onPress}
+      onPressIn={() => springTo(0.96)}
+      onPressOut={() => springTo(1)}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      style={[
         styles.button,
         size === 'sm' && styles.buttonSm,
         variant === 'primary' && styles.buttonPrimary,
         variant === 'outline' && styles.buttonOutline,
         variant === 'ghost' && styles.buttonGhost,
         variant === 'danger' && styles.buttonDanger,
-        pressed && !isDisabled && styles.buttonPressed,
         isDisabled && styles.buttonDisabled,
         style,
+        {
+          transform: [{ scale }],
+          ...(isDisabled
+            ? null
+            : { opacity: scale.interpolate({ inputRange: [0.96, 1], outputRange: [0.85, 1] }) }),
+        },
       ]}
     >
       {loading ? (
@@ -97,7 +115,7 @@ export function Button({
           {label}
         </Text>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -322,7 +340,6 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
     borderColor: colors.danger,
   },
-  buttonPressed: { opacity: 0.7 },
   buttonDisabled: { opacity: 0.35 },
   buttonLabel: { ...type.label, color: colors.ink },
   buttonLabelSm: { fontSize: 11.5 },
