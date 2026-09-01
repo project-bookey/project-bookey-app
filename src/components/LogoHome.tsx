@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable } from 'react-native';
 
-import { useTheme, sans, spacing } from '@/theme';
+import { spacing } from '@/theme';
 
 /**
  * 헤더 좌측 로고 — 어느 화면에서든 누르면 홈으로 간다.
  * 블랙 크롬 전용 화이트 마크(logo-dark.png)를 쓴다.
+ * 좌측 여백은 화면 콘텐츠 여백(spacing.lg)과 정렬.
  */
 export function LogoHome() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export function LogoHome() {
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel="bookey 홈"
-      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginLeft: spacing.lg, marginRight: spacing.md })}
     >
       <Image
         source={require('../../assets/logo-dark.png')}
@@ -23,27 +24,5 @@ export function LogoHome() {
         resizeMode="contain"
       />
     </Pressable>
-  );
-}
-
-/** 서브 화면 헤더 좌측 — 뒤로가기 셰브론 + 로고. */
-export function HeaderBackLogo() {
-  const router = useRouter();
-  const { colors } = useTheme();
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: spacing.md }}>
-      {router.canGoBack() && (
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로"
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 10 })}
-        >
-          <Text style={{ color: colors.onChrome, fontFamily: sans.semiBold, fontSize: 30, lineHeight: 34 }}>‹</Text>
-        </Pressable>
-      )}
-      <LogoHome />
-    </View>
   );
 }

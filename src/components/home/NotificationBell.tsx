@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { notificationApi } from '@/api/endpoints';
 import { radius, sans, useTheme } from '@/theme';
@@ -19,7 +19,10 @@ export function NotificationBell() {
       accessibilityRole="button"
       accessibilityLabel="알림"
     >
-      <Text style={{ fontSize: 20 }}>🔔</Text>
+      <Image
+        source={require('../../../assets/icons/bell.png')}
+        style={[styles.icon, { tintColor: colors.onChrome }]}
+      />
       {unread > 0 ? (
         <View style={[styles.badge, { backgroundColor: colors.accent }]}>
           <Text style={[styles.badgeText, { fontFamily: sans.bold, color: colors.onAccent }]}>
@@ -44,4 +47,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: { fontSize: 10 },
+  icon: { width: 26, height: 26, resizeMode: 'contain' },
 });
