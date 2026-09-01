@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HeaderBackLogo } from '@/components/LogoHome';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
+import { useThemePreference } from '@/store/themePreference';
 import { useTheme, sans } from '@/theme';
 
 const queryClient = new QueryClient({
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const restore = useAuth((s) => s.restore);
+  const restoreTheme = useThemePreference((s) => s.restore);
   const status = useAuth((s) => s.status);
   const [ready, setReady] = useState(false);
   const { colors } = useTheme();
@@ -29,8 +31,9 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    restore().finally(() => setReady(true));
-  }, [restore]);
+    // 첫 렌더 전에 테마 선호까지 복원해 콜드 스타트 다크→라이트 깜빡임을 막는다.
+    Promise.all([restore(), restoreTheme()]).finally(() => setReady(true));
+  }, [restore, restoreTheme]);
 
   if (!ready || !fontsLoaded || status === 'loading') {
     return <Loading />;

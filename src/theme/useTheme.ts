@@ -1,18 +1,23 @@
+import { useColorScheme } from 'react-native';
 import type { ViewStyle } from 'react-native';
 
-import { cardShadow, darkColors } from './palette';
+import { useThemePreference } from '@/store/themePreference';
+import { cardShadow, darkColors, lightColors } from './palette';
 import type { ColorTokens, ThemeMode } from './palette';
 
 /**
- * 활성 테마를 내려주는 훅. 당분간 다크 고정(2026-09-01 후속 결정) —
- * 리디자인 검수 중 화면 간 톤 불일치를 막기 위해 시스템 설정을 따르지 않는다.
- * 라이트 팔레트는 유지하며, 앱 내 테마 토글이 생기면 이 훅 내부만 바꾼다 — 호출부는 그대로.
+ * 활성 테마를 내려주는 훅. 앱 내 선호(themePreference)가 우선이고,
+ * '시스템'이면 기기 설정(useColorScheme)을 따르되 값이 없으면 다크(기본)로 폴백한다.
+ * 시그니처는 불변 — 테마 정책이 바뀌면 이 훅 내부만 바꾼다 (수동 테마 전환 스펙).
  */
 export function useTheme(): { mode: ThemeMode; colors: ColorTokens; cardShadow: ViewStyle } {
-  const mode: ThemeMode = 'dark';
+  const preference = useThemePreference((s) => s.preference);
+  const scheme = useColorScheme();
+  const mode: ThemeMode =
+    preference === 'system' ? (scheme === 'light' ? 'light' : 'dark') : preference;
   return {
     mode,
-    colors: darkColors,
+    colors: mode === 'light' ? lightColors : darkColors,
     cardShadow: cardShadow[mode],
   };
 }
