@@ -104,8 +104,9 @@ export default function SearchScreen() {
         </View>
       </View>
 
+      {/* autoFocus로 키보드가 열린 상태에서도 책 탭이 먹히도록 — 기본값 'never'는 첫 탭을 키보드 닫기로만 소모한다 */}
       {!searching ? (
-        <ScrollView contentContainerStyle={styles.explore}>
+        <ScrollView contentContainerStyle={styles.explore} keyboardShouldPersistTaps="handled">
           <BookRow
             title="추천"
             loading={recommended.isLoading}
@@ -129,6 +130,7 @@ export default function SearchScreen() {
           data={search.isLoading ? [] : results}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
             search.isLoading ? (
               <View>
