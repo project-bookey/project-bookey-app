@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import type { ReadingRecord } from '@/api/types';
@@ -8,9 +8,9 @@ import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import { HeroContinue } from '@/components/home/HeroContinue';
-import { layout, spacing, useTheme } from '@/theme';
+import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 탭 1. 홈 — OTT 구성: 이벤트 배너 → 풀블리드 히어로 → 표지 행 4개 (홈 리디자인 스펙) */
+/** 탭 1. 홈 — OTT 구성: 검색 바 → 이벤트 배너 → 히어로(읽는 중일 때만) → 표지 행 4개 (홈 리디자인·빈 섹션 스펙) */
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -46,6 +46,15 @@ export default function HomeScreen() {
       contentContainerStyle={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetchAll} />}
     >
+      <Pressable
+        onPress={() => router.push('/search')}
+        style={[styles.searchBar, { borderColor: colors.lineStrong }]}
+        accessibilityRole="button"
+        accessibilityLabel="책 검색"
+      >
+        <Text style={[typeScale.body, { color: colors.textMuted }]}>⌕ 책 제목·저자 검색</Text>
+      </Pressable>
+
       <BannerCarousel banners={banners.data ?? []} />
 
       <HeroContinue
@@ -54,7 +63,6 @@ export default function HomeScreen() {
         loading={reading.isLoading}
         onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
         onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
-        onSearch={() => router.push('/search')}
       />
 
       <BookRow
@@ -134,5 +142,12 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.xxl,
     gap: spacing.xl,
+  },
+  searchBar: {
+    marginHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
   },
 });

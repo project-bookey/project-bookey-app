@@ -36,7 +36,19 @@
 
 ---
 
-### Task 2: 육안 검증 (컨트롤러 수행)
+### Task 2: 상시 검색 바 + 온보딩 히어로 제거 (후속 결정)
 
-- [ ] `npm run web`에서 빈 계정 기준: 배너 스트립·히어로 온보딩·행 4개(+ 타일 2, 유령 2) 노출, + 타일 → 검색, 다크/라이트.
+**Files:**
+- Modify: `app/(tabs)/home.tsx` — 스크롤 맨 위에 가짜 검색 바(로컬 컴포넌트) 추가, 히어로 `onSearch` 제거
+- Modify: `src/components/home/HeroContinue.tsx` — 온보딩 분기·`onSearch` prop 제거, `!record`면 `null`
+
+- [ ] **Step 1: 검색 바** — hairline 테두리(`colors.lineStrong`)·`radius.md`, `⌕ 책 제목·저자 검색`, 탭 → `/search`.
+- [ ] **Step 2: 히어로 정리** — 온보딩 빈 상태 삭제, 읽는 중 없으면 렌더 안 함. 로딩 스켈레톤 유지.
+- [ ] **Step 3: 검증·커밋** — `npm run typecheck` exit 0 후 커밋.
+
+---
+
+### Task 3: 육안 검증 (컨트롤러 수행)
+
+- [ ] `npm run web`에서 빈 계정 기준: 검색 바·배너 스트립·행 4개(+ 타일 2, 유령 2) 노출(히어로 없음), 검색 바·+ 타일 → 검색, 다크/라이트.
 - [ ] 검증 후 main 머지 + 브랜치 삭제 (CLAUDE.md Git 규칙).

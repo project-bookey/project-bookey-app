@@ -9,14 +9,14 @@ const HERO_H = 360;
 /**
  * 풀블리드 히어로 — 표지를 확대·블러해 배경으로 깔고 스크림 위에 정보·CTA.
  * 항상 어두운 영역이므로 오버레이 색은 darkColors 고정.
+ * 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 홈 상단 검색 바가 담당(홈 빈 섹션 스펙).
  */
-export function HeroContinue({ record, streakLine, loading, onContinue, onDetail, onSearch }: {
+export function HeroContinue({ record, streakLine, loading, onContinue, onDetail }: {
   record: ReadingRecord | null;
   streakLine?: string;
   loading?: boolean;
   onContinue: (record: ReadingRecord) => void;
   onDetail: (record: ReadingRecord) => void;
-  onSearch: () => void;
 }) {
   const { colors } = useTheme();
 
@@ -25,19 +25,7 @@ export function HeroContinue({ record, streakLine, loading, onContinue, onDetail
   }
 
   if (!record) {
-    return (
-      <View style={[styles.hero, styles.onboarding, { backgroundColor: colors.surface }]}>
-        <Text style={[typeScale.title, { color: colors.text, textAlign: 'center' }]}>
-          첫 책을 찾아보세요
-        </Text>
-        <Text style={[typeScale.body, { color: colors.textMuted, textAlign: 'center' }]}>
-          책을 등록하고 목표일을 정하면{'\n'}페이스가 밀릴 때 알려드립니다.
-        </Text>
-        <Pressable onPress={onSearch} style={[styles.cta, { backgroundColor: colors.accent }]} accessibilityRole="button">
-          <Text style={[typeScale.label, { color: colors.onAccent }]}>책 찾기</Text>
-        </Pressable>
-      </View>
-    );
+    return null;
   }
 
   const progress = record.progress.completionRate ?? 0;
@@ -102,7 +90,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  onboarding: { alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl },
   info: { padding: spacing.lg, gap: spacing.xs },
   track: {
     height: 3,
