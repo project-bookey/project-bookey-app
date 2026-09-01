@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   button: {
     minHeight: 46,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   tag: {
     paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: radius.sm,
+    borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt,
     alignSelf: 'flex-start',
   },
