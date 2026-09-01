@@ -11,7 +11,7 @@ export function LogoHome() {
   const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.navigate('/(tabs)/home')}
+      onPress={() => router.navigate('/home')}
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel="bookey 홈"

@@ -63,7 +63,7 @@ export default function LoginScreen() {
     setGoogleLoading(true);
     setError(null);
     googleLogin(idToken)
-      .then(() => router.replace('/(tabs)/home'))
+      .then(() => router.replace('/home'))
       .catch((e) => setError(e instanceof Error ? e.message : 'Google 로그인에 실패했습니다.'))
       .finally(() => setGoogleLoading(false));
   }, [googleLogin, response, router]);
@@ -77,7 +77,7 @@ export default function LoginScreen() {
       } else {
         await emailLogin(email.trim(), password);
       }
-      router.replace('/(tabs)/home');
+      router.replace('/home');
     } catch (e) {
       setError(e instanceof Error ? e.message : '인증에 실패했습니다.');
     } finally {

@@ -187,7 +187,7 @@ export default function ClubHomeScreen() {
           club={data}
           onLeft={() => {
             queryClient.invalidateQueries({ queryKey: ['clubs'] });
-            router.replace('/(tabs)/clubs');
+            router.replace('/clubs');
           }}
         />
       </ScrollView>

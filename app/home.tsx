@@ -7,6 +7,7 @@ import type { ReadingRecord } from '@/api/types';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { BookRow, RowBook } from '@/components/home/BookRow';
+import { ClubRow } from '@/components/home/ClubRow';
 import { HeroContinue } from '@/components/home/HeroContinue';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -76,7 +77,7 @@ export default function HomeScreen() {
           progress: r.progress.completionRate ?? 0,
         }))}
         onPressBook={openBook}
-        onPressAll={() => router.push('/(tabs)/library')}
+        onPressAll={() => router.push('/library')}
         onPressEmpty={() => router.push('/search')}
       />
 
@@ -90,7 +91,7 @@ export default function HomeScreen() {
           coverUrl: r.book?.coverUrl,
         }))}
         onPressBook={openBook}
-        onPressAll={() => router.push('/(tabs)/library')}
+        onPressAll={() => router.push('/library')}
         onPressEmpty={() => router.push('/search')}
       />
 
@@ -118,6 +119,8 @@ export default function HomeScreen() {
         }))}
         onPressBook={openBook}
       />
+
+      <ClubRow />
     </ScrollView>
   );
 }

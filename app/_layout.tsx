@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { HeaderBackLogo } from '@/components/LogoHome';
+import { HomeHeaderIcons } from '@/components/home/HomeHeaderIcons';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
@@ -54,7 +55,13 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: colors.bg },
           }}
         >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="home"
+            options={{ headerTitle: '', headerRight: () => <HomeHeaderIcons /> }}
+          />
+          <Stack.Screen name="library" options={{ title: '서재' }} />
+          <Stack.Screen name="clubs" options={{ title: '모임' }} />
+          <Stack.Screen name="profile" options={{ title: '프로필' }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="search" options={{ title: '도서 검색' }} />
           <Stack.Screen name="notifications" options={{ title: '알림' }} />
