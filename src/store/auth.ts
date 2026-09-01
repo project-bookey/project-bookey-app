@@ -10,7 +10,7 @@ type AuthState = {
   restore: () => Promise<void>;
   emailLogin: (email: string, password: string) => Promise<void>;
   emailSignup: (email: string, password: string, nickname: string) => Promise<void>;
-  googleLogin: (idToken: string) => Promise<void>;
+  socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO', token: string, nickname?: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: Me) => void;
 };
@@ -46,8 +46,8 @@ export const useAuth = create<AuthState>((set) => ({
     set({ user: result.user, status: "authenticated" });
   },
 
-  googleLogin: async (idToken) => {
-    const result = await authApi.socialLogin('GOOGLE', idToken);
+  socialLogin: async (provider, token, nickname) => {
+    const result = await authApi.socialLogin(provider, token, nickname);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     set({ user: result.user, status: 'authenticated' });
   },

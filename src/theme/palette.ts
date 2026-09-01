@@ -88,6 +88,9 @@ export const lightColors: ColorTokens = {
   onChromeFaint: '#737373',
 };
 
+/** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. */
+export const brandGradientStops = ['#1B4A3E', darkColors.accentSoft, '#0D1F1B'] as const;
+
 /** 엘리베이션 — 다크는 밝기 단계로 대체(그림자 없음), 라이트만 카드 그림자 1종. */
 export const cardShadow: Record<ThemeMode, ViewStyle> = {
   dark: {},
