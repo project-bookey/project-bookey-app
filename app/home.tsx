@@ -12,7 +12,7 @@ import { ClubRow } from '@/components/home/ClubRow';
 import { HeroContinue } from '@/components/home/HeroContinue';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 탭 1. 홈 — OTT 구성: 검색 바 → 이벤트 배너 → 히어로(읽는 중일 때만) → 표지 행 4개 (홈 리디자인·빈 섹션 스펙) */
+/** 홈 — 검색 바 → 배너 → 히어로 → 인기 → 추천 → 읽고 싶은 → 읽는 중 → 챌린지 → 모임 (2026-09-01 배치 보정) */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -69,21 +69,31 @@ export default function HomeScreen() {
         onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
       />
 
-      <ChallengeRow />
-
       <BookRow
-        title="읽는 중"
-        loading={reading.isLoading}
-        books={records.map((r): RowBook => ({
-          key: `reading-${r.id}`,
-          bookId: r.book?.id,
-          title: r.book?.title ?? '',
-          coverUrl: r.book?.coverUrl,
-          progress: r.progress.completionRate ?? 0,
+        title="인기"
+        loading={popular.isLoading}
+        books={(popular.data ?? []).map((p, i): RowBook => ({
+          key: `popular-${p.book.id}`,
+          bookId: p.book.id,
+          title: p.book.title,
+          author: p.book.author,
+          coverUrl: p.book.coverUrl,
+          rank: i + 1,
         }))}
         onPressBook={openBook}
-        onPressAll={() => router.push('/library')}
-        onPressEmpty={() => router.push('/search')}
+      />
+
+      <BookRow
+        title="추천"
+        loading={recommended.isLoading}
+        books={(recommended.data ?? []).map((b): RowBook => ({
+          key: `pick-${b.id}`,
+          bookId: b.id,
+          title: b.title,
+          author: b.author,
+          coverUrl: b.coverUrl,
+        }))}
+        onPressBook={openBook}
       />
 
       <BookRow
@@ -101,31 +111,21 @@ export default function HomeScreen() {
       />
 
       <BookRow
-        title="추천"
-        loading={recommended.isLoading}
-        books={(recommended.data ?? []).map((b): RowBook => ({
-          key: `pick-${b.id}`,
-          bookId: b.id,
-          title: b.title,
-          author: b.author,
-          coverUrl: b.coverUrl,
+        title="읽는 중"
+        loading={reading.isLoading}
+        books={records.map((r): RowBook => ({
+          key: `reading-${r.id}`,
+          bookId: r.book?.id,
+          title: r.book?.title ?? '',
+          coverUrl: r.book?.coverUrl,
+          progress: r.progress.completionRate ?? 0,
         }))}
         onPressBook={openBook}
+        onPressAll={() => router.push('/library')}
+        onPressEmpty={() => router.push('/search')}
       />
 
-      <BookRow
-        title="인기"
-        loading={popular.isLoading}
-        books={(popular.data ?? []).map((p, i): RowBook => ({
-          key: `popular-${p.book.id}`,
-          bookId: p.book.id,
-          title: p.book.title,
-          author: p.book.author,
-          coverUrl: p.book.coverUrl,
-          rank: i + 1,
-        }))}
-        onPressBook={openBook}
-      />
+      <ChallengeRow />
 
       <ClubRow />
     </ScrollView>
