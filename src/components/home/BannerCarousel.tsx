@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Banner } from '@/api/types';
-import { darkColors, radius, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, ornament, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const CARD_H = 108;
 
 /**
  * 홈 최상단 이벤트 배너 — 가로 페이징 캐러셀 + 인디케이터.
  * 이미지 위 오버레이 영역이라 모드와 무관하게 어두운 톤(darkColors)을 쓴다.
+ * 배너가 없으면 같은 높이의 '이벤트 준비 중' 스트립으로 자리를 지킨다(홈 빈 섹션 스펙).
  */
 export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const router = useRouter();
@@ -18,7 +19,13 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const [width, setWidth] = useState(0);
 
   if (banners.length === 0) {
-    return null;
+    return (
+      <View style={[styles.wrap, styles.placeholder, { borderColor: colors.lineStrong }]}>
+        <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+          {ornament.section} 이벤트 준비 중
+        </Text>
+      </View>
+    );
   }
 
   const open = (banner: Banner) => {
@@ -98,6 +105,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radius.sm,
     marginBottom: spacing.xs,
+  },
+  placeholder: {
+    height: CARD_H,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
   dot: { width: 4, height: 4, borderRadius: radius.pill },

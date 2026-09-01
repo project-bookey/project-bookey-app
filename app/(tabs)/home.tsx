@@ -69,6 +69,7 @@ export default function HomeScreen() {
         }))}
         onPressBook={openBook}
         onPressAll={() => router.push('/(tabs)/library')}
+        onPressEmpty={() => router.push('/search')}
       />
 
       <BookRow
@@ -82,6 +83,7 @@ export default function HomeScreen() {
         }))}
         onPressBook={openBook}
         onPressAll={() => router.push('/(tabs)/library')}
+        onPressEmpty={() => router.push('/search')}
       />
 
       <BookRow

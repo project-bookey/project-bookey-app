@@ -16,25 +16,24 @@ export type RowBook = {
 const COVER_W = 96;
 const COVER_H = 144;
 
-/** 가로 표지 캐러셀 행. 데이터가 비면 행 전체를 숨긴다. */
-export function BookRow({ title, books, loading, onPressBook, onPressAll }: {
+/** 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressEmpty가 있으면 + 타일, 없으면 유령 표지. */
+export function BookRow({ title, books, loading, onPressBook, onPressAll, onPressEmpty }: {
   title: string;
   books: RowBook[];
   loading?: boolean;
   onPressBook: (book: RowBook) => void;
   onPressAll?: () => void;
+  /** 빈 행의 + 타일 이동 대상 — 없으면 '준비 중' 유령 표지로 대체 */
+  onPressEmpty?: () => void;
 }) {
   const { colors } = useTheme();
-
-  if (!loading && books.length === 0) {
-    return null;
-  }
+  const empty = !loading && books.length === 0;
 
   return (
     <View style={styles.section}>
       <View style={styles.header}>
         <Text style={[typeScale.section, { color: colors.text }]}>{title}</Text>
-        {onPressAll ? (
+        {onPressAll && !empty ? (
           <Pressable onPress={onPressAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
             <Text style={[typeScale.label, { color: colors.textMuted }]}>전체보기 ›</Text>
           </Pressable>
@@ -46,6 +45,26 @@ export function BookRow({ title, books, loading, onPressBook, onPressAll }: {
           {[0, 1, 2].map((i) => (
             <View key={i} style={[styles.cover, { backgroundColor: colors.surface }]} />
           ))}
+        </View>
+      ) : empty && onPressEmpty ? (
+        <View style={styles.list}>
+          <Pressable onPress={onPressEmpty} accessibilityRole="button" accessibilityLabel="책 추가">
+            <View style={[styles.cover, styles.ghost, { borderColor: colors.lineStrong }]}>
+              <Text style={[typeScale.title, { color: colors.textMuted }]}>+</Text>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>책 추가</Text>
+            </View>
+          </Pressable>
+        </View>
+      ) : empty ? (
+        <View style={styles.emptyWrap}>
+          <View style={styles.list}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={[styles.cover, styles.ghost, { borderColor: colors.lineStrong }]} />
+            ))}
+          </View>
+          <Text style={[typeScale.caption, styles.emptyNote, { color: colors.textMuted }]}>
+            아직 준비 중이에요
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -117,4 +136,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   fill: { height: 3 },
+  ghost: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  emptyWrap: { gap: spacing.sm },
+  emptyNote: { paddingHorizontal: spacing.lg },
 });
