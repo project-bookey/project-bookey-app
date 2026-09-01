@@ -2374,6 +2374,8 @@ export interface components {
             liked: boolean;
             /** Format: int64 */
             likeCount: number;
+            /** Format: int64 */
+            myRecordId?: number;
         };
         RatingSummary: {
             /** Format: double */

@@ -8,7 +8,7 @@ import {
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
-import type { BookSummary, ReadingStatus, VerificationLevel } from '@/api/types';
+import type { BookDetail, BookSummary, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { formatDuration, formatRelative, percent } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
@@ -30,13 +30,16 @@ export default function BookDetailScreen() {
   const bookId = Number(id);
   const paramRid = recordId ? Number(recordId) : null;
   const [addedRid, setAddedRid] = useState<number | null>(null);
-  const rid = paramRid ?? addedRid;
 
   const book = useQuery({
     queryKey: ['book', bookId],
     queryFn: () => bookApi.detail(bookId),
     enabled: Number.isFinite(bookId),
   });
+
+  // 라우트 파라미터 → 이 세션에서 담은 기록 → 서버가 알려준 내 기록 순으로 채택
+  const rid = paramRid ?? addedRid ?? book.data?.myRecordId ?? null;
+
   const record = useQuery({
     queryKey: ['library', 'record', rid],
     queryFn: () => libraryApi.detail(rid!),
@@ -80,14 +83,16 @@ export default function BookDetailScreen() {
       )}
 
       <View style={styles.sections}>
-        <ActionBar
-          bookId={bookId}
-          liked={book.data?.liked ?? false}
-          likeCount={book.data?.likeCount ?? 0}
-          hasRecord={rid != null}
-          colors={colors}
-          onAdded={setAddedRid}
-        />
+        {book.data ? (
+          <ActionBar
+            bookId={bookId}
+            liked={book.data.liked}
+            likeCount={book.data.likeCount}
+            hasRecord={rid != null}
+            colors={colors}
+            onAdded={setAddedRid}
+          />
+        ) : null}
 
         {record.data && progress ? (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -296,7 +301,11 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
 
   const like = useMutation({
     mutationFn: () => bookApi.like(bookId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['book', bookId] }),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['book', bookId], (old: BookDetail | undefined) =>
+        old ? { ...old, liked: res.liked, likeCount: res.likeCount } : old,
+      );
+    },
   });
   const add = useMutation({
     mutationFn: (status: ReadingStatus) => libraryApi.add({ bookId, status }),
