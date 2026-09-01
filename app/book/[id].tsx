@@ -454,6 +454,7 @@ function ProgressEditor({ rid, progress, colors }: {
             value={text}
             onChangeText={(t) => setText(t.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
+            maxLength={4}
             autoFocus
             selectTextOnFocus
             onSubmitEditing={confirmEdit}
@@ -492,7 +493,7 @@ function ProgressEditor({ rid, progress, colors }: {
         <View pointerEvents="none" style={[styles.track, dragging && styles.trackActive, { backgroundColor: colors.line }]}>
           <View style={[styles.fill, { width: `${Math.round(ratio * 100)}%`, backgroundColor: colors.accent }]} />
         </View>
-        {dragging ? (
+        {total > 0 ? (
           <View pointerEvents="none" style={[styles.thumb, { left: `${ratio * 100}%`, backgroundColor: colors.accent }]} />
         ) : null}
       </View>
@@ -677,12 +678,12 @@ const styles = StyleSheet.create({
   tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
   progressNumbers: { flexDirection: 'row', alignItems: 'baseline' },
   bigNumber: { fontSize: 28 },
-  bigNumberInput: { padding: 0, minWidth: 56, borderBottomWidth: 1 },
+  bigNumberInput: { padding: 0, width: 72, borderBottomWidth: 1 },
   track: { height: 4, borderRadius: radius.none, overflow: 'hidden' },
   trackTouch: { height: 32, justifyContent: 'center' },
   trackActive: { height: 8 },
   fill: { height: '100%' },
-  thumb: { position: 'absolute', top: '50%', width: 4, height: 20, marginTop: -10, marginLeft: -2 },
+  thumb: { position: 'absolute', top: '50%', width: 10, height: 20, marginTop: -10, marginLeft: -5 },
   kv: { flexDirection: 'row', justifyContent: 'space-between' },
   actionBarWrap: { gap: spacing.xs },
   actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
