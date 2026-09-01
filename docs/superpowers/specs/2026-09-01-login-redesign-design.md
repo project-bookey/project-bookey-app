@@ -45,9 +45,10 @@
 - 애플 — `expo-apple-authentication` 설치, `app.json`에 플러그인 + `ios.usesAppleSignIn: true`.
   iOS에서만 `require`(try/catch — Expo Go 안전), `isAvailableAsync()` 통과 시에만 공식
   `AppleAuthenticationButton`(WHITE, `cornerRadius: radius.md`) 렌더. `ERR_REQUEST_CANCELED`는 무시.
-- `app/login.tsx` — 전면 리라이트. 레이아웃: 그라데이션 풀블리드 → 로고+태그라인 → 이메일 폼
-  (이메일/비번, 가입 시 닉네임, 가입↔로그인 토글 유지) → "또는" hairline → 소셜 스택 →
-  `__DEV__` 전용 API 주소·미설정 키 안내. 카카오 버튼 `#FEE500`/`#191919`, 구글 아웃라인.
+- `app/login.tsx` — 전면 리라이트. 레이아웃(복귀 확정판): 플랫 다크(`darkColors.bg`) →
+  좌측 "bookey" 워드마크+밑줄+태그라인 → 라벨 붙은 이메일 폼(이메일/비번, 가입 시 닉네임,
+  가입↔로그인 토글 유지) → "또는" hairline → 소셜 스택 → `__DEV__` 전용 API 주소·미설정 키 안내.
+  카카오 버튼 `#FEE500`/`#191919`, 구글 아웃라인.
 
 ## 플랫폼별 실작동 범위
 
@@ -65,5 +66,5 @@
 
 - 백엔드: `HttpMessageNotReadableException` 단위 테스트 + `mvnw test` 회귀, curl 가입→로그인→`/me`.
 - 앱: `npm run typecheck` + 웹(:8083) 실사용 — 시드 계정 이메일 로그인 → 홈 진입, 신규 가입 성공,
-  레이아웃 육안(그라데이션·로고·소셜 스택·애플 부재·`__DEV__` 안내).
+  레이아웃 육안(플랫 다크·워드마크·소셜 게이트·애플 부재·`__DEV__` 안내).
 - 소셜 실로그인은 키 제공 시 웹에서 카카오·구글 검증. 애플은 iOS 빌드 환경 확보 후 수동 체크리스트.

@@ -105,7 +105,8 @@ export default function LoginScreen() {
   };
 
   const submitApple = async () => {
-    if (!Apple) return;
+    if (!Apple || busy) return; // 네이티브 버튼엔 disabled가 없어 진행 중 중복 실행을 여기서 막는다
+
     setSocialLoading('APPLE');
     setError(null);
     try {
