@@ -454,6 +454,7 @@ function ProgressEditor({ rid, progress, colors }: {
             value={text}
             onChangeText={(t) => setText(t.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
+            maxLength={4}
             autoFocus
             selectTextOnFocus
             onSubmitEditing={confirmEdit}
@@ -677,7 +678,7 @@ const styles = StyleSheet.create({
   tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
   progressNumbers: { flexDirection: 'row', alignItems: 'baseline' },
   bigNumber: { fontSize: 28 },
-  bigNumberInput: { padding: 0, minWidth: 56, borderBottomWidth: 1 },
+  bigNumberInput: { padding: 0, width: 72, borderBottomWidth: 1 },
   track: { height: 4, borderRadius: radius.none, overflow: 'hidden' },
   trackTouch: { height: 32, justifyContent: 'center' },
   trackActive: { height: 8 },
