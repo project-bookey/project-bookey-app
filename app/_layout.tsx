@@ -16,8 +16,6 @@ import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { LogoHome } from '@/components/LogoHome';
-import { HomeHeaderIcons } from '@/components/home/HomeHeaderIcons';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
@@ -74,17 +72,16 @@ export default function RootLayout() {
               headerShadowVisible: false,
               headerTintColor: colors.onChrome,
               headerTitleStyle: { fontFamily: sans.semiBold, fontSize: 24 },
-              headerLeft: () => <LogoHome />,
-              headerRight: () => <HomeHeaderIcons />,
               contentStyle: { backgroundColor: colors.bg },
             }}
           >
-            <Stack.Screen name="home" options={{ headerTitle: '' }} />
+            <Stack.Screen name="home" options={{ headerShown: false }} />
+            <Stack.Screen name="search" options={{ headerShown: false }} />
+            <Stack.Screen name="plaza" options={{ headerShown: false }} />
+            <Stack.Screen name="profile" options={{ headerShown: false }} />
             <Stack.Screen name="library" options={{ title: '서재' }} />
-            <Stack.Screen name="clubs" options={{ title: '모임' }} />
-            <Stack.Screen name="profile" options={{ title: '프로필' }} />
+            <Stack.Screen name="clubs" options={{ title: '토론 모임' }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="search" options={{ title: '도서 검색' }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
             <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />

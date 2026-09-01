@@ -4,6 +4,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text } from 'react-n
 
 import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import type { ReadingRecord } from '@/api/types';
+import { PaperScreen, SectionNav } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { BookRow, RowBook } from '@/components/home/BookRow';
@@ -45,90 +46,92 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bg }}
-      contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetchAll} />}
-    >
-      <Pressable
-        onPress={() => router.push('/search')}
-        style={[styles.searchBar, { borderColor: colors.lineStrong }]}
-        accessibilityRole="button"
-        accessibilityLabel="책 검색"
+    <PaperScreen>
+      <SectionNav active="shelf" />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetchAll} />}
       >
-        <Text style={[typeScale.body, { color: colors.textMuted }]}>⌕ 책 제목·저자 검색</Text>
-      </Pressable>
+        <Pressable
+          onPress={() => router.push('/search')}
+          style={[styles.searchBar, { borderColor: colors.lineStrong }]}
+          accessibilityRole="button"
+          accessibilityLabel="책 검색"
+        >
+          <Text style={[typeScale.body, { color: colors.textMuted }]}>⌕ 책 제목·저자 검색</Text>
+        </Pressable>
 
-      <BannerCarousel banners={banners.data ?? []} />
+        <BannerCarousel banners={banners.data ?? []} />
 
-      <HeroContinue
-        record={hero}
-        streakLine={streakLine}
-        loading={reading.isLoading}
-        onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
-        onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
-      />
+        <HeroContinue
+          record={hero}
+          streakLine={streakLine}
+          loading={reading.isLoading}
+          onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
+          onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
+        />
 
-      <BookRow
-        title="인기"
-        loading={popular.isLoading}
-        books={(popular.data ?? []).map((p, i): RowBook => ({
-          key: `popular-${p.book.id}`,
-          bookId: p.book.id,
-          title: p.book.title,
-          author: p.book.author,
-          coverUrl: p.book.coverUrl,
-          rank: i + 1,
-        }))}
-        onPressBook={openBook}
-      />
+        <BookRow
+          title="인기"
+          loading={popular.isLoading}
+          books={(popular.data ?? []).map((p, i): RowBook => ({
+            key: `popular-${p.book.id}`,
+            bookId: p.book.id,
+            title: p.book.title,
+            author: p.book.author,
+            coverUrl: p.book.coverUrl,
+            rank: i + 1,
+          }))}
+          onPressBook={openBook}
+        />
 
-      <BookRow
-        title="추천"
-        loading={recommended.isLoading}
-        books={(recommended.data ?? []).map((b): RowBook => ({
-          key: `pick-${b.id}`,
-          bookId: b.id,
-          title: b.title,
-          author: b.author,
-          coverUrl: b.coverUrl,
-        }))}
-        onPressBook={openBook}
-      />
+        <BookRow
+          title="추천"
+          loading={recommended.isLoading}
+          books={(recommended.data ?? []).map((b): RowBook => ({
+            key: `pick-${b.id}`,
+            bookId: b.id,
+            title: b.title,
+            author: b.author,
+            coverUrl: b.coverUrl,
+          }))}
+          onPressBook={openBook}
+        />
 
-      <BookRow
-        title="읽고 싶은"
-        loading={want.isLoading}
-        books={(want.data?.content ?? []).map((r): RowBook => ({
-          key: `want-${r.id}`,
-          bookId: r.book?.id,
-          title: r.book?.title ?? '',
-          coverUrl: r.book?.coverUrl,
-        }))}
-        onPressBook={openBook}
-        onPressAll={() => router.push('/library')}
-        onPressEmpty={() => router.push('/search')}
-      />
+        <BookRow
+          title="읽고 싶은"
+          loading={want.isLoading}
+          books={(want.data?.content ?? []).map((r): RowBook => ({
+            key: `want-${r.id}`,
+            bookId: r.book?.id,
+            title: r.book?.title ?? '',
+            coverUrl: r.book?.coverUrl,
+          }))}
+          onPressBook={openBook}
+          onPressAll={() => router.push('/library')}
+          onPressEmpty={() => router.push('/search')}
+        />
 
-      <BookRow
-        title="읽는 중"
-        loading={reading.isLoading}
-        books={records.map((r): RowBook => ({
-          key: `reading-${r.id}`,
-          bookId: r.book?.id,
-          title: r.book?.title ?? '',
-          coverUrl: r.book?.coverUrl,
-          progress: r.progress.completionRate ?? 0,
-        }))}
-        onPressBook={openBook}
-        onPressAll={() => router.push('/library')}
-        onPressEmpty={() => router.push('/search')}
-      />
+        <BookRow
+          title="읽는 중"
+          loading={reading.isLoading}
+          books={records.map((r): RowBook => ({
+            key: `reading-${r.id}`,
+            bookId: r.book?.id,
+            title: r.book?.title ?? '',
+            coverUrl: r.book?.coverUrl,
+            progress: r.progress.completionRate ?? 0,
+          }))}
+          onPressBook={openBook}
+          onPressAll={() => router.push('/library')}
+          onPressEmpty={() => router.push('/search')}
+        />
 
-      <ChallengeRow />
+        <ChallengeRow />
 
-      <ClubRow />
-    </ScrollView>
+        <ClubRow />
+      </ScrollView>
+    </PaperScreen>
   );
 }
 
