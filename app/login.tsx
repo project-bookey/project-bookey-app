@@ -1,17 +1,16 @@
 import * as Google from 'expo-auth-session/providers/google';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { useAuth } from '@/store/auth';
-import { brandGradientStops, darkColors, hairline, radius, sans, spacing, typeScale } from '@/theme';
+import { darkColors, hairline, radius, sans, spacing, typeScale } from '@/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -28,7 +27,7 @@ if (Platform.OS === 'ios') {
 type SocialProvider = 'APPLE' | 'KAKAO' | 'GOOGLE';
 
 /**
- * 로그인 — 다크 고정 브랜드 틸 그라데이션.
+ * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
  * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 소셜은 로그인=최초 가입.
  */
 export default function LoginScreen() {
@@ -164,61 +163,66 @@ export default function LoginScreen() {
   const busy = emailLoading || socialLoading != null;
 
   return (
-    <LinearGradient colors={[...brandGradientStops]} style={styles.fill}>
+    <View style={styles.screen}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.fill}
       >
         <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.brand}>
-            <Image
-              source={require('../assets/logo-dark.png')}
-              style={styles.logo}
-              resizeMode="contain"
-              accessibilityLabel="bookey"
-            />
+          <View>
+            <Text style={styles.wordmark}>bookey</Text>
+            <View style={styles.wordmarkRule} />
             <Text style={styles.tagline}>
               읽기로 한 책을 끝까지.{'\n'}읽은 사람만 리뷰를 쓴다.
             </Text>
           </View>
 
           <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="이메일"
-              placeholderTextColor={darkColors.textFaint}
-              accessibilityLabel="이메일"
-              textContentType="emailAddress"
-              autoComplete="email"
-              inputMode="email"
-            />
-            {isSignup ? (
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>이메일</Text>
               <TextInput
                 style={styles.input}
-                value={nickname}
-                onChangeText={setNickname}
-                placeholder="닉네임"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="you@example.com"
                 placeholderTextColor={darkColors.textFaint}
-                accessibilityLabel="닉네임"
-                textContentType="nickname"
+                accessibilityLabel="이메일"
+                textContentType="emailAddress"
+                autoComplete="email"
+                inputMode="email"
               />
+            </View>
+            {isSignup ? (
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>닉네임</Text>
+                <TextInput
+                  style={styles.input}
+                  value={nickname}
+                  onChangeText={setNickname}
+                  placeholder="독서가"
+                  placeholderTextColor={darkColors.textFaint}
+                  accessibilityLabel="닉네임"
+                  textContentType="nickname"
+                />
+              </View>
             ) : null}
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholder="비밀번호 (8자 이상)"
-              placeholderTextColor={darkColors.textFaint}
-              accessibilityLabel="비밀번호"
-              textContentType={isSignup ? 'newPassword' : 'password'}
-              autoComplete={isSignup ? 'new-password' : 'current-password'}
-            />
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>비밀번호</Text>
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                placeholder="8자 이상"
+                placeholderTextColor={darkColors.textFaint}
+                accessibilityLabel="비밀번호"
+                textContentType={isSignup ? 'newPassword' : 'password'}
+                autoComplete={isSignup ? 'new-password' : 'current-password'}
+              />
+            </View>
             <Pressable
               onPress={submitEmail}
               disabled={busy}
@@ -227,16 +231,16 @@ export default function LoginScreen() {
             >
               {emailLoading
                 ? <ActivityIndicator color={darkColors.onAccent} />
-                : <Text style={styles.ctaLabel}>{isSignup ? '가입하기' : '로그인'}</Text>}
+                : <Text style={styles.ctaLabel}>{isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</Text>}
             </Pressable>
             <Pressable
               onPress={() => { setIsSignup(!isSignup); setError(null); }}
               disabled={busy}
               accessibilityRole="button"
-              style={styles.switchLine}
+              style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
             >
-              <Text style={styles.switchLabel}>
-                {isSignup ? '이미 계정이 있어요 · 로그인' : '처음이신가요? 이메일로 가입하기'}
+              <Text style={styles.ghostLabel}>
+                {isSignup ? '로그인으로 돌아가기' : '처음 가입하기'}
               </Text>
             </Pressable>
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
@@ -288,6 +292,7 @@ export default function LoginScreen() {
 
           {__DEV__ ? (
             <View style={styles.devInfo}>
+              <View style={styles.devRule} />
               {!hasKakaoClient ? (
                 <Text style={styles.devLine}>카카오 미설정 — EXPO_PUBLIC_KAKAO_REST_KEY</Text>
               ) : null}
@@ -299,13 +304,14 @@ export default function LoginScreen() {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const BUTTON_HEIGHT = 48;
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: darkColors.bg },
   fill: { flex: 1 },
   container: {
     flexGrow: 1,
@@ -316,14 +322,17 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  brand: { alignItems: 'center', gap: spacing.lg },
-  logo: { width: 72, height: 72 },
-  tagline: {
-    ...typeScale.body,
-    color: darkColors.textMuted,
-    textAlign: 'center',
+  wordmark: {
+    fontFamily: sans.extraBold,
+    fontSize: 40,
+    color: darkColors.text,
+    letterSpacing: 0.5,
   },
-  form: { gap: spacing.sm },
+  wordmarkRule: { width: 40, height: 3, backgroundColor: darkColors.text, marginTop: spacing.md },
+  tagline: { ...typeScale.body, color: darkColors.textMuted, marginTop: spacing.lg, lineHeight: 23 },
+  form: { gap: spacing.md },
+  field: { gap: spacing.xs },
+  fieldLabel: { ...typeScale.label, color: darkColors.textMuted },
   input: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.md,
@@ -344,9 +353,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
-  switchLine: { alignItems: 'center', paddingVertical: spacing.sm },
-  switchLabel: { ...typeScale.label, color: darkColors.textMuted },
-  error: { ...typeScale.caption, color: darkColors.danger, textAlign: 'center' },
+  ghost: {
+    minHeight: BUTTON_HEIGHT,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ghostLabel: { ...typeScale.label, color: darkColors.textMuted },
+  error: { ...typeScale.caption, color: darkColors.danger },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dividerRule: { flex: 1, height: hairline, backgroundColor: darkColors.lineStrong },
   dividerLabel: { ...typeScale.caption, color: darkColors.textFaint },
@@ -370,6 +384,7 @@ const styles = StyleSheet.create({
   },
   googleLabel: { ...typeScale.bodyStrong, color: darkColors.text },
   pressed: { opacity: 0.75 },
-  devInfo: { gap: spacing.xs, alignItems: 'center' },
+  devInfo: { gap: spacing.sm },
+  devRule: { height: hairline, backgroundColor: darkColors.line },
   devLine: { ...typeScale.caption, color: darkColors.textFaint, fontVariant: ['tabular-nums'] },
 });
