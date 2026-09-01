@@ -12,6 +12,9 @@ import { mono, serif } from '@/theme/tokens';
  * 공용 프리미티브. 콜라주 토큰 기반이며 다크/라이트 모두에서 동작한다.
  * 스타일 시트는 모드별로 한 번만 만들어 캐시한다 — 모듈 로드 시점에 색을
  * 캡처하면 테마 전환이 반영되지 않기 때문이다.
+ *
+ * 전제: colors 는 mode 의 순수 함수다(같은 mode → 항상 같은 팔레트 객체).
+ * 사용자별 팔레트나 런타임 색 오버라이드가 생기면 이 캐시 키를 함께 바꿔야 한다.
  */
 const sheetCache = new Map<ThemeMode, ReturnType<typeof makeStyles>>();
 
@@ -386,7 +389,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     tagText: { fontFamily: mono.medium, fontSize: 10.5, letterSpacing: 0.6, color: colors.textMuted },
     track: {
-      backgroundColor: colors.line,
+      backgroundColor: colors.surfaceRaised,
       width: '100%',
       overflow: 'hidden',
       borderRadius: radius.pill,

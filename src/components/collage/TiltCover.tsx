@@ -19,6 +19,17 @@ const LIFT_SPRING = { damping: 18, stiffness: 220, mass: 0.6 };
 const SETTLE_RISE = 14;
 
 /**
+ * 이미 입장 애니를 마친 표지 키 모음 — 앱 세션 동안만 사는 메모리 캐시다
+ * (영속 저장 아님, 앱을 다시 켜면 비어 있다).
+ *
+ * 가상화 리스트는 화면 밖 셀을 언마운트했다가 다시 마운트한다. 그때 컴포넌트
+ * 인스턴스가 새로 생기므로 인스턴스 내부 ref 가드만으로는 입장 애니 재발화를
+ * 막을 수 없다. 화면이 안정적인 키(예: `popular:123`)를 넘기면 두 번째부터는
+ * 스태거 지연 없이 곧바로 정착 상태로 그린다.
+ */
+const enteredKeys = new Set<string>();
+
+/**
  * 콜라주 표지 — 표지 동적 효과의 단일 소스.
  *
  * 세 가지를 한 컴포넌트가 담당한다.
@@ -37,6 +48,7 @@ export function TiltCover({
   index = 0,
   offsetY = 0,
   entering = true,
+  entranceKey,
   stacked = false,
   onPress,
   children,
@@ -53,6 +65,12 @@ export function TiltCover({
   offsetY?: number;
   /** 입장 정착 애니메이션 여부. false 면 기울기·오프셋만 정적으로 적용. */
   entering?: boolean;
+  /**
+   * 표지를 세션 단위로 식별하는 키(예: `popular:123`).
+   * 넘기면 리스트 재활용으로 재마운트돼도 입장 애니가 한 번만 돈다.
+   * 미지정이면 마운트마다 입장한다(기존 동작).
+   */
+  entranceKey?: string;
   /** 뒤에 표지 한 장을 더 겹쳐 스택처럼 보이게 한다. */
   stacked?: boolean;
   /** 지정하면 프레스 리프트가 켜진다. */
@@ -65,19 +83,23 @@ export function TiltCover({
   const height = Math.round(width * 1.5);
   const angle = tilt ?? tiltFor(index);
 
-  // 0 → 1 로 한 번만 진행하는 입장 값. entering=false 면 처음부터 1.
-  const progress = useSharedValue(entering ? 0 : 1);
+  // 이미 한 번 입장한 표지는(키가 있을 때) 다시 마운트돼도 정착 상태로 시작한다.
+  const shouldEnter = entering && !(entranceKey != null && enteredKeys.has(entranceKey));
+
+  // 0 → 1 로 한 번만 진행하는 입장 값. 입장이 필요 없으면 처음부터 1.
+  const progress = useSharedValue(shouldEnter ? 0 : 1);
   const pressed = useSharedValue(0);
-  // FlatList 가 셀을 다시 붙여도(=effect 재실행) 입장 애니가 재발화하지 않도록 잠근다.
+  // 같은 인스턴스에서 effect 가 다시 돌아도(스트릭트 모드 등) 재발화하지 않도록 잠근다.
   const settled = useRef(false);
 
   useEffect(() => {
     if (settled.current) return;
     settled.current = true;
-    if (!entering) {
+    if (!shouldEnter) {
       progress.value = 1;
       return;
     }
+    if (entranceKey != null) enteredKeys.add(entranceKey);
     const delay = Math.min(index, stagger.max) * stagger.step;
     progress.value = withDelay(delay, withSpring(1, SETTLE_SPRING));
     // 의도적으로 마운트 시 1회만 실행한다 — 의존성 배열을 채우면 재발화한다.
@@ -126,15 +148,21 @@ export function TiltCover({
           coverShadow[mode].rest,
         ]}
       >
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.shadowProxy,
-            { backgroundColor: colors.surfaceDeep },
-            coverShadow[mode].lifted,
-            liftedShadowStyle,
-          ]}
-        />
+        {/*
+          안드로이드는 elevation 이 큰 형제를 위로 올려 그린다 — 프록시(불투명 사각형)가
+          표지·배지를 덮어버린다. elevation 0 인 래퍼로 한 겹 감싸 스택 순서 경쟁을
+          래퍼 안쪽으로 가둔다. 래퍼 자체는 문서 순서대로 표지 뒤에 남고 그림자는 유지된다.
+        */}
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Animated.View
+            style={[
+              styles.shadowProxy,
+              { backgroundColor: colors.surfaceDeep },
+              coverShadow[mode].lifted,
+              liftedShadowStyle,
+            ]}
+          />
+        </View>
 
         <View style={[styles.surface, { borderColor: colors.line }]}>
           {uri ? (

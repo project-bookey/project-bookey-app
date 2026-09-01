@@ -11,13 +11,15 @@ export function Chip({ label, active = false, onPress, disabled = false }: {
   disabled?: boolean;
 }) {
   const { colors } = useTheme();
+  // onPress 가 없으면 실제로 누를 수 없으므로 보조 기술에도 비활성으로 알린다.
+  const inert = disabled || !onPress;
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled || !onPress}
+      disabled={inert}
       accessibilityRole="button"
-      accessibilityState={{ selected: active, disabled }}
+      accessibilityState={{ selected: active, disabled: inert }}
       style={[
         styles.chip,
         active

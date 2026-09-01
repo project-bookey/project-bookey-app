@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,15 +20,17 @@ export function PaperScreen({ children, withTopInset = false, style }: {
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[
-        { flex: 1, backgroundColor: colors.bg },
-        withTopInset ? { paddingTop: insets.top } : null,
-        style,
-      ]}
-    >
+    <View style={[{ flex: 1, backgroundColor: colors.bg }, style]}>
       <DotGridBackground />
-      {children}
+      {/* 세이프에어리어 패딩은 콘텐츠에만 준다 — 셸에 주면 absolute 도트 그리드가
+          패딩 박스로 밀려 상단에 질감 없는 띠가 생긴다. */}
+      <View style={[styles.content, withTopInset ? { paddingTop: insets.top } : null]}>
+        {children}
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { flex: 1 },
+});

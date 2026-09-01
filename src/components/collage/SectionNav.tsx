@@ -27,10 +27,8 @@ export function SectionNav({ active }: { active: SectionKey }) {
 
   return (
     <View
-      style={[
-        styles.bar,
-        { paddingTop: insets.top, borderBottomColor: colors.line, backgroundColor: colors.bg },
-      ]}
+      // 배경을 깔지 않는다 — PaperScreen 의 도트 그리드가 네비 아래로 이어져야 한다.
+      style={[styles.bar, { paddingTop: insets.top, borderBottomColor: colors.line }]}
     >
       <View style={styles.row}>
         <View style={styles.tabs} accessibilityRole="tablist">

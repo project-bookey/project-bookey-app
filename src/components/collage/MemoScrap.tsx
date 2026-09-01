@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { hairline, radius, spacing } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 
 /** 오려 붙인 메모 조각 — 점선 테두리에 살짝 기울어진 종잇조각. */
 export function MemoScrap({ children, rotate = 1.5, style }: {
@@ -19,7 +19,8 @@ export function MemoScrap({ children, rotate = 1.5, style }: {
       style={[
         {
           backgroundColor: colors.surfaceDeep,
-          borderWidth: hairline,
+          // dashed 는 서브픽셀 두께에서 실선처럼 뭉개진다 — hairline 대신 1px 고정.
+          borderWidth: 1,
           borderStyle: 'dashed',
           borderColor: colors.lineStrong,
           borderRadius: radius.sm,
