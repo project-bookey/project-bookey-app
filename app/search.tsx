@@ -23,10 +23,16 @@ export default function SearchScreen() {
   const [openAddId, setOpenAddId] = useState<number | null>(null);
   /** 이 세션에서 담기 완료한 책 id — '담김 ✓' 표시용. */
   const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
+  /** 담기 실패한 책 id — 실패 메시지 표시용. */
+  const [failedId, setFailedId] = useState<number | null>(null);
 
   // 400ms 디바운스 — 입력이 멈추면 검색어 확정
   useEffect(() => {
-    const timer = setTimeout(() => setKeyword(input.trim()), 400);
+    const timer = setTimeout(() => {
+      setKeyword(input.trim());
+      setOpenAddId(null);
+      setFailedId(null);
+    }, 400);
     return () => clearTimeout(timer);
   }, [input]);
 
@@ -47,9 +53,13 @@ export default function SearchScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
       setAddedIds((prev) => new Set(prev).add(vars.book.id));
       setOpenAddId(null);
+      setFailedId(null);
     },
-    // 실패 시 칩을 닫아 '담기' 버튼으로 복귀 — 다시 시도할 수 있다
-    onError: () => setOpenAddId(null),
+    // 실패 시 실패 상태 저장 후 칩 종료 — 사용자에게 안내 표시
+    onError: (_err, vars) => {
+      setFailedId(vars.book.id);
+      setOpenAddId(null);
+    },
   });
 
   const openBook = (b: RowBook) => {
@@ -126,9 +136,13 @@ export default function SearchScreen() {
               colors={colors}
               choosing={openAddId === item.id}
               added={addedIds.has(item.id)}
+              failed={failedId === item.id}
               pending={add.isPending && add.variables?.book.id === item.id}
               onPress={() => router.push(`/book/${item.id}`)}
-              onOpenAdd={() => setOpenAddId(item.id)}
+              onOpenAdd={() => {
+                setOpenAddId(item.id);
+                setFailedId(null);
+              }}
               onPick={(status) => add.mutate({ book: item, status })}
             />
           )}
@@ -139,11 +153,12 @@ export default function SearchScreen() {
 }
 
 /** 결과 행 — 우측 담기 영역은 담기 → 상태 칩 2개 → 담김 ✓ 의 3상태. */
-function ResultRow({ book, colors, choosing, added, pending, onPress, onOpenAdd, onPick }: {
+function ResultRow({ book, colors, choosing, added, failed, pending, onPress, onOpenAdd, onPick }: {
   book: BookSummary;
   colors: ColorTokens;
   choosing: boolean;
   added: boolean;
+  failed: boolean;
   pending: boolean;
   onPress: () => void;
   onOpenAdd: () => void;
@@ -183,6 +198,7 @@ function ResultRow({ book, colors, choosing, added, pending, onPress, onOpenAdd,
             <Text style={[typeScale.overline, { color: colors.warn }]}>쪽수 없음</Text>
           </View>
         )}
+        {failed ? <Text style={[typeScale.caption, { color: colors.warn }]}>담지 못했어요 · 다시 시도</Text> : null}
       </View>
 
       {added ? (
