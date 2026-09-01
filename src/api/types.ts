@@ -59,3 +59,7 @@ export type Notification = Schemas['NotificationView'];
 export type Review = Schemas['ReviewView'];
 export type VerificationPreview = Schemas['VerificationPreview'];
 export type VerificationLevel = NonNullable<Review['verificationLevel']>;
+
+// ── 챌린지 ───────────────────────────────────────────────
+export type Challenge = Schemas['ChallengeView'];
+export type ChallengeStatus = Challenge['status'];

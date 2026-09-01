@@ -1,6 +1,6 @@
 import { api } from './client';
 import type {
-  Banner, BookDetail, BookLikeView, BookSummary, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
+  Banner, BookDetail, BookLikeView, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
   LibrarySummary, Me, Notification, NudgeMessageKey, Page, PopularBook, ReadingRecord, ReadingStatus,
   Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
 } from './types';
@@ -117,6 +117,18 @@ export const reviewApi = {
   create: (body: { readingRecordId: number; rating?: number; body: string; tags?: string[] }) =>
     api<Review>('/api/v1/reviews', { method: 'POST', body }),
   mine: () => api<Page<Review>>('/api/v1/reviews/me'),
+};
+
+export const challengeApi = {
+  create: (body: { readingRecordId: number; budgetSec: number }) =>
+    api<Challenge>('/api/v1/challenges', { method: 'POST', body }),
+  active: () => api<Challenge[]>('/api/v1/challenges/active'),
+  get: (id: number) => api<Challenge>(`/api/v1/challenges/${id}`),
+  start: (id: number) => api<Challenge>(`/api/v1/challenges/${id}/start`, { method: 'POST' }),
+  pause: (id: number) => api<Challenge>(`/api/v1/challenges/${id}/pause`, { method: 'POST' }),
+  progress: (id: number, currentPage: number) =>
+    api<Challenge>(`/api/v1/challenges/${id}/progress`, { method: 'PATCH', body: { currentPage } }),
+  cancel: (id: number) => api<void>(`/api/v1/challenges/${id}`, { method: 'DELETE' }),
 };
 
 export type { Checkpoint };
