@@ -32,74 +32,140 @@ export type ColorTokens = {
   scrimDim: string;
   /** 포스터 하단→투명 그라데이션 색 스톱. 렌더링은 화면 작업 때 expo-linear-gradient 로. */
   scrimStops: readonly [string, string];
-  /** 헤더·탭바 크롬 — 모드 무관 블랙 고정 (브랜드 결정) */
+  /** 헤더·탭바 크롬 — 블랙 크롬 폐기, 배경과 동화(=bg) */
   chrome: string;
-  /** 크롬 위 텍스트·활성 탭 */
+  /** 크롬 위 텍스트·활성 탭 (=text) */
   onChrome: string;
-  /** 크롬 위 비활성 탭 */
+  /** 크롬 위 비활성 탭 (=textFaint) */
   onChromeFaint: string;
+  /** 배경 보조 톤 — 섹션 구분·서브 배경 */
+  bgAlt: string;
+  /** surface 보다 더 깊은 면 — 콜라주 책상 바닥 */
+  surfaceDeep: string;
+  /** 화면 배경 위 도트 그리드 질감 색 */
+  dotGrid: string;
+  /** 스티키 노트 배경 (accent 와 동일 값) */
+  note: string;
+  /** 스티키 노트 위 텍스트 (onAccent 와 동일 값) */
+  onNote: string;
+  /** 중간 톤 회색 — textMuted/textFaint 사이 보조 텍스트 */
+  mid: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
 
 export const darkColors: ColorTokens = {
-  bg: '#141414',
-  surface: '#1F1F1F',
-  surfaceRaised: '#2A2A2A',
-  text: '#F5F5F5',
-  textMuted: '#A6A6A6',
-  textFaint: '#737373',
-  line: '#333333',
-  lineStrong: '#4D4D4D',
-  accent: '#1FC7A8',
-  onAccent: '#0E1512',
-  accentSoft: '#12352E',
+  bg: '#0c0e0d',
+  surface: '#171a16',
+  surfaceRaised: '#1d211c',
+  text: '#e8e6e1',
+  textMuted: '#9a9790',
+  textFaint: '#6f6d66',
+  line: '#23261f',
+  lineStrong: '#33372e',
+  accent: '#3ddc97',
+  onAccent: '#0c0e0d',
+  accentSoft: '#16352a',
   warn: '#F0B429',
   warnSoft: '#38290F',
   danger: '#FF6B60',
   dangerSoft: '#3A1714',
   scrimDim: 'rgba(0,0,0,0.55)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
-  chrome: '#000000',
-  onChrome: '#F5F5F5',
-  onChromeFaint: '#737373',
+  chrome: '#0c0e0d',
+  onChrome: '#e8e6e1',
+  onChromeFaint: '#6f6d66',
+  bgAlt: '#131413',
+  surfaceDeep: '#141712',
+  dotGrid: '#1b1e1a',
+  note: '#3ddc97',
+  onNote: '#0c0e0d',
+  mid: '#8c8981',
 };
 
 export const lightColors: ColorTokens = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceRaised: '#F0F0F0',
-  text: '#171717',
-  textMuted: '#595959',
-  textFaint: '#8C8C8C',
-  line: '#E3E3E3',
-  lineStrong: '#C7C7C7',
-  accent: '#0E9F85',
-  onAccent: '#FFFFFF',
-  accentSoft: '#DFF7F1',
+  bg: '#faf8f4',
+  surface: '#ffffff',
+  surfaceRaised: '#efece4',
+  text: '#1a1c18',
+  textMuted: '#57554f',
+  textFaint: '#8b887f',
+  line: '#e5e1d7',
+  lineStrong: '#cfcabc',
+  accent: '#177a54',
+  onAccent: '#ffffff',
+  accentSoft: '#ddf2e7',
   warn: '#8A5A12',
   warnSoft: '#FDF0D5',
   danger: '#B3362B',
   dangerSoft: '#FBE4E1',
   scrimDim: 'rgba(0,0,0,0.45)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
-  chrome: '#000000',
-  onChrome: '#F5F5F5',
-  onChromeFaint: '#737373',
+  chrome: '#faf8f4',
+  onChrome: '#1a1c18',
+  onChromeFaint: '#8b887f',
+  bgAlt: '#f4f1ea',
+  surfaceDeep: '#f1eee6',
+  dotGrid: '#e7e3d9',
+  note: '#177a54',
+  onNote: '#ffffff',
+  mid: '#6e6b63',
 };
 
-/** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. */
-export const brandGradientStops = ['#1B4A3E', darkColors.accentSoft, '#0D1F1B'] as const;
+/** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. 새 민트 기준 재조정. */
+export const brandGradientStops = ['#123528', '#16352a', '#0a1712'] as const;
 
-/** 엘리베이션 — 다크는 밝기 단계로 대체(그림자 없음), 라이트만 카드 그림자 1종. */
+/** 엘리베이션 — 콜라주 언어는 다크에서도 깊은 그림자를 쓴다. 라이트는 기존 카드 그림자 1종 유지. */
 export const cardShadow: Record<ThemeMode, ViewStyle> = {
-  dark: {},
+  dark: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+  },
   light: {
     shadowColor: '#000000',
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
+  },
+};
+
+/** 표지 전용 2단 그림자 — 평상시(rest)/눌림 리프트(lifted). TiltCover 등 콜라주 표지 컴포넌트가 사용. */
+export const coverShadow: Record<ThemeMode, { rest: ViewStyle; lifted: ViewStyle }> = {
+  dark: {
+    rest: {
+      shadowColor: '#000000',
+      shadowOpacity: 0.45,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 6,
+    },
+    lifted: {
+      shadowColor: '#000000',
+      shadowOpacity: 0.55,
+      shadowRadius: 22,
+      shadowOffset: { width: 0, height: 14 },
+      elevation: 12,
+    },
+  },
+  light: {
+    rest: {
+      shadowColor: '#000000',
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 2,
+    },
+    lifted: {
+      shadowColor: '#000000',
+      shadowOpacity: 0.2,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 6,
+    },
   },
 };
 
