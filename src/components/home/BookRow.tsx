@@ -1,11 +1,13 @@
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
 export type RowBook = {
   key: string;
   bookId?: number;
   title: string;
+  /** 표지 아래 작가 줄 — 없으면 줄 자체를 그리지 않는다 (추천·인기 행에서 사용) */
+  author?: string;
   coverUrl?: string;
   /** 0~1 — 읽는 중 행의 진행률 오버레이 */
   progress?: number;
@@ -94,9 +96,14 @@ export function BookRow({ title, books, loading, onPressBook, onPressAll, onPres
                   </View>
                 ) : null}
               </View>
-              <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted, marginTop: spacing.xs, width: COVER_W }]}>
+              <Text numberOfLines={1} style={[typeScale.caption, styles.metaTitle, { color: colors.text }]}>
                 {item.title}
               </Text>
+              {item.author ? (
+                <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
+                  {item.author}
+                </Text>
+              ) : null}
             </Pressable>
           )}
         />
@@ -115,6 +122,7 @@ const styles = StyleSheet.create({
   },
   list: { paddingHorizontal: spacing.lg, gap: spacing.sm, flexDirection: 'row' },
   item: { width: COVER_W },
+  metaTitle: { fontFamily: sans.semiBold, marginTop: spacing.xs },
   cover: { width: COVER_W, height: COVER_H, borderRadius: radius.sm, overflow: 'hidden' },
   coverFallback: { padding: spacing.sm },
   rank: {
