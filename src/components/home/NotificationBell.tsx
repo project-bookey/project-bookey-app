@@ -21,7 +21,7 @@ export function NotificationBell() {
     >
       <Image
         source={require('../../../assets/icons/bell.png')}
-        style={[styles.icon, { tintColor: colors.onChrome }]}
+        style={[styles.icon, { tintColor: colors.text }]}
       />
       {unread > 0 ? (
         <View style={[styles.badge, { backgroundColor: colors.accent }]}>
