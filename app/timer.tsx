@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
 import { BookCover } from '@/components/BookCover';
 import {
@@ -33,6 +34,7 @@ export default function TimerScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [endPage, setEndPage] = useState('');
   const [memo, setMemo] = useState('');
+  const [endError, setEndError] = useState<string | null>(null);
 
   const interactions = useRef(0);
   const foregroundMs = useRef(0);
@@ -89,8 +91,11 @@ export default function TimerScreen() {
 
   const end = useMutation({
     mutationFn: () => {
+      if (!session || end.isPending) {
+        throw new Error('종료할 세션이 없습니다.');
+      }
       const ratio = totalMs.current > 0 ? foregroundMs.current / totalMs.current : 1;
-      return sessionApi.end(session!.id, {
+      return sessionApi.end(session.id, {
         endPage: endPage ? Number(endPage) : undefined,
         foregroundRatio: Math.min(1, Math.max(0, Number(ratio.toFixed(3)))),
         interactionCount: interactions.current,
@@ -98,6 +103,7 @@ export default function TimerScreen() {
       });
     },
     onSuccess: (result) => {
+      setEndError(null);
       queryClient.invalidateQueries({ queryKey: ['library'] });
       queryClient.invalidateQueries({ queryKey: ['session', 'current'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
@@ -107,6 +113,15 @@ export default function TimerScreen() {
       } else {
         router.back();
       }
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) {
+        queryClient.setQueryData(['session', 'current'], null);
+        queryClient.invalidateQueries({ queryKey: ['library'] });
+        setEndError('이미 종료된 세션입니다. 화면을 새로고침했습니다.');
+        return;
+      }
+      setEndError(error instanceof Error ? error.message : '세션 종료에 실패했습니다.');
     },
   });
 
@@ -173,7 +188,9 @@ export default function TimerScreen() {
               label="세션 종료"
               onPress={() => end.mutate()}
               loading={end.isPending}
+              disabled={!session || end.isPending}
             />
+            {endError ? <Text style={styles.error}>{endError}</Text> : null}
           </View>
         ) : (
           <View style={styles.startArea}>
@@ -208,6 +225,7 @@ const styles = StyleSheet.create({
   clockLabel: { ...type.caption, color: colors.textFaint, letterSpacing: 0.4 },
   startArea: { gap: spacing.md },
   hint: { ...type.caption, color: colors.textFaint, textAlign: 'center' },
+  error: { ...type.caption, color: colors.danger, lineHeight: 17 },
   endForm: { gap: spacing.md },
   formLabel: { ...type.eyebrow, color: colors.textFaint },
   pageRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
