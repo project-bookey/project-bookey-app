@@ -8,7 +8,7 @@ import {
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
-import type { BookSummary, VerificationLevel } from '@/api/types';
+import type { BookSummary, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { formatDuration, formatRelative, percent } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
@@ -28,7 +28,9 @@ export default function BookDetailScreen() {
   const { colors } = useTheme();
   const { id, recordId } = useLocalSearchParams<{ id: string; recordId?: string }>();
   const bookId = Number(id);
-  const rid = recordId ? Number(recordId) : null;
+  const paramRid = recordId ? Number(recordId) : null;
+  const [addedRid, setAddedRid] = useState<number | null>(null);
+  const rid = paramRid ?? addedRid;
 
   const book = useQuery({
     queryKey: ['book', bookId],
@@ -78,6 +80,15 @@ export default function BookDetailScreen() {
       )}
 
       <View style={styles.sections}>
+        <ActionBar
+          bookId={bookId}
+          liked={book.data?.liked ?? false}
+          likeCount={book.data?.likeCount ?? 0}
+          hasRecord={rid != null}
+          colors={colors}
+          onAdded={setAddedRid}
+        />
+
         {record.data && progress ? (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardHead}>
@@ -272,6 +283,84 @@ function Hero({ info, description }: { info?: BookSummary; description?: string 
   );
 }
 
+/** 히어로 아래 액션 바 — ♥ 좋아요(항상) + 서재에 없으면 담기 2버튼. */
+function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
+  bookId: number;
+  liked: boolean;
+  likeCount: number;
+  hasRecord: boolean;
+  colors: ColorTokens;
+  onAdded: (recordId: number) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const like = useMutation({
+    mutationFn: () => bookApi.like(bookId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['book', bookId] }),
+  });
+  const add = useMutation({
+    mutationFn: (status: ReadingStatus) => libraryApi.add({ bookId, status }),
+    onSuccess: (record) => {
+      queryClient.invalidateQueries({ queryKey: ['library'] });
+      onAdded(record.id);
+    },
+  });
+  const failed =
+    (like.isError && !like.isPending) || (add.isError && !add.isPending);
+
+  return (
+    <View style={styles.actionBarWrap}>
+      <View style={styles.actionBar}>
+        <Pressable
+          disabled={like.isPending}
+          onPress={() => like.mutate()}
+          accessibilityRole="button"
+          accessibilityLabel="좋아요"
+          style={[
+            styles.likeButton,
+            liked
+              ? { backgroundColor: colors.accent }
+              : { borderWidth: 1, borderColor: colors.lineStrong },
+            { opacity: like.isPending ? 0.6 : 1 },
+          ]}
+        >
+          <Text style={[typeScale.label, { color: liked ? colors.onAccent : colors.textMuted }]}>
+            {liked ? '♥' : '♡'} {likeCount}
+          </Text>
+        </Pressable>
+
+        {!hasRecord ? (
+          <>
+            <Pressable
+              disabled={add.isPending}
+              onPress={() => add.mutate('WANT_TO_READ')}
+              accessibilityRole="button"
+              accessibilityLabel="읽고 싶은 책으로 담기"
+              style={[styles.quickAdd, { borderWidth: 1, borderColor: colors.accent, opacity: add.isPending ? 0.6 : 1 }]}
+            >
+              <Text style={[typeScale.label, { color: colors.accent }]}>+ 읽고 싶은</Text>
+            </Pressable>
+            <Pressable
+              disabled={add.isPending}
+              onPress={() => add.mutate('READING')}
+              accessibilityRole="button"
+              accessibilityLabel="읽기 시작"
+              style={[styles.quickAdd, { backgroundColor: colors.accent, opacity: add.isPending ? 0.6 : 1 }]}
+            >
+              <Text style={[typeScale.label, { color: colors.onAccent }]}>▶ 읽기 시작</Text>
+            </Pressable>
+          </>
+        ) : null}
+      </View>
+      {failed ? (
+        <Text style={[typeScale.caption, { color: colors.warn }]}>
+          처리하지 못했어요 · 다시 시도
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 function KV({ label, value, colors }: { label: string; value: string; colors: ColorTokens }) {
   return (
     <View style={styles.kv}>
@@ -448,6 +537,22 @@ const styles = StyleSheet.create({
   track: { height: 4, borderRadius: radius.none },
   fill: { height: 4 },
   kv: { flexDirection: 'row', justifyContent: 'space-between' },
+  actionBarWrap: { gap: spacing.xs },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
+  likeButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickAdd: {
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cta: {
     paddingVertical: spacing.sm + 2,
     borderRadius: radius.md,
