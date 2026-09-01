@@ -34,7 +34,7 @@ export default function RootLayout() {
   const restoreTheme = useThemePreference((s) => s.restore);
   const status = useAuth((s) => s.status);
   const [ready, setReady] = useState(false);
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const [fontsLoaded] = useFonts({
     'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
     'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
@@ -66,8 +66,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          {/* 크롬이 모드 무관 블랙이므로 상태바도 항상 밝은 아이콘 */}
-          <StatusBar style="light" />
+          {/* 크롬이 배경과 동화되므로 상태바 아이콘도 테마 모드를 따라간다 */}
+          <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
           <Stack
             screenOptions={{
               headerStyle: { backgroundColor: colors.chrome },
