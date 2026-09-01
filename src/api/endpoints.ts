@@ -1,6 +1,6 @@
 import { api } from './client';
 import type {
-  Banner, BookSummary, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
+  Banner, BookDetail, BookLikeView, BookSummary, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
   LibrarySummary, Me, Notification, NudgeMessageKey, Page, PopularBook, ReadingRecord, ReadingStatus,
   Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
 } from './types';
@@ -21,7 +21,8 @@ export const authApi = {
 export const bookApi = {
   search: (keyword: string) => api<BookSummary[]>('/api/v1/books', { query: { keyword } }),
   byIsbn: (isbn13: string) => api<BookSummary>(`/api/v1/books/isbn/${isbn13}`),
-  detail: (bookId: number) => api<{ book: BookSummary; description?: string }>(`/api/v1/books/${bookId}`),
+  detail: (bookId: number) => api<BookDetail>(`/api/v1/books/${bookId}`),
+  like: (bookId: number) => api<BookLikeView>(`/api/v1/books/${bookId}/like`, { method: 'POST' }),
   createManual: (body: { title: string; author?: string; totalPages: number }) =>
     api<BookSummary>('/api/v1/books', { method: 'POST', body }),
   reviews: (bookId: number, verifiedOnly = false) =>

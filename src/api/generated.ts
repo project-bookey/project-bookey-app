@@ -504,6 +504,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/books/{bookId}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 좋아요 토글 */
+        post: operations["like"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/social": {
         parameters: {
             query?: never;
@@ -2103,6 +2120,11 @@ export interface components {
             votes: number;
             applied: boolean;
         };
+        BookLikeView: {
+            liked: boolean;
+            /** Format: int64 */
+            likeCount: number;
+        };
         SocialLoginRequest: {
             /** @enum {string} */
             provider: "APPLE" | "GOOGLE" | "KAKAO";
@@ -2349,6 +2371,9 @@ export interface components {
             overallRating?: components["schemas"]["RatingSummary"];
             /** Format: int64 */
             verifiedReviewCount: number;
+            liked: boolean;
+            /** Format: int64 */
+            likeCount: number;
         };
         RatingSummary: {
             /** Format: double */
@@ -2834,6 +2859,7 @@ export type SchemaJoinRequest = components['schemas']['JoinRequest'];
 export type SchemaManualBookRequest = components['schemas']['ManualBookRequest'];
 export type SchemaPageSuggestionRequest = components['schemas']['PageSuggestionRequest'];
 export type SchemaPageSuggestionResponse = components['schemas']['PageSuggestionResponse'];
+export type SchemaBookLikeView = components['schemas']['BookLikeView'];
 export type SchemaSocialLoginRequest = components['schemas']['SocialLoginRequest'];
 export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
@@ -3730,6 +3756,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageSuggestionResponse"];
+                };
+            };
+        };
+    };
+    like: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookLikeView"];
                 };
             };
         };

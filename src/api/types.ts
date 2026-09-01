@@ -24,6 +24,7 @@ export type NotifyTone = 'GENTLE' | 'FACT' | 'SPARTA' | 'TSUNDERE' | 'SILENT';
 // ── 도서 · 서재 ──────────────────────────────────────────
 export type BookSummary = Schemas['BookSummary'];
 export type BookDetail = Schemas['BookDetail'];
+export type BookLikeView = Schemas['BookLikeView'];
 export type Progress = Schemas['ProgressView'];
 export type ReadingRecord = Schemas['ReadingRecordView'];
 export type LibrarySummary = Schemas['LibrarySummary'];
