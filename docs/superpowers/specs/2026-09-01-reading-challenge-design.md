@@ -78,8 +78,16 @@ remainingSec, running, status, currentPage, totalPages, completedAt }` — elaps
 
 ### 생성 화면 (`/challenge/new`)
 
-- 읽는 중 책 목록(`['library','READING']` 재사용)에서 선택 + 예산 입력(시간·분 두 필드,
-  합산 budgetSec, 최소 10분) → "챌린지 시작" → `POST /challenges` → `/challenge/{id}`로 교체 이동.
+- **책 선정 2경로** (2026-09-01 확장 — 사용자 결정):
+  ① 읽는 중 책 목록(`['library','READING']` 재사용)에서 선택 —
+  ② **상단 검색 바**(디바운스 400ms·2자, 검색 화면 문법)로 아무 책이나 검색해 선택.
+  검색 결과 중 총쪽수 없는 책은 "쪽수 없음" 태그와 함께 선택 비활성(서버도
+  `CHALLENGE_REQUIRES_PAGES`로 거부).
+- 예산 입력(시간·분, 합산 budgetSec, 최소 10분) → "챌린지 시작" → `/challenge/{id}` 교체 이동.
+- **생성 API 확장**: `POST /challenges`가 `readingRecordId` 또는 `bookId` 중 하나를 받는다.
+  `bookId`인 경우 서버가 원자적으로 처리 — 내 최신 기록이 있으면 사용(READING이면 그대로,
+  WANT_TO_READ·PAUSED면 READING으로 전환, FINISHED·ABANDONED면 `CHALLENGE_INVALID_RECORD`),
+  없으면 서재에 READING으로 자동 담은 뒤 챌린지 생성.
 - 재도전 프리필: `/challenge/new?recordId=&budgetSec=` 파라미터 지원.
 
 ### 챌린지 화면 (`/challenge/[id]`)
