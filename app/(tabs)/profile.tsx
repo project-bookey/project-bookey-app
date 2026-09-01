@@ -5,11 +5,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { TextStyle } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
-import { libraryApi, notificationApi } from '@/api/endpoints';
+import { libraryApi, notificationApi, statsApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import type { ThemePreference } from '@/store/themePreference';
+import type { ColorTokens } from '@/theme';
 import { hairline, layout, ornament, radius, spacing, type, useTheme } from '@/theme';
 
 const TONES: { value: NotifyTone; label: string; sample: string }[] = [
@@ -42,6 +43,7 @@ export default function ProfileScreen() {
   const setPreference = useThemePreference((s) => s.setPreference);
 
   const summary = useQuery({ queryKey: ['library', 'summary'], queryFn: libraryApi.summary });
+  const stats = useQuery({ queryKey: ['stats', 90], queryFn: () => statsApi.summary(90) });
 
   const updateSettings = useMutation({
     mutationFn: (body: Record<string, unknown>) => notificationApi.updateSettings(body),
@@ -70,6 +72,49 @@ export default function ProfileScreen() {
             <CountCell label="하차" value={summary.data?.abandoned ?? 0} />
           </View>
         </Card>
+
+        {stats.isLoading ? null : (
+          <Card>
+            <Eyebrow>기록</Eyebrow>
+            {stats.data ? (
+              <>
+                <View style={styles.statRow}>
+                  <StatCell label="현재 스트릭" value={`${stats.data.currentStreakDays}일`} />
+                  <VRule />
+                  <StatCell label="최장 스트릭" value={`${stats.data.longestStreakDays}일`} />
+                  <VRule />
+                  <StatCell label="이번 주" value={formatDuration(stats.data.weekDurationSec)} />
+                </View>
+                <Heatmap daily={stats.data.daily} />
+                <View style={styles.legend}>
+                  <Text style={[type.caption, { color: colors.textFaint }]}>적음</Text>
+                  {[0, 0.2, 0.4, 0.6, 1].map((level) => (
+                    <View
+                      key={level}
+                      style={[styles.legendCell, { backgroundColor: cellColor(level, colors) }]}
+                    />
+                  ))}
+                  <Text style={[type.caption, { color: colors.textFaint }]}>많음</Text>
+                </View>
+                <View style={{ marginTop: spacing.sm }}>
+                  <Rule />
+                  <KeyValue label="총 독서시간" value={formatDuration(stats.data.totalDurationSec)} />
+                  <Rule />
+                  <KeyValue label="오늘" value={formatDuration(stats.data.todayDurationSec)} />
+                  <Rule />
+                  <KeyValue
+                    label="기록한 날"
+                    value={`${stats.data.daily.filter((d) => d.sessionCount > 0).length}일 / 90일`}
+                  />
+                </View>
+              </>
+            ) : (
+              <Text style={[type.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+                통계를 불러오지 못했습니다.
+              </Text>
+            )}
+          </Card>
+        )}
 
         <View>
           <Eyebrow>재촉 톤</Eyebrow>
@@ -197,6 +242,83 @@ function CountCell({ label, value }: { label: string; value: number }) {
   );
 }
 
+function StatCell({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.statCell}>
+      <Numeral style={{ fontSize: 20, fontWeight: '700' }}>{value}</Numeral>
+      <Text style={[type.caption, { color: colors.textFaint }]}>{label}</Text>
+    </View>
+  );
+}
+
+function VRule() {
+  const { colors } = useTheme();
+  return <View style={[styles.vRule, { backgroundColor: colors.line }]} />;
+}
+
+/** 주 단위 열로 쌓는 각진 히트맵 — 기록 탭에서 이식, 램프는 테마 악센트 파생. */
+function Heatmap({ daily }: { daily: { date: string; durationSec: number }[] }) {
+  const { colors } = useTheme();
+  const max = Math.max(1, ...daily.map((d) => d.durationSec));
+  const weeks: { date: string; durationSec: number }[][] = [];
+  let current: { date: string; durationSec: number }[] = [];
+
+  daily.forEach((day, index) => {
+    const weekday = new Date(day.date).getDay();
+    if (index === 0) {
+      for (let i = 0; i < weekday; i++) {
+        current.push({ date: '', durationSec: -1 });
+      }
+    }
+    current.push(day);
+    if (current.length === 7) {
+      weeks.push(current);
+      current = [];
+    }
+  });
+  if (current.length > 0) {
+    weeks.push(current);
+  }
+
+  return (
+    <View style={styles.heatmap}>
+      {weeks.map((week, weekIndex) => (
+        <View key={weekIndex} style={styles.heatWeek}>
+          {week.map((day, dayIndex) => (
+            <View
+              key={`${weekIndex}-${dayIndex}`}
+              style={[
+                styles.heatCell,
+                day.durationSec < 0
+                  ? { backgroundColor: 'transparent' }
+                  : { backgroundColor: cellColor(day.durationSec / max, colors) },
+              ]}
+            />
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function cellColor(ratio: number, colors: ColorTokens): string {
+  if (ratio <= 0) return colors.line;
+  if (ratio < 0.25) return `${colors.accent}40`;
+  if (ratio < 0.5) return `${colors.accent}80`;
+  if (ratio < 0.75) return `${colors.accent}BF`;
+  return colors.accent;
+}
+
+function formatDuration(seconds?: number | null): string {
+  const total = Math.max(0, Math.floor(seconds ?? 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  if (hours > 0) return `${hours}시간 ${minutes}분`;
+  if (minutes > 0) return `${minutes}분`;
+  return `${total}초`;
+}
+
 // ── 로컬 프리미티브 — ui.tsx(다크 고정)와 같은 모양의 테마 인식 버전 ──────────
 
 function Screen({ children }: { children: ReactNode }) {
@@ -288,6 +410,20 @@ const styles = StyleSheet.create({
   card: { borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, overflow: 'hidden' },
   counts: { flexDirection: 'row', marginTop: spacing.md },
   countCell: { flex: 1, gap: 3 },
+  statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
+  statCell: { flex: 1, gap: 3 },
+  vRule: { width: hairline, marginHorizontal: spacing.md },
+  heatmap: { flexDirection: 'row', gap: 3, flexWrap: 'wrap', marginTop: spacing.md },
+  heatWeek: { gap: 3 },
+  heatCell: { width: 11, height: 11 },
+  legend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.md,
+    justifyContent: 'flex-end',
+  },
+  legendCell: { width: 11, height: 11 },
   toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: 12, overflow: 'hidden' },
   toneRow: {
     flexDirection: 'row',
