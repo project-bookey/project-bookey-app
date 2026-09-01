@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
-import type { BookDetail, BookSummary, ReadingStatus, VerificationLevel } from '@/api/types';
+import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { formatDuration, formatRelative, percent } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
@@ -105,23 +105,7 @@ export default function BookDetailScreen() {
               ) : null}
             </View>
 
-            <View style={styles.progressNumbers}>
-              <Text style={[styles.bigNumber, { fontFamily: sans.extraBold, color: colors.text }]}>
-                {progress.currentPage}
-              </Text>
-              <Text style={[typeScale.body, { color: colors.textFaint }]}>
-                {progress.totalPages > 0 ? ` / ${progress.totalPages}쪽` : '쪽'}
-              </Text>
-              <Text style={[typeScale.caption, { color: colors.textMuted, marginLeft: 'auto' }]}>
-                {percent(progress.completionRate)}
-              </Text>
-            </View>
-            <View style={[styles.track, { backgroundColor: colors.line }]}>
-              <View style={[styles.fill, {
-                width: `${Math.round((progress.completionRate ?? 0) * 100)}%`,
-                backgroundColor: colors.accent,
-              }]} />
-            </View>
+            <ProgressEditor rid={rid!} progress={progress} colors={colors} />
 
             <KV label="누적 독서시간" value={formatDuration(progress.totalDurationSec)} colors={colors} />
             <KV label="최근 7일 페이스" value={`${(progress.actualDailyPace ?? 0).toFixed(1)}쪽/일`} colors={colors} />
@@ -370,6 +354,156 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
   );
 }
 
+/** 내 진척 수정기 — 큰 숫자 탭(정밀 입력) + 진행 바 드래그/탭(대략 조절)으로 현재 페이지를 고친다. */
+function ProgressEditor({ rid, progress, colors }: {
+  rid: number;
+  progress: NonNullable<ReadingRecord['progress']>;
+  colors: ColorTokens;
+}) {
+  const queryClient = useQueryClient();
+  const total = progress.totalPages ?? 0;
+  const serverPage = progress.currentPage ?? 0;
+
+  // 드래그·저장 중 로컬 값 — null이면 서버 값 표시. ref는 PanResponder 핸들러(최초 렌더 클로저)용.
+  const [draft, setDraft] = useState<number | null>(null);
+  const draftRef = useRef<number | null>(null);
+  const setDraftBoth = (v: number | null) => { draftRef.current = v; setDraft(v); };
+
+  const [dragging, setDragging] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const editingRef = useRef(false);
+  const [text, setText] = useState('');
+
+  const widthRef = useRef(0);
+  const startXRef = useRef(0);
+  const totalRef = useRef(total);
+  totalRef.current = total;
+
+  const save = useMutation({
+    mutationFn: (page: number) => libraryApi.updateProgress(rid, page),
+    onSuccess: (updated) => {
+      // 응답이 갱신된 기록 전체 — 바로 캐시에 넣어 재조회 사이 깜빡임을 막는다
+      queryClient.setQueryData(['library', 'record', rid], updated);
+      queryClient.invalidateQueries({ queryKey: ['library'] });
+      queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
+      setDraftBoth(null);
+    },
+    onError: () => setDraftBoth(null),
+  });
+
+  const commit = (page: number | null) => {
+    if (page == null || page === serverPage) { setDraftBoth(null); return; }
+    setDraftBoth(page);
+    save.mutate(page);
+  };
+  const commitRef = useRef(commit);
+  commitRef.current = commit;
+
+  const pageAtX = (x: number) => {
+    if (widthRef.current <= 0 || totalRef.current <= 0) return null;
+    const ratio = Math.min(1, Math.max(0, x / widthRef.current));
+    return Math.round(ratio * totalRef.current);
+  };
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => totalRef.current > 0,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: (evt) => {
+      startXRef.current = evt.nativeEvent.locationX;
+      setDragging(true);
+      setDraftBoth(pageAtX(startXRef.current));
+    },
+    onPanResponderMove: (_evt, gesture) => {
+      setDraftBoth(pageAtX(startXRef.current + gesture.dx));
+    },
+    onPanResponderRelease: () => {
+      setDragging(false);
+      commitRef.current(draftRef.current);
+    },
+    onPanResponderTerminate: () => {
+      setDragging(false);
+      setDraftBoth(null);
+    },
+  })).current;
+
+  const page = draft ?? serverPage;
+  const ratio = total > 0
+    ? Math.min(1, Math.max(0, page / total))
+    : Math.min(1, Math.max(0, progress.completionRate ?? 0));
+
+  const startEdit = () => {
+    editingRef.current = true;
+    setEditing(true);
+    setText(String(page));
+  };
+  // onSubmitEditing과 onBlur가 연달아 와도 ref 가드로 한 번만 저장한다
+  const confirmEdit = () => {
+    if (!editingRef.current) return;
+    editingRef.current = false;
+    setEditing(false);
+    const parsed = Number.parseInt(text, 10);
+    if (!Number.isFinite(parsed)) return;
+    commit(Math.max(0, total > 0 ? Math.min(parsed, total) : parsed));
+  };
+
+  return (
+    <>
+      <View style={styles.progressNumbers}>
+        {editing ? (
+          <TextInput
+            value={text}
+            onChangeText={(t) => setText(t.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            autoFocus
+            selectTextOnFocus
+            onSubmitEditing={confirmEdit}
+            onBlur={confirmEdit}
+            accessibilityLabel="현재 페이지 입력"
+            style={[styles.bigNumber, styles.bigNumberInput, {
+              fontFamily: sans.extraBold, color: colors.text, borderBottomColor: colors.accent,
+            }]}
+          />
+        ) : (
+          <Pressable
+            onPress={startEdit}
+            accessibilityRole="button"
+            accessibilityLabel="현재 페이지 수정"
+            hitSlop={8}
+          >
+            <Text style={[styles.bigNumber, { fontFamily: sans.extraBold, color: colors.text }]}>{page}</Text>
+          </Pressable>
+        )}
+        <Text style={[typeScale.body, { color: colors.textFaint }]}>
+          {total > 0 ? ` / ${total}쪽` : '쪽'}
+        </Text>
+        <Text style={[typeScale.caption, { color: colors.textMuted, marginLeft: 'auto' }]}>
+          {percent(ratio)}
+        </Text>
+      </View>
+
+      <View
+        {...pan.panHandlers}
+        onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; }}
+        accessibilityRole="adjustable"
+        accessibilityLabel="진척도 조절"
+        accessibilityValue={{ min: 0, max: total, now: page }}
+        style={styles.trackTouch}
+      >
+        <View pointerEvents="none" style={[styles.track, dragging && styles.trackActive, { backgroundColor: colors.line }]}>
+          <View style={[styles.fill, { width: `${Math.round(ratio * 100)}%`, backgroundColor: colors.accent }]} />
+        </View>
+        {dragging ? (
+          <View pointerEvents="none" style={[styles.thumb, { left: `${ratio * 100}%`, backgroundColor: colors.accent }]} />
+        ) : null}
+      </View>
+
+      {save.isError && !save.isPending ? (
+        <Text style={[typeScale.caption, { color: colors.warn }]}>처리하지 못했어요 · 다시 시도</Text>
+      ) : null}
+    </>
+  );
+}
+
 function KV({ label, value, colors }: { label: string; value: string; colors: ColorTokens }) {
   return (
     <View style={styles.kv}>
@@ -543,8 +677,12 @@ const styles = StyleSheet.create({
   tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
   progressNumbers: { flexDirection: 'row', alignItems: 'baseline' },
   bigNumber: { fontSize: 28 },
-  track: { height: 4, borderRadius: radius.none },
-  fill: { height: 4 },
+  bigNumberInput: { padding: 0, minWidth: 56, borderBottomWidth: 1 },
+  track: { height: 4, borderRadius: radius.none, overflow: 'hidden' },
+  trackTouch: { height: 32, justifyContent: 'center' },
+  trackActive: { height: 8 },
+  fill: { height: '100%' },
+  thumb: { position: 'absolute', top: '50%', width: 4, height: 20, marginTop: -10, marginLeft: -2 },
   kv: { flexDirection: 'row', justifyContent: 'space-between' },
   actionBarWrap: { gap: spacing.xs },
   actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
