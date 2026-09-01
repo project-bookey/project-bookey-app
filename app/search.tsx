@@ -8,6 +8,7 @@ import {
 
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
+import { PaperScreen, SectionNav } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -78,7 +79,8 @@ export default function SearchScreen() {
   const results = search.data ?? [];
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+    <PaperScreen>
+      <SectionNav active="explore" />
       <View style={styles.searchBarWrap}>
         <View
           style={[
@@ -167,7 +169,7 @@ export default function SearchScreen() {
           )}
         />
       )}
-    </View>
+    </PaperScreen>
   );
 }
 
@@ -257,7 +259,6 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   searchBarWrap: { ...layout.content, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   searchBar: {
     flexDirection: 'row',

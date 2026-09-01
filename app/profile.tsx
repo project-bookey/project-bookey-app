@@ -7,6 +7,7 @@ import type { TextStyle } from 'react-native';
 import { API_BASE_URL } from '@/api/client';
 import { libraryApi, notificationApi, statsApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
+import { PaperScreen, SectionNav } from '@/components/collage';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import type { ThemePreference } from '@/store/themePreference';
@@ -56,7 +57,8 @@ export default function ProfileScreen() {
   });
 
   return (
-    <Screen>
+    <PaperScreen>
+      <SectionNav active="me" />
       <ScrollView contentContainerStyle={styles.container}>
         <View>
           <Text style={[type.display, { color: colors.text }]}>{user?.nickname}</Text>
@@ -228,7 +230,7 @@ export default function ProfileScreen() {
           />
         </View>
       </ScrollView>
-    </Screen>
+    </PaperScreen>
   );
 }
 
@@ -321,11 +323,6 @@ function formatDuration(seconds?: number | null): string {
 
 // ── 로컬 프리미티브 — ui.tsx(다크 고정)와 같은 모양의 테마 인식 버전 ──────────
 
-function Screen({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
-  return <View style={[styles.screen, { backgroundColor: colors.bg }]}>{children}</View>;
-}
-
 function Card({ children }: { children: ReactNode }) {
   const { colors, cardShadow } = useTheme();
   return (
@@ -405,7 +402,6 @@ function GhostButton({ label, onPress }: { label: string; onPress: () => void })
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   card: { borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, overflow: 'hidden' },
   counts: { flexDirection: 'row', marginTop: spacing.md },
