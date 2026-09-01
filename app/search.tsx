@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  FlatList, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  type TextStyle,
 } from 'react-native';
 
 import { bookApi, libraryApi } from '@/api/endpoints';
@@ -10,6 +11,10 @@ import type { BookSummary, ReadingStatus } from '@/api/types';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+
+// 웹 전용: 브라우저 기본 포커스 링 제거 — outline-style이 auto인 한 outline-width:0은 무시된다.
+// RN 타입에 'none'이 없어 캐스팅하지만 RNW는 CSS outline-style로 그대로 전달한다.
+const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
 
 /** 도서 검색 — 디바운스 실시간 검색 + 초기 탐색 행 + 3상태 담기 (검색 리디자인 스펙) */
 export default function SearchScreen() {
@@ -19,6 +24,8 @@ export default function SearchScreen() {
 
   const [input, setInput] = useState('');
   const [keyword, setKeyword] = useState('');
+  /** 포커스 표시는 input 자체(웹 기본 outline) 대신 검색바 컨테이너 보더로 그린다. */
+  const [focused, setFocused] = useState(false);
   /** 담기 칩이 열려 있는 행의 책 id — 한 번에 한 행만 연다. */
   const [openAddId, setOpenAddId] = useState<number | null>(null);
   /** 이 세션에서 담기 완료한 책 id — '담김 ✓' 표시용. */
@@ -73,7 +80,15 @@ export default function SearchScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.bg }]}>
       <View style={styles.searchBarWrap}>
-        <View style={[styles.searchBar, { backgroundColor: colors.surfaceRaised }]}>
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.surfaceRaised,
+              borderColor: focused ? colors.accent : 'transparent',
+            },
+          ]}
+        >
           <Text style={[typeScale.body, { color: colors.textFaint }]}>⌕</Text>
           <TextInput
             value={input}
@@ -82,7 +97,9 @@ export default function SearchScreen() {
             placeholderTextColor={colors.textFaint}
             returnKeyType="search"
             autoFocus
-            style={[styles.input, { color: colors.text }]}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={[styles.input, webNoOutline, { color: colors.text }]}
           />
         </View>
       </View>
@@ -245,6 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     borderRadius: radius.md,
+    borderWidth: 1,
     paddingHorizontal: spacing.md,
   },
   input: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
