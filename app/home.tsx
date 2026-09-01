@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
 
@@ -7,6 +7,7 @@ import type { ReadingRecord } from '@/api/types';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { BookRow, RowBook } from '@/components/home/BookRow';
+import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
 import { HeroContinue } from '@/components/home/HeroContinue';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -14,6 +15,7 @@ import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 /** 탭 1. 홈 — OTT 구성: 검색 바 → 이벤트 배너 → 히어로(읽는 중일 때만) → 표지 행 4개 (홈 리디자인·빈 섹션 스펙) */
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { colors } = useTheme();
 
   const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
@@ -35,6 +37,7 @@ export default function HomeScreen() {
   const refetchAll = () => {
     reading.refetch(); want.refetch(); stats.refetch();
     banners.refetch(); popular.refetch(); recommended.refetch();
+    queryClient.invalidateQueries({ queryKey: ['challenges'] });
   };
 
   const openBook = (b: RowBook) => {
@@ -65,6 +68,8 @@ export default function HomeScreen() {
         onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
         onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
       />
+
+      <ChallengeRow />
 
       <BookRow
         title="읽는 중"
@@ -102,6 +107,7 @@ export default function HomeScreen() {
           key: `pick-${b.id}`,
           bookId: b.id,
           title: b.title,
+          author: b.author,
           coverUrl: b.coverUrl,
         }))}
         onPressBook={openBook}
@@ -114,6 +120,7 @@ export default function HomeScreen() {
           key: `popular-${p.book.id}`,
           bookId: p.book.id,
           title: p.book.title,
+          author: p.book.author,
           coverUrl: p.book.coverUrl,
           rank: i + 1,
         }))}

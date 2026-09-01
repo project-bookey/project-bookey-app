@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { HeaderBackLogo } from '@/components/LogoHome';
+import { LogoHome } from '@/components/LogoHome';
 import { HomeHeaderIcons } from '@/components/home/HomeHeaderIcons';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
@@ -50,15 +50,13 @@ export default function RootLayout() {
             headerStyle: { backgroundColor: colors.chrome },
             headerShadowVisible: false,
             headerTintColor: colors.onChrome,
-            headerTitleStyle: { fontFamily: sans.semiBold, fontSize: 20 },
-            headerLeft: () => <HeaderBackLogo />,
+            headerTitleStyle: { fontFamily: sans.semiBold, fontSize: 24 },
+            headerLeft: () => <LogoHome />,
+            headerRight: () => <HomeHeaderIcons />,
             contentStyle: { backgroundColor: colors.bg },
           }}
         >
-          <Stack.Screen
-            name="home"
-            options={{ headerTitle: '', headerRight: () => <HomeHeaderIcons /> }}
-          />
+          <Stack.Screen name="home" options={{ headerTitle: '' }} />
           <Stack.Screen name="library" options={{ title: '서재' }} />
           <Stack.Screen name="clubs" options={{ title: '모임' }} />
           <Stack.Screen name="profile" options={{ title: '프로필' }} />
@@ -66,6 +64,8 @@ export default function RootLayout() {
           <Stack.Screen name="search" options={{ title: '도서 검색' }} />
           <Stack.Screen name="notifications" options={{ title: '알림' }} />
           <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
+          <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
+          <Stack.Screen name="challenge/[id]" options={{ title: '챌린지' }} />
           <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
           <Stack.Screen name="club/create" options={{ title: '모임 만들기' }} />
           <Stack.Screen name="club/[id]/index" options={{ title: '모임' }} />
