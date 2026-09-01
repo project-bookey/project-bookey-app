@@ -74,7 +74,7 @@ export default function BookDetailScreen() {
       {book.isLoading ? (
         <View style={[styles.hero, { backgroundColor: colors.surface }]} />
       ) : (
-        <Hero info={info} />
+        <Hero info={info} description={description} />
       )}
 
       <View style={styles.sections}>
@@ -150,8 +150,6 @@ export default function BookDetailScreen() {
           </View>
         ) : null}
 
-        {description ? <DescriptionCard text={description} colors={colors} /> : null}
-
         {verification.data ? (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[typeScale.overline, { color: colors.accent }]}>리뷰 검증 상태</Text>
@@ -211,8 +209,9 @@ export default function BookDetailScreen() {
   );
 }
 
-/** 풀블리드 히어로 — 블러 표지 배경 + 중앙 원본 표지. 오버레이는 darkColors 고정. */
-function Hero({ info }: { info?: BookSummary }) {
+/** 풀블리드 히어로 — 블러 표지 배경, 표지는 좌측·간단한 소개는 좌하단. 오버레이는 darkColors 고정. */
+function Hero({ info, description }: { info?: BookSummary; description?: string }) {
+  const [expanded, setExpanded] = useState(false);
   return (
     <View style={[styles.hero, { backgroundColor: darkColors.surfaceRaised }]}>
       {info?.coverUrl ? (
@@ -225,23 +224,39 @@ function Hero({ info }: { info?: BookSummary }) {
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.heroContent}>
-        <View style={[styles.heroCover, { backgroundColor: darkColors.surface }]}>
-          {info?.coverUrl ? (
-            <Image source={{ uri: info.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-          ) : (
-            <Text numberOfLines={4} style={[typeScale.caption, { color: darkColors.textMuted, padding: spacing.sm }]}>
+        <View style={styles.heroRow}>
+          <View style={[styles.heroCover, { backgroundColor: darkColors.surface }]}>
+            {info?.coverUrl ? (
+              <Image source={{ uri: info.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            ) : (
+              <Text numberOfLines={4} style={[typeScale.caption, { color: darkColors.textMuted, padding: spacing.sm }]}>
+                {info?.title}
+              </Text>
+            )}
+          </View>
+          <View style={styles.heroInfo}>
+            <Text numberOfLines={3} style={[typeScale.title, { color: darkColors.text }]}>
               {info?.title}
             </Text>
-          )}
+            <Text numberOfLines={1} style={[typeScale.caption, { color: darkColors.textMuted }]}>
+              {info?.author ?? '저자 미상'}
+              {info?.publisher ? ` · ${info.publisher}` : ''}
+              {info?.totalPages ? ` · ${info.totalPages}쪽` : ''}
+            </Text>
+          </View>
         </View>
-        <Text numberOfLines={2} style={[typeScale.title, styles.heroTitle, { color: darkColors.text }]}>
-          {info?.title}
-        </Text>
-        <Text numberOfLines={1} style={[typeScale.caption, { color: darkColors.textMuted }]}>
-          {info?.author ?? '저자 미상'}
-          {info?.publisher ? ` · ${info.publisher}` : ''}
-          {info?.totalPages ? ` · ${info.totalPages}쪽` : ''}
-        </Text>
+        {description ? (
+          <View style={styles.heroDesc}>
+            <Text numberOfLines={expanded ? undefined : 3} style={[typeScale.caption, { color: darkColors.textMuted }]}>
+              {description}
+            </Text>
+            <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" hitSlop={8}>
+              <Text style={[typeScale.label, { color: darkColors.textFaint }]}>
+                {expanded ? '접기 ▲' : '더보기 ▼'}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -252,24 +267,6 @@ function KV({ label, value, colors }: { label: string; value: string; colors: Co
     <View style={styles.kv}>
       <Text style={[typeScale.caption, { color: colors.textMuted }]}>{label}</Text>
       <Text style={[typeScale.caption, { color: colors.text }]}>{value}</Text>
-    </View>
-  );
-}
-
-/** 소개 — 3줄 미리보기 + 더보기/접기. */
-function DescriptionCard({ text, colors }: { text: string; colors: ColorTokens }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <View style={[styles.card, { backgroundColor: colors.surface }]}>
-      <Text style={[typeScale.overline, { color: colors.accent }]}>소개</Text>
-      <Text numberOfLines={expanded ? undefined : 3} style={[typeScale.body, { color: colors.textMuted }]}>
-        {text}
-      </Text>
-      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" hitSlop={8}>
-        <Text style={[typeScale.label, { color: colors.textFaint }]}>
-          {expanded ? '접기 ▲' : '더보기 ▼'}
-        </Text>
-      </Pressable>
     </View>
   );
 }
@@ -373,7 +370,7 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
       {items.length === 0 ? (
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-            아직 리뷰가 없습니다. 완독하면 검증 배지와 함께 첫 리뷰를 남길 수 있어요.
+            아직 리뷰가 없어요. 이 책의 첫 리뷰를 남겨보세요.
           </Text>
         </View>
       ) : (
@@ -409,21 +406,28 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
 
 const styles = StyleSheet.create({
   container: { paddingBottom: spacing.xxl },
-  hero: { height: 340, justifyContent: 'flex-end' },
-  heroContent: { alignItems: 'center', gap: spacing.xs, paddingBottom: spacing.lg },
+  hero: { minHeight: 300, justifyContent: 'flex-end' },
+  heroContent: {
+    ...layout.content,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.xl,
+    gap: spacing.md,
+  },
+  heroRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-end' },
+  heroInfo: { flex: 1, gap: spacing.xs, paddingBottom: spacing.xs },
   heroCover: {
-    width: 110,
-    height: 165,
+    width: 100,
+    height: 150,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    marginBottom: spacing.sm,
     shadowColor: '#000000',
     shadowOpacity: 0.5,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
-  heroTitle: { textAlign: 'center', paddingHorizontal: spacing.xl },
+  heroDesc: { gap: spacing.xs },
   sections: { ...layout.content, padding: spacing.lg, gap: spacing.xl },
   section: { gap: spacing.sm },
   card: { borderRadius: radius.md, padding: spacing.lg, gap: spacing.sm },
