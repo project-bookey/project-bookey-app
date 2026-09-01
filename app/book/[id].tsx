@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
   trackTouch: { height: 32, justifyContent: 'center' },
   trackActive: { height: 8 },
   fill: { height: '100%' },
-  thumb: { position: 'absolute', top: '50%', width: 4, height: 20, marginTop: -10, marginLeft: -2 },
+  thumb: { position: 'absolute', top: '50%', width: 10, height: 20, marginTop: -10, marginLeft: -5 },
   kv: { flexDirection: 'row', justifyContent: 'space-between' },
   actionBarWrap: { gap: spacing.xs },
   actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
