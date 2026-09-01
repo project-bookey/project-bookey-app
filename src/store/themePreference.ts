@@ -14,11 +14,13 @@ type ThemePreferenceState = {
 };
 
 /**
- * 앱 내 화면 테마 선호 — 기본 'system'(기기 설정 추종).
+ * 앱 내 화면 테마 선호 — 기본 'dark'. 레거시 화면(다크 고정)이 남아 있는 동안
+ * 시스템/라이트는 톤 불일치를 감수하는 명시적 선택이다. 전 화면 리디자인 완료 후
+ * 'system' 기본 복귀 검토(수동 테마 전환 스펙 후속 메모).
  * 비밀값이 아니므로 tokenStorage와 달리 분기 없이 전 플랫폼 AsyncStorage만 쓴다.
  */
 export const useThemePreference = create<ThemePreferenceState>((set) => ({
-  preference: 'system',
+  preference: 'dark',
 
   restore: async () => {
     try {
@@ -27,7 +29,7 @@ export const useThemePreference = create<ThemePreferenceState>((set) => ({
         set({ preference: raw as ThemePreference });
       }
     } catch {
-      // 읽기 실패 시 기본값 'system' 유지 — 앱 동작에 지장 없음.
+      // 읽기 실패 시 기본값 'dark' 유지 — 앱 동작에 지장 없음.
     }
   },
 
