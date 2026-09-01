@@ -1,122 +1,267 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+} from 'react-native';
 
 import { bookApi, libraryApi } from '@/api/endpoints';
-import type { BookSummary } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
-import { Button, EmptyState, Loading, Screen, Tag } from '@/components/ui';
-import { colors, hairline, spacing, type, layout } from '@/theme';
+import type { BookSummary, ReadingStatus } from '@/api/types';
+import { BookRow, RowBook } from '@/components/home/BookRow';
+import type { ColorTokens } from '@/theme';
+import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 도서 검색 → 서재 등록 (§F1, §F2) */
+/** 도서 검색 — 디바운스 실시간 검색 + 초기 탐색 행 + 3상태 담기 (검색 리디자인 스펙) */
 export default function SearchScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
+
   const [input, setInput] = useState('');
   const [keyword, setKeyword] = useState('');
+  /** 담기 칩이 열려 있는 행의 책 id — 한 번에 한 행만 연다. */
+  const [openAddId, setOpenAddId] = useState<number | null>(null);
+  /** 이 세션에서 담기 완료한 책 id — '담김 ✓' 표시용. */
+  const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
 
+  // 400ms 디바운스 — 입력이 멈추면 검색어 확정
+  useEffect(() => {
+    const timer = setTimeout(() => setKeyword(input.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [input]);
+
+  const searching = keyword.length >= 2;
   const search = useQuery({
     queryKey: ['books', keyword],
     queryFn: () => bookApi.search(keyword),
-    enabled: keyword.trim().length > 0,
+    enabled: searching,
   });
+  // 초기 탐색 행 — 홈과 같은 키라 캐시를 공유한다
+  const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
+  const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
 
   const add = useMutation({
-    mutationFn: (book: BookSummary) =>
-      libraryApi.add({ bookId: book.id, status: 'READING' }),
-    onSuccess: () => {
+    mutationFn: ({ book, status }: { book: BookSummary; status: ReadingStatus }) =>
+      libraryApi.add({ bookId: book.id, status }),
+    onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      router.back();
+      setAddedIds((prev) => new Set(prev).add(vars.book.id));
+      setOpenAddId(null);
     },
+    // 실패 시 칩을 닫아 '담기' 버튼으로 복귀 — 다시 시도할 수 있다
+    onError: () => setOpenAddId(null),
   });
 
+  const openBook = (b: RowBook) => {
+    if (b.bookId != null) {
+      router.push(`/book/${b.bookId}`);
+    }
+  };
+
+  const results = search.data ?? [];
+
   return (
-    <Screen>
-      <View style={styles.searchBar}>
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          onSubmitEditing={() => setKeyword(input)}
-          placeholder="제목 · 저자 · ISBN"
-          placeholderTextColor={colors.textFaint}
-          returnKeyType="search"
-          autoFocus
-          style={styles.input}
-        />
-        <Button label="검색" size="sm" onPress={() => setKeyword(input)} />
+    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+      <View style={styles.searchBarWrap}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surfaceRaised }]}>
+          <Text style={[typeScale.body, { color: colors.textFaint }]}>⌕</Text>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            placeholder="제목 · 저자 · ISBN"
+            placeholderTextColor={colors.textFaint}
+            returnKeyType="search"
+            autoFocus
+            style={[styles.input, { color: colors.text }]}
+          />
+        </View>
       </View>
 
-      {search.isLoading ? <Loading /> : null}
-
-      <FlatList
-        data={search.data ?? []}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={
-          search.isLoading ? null : (
-            <EmptyState
-              title={keyword ? '결과가 없어요' : '읽을 책을 찾아보세요'}
-              description={
-                keyword
-                  ? '외부 검색에 없는 책이라면 직접 등록할 수 있습니다. 제목·저자·총 페이지 수만 있으면 됩니다.'
-                  : '제목이나 저자로 검색하면 총 페이지 수까지 함께 가져옵니다.'
-              }
-            />
-          )
-        }
-        renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => add.mutate(item)} disabled={add.isPending}>
-            <BookCover url={item.coverUrl} title={item.title} width={44} />
-            <View style={styles.rowBody}>
-              <Text numberOfLines={2} style={styles.title}>{item.title}</Text>
-              <Text numberOfLines={1} style={styles.author}>
-                {item.author ?? '저자 미상'}
-                {item.publisher ? ` · ${item.publisher}` : ''}
-              </Text>
-              <View style={styles.tagRow}>
-                {item.totalPages ? (
-                  <Tag label={`${item.totalPages}쪽`} />
-                ) : (
-                  <Tag label="페이지 수 없음" fg={colors.warn} bg={colors.warnSoft} />
-                )}
-                <Tag label={item.source} />
+      {!searching ? (
+        <ScrollView contentContainerStyle={styles.explore}>
+          <BookRow
+            title="추천"
+            loading={recommended.isLoading}
+            books={(recommended.data ?? []).map((b): RowBook => ({
+              key: `pick-${b.id}`, bookId: b.id, title: b.title, coverUrl: b.coverUrl,
+            }))}
+            onPressBook={openBook}
+          />
+          <BookRow
+            title="인기"
+            loading={popular.isLoading}
+            books={(popular.data ?? []).map((p, i): RowBook => ({
+              key: `popular-${p.book.id}`, bookId: p.book.id, title: p.book.title,
+              coverUrl: p.book.coverUrl, rank: i + 1,
+            }))}
+            onPressBook={openBook}
+          />
+        </ScrollView>
+      ) : (
+        <FlatList
+          data={search.isLoading ? [] : results}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            search.isLoading ? (
+              <View>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={styles.row}>
+                    <View style={[styles.cover, { backgroundColor: colors.surface }]} />
+                  </View>
+                ))}
               </View>
-            </View>
-            <Text style={styles.addMark}>담기</Text>
-          </Pressable>
+            ) : (
+              <View style={styles.empty}>
+                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>결과가 없어요</Text>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                  다른 검색어로 시도해보세요.
+                </Text>
+              </View>
+            )
+          }
+          renderItem={({ item }) => (
+            <ResultRow
+              book={item}
+              colors={colors}
+              choosing={openAddId === item.id}
+              added={addedIds.has(item.id)}
+              pending={add.isPending && add.variables?.book.id === item.id}
+              onPress={() => router.push(`/book/${item.id}`)}
+              onOpenAdd={() => setOpenAddId(item.id)}
+              onPick={(status) => add.mutate({ book: item, status })}
+            />
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+/** 결과 행 — 우측 담기 영역은 담기 → 상태 칩 2개 → 담김 ✓ 의 3상태. */
+function ResultRow({ book, colors, choosing, added, pending, onPress, onOpenAdd, onPick }: {
+  book: BookSummary;
+  colors: ColorTokens;
+  choosing: boolean;
+  added: boolean;
+  pending: boolean;
+  onPress: () => void;
+  onOpenAdd: () => void;
+  onPick: (status: ReadingStatus) => void;
+}) {
+  return (
+    <Pressable
+      style={styles.row}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={book.title}
+    >
+      <View style={[styles.cover, { backgroundColor: colors.surfaceRaised }]}>
+        {book.coverUrl ? (
+          <Image source={{ uri: book.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <Text numberOfLines={3} style={[typeScale.caption, styles.coverFallback, { color: colors.textMuted }]}>
+            {book.title}
+          </Text>
         )}
-      />
-    </Screen>
+      </View>
+
+      <View style={styles.rowBody}>
+        <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
+          {book.title}
+        </Text>
+        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
+          {book.author ?? '저자 미상'}
+          {book.publisher ? ` · ${book.publisher}` : ''}
+        </Text>
+        {book.totalPages ? (
+          <View style={[styles.pageTag, { backgroundColor: colors.surfaceRaised }]}>
+            <Text style={[typeScale.overline, { color: colors.textMuted }]}>{book.totalPages}쪽</Text>
+          </View>
+        ) : (
+          <View style={[styles.pageTag, { backgroundColor: colors.warnSoft }]}>
+            <Text style={[typeScale.overline, { color: colors.warn }]}>쪽수 없음</Text>
+          </View>
+        )}
+      </View>
+
+      {added ? (
+        <Text style={[typeScale.label, { color: colors.textFaint }]}>담김 ✓</Text>
+      ) : choosing ? (
+        <View style={styles.chips}>
+          {(
+            [
+              { status: 'READING', label: '읽는 중' },
+              { status: 'WANT_TO_READ', label: '읽고 싶은' },
+            ] as const
+          ).map((c) => (
+            <Pressable
+              key={c.status}
+              disabled={pending}
+              onPress={() => onPick(c.status)}
+              accessibilityRole="button"
+              accessibilityLabel={c.label}
+              style={[styles.chip, { backgroundColor: colors.accentSoft, opacity: pending ? 0.5 : 1 }]}
+            >
+              <Text style={[typeScale.label, { color: colors.accent }]}>{c.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <Pressable
+          onPress={onOpenAdd}
+          accessibilityRole="button"
+          accessibilityLabel="담기"
+          style={[styles.addButton, { borderColor: colors.accent }]}
+        >
+          <Text style={[typeScale.label, { color: colors.accent }]}>담기</Text>
+        </Pressable>
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  searchBarWrap: { ...layout.content, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   searchBar: {
-    ...layout.content,
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
-    padding: spacing.lg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+  },
+  input: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
+  explore: { ...layout.content, gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
-  input: {
-    flex: 1,
-    borderWidth: hairline,
-    borderColor: colors.line,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: 15,
-    color: colors.text,
-  },
-  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  separator: { height: hairline, backgroundColor: colors.line },
-  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, alignItems: 'center' },
+  cover: { width: 52, height: 78, borderRadius: radius.sm, overflow: 'hidden' },
+  coverFallback: { padding: spacing.xs },
   rowBody: { flex: 1, gap: 3 },
-  title: { ...type.subtitle, color: colors.ink },
-  author: { ...type.caption, color: colors.textMuted },
-  tagRow: { flexDirection: 'row', gap: spacing.xs, marginTop: 2 },
-  addMark: { ...type.label, color: colors.accent },
+  pageTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    marginTop: 2,
+  },
+  chips: { gap: spacing.xs },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  addButton: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
 });
