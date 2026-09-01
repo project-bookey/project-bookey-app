@@ -120,6 +120,14 @@ export default function ChallengeScreen() {
               <Text style={[typeScale.label, { color: colors.textMuted }]}>홈으로</Text>
             </Pressable>
           </View>
+        ) : challenge.status === 'CANCELLED' ? (
+          <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
+            <Text style={[typeScale.display, { color: colors.text, textAlign: 'center' }]}>포기한 챌린지예요</Text>
+            <Pressable onPress={() => router.replace('/home')} accessibilityRole="button"
+              style={[styles.cta, { backgroundColor: colors.accent }]}>
+              <Text style={[typeScale.label, { color: colors.onAccent }]}>홈으로</Text>
+            </Pressable>
+          </View>
         ) : (
           <>
             <Text style={[styles.clock, { fontFamily: sans.extraBold, color: colors.text }]}>
@@ -151,18 +159,18 @@ export default function ChallengeScreen() {
               <View style={styles.pageRow}>
                 <TextInput
                   value={pageInput}
-                  onChangeText={setPageInput}
+                  onChangeText={(t) => setPageInput(t.replace(/[^0-9]/g, ''))}
                   keyboardType="number-pad"
                   style={[styles.pageInput, { backgroundColor: colors.surfaceRaised, color: colors.text }]}
                 />
                 <Text style={[typeScale.body, { color: colors.textMuted }]}>/ {challenge.totalPages}쪽</Text>
                 <Pressable
-                  disabled={progress.isPending || pageInput.trim() === ''}
+                  disabled={progress.isPending || pageInput.trim() === '' || !Number.isFinite(Number(pageInput))}
                   onPress={() => progress.mutate()}
                   accessibilityRole="button"
                   style={[styles.recordButton, {
                     backgroundColor: colors.accent,
-                    opacity: progress.isPending || pageInput.trim() === '' ? 0.5 : 1,
+                    opacity: progress.isPending || pageInput.trim() === '' || !Number.isFinite(Number(pageInput)) ? 0.5 : 1,
                   }]}
                 >
                   <Text style={[typeScale.label, { color: colors.onAccent }]}>기록</Text>

@@ -18,7 +18,7 @@ export function useRemainingSec(challenge: Challenge | undefined, dataUpdatedAt:
     return () => clearInterval(timer);
   }, [running]);
   if (!challenge) return 0;
-  const drift = running ? Math.floor((now - dataUpdatedAt) / 1000) : 0;
+  const drift = running ? Math.max(0, Math.floor((now - dataUpdatedAt) / 1000)) : 0;
   return Math.max(0, challenge.remainingSec - drift);
 }
 

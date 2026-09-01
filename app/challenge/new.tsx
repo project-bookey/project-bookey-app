@@ -93,7 +93,7 @@ export default function NewChallengeScreen() {
             <View style={styles.budgetRow}>
               <TextInput
                 value={hours}
-                onChangeText={setHours}
+                onChangeText={(t) => setHours(t.replace(/[^0-9]/g, ''))}
                 keyboardType="number-pad"
                 placeholder="0"
                 placeholderTextColor={colors.textFaint}
@@ -102,7 +102,7 @@ export default function NewChallengeScreen() {
               <Text style={[typeScale.body, { color: colors.textMuted }]}>시간</Text>
               <TextInput
                 value={minutes}
-                onChangeText={setMinutes}
+                onChangeText={(t) => setMinutes(t.replace(/[^0-9]/g, ''))}
                 keyboardType="number-pad"
                 placeholder="0"
                 placeholderTextColor={colors.textFaint}
