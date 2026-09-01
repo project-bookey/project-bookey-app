@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { TextStyle } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
 import { libraryApi, notificationApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
-import {
-  Button, Card, Eyebrow, KeyValue, Numeral, Rule, Screen, Toggle,
-} from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { colors, hairline, spacing, type, layout } from '@/theme';
+import { useThemePreference } from '@/store/themePreference';
+import type { ThemePreference } from '@/store/themePreference';
+import { hairline, layout, ornament, radius, spacing, type, useTheme } from '@/theme';
 
 const TONES: { value: NotifyTone; label: string; sample: string }[] = [
   { value: 'GENTLE', label: '다정', sample: '12쪽 남았어요. 오늘 10분이면 끝나요.' },
@@ -19,13 +20,26 @@ const TONES: { value: NotifyTone; label: string; sample: string }[] = [
   { value: 'SILENT', label: '무음', sample: '푸시 없이 인앱 배지로만 알립니다.' },
 ];
 
-/** 탭 5. 프로필 — 알림 톤 · 설정 (§6) */
+const THEMES: { value: ThemePreference; label: string }[] = [
+  { value: 'system', label: '시스템' },
+  { value: 'light', label: '라이트' },
+  { value: 'dark', label: '다크' },
+];
+
+/**
+ * 탭 5. 프로필 — 알림 톤 · 설정 (§6).
+ * 테마 인식 전환 완료 — 레거시 colors 미사용. 다크 외관은 전환 전과 픽셀 동일해야 한다
+ * (수동 테마 전환 스펙). 프리미티브는 ui.tsx(다크 고정) 대신 아래 로컬 버전을 쓴다.
+ */
 export default function ProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
   const user = useAuth((s) => s.user);
   const setUser = useAuth((s) => s.setUser);
   const logout = useAuth((s) => s.logout);
+  const preference = useThemePreference((s) => s.preference);
+  const setPreference = useThemePreference((s) => s.setPreference);
 
   const summary = useQuery({ queryKey: ['library', 'summary'], queryFn: libraryApi.summary });
 
@@ -43,8 +57,8 @@ export default function ProfileScreen() {
     <Screen>
       <ScrollView contentContainerStyle={styles.container}>
         <View>
-          <Text style={styles.nickname}>{user?.nickname}</Text>
-          <Text style={styles.handle}>@{user?.handle}</Text>
+          <Text style={[type.display, { color: colors.text }]}>{user?.nickname}</Text>
+          <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>@{user?.handle}</Text>
         </View>
 
         <Card>
@@ -59,24 +73,37 @@ export default function ProfileScreen() {
 
         <View>
           <Eyebrow>재촉 톤</Eyebrow>
-          <Text style={styles.helper}>
+          <Text style={[type.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
             같은 상황이라도 어떻게 말을 걸지 고를 수 있습니다.
           </Text>
-          <View style={styles.toneList}>
+          <View style={[styles.toneList, { borderColor: colors.line }]}>
             {TONES.map((tone) => {
               const selected = user?.notifyTone === tone.value;
               return (
                 <Pressable
                   key={tone.value}
-                  style={[styles.toneRow, selected && styles.toneRowSelected]}
+                  style={[
+                    styles.toneRow,
+                    {
+                      borderBottomColor: colors.line,
+                      backgroundColor: selected ? colors.accentSoft : colors.surface,
+                    },
+                  ]}
                   onPress={() => updateSettings.mutate({ notifyTone: tone.value })}
                 >
-                  <View style={[styles.radio, selected && styles.radioOn]} />
+                  <View
+                    style={[
+                      styles.radio,
+                      selected
+                        ? { backgroundColor: colors.text, borderColor: colors.text }
+                        : { borderColor: colors.textFaint },
+                    ]}
+                  />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.toneLabel, selected && styles.toneLabelSelected]}>
-                      {tone.label}
+                    <Text style={[type.label, { color: colors.text }]}>{tone.label}</Text>
+                    <Text style={[type.caption, styles.toneSample, { color: colors.textMuted }]}>
+                      {tone.sample}
                     </Text>
-                    <Text style={styles.toneSample}>{tone.sample}</Text>
                   </View>
                 </Pressable>
               );
@@ -96,8 +123,8 @@ export default function ProfileScreen() {
             <Rule />
             <View style={styles.switchRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.switchLabel}>찌르기 받기</Text>
-                <Text style={styles.switchDesc}>
+                <Text style={[type.label, { color: colors.text }]}>찌르기 받기</Text>
+                <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>
                   모임원이 프리셋 문구로 보내는 가벼운 재촉입니다.
                 </Text>
               </View>
@@ -109,13 +136,46 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
+        <Card>
+          <Eyebrow>화면 테마</Eyebrow>
+          <View style={[styles.themeSegments, { borderColor: colors.line, backgroundColor: colors.surface }]}>
+            {THEMES.map((option, index) => {
+              const active = preference === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => setPreference(option.value)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[
+                    styles.themeSegment,
+                    index > 0 && { borderLeftWidth: hairline, borderLeftColor: colors.line },
+                    active && { backgroundColor: colors.text },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      type.label,
+                      styles.themeSegmentLabel,
+                      { color: active ? colors.bg : colors.textMuted },
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={[type.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+            시스템은 기기 설정을 따릅니다.
+          </Text>
+        </Card>
+
         <View style={{ gap: spacing.sm }}>
           <Rule />
-          <Text style={styles.meta}>API {API_BASE_URL}</Text>
-          <Button
+          <Text style={[type.caption, { color: colors.textFaint }]}>API {API_BASE_URL}</Text>
+          <GhostButton
             label="로그아웃"
-            variant="ghost"
-            size="sm"
             onPress={async () => {
               await logout();
               router.replace('/login');
@@ -128,59 +188,150 @@ export default function ProfileScreen() {
 }
 
 function CountCell({ label, value }: { label: string; value: number }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.countCell}>
-      <Numeral style={styles.countValue}>{value}</Numeral>
-      <Text style={styles.countLabel}>{label}</Text>
+      <Numeral style={{ fontSize: 20, fontWeight: '700' }}>{value}</Numeral>
+      <Text style={[type.caption, { color: colors.textFaint }]}>{label}</Text>
     </View>
   );
 }
 
+// ── 로컬 프리미티브 — ui.tsx(다크 고정)와 같은 모양의 테마 인식 버전 ──────────
+
+function Screen({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  return <View style={[styles.screen, { backgroundColor: colors.bg }]}>{children}</View>;
+}
+
+function Card({ children }: { children: ReactNode }) {
+  const { colors, cardShadow } = useTheme();
+  return (
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
+      {children}
+    </View>
+  );
+}
+
+function Eyebrow({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <Text style={[type.eyebrow, { color: colors.textMuted }]}>
+      <Text style={{ color: colors.accent, fontSize: 11 }}>{ornament.section} </Text>
+      {children}
+    </Text>
+  );
+}
+
+function Rule() {
+  const { colors } = useTheme();
+  return <View style={[styles.rule, { backgroundColor: colors.line }]} />;
+}
+
+function KeyValue({ label, value }: { label: string; value: ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.keyValue}>
+      <Text style={[type.caption, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[styles.keyValueValue, { color: colors.text }]}>{value}</Text>
+    </View>
+  );
+}
+
+function Numeral({ children, style }: { children: ReactNode; style?: TextStyle }) {
+  const { colors } = useTheme();
+  return <Text style={[styles.numeral, { color: colors.text }, style]}>{children}</Text>;
+}
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (value: boolean) => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      onPress={() => onChange(!value)}
+      style={[
+        styles.toggleTrack,
+        value
+          ? { backgroundColor: colors.text, borderColor: colors.text }
+          : { backgroundColor: colors.surfaceRaised, borderColor: colors.line },
+      ]}
+    >
+      <View
+        style={[
+          styles.toggleKnob,
+          value
+            ? { backgroundColor: colors.bg, alignSelf: 'flex-end' }
+            : { backgroundColor: colors.textFaint },
+        ]}
+      />
+    </Pressable>
+  );
+}
+
+function GhostButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.ghostButton, pressed && styles.pressed]}
+    >
+      <Text style={[type.label, styles.ghostButtonLabel, { color: colors.text }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
-  nickname: { ...type.display, color: colors.ink },
-  handle: { ...type.caption, color: colors.textFaint, marginTop: 2 },
+  card: { borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, overflow: 'hidden' },
   counts: { flexDirection: 'row', marginTop: spacing.md },
   countCell: { flex: 1, gap: 3 },
-  countValue: { fontSize: 20, fontWeight: '700', color: colors.ink },
-  countLabel: { ...type.caption, color: colors.textFaint },
-  helper: { ...type.caption, color: colors.textFaint, marginTop: spacing.sm },
-  toneList: {
-    marginTop: spacing.sm,
-    borderWidth: hairline,
-    borderColor: colors.line,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
+  toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: 12, overflow: 'hidden' },
   toneRow: {
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
     alignItems: 'flex-start',
     borderBottomWidth: hairline,
-    borderBottomColor: colors.line,
-    backgroundColor: colors.surface,
   },
-  toneRowSelected: { backgroundColor: colors.accentSoft },
-  radio: {
-    width: 16,
-    height: 16,
-    borderRadius: 999,
-    borderWidth: hairline,
-    borderColor: colors.textFaint,
-    marginTop: 2,
-  },
-  radioOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  toneLabel: { ...type.label, color: colors.text },
-  toneLabelSelected: { color: colors.ink },
-  toneSample: { ...type.caption, color: colors.textMuted, marginTop: 3, lineHeight: 16 },
+  radio: { width: 16, height: 16, borderRadius: 999, borderWidth: hairline, marginTop: 2 },
+  toneSample: { marginTop: 3, lineHeight: 16 },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.sm,
   },
-  switchLabel: { ...type.label, color: colors.text },
-  switchDesc: { ...type.caption, color: colors.textFaint, marginTop: 2 },
-  meta: { ...type.caption, color: colors.textFaint },
+  themeSegments: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  themeSegment: { flex: 1, paddingVertical: spacing.sm + 2, alignItems: 'center' },
+  themeSegmentLabel: { fontSize: 12 },
+  rule: { height: hairline },
+  keyValue: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingVertical: spacing.sm,
+  },
+  keyValueValue: { fontSize: 13, fontWeight: '700' },
+  numeral: { fontSize: 13, fontWeight: '700' },
+  toggleTrack: {
+    width: 46,
+    height: 26,
+    borderWidth: hairline,
+    borderRadius: radius.pill,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleKnob: { width: 20, height: 20, borderRadius: radius.pill },
+  ghostButton: { minHeight: 32, alignItems: 'center', justifyContent: 'center' },
+  ghostButtonLabel: { fontSize: 11.5 },
+  pressed: { opacity: 0.7 },
 });
