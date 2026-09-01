@@ -25,8 +25,8 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 ```
 
 - zustand 스토어: `{ preference: ThemePreference; restore(): Promise<void>; setPreference(p: ThemePreference): void }`
-- 저장 키 `bookey.themePreference`. 전 플랫폼 AsyncStorage — 비밀값이 아니므로
-  SecureStore를 쓰지 않는다 (`tokenStorage.ts`의 분기와 다른 이유).
+- 저장 키 `bookey.themePreference`. 전 플랫폼 AsyncStorage — `tokenStorage.ts`가
+  네이티브에서 SecureStore로 분기하는 것과 달리, 비밀값이 아니므로 분기 없이 AsyncStorage만 쓴다.
 - `restore()`: 저장값이 3개 허용값 중 하나일 때만 반영. 없거나, 깨졌거나, 읽기가 실패하면
   기본값 `'system'` 유지 — 앱 동작에 지장 없음.
 - `setPreference()`: 상태를 즉시 반영(화면이 그 자리에서 전환)하고, 저장은 fire-and-forget
@@ -67,8 +67,9 @@ const mode: ThemeMode =
   Button, Toggle`)은 profile.tsx 안에 같은 모양의 테마 인식 로컬 버전으로 대체한다.
   **`ui.tsx`는 건드리지 않는다** — 모든 레거시 화면이 공유하므로, 그걸 테마 인식으로 바꾸면
   화면 자체 스타일이 다크 고정인 레거시 화면들이 라이트 모드에서 반쯤 깨진다.
-- 수용 기준: **다크 모드에서 현재와 픽셀 동일**. 레이아웃·타이포 변경 없음 — 레거시 `type`
-  (시스템 폰트) 유지, 색상만 테마화. Pretendard 전환·레이아웃 개편은 추후 OTT 리디자인에서.
+- 수용 기준: **다크 모드에서 현재와 픽셀 동일** (신규 '화면 테마' 섹션 추가분 제외).
+  레이아웃·타이포 변경 없음 — 레거시 `type`(시스템 폰트) 유지, 색상만 테마화.
+  Pretendard 전환·레이아웃 개편은 추후 OTT 리디자인에서.
 
 ## 스코프 밖
 
