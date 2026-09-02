@@ -79,7 +79,7 @@ export default function RootLayout() {
             <Stack.Screen name="search" options={{ headerShown: false }} />
             <Stack.Screen name="plaza" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
-            <Stack.Screen name="library" options={{ title: '서재' }} />
+            <Stack.Screen name="library" options={{ headerShown: false }} />
             <Stack.Screen name="clubs" options={{ title: '토론 모임' }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
