@@ -25,14 +25,50 @@ const ROTATE_MS = 6000;
 /** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. 높이는 1.5배(108). */
 const COVER_W = 72;
 /**
+ * 인용 조판 — 여기 숫자 하나를 고치면 QUOTE_MAX_H 와 ROW_H 가 함께 따라온다.
+ * 손으로 맞춘 상수를 여러 군데 두면 다음에 크기를 손볼 때 반드시 어긋난다.
+ */
+const QUOTE_LINES = 3;
+const QUOTE_SIZE = 15;
+const QUOTE_LH = 24;
+/** 메타(닉네임·책)·핫 지표 조판. */
+const META_SIZE = 10;
+const META_LH = 14;
+/** 핫 지표와 메타 사이 간격(px). */
+const HOT_GAP = 3;
+
+/**
+ * 인용 상자 높이 상한(px) — 딱 3줄.
+ *
+ * `numberOfLines` 만으로는 부족하다. 웹에서는 이 Text 가 조각(flex 컨테이너)의 자식이라
+ * `-webkit-line-clamp` 가 걸린 `display:-webkit-box` 가 블록으로 바뀌어(computed `flow-root`)
+ * 말줄임표만 찍히고 **네 번째 줄이 상자 높이만큼 그대로 그려진다** — 잘린 반 줄이 메타 위로
+ * 겹쳐 보인다. 상자 자체를 3줄로 못 박아 넷째 줄이 놓일 자리를 없앤다.
+ */
+const QUOTE_MAX_H = QUOTE_LINES * QUOTE_LH;
+
+/**
  * 행 고정 높이(px).
  *
  * 회전할 때 아래 행들이 밀리면 안 되므로 minHeight 가 아니라 **높이를 못 박는다**.
  * minHeight 만 주면 문장이 3줄인 항목에서 카드가 그 값을 넘겨 행이 커지고,
  * 1줄짜리로 넘어가는 순간 홈 전체가 출렁인다.
- * 값은 인용 3줄(21×3) + 메타·핫 지표 두 줄 + 스크랩 안쪽 여백(12×2)을 더한 최댓값 기준.
+ *
+ * 인용 3줄 최악의 경우 필요한 높이:
+ *
+ *   스크랩 테두리 1×2 + 안쪽 여백 12×2  = 26
+ *   인용 24 × 3                         = 72
+ *   메타 lineHeight 14                  = 14
+ *   핫   간격 3 + lineHeight 14         = 17
+ *                                     합 = 129
+ *
+ * 여기에 인용과 메타 사이 숨 쉴 자리 겸, 글꼴 폴백으로 줄상자가 두꺼워질 때를 위한
+ * 여유 15px 을 얹어 144 (종전 132 도 같은 방식으로 필요분 126 + 여유 6 이었다).
+ * 남는 자리는 메타의 `marginTop:'auto'` 가 인용 아래로 몰아 준다 —
+ * 메타·핫 지표는 문장 길이와 무관하게 늘 조각 바닥에 붙는다.
  */
-const ROW_H = 132;
+const ROW_SLACK = 15;
+const ROW_H = 2 + spacing.md * 2 + QUOTE_MAX_H + META_LH + HOT_GAP + META_LH + ROW_SLACK;
 /** 들어오는 조각이 올라오는 거리(px) — 책상에 내려놓는 듯한 짧은 낙차. */
 const ENTER_RISE = 8;
 /** 카드 기울기(도) — 회전 항목마다 좌우로 엇갈린다. */
@@ -55,6 +91,9 @@ const EASE_OUT = Easing.out(Easing.quad);
  *
  * 광장으로 가는 이동은 push 가 아니라 navigate 다 — 구역(서가·탐색·광장·나) 사이는
  * push 하면 오갈 때마다 스택에 같은 구역이 쌓인다.
+ *
+ * 조각을 누르면 `focusQuoteId` 를 달고 간다 — 광장이 그 문장 카드로 스크롤한 뒤
+ * 한 번만 강조하고 파라미터를 비운다(app/plaza.tsx).
  */
 export function QuoteScraps() {
   const router = useRouter();
@@ -129,7 +168,16 @@ export function QuoteScraps() {
   const item = spotlight[index];
   if (!item) return null;
 
-  const openPlaza = () => router.navigate('/plaza');
+  /**
+   * 광장으로 보낸다. 문장 id 를 함께 넘기면 광장이 그 카드로 스크롤하고 한 번 강조한다.
+   * 헤더 '광장 →' 는 목적지가 특정 문장이 아니므로 파라미터 없이 그냥 연다.
+   */
+  const openPlaza = (quoteId?: number | null) =>
+    router.navigate(
+      quoteId != null
+        ? { pathname: '/plaza', params: { focusQuoteId: String(quoteId) } }
+        : '/plaza',
+    );
   const agreeCount = item.agreeCount ?? 0;
 
   return (
@@ -137,7 +185,7 @@ export function QuoteScraps() {
       <View style={styles.header}>
         <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오려둔 문장</Text>
         <Pressable
-          onPress={openPlaza}
+          onPress={() => openPlaza()}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="광장으로"
@@ -147,18 +195,19 @@ export function QuoteScraps() {
       </View>
 
       {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
-          라벨만 현재 항목으로 바뀐다. */}
+          라벨만 현재 항목으로 바뀐다.
+          카드·표지 어디를 눌러도 광장의 '그 문장'으로 간다 — 표지 탭도 이 행 버튼이 받는다. */}
       <Pressable
-        onPress={openPlaza}
+        onPress={() => openPlaza(item.quoteId)}
         accessibilityRole="button"
-        accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장`}
+        accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장 · 광장에서 보기`}
         style={styles.rowWrap}
       >
         <Animated.View style={[styles.row, groupStyle]}>
           <Animated.View style={[styles.cardSlot, cardStyle]}>
             {/* 기울기는 회전 연출과 함께 움직여야 해서 바깥에서 준다. */}
             <MemoScrap rotate={0} style={styles.card}>
-              <Text numberOfLines={3} style={[styles.quote, { color: colors.text }]}>
+              <Text numberOfLines={QUOTE_LINES} style={[styles.quote, { color: colors.text }]}>
                 {item.content}
               </Text>
               <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
@@ -218,12 +267,20 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.md, height: ROW_H },
   cardSlot: { flex: 1 },
   // numberOfLines 는 줄 수만 자를 뿐 글자 상자는 못 자른다 — 시스템 글꼴을 크게 키우면
-  // 3줄이 132px 를 넘겨 아래 '추천' 행 위로 번진다. 조각 밖으로는 한 픽셀도 내보내지 않는다.
+  // 3줄이 ROW_H 를 넘겨 아래 '추천' 행 위로 번진다. 조각 밖으로는 한 픽셀도 내보내지 않는다.
   card: { flex: 1, overflow: 'hidden' },
-  // 인용이 남은 자리를 차지하고, 메타·핫 지표는 조각 아래쪽에 앉는다.
-  quote: { flex: 1, fontFamily: serif.regular, fontSize: 13, lineHeight: 21 },
-  meta: { fontSize: 9, letterSpacing: 0.4, lineHeight: 13, marginTop: spacing.sm },
-  hot: { fontSize: 9, letterSpacing: 0.4, lineHeight: 13, marginTop: 3 },
-  // 표지(108)는 행(132)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
+  // 인용은 제 줄 수만큼만 차지하고 3줄에서 끊긴다(QUOTE_MAX_H 주석 참고).
+  quote: {
+    fontFamily: serif.regular,
+    fontSize: QUOTE_SIZE,
+    lineHeight: QUOTE_LH,
+    maxHeight: QUOTE_MAX_H,
+    overflow: 'hidden',
+  },
+  // 남는 자리를 인용 아래로 몰아 메타·핫 지표를 조각 바닥에 붙인다 —
+  // 문장이 1줄이든 3줄이든 두 줄의 y 가 같아 회전해도 눈이 흔들리지 않는다.
+  meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: 'auto' },
+  hot: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: HOT_GAP },
+  // 표지(108)는 행(144)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
   coverSlot: { justifyContent: 'center' },
 });
