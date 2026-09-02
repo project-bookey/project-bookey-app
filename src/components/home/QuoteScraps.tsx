@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
+  cancelAnimation,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -95,7 +96,15 @@ export function QuoteScraps() {
         if (done) runOnJS(advance)();
       });
     }, ROTATE_MS);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      // 나가는 페이드가 떠 있는 150ms 창에서 정리되면, 완료 콜백의 runOnJS(advance) 가
+      // 주인 없는 상태로 발화한다 — 애니메이션을 먼저 끊어 콜백 자체를 없앤다.
+      cancelAnimation(settle);
+      // 끊긴 자리에 반투명하게 굳지 않도록 정착 상태로 되돌린다
+      // (항목이 2건 → 1건으로 줄어 회전이 꺼지는 경우, 이 카드는 계속 화면에 남는다).
+      settle.value = 1;
+    };
   }, [rotating, advance, settle]);
 
   // 새 조각이 책상에 놓이는 연출 — 살짝 아래에서 올라오며 기울기가 정착한다.
@@ -167,9 +176,20 @@ export function QuoteScraps() {
           {/*
             표지에도 onPress 를 달지 않는다 — 웹에서 accessibilityRole="button" 은 진짜
             <button> 으로 나가므로 행 버튼 안에 표지 버튼이 겹치면 중첩 버튼(잘못된 HTML)이 된다.
-            표지 탭은 행 버튼이 그대로 받아 광장으로 보내고, 스크린리더도 한 번만 읽는다.
+            표지 탭은 행 버튼이 그대로 받아 광장으로 보낸다.
+
+            pointerEvents 는 터치만 막고 접근성 트리는 그대로 둔다 — 네이티브 스크린리더가
+            표지에서 한 번 더 멈춰 책 제목을 되풀이한다. 세 플랫폼이 각각 다른 속성을 보므로
+            (iOS accessibilityElementsHidden · 안드로이드 importantForAccessibility · 웹 aria-hidden)
+            셋 다 걸어 가지째 숨긴다. 행 라벨이 이미 책 제목을 읽어 준다.
           */}
-          <View style={styles.coverSlot} pointerEvents="none">
+          <View
+            style={styles.coverSlot}
+            pointerEvents="none"
+            aria-hidden
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <TiltCover
               uri={item.bookCoverUrl}
               title={item.bookTitle}
@@ -197,7 +217,9 @@ const styles = StyleSheet.create({
   // 높이를 못 박아 문장 길이·회전과 무관하게 아래 행이 그대로 있게 한다.
   row: { flexDirection: 'row', gap: spacing.md, height: ROW_H },
   cardSlot: { flex: 1 },
-  card: { flex: 1 },
+  // numberOfLines 는 줄 수만 자를 뿐 글자 상자는 못 자른다 — 시스템 글꼴을 크게 키우면
+  // 3줄이 132px 를 넘겨 아래 '추천' 행 위로 번진다. 조각 밖으로는 한 픽셀도 내보내지 않는다.
+  card: { flex: 1, overflow: 'hidden' },
   // 인용이 남은 자리를 차지하고, 메타·핫 지표는 조각 아래쪽에 앉는다.
   quote: { flex: 1, fontFamily: serif.regular, fontSize: 13, lineHeight: 21 },
   meta: { fontSize: 9, letterSpacing: 0.4, lineHeight: 13, marginTop: spacing.sm },
