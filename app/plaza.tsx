@@ -65,7 +65,7 @@ type FeedCache = InfiniteData<Page<PlazaItem>>;
  * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 완독 자랑이 모이는 곳 (시안 2d).
  *
  * 필터 칩은 세 개지만 성격이 다르다. '밑줄'·'완독 자랑'은 같은 피드의 type 이고,
- * '토론'은 피드가 아니라 모임 화면으로 나가는 링크다 — 눌러도 활성으로 남지 않는다.
+ * '모임' 칩은 피드 필터가 아니라 모임 화면으로 나가는 링크다 — 눌러도 활성으로 남지 않는다.
  *
  * 홈 '오려둔 문장'(QuoteScraps)에서 `focusQuoteId` 를 달고 들어오면 그 문장 카드로
  * 스크롤한 뒤 한 번만 강조한다 — 아래 '찍고 온 문장' 블록 참고.
@@ -245,8 +245,8 @@ export default function PlazaScreen() {
     <View style={styles.header}>
       <View style={styles.chipRow}>
         <Chip label="밑줄" active={type === 'QUOTE'} onPress={() => switchType('QUOTE')} />
-        {/* 토론은 피드가 아니라 모임으로 나가는 문이다 — 활성 상태로 남지 않는다. */}
-        <Chip label="토론" onPress={() => router.push('/clubs')} />
+        {/* 모임 칩은 피드 필터가 아니라 모임 화면으로 나가는 문이다 — 활성 상태로 남지 않는다. */}
+        <Chip label="모임" onPress={() => router.push('/clubs')} />
         <Chip label="완독 자랑" active={type === 'FINISH'} onPress={() => switchType('FINISH')} />
         <Pressable
           onPress={() => setComposing((open) => !open)}
