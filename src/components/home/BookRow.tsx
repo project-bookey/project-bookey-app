@@ -23,10 +23,12 @@ const COVER_H = 144;
 /** 지그재그 최대 낙차 — 행 아래 여백을 이만큼 더 준다. */
 const MAX_OFFSET = Math.max(...rowOffsetY);
 /**
- * 랭크 배지(top -10)와 기울어진 표지의 위쪽 모서리가 스크롤 뷰에 잘리지 않게 두는 여백.
- * 배지 10 + 기울기로 올라오는 모서리 약 5 를 합쳐 잡는다.
+ * 랭크 배지(top -10)가 위로 걸치는 만큼 두는 여백. 배지 10 + 기울기로 올라오는
+ * 모서리 약 5 를 합쳐 잡는다.
  */
 const BADGE_BLEED = 16;
+/** 기울어진 표지의 위쪽 모서리가 올라오는 양(96×144, 최대 6°). */
+const TILT_BLEED = 5;
 
 /** 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressEmpty가 있으면 + 타일, 없으면 유령 표지. */
 export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressEmpty }: {
@@ -47,7 +49,15 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
 }) {
   const { colors } = useTheme();
   const empty = !loading && books.length === 0;
-  const listStyle = [styles.list, staggered ? styles.listStaggered : null];
+  // 위 여백은 '무엇이 위로 삐져나오는가'로 정한다. 랭크 배지는 지그재그와 무관하게
+  // top -10 으로 걸치므로(탐색 화면의 인기 행이 그렇다) 배지 유무를 따로 잰다.
+  const hasRank = books.some((b) => b.rank != null);
+  const bleedTop = hasRank ? BADGE_BLEED : staggered ? TILT_BLEED : 0;
+  const listStyle = [
+    styles.list,
+    staggered ? styles.listStaggered : null,
+    bleedTop ? { paddingTop: bleedTop } : null,
+  ];
 
   return (
     <View style={styles.section}>
@@ -201,9 +211,10 @@ const styles = StyleSheet.create({
   headTitle: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexShrink: 1 },
   title: { fontSize: 18, lineHeight: 26 },
   list: { paddingHorizontal: spacing.lg, gap: spacing.md, flexDirection: 'row' },
-  // 지그재그 행에만: 위는 걸친 랭크 배지, 아래는 내려간 표지만큼 여백을 더 둔다.
-  // (배지도 지그재그도 없는 행에 같은 여백을 주면 행 간격이 들쭉날쭉해진다.)
-  listStaggered: { paddingTop: BADGE_BLEED, paddingBottom: MAX_OFFSET },
+  // 지그재그 행에만: 아래로 내려간 표지만큼 여백을 더 둔다. 위 여백(bleedTop)은
+  // 배지·기울기 유무로 따로 계산한다 — 아무것도 삐져나오지 않는 행까지 띄우면
+  // 행 간격이 들쭉날쭉해진다.
+  listStaggered: { paddingBottom: MAX_OFFSET },
   item: { width: COVER_W },
   meta: { marginTop: spacing.sm },
   metaTap: { gap: 2 },

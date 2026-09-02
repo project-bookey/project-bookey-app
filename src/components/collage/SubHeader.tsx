@@ -15,18 +15,28 @@ export function SubHeader({ category, right, onBack }: {
   category?: string;
   /** 우측 슬롯 — 없으면 자리만 비워 좌우 균형을 맞춘다. */
   right?: ReactNode;
-  /** 기본 동작은 router.back(). */
+  /** 기본 동작은 뒤로 가기 — 돌아갈 곳이 없으면 서가로. */
   onBack?: () => void;
 }) {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
+  // 딥링크·웹 새로고침으로 이 화면이 스택의 첫 화면이면 back() 이 아무 일도 하지
+  // 않아 뒤로 버튼이 막다른 골목이 된다. 그때는 서가로 보낸다.
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/home');
+    }
+  };
+
   return (
     <View style={[styles.bar, { paddingTop: insets.top }]}>
       <View style={styles.row}>
         <Pressable
-          onPress={onBack ?? (() => router.back())}
+          onPress={onBack ?? goBack}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel="뒤로"

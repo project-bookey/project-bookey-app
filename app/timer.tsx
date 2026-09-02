@@ -110,8 +110,10 @@ export default function TimerScreen() {
       queryClient.invalidateQueries({ queryKey: ['session', 'current'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
-      if (result.bookFinished) {
-        router.replace(`/book/${record.data?.book?.id}?recordId=${id}&finished=1`);
+      // 완독이어도 책 id 를 모르면 /book/undefined 로 튄다 — 그때는 그냥 되돌아간다.
+      const bookId = record.data?.book?.id;
+      if (result.bookFinished && bookId != null) {
+        router.replace(`/book/${bookId}?recordId=${id}`);
       } else {
         router.back();
       }
