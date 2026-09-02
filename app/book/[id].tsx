@@ -11,12 +11,13 @@ import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
+import type { BookBand, BookNote } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, percent,
 } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
 import { getLagStyle, hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { mono, serif } from '@/theme/tokens';
+import { mono, serif, statusLabel } from '@/theme/tokens';
 
 const VERIFICATION_LABEL: Record<VerificationLevel, string> = {
   VERIFIED_FULL: '완독 검증',
@@ -32,6 +33,8 @@ const H = {
   coverW: 138,
   coverLeftRatio: 96 / BASE_W,
   coverTop: 22,
+  /** 뒤장(줄거리 메모장) 부채꼴 — 홈 히어로와 같은 값으로 펼친다 */
+  stack: { x: 48, y: -15, rotate: 10, scale: 0.95 },
   /** 표제 — 좌하단에서 표지와 겹친다 */
   titleTop: 150,
   titleWRatio: 212 / BASE_W,
@@ -123,6 +126,18 @@ export default function BookDetailScreen() {
   const info = book.data?.book;
   const description = book.data?.description;
   const progress = record.data?.progress;
+  // 장정본 표지 — 띠지엔 내 기록의 상태·진행, 뒤장 메모장엔 줄거리(홈 히어로와 같은 연출).
+  const bound = {
+    band: record.data
+      ? {
+          title: statusLabel[record.data.status] ?? record.data.status,
+          meta: progress && progress.totalPages > 0
+            ? `${progress.currentPage} / ${progress.totalPages} · ${percent(progress.completionRate ?? 0)}`
+            : undefined,
+        }
+      : undefined,
+    backNote: description ? { title: '줄거리', body: description } : {},
+  };
   const lag = progress ? getLagStyle(colors)[progress.lagLevel] : null;
   const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
   const rating = pickRating(book.data);
@@ -132,7 +147,7 @@ export default function BookDetailScreen() {
       <SubHeader category={headerCategory(info)} />
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Hero info={info} rating={rating} loading={book.isLoading} />
+        <Hero info={info} rating={rating} loading={book.isLoading} bound={bound} />
 
         <View style={styles.sections}>
           {book.data ? (
@@ -269,11 +284,13 @@ export default function BookDetailScreen() {
  * 히어로 콜라주 — 표지 스택·겹쳐 앉은 세리프 표제·평점 스티키 칩.
  * 서브 화면이라 패럴랙스는 없다(정적 콜라주). 입장 정착 애니는 표지에만 건다.
  */
-function Hero({ info, rating, loading }: {
+function Hero({ info, rating, loading, bound }: {
   info?: BookSummary;
   rating: RatingPick | null;
   /** 로딩 중에는 같은 높이의 빈 판만 그린다 — 도착할 때 아래 섹션이 튀지 않는다. */
   loading?: boolean;
+  /** 장정본 표지 — 띠지(내 기록)와 뒤장 메모장(줄거리). */
+  bound?: { band?: BookBand; backNote?: BookNote };
 }) {
   const { colors } = useTheme();
   const window = useWindowDimensions();
@@ -319,9 +336,17 @@ function Hero({ info, rating, loading }: {
 
   return (
     <View style={[styles.board, { height: boardH }]} onLayout={onBoardLayout}>
-      {/* ① 표지 스택 — 무표지면 TiltCover 세리프 폴백이 그려진다 */}
+      {/* ① 표지 스택 — 장정본(사진판·띠지·책갈피) + 부채꼴로 펼친 줄거리 메모장. 무표지면 사진판에 세리프 폴백 */}
       <View style={[styles.layer, { left: Math.round(W * H.coverLeftRatio), top: coverTop, zIndex: 1 }]}>
-        <TiltCover uri={info?.coverUrl} title={info?.title} width={coverW} tilt={-3} stacked />
+        <TiltCover
+          uri={info?.coverUrl}
+          title={info?.title}
+          width={coverW}
+          tilt={-3}
+          stacked
+          stackOffset={H.stack}
+          bound={bound}
+        />
       </View>
 
       {/* ② 표제 — 표지 좌하단에 겹쳐 앉는다 */}
