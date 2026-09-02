@@ -6,13 +6,14 @@ import { NotificationBell } from '@/components/home/NotificationBell';
 import { useTheme } from '@/theme';
 import { hairline, spacing, typeScale } from '@/theme/tokens';
 
-export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'me';
+export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'me';
 
-/** 4구역 — 라벨과 경로는 한 곳에서만 정의한다. */
+/** 5구역 — 라벨과 경로는 한 곳에서만 정의한다. 모임은 광장 칩에서 상단 탭으로 올라왔다. */
 const SECTIONS: { key: SectionKey; label: string; path: string }[] = [
   { key: 'shelf', label: '서가', path: '/home' },
   { key: 'explore', label: '탐색', path: '/search' },
   { key: 'plaza', label: '광장', path: '/plaza' },
+  { key: 'clubs', label: '모임', path: '/clubs' },
   { key: 'me', label: '나', path: '/profile' },
 ];
 
