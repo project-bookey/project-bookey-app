@@ -2,20 +2,34 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  FlatList, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   type TextStyle,
 } from 'react-native';
 
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
-import { PaperScreen, SectionNav } from '@/components/collage';
+import { Chip, MemoScrap, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { serif } from '@/theme/tokens';
 
 // 웹 전용: 브라우저 기본 포커스 링 제거 — outline-style이 auto인 한 outline-width:0은 무시된다.
 // RN 타입에 'none'이 없어 캐스팅하지만 RNW는 CSS outline-style로 그대로 전달한다.
 const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
+
+/**
+ * '상황으로' 무드 칩 — 클라이언트 고정 매핑(서버 태그 연동 전 임시).
+ * 탭하면 query 문자열을 입력창에 그대로 채워 기존 디바운스 검색 흐름을 그대로 탄다.
+ */
+const MOOD_QUERIES: ReadonlyArray<{ label: string; query: string }> = [
+  { label: '잠들기 전', query: '에세이' },
+  { label: '출퇴근 40분', query: '단편소설' },
+  { label: '울고 싶을 때', query: '위로' },
+  { label: '머리 식히기', query: '추리소설' },
+  { label: '면접 전날', query: '자기계발' },
+  { label: '비 오는 날', query: '고전' },
+];
 
 /** 도서 검색 — 디바운스 실시간 검색 + 초기 탐색 행 + 3상태 담기 (검색 리디자인 스펙) */
 export default function SearchScreen() {
@@ -78,6 +92,11 @@ export default function SearchScreen() {
 
   const results = search.data ?? [];
 
+  // '오늘의 한 칸' — 추천 캐시에서 날짜 시드로 고정한 하루 한 권(자정마다 바뀐다).
+  const recommendedList = recommended.data ?? [];
+  const todaySeed = Number(new Date().toISOString().slice(0, 10).replace(/-/g, ''));
+  const todayPick = recommendedList.length > 0 ? recommendedList[todaySeed % recommendedList.length] : null;
+
   return (
     <PaperScreen>
       <SectionNav active="explore" />
@@ -91,11 +110,11 @@ export default function SearchScreen() {
             },
           ]}
         >
-          <Text style={[typeScale.body, { color: colors.textFaint }]}>⌕</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>⌕</Text>
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="제목 · 저자 · ISBN"
+            placeholder='제목, 저자, 혹은 "요즘 좀 지친다"'
             placeholderTextColor={colors.textFaint}
             returnKeyType="search"
             autoFocus
@@ -109,20 +128,34 @@ export default function SearchScreen() {
       {/* autoFocus로 키보드가 열린 상태에서도 책 탭이 먹히도록 — 기본값 'never'는 첫 탭을 키보드 닫기로만 소모한다 */}
       {!searching ? (
         <ScrollView contentContainerStyle={styles.explore} keyboardShouldPersistTaps="handled">
+          <View style={styles.moodSection}>
+            <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>상황으로</Text>
+            <View style={styles.moodChips}>
+              {MOOD_QUERIES.map((mood) => (
+                <Chip key={mood.label} label={mood.label} onPress={() => setInput(mood.query)} />
+              ))}
+            </View>
+          </View>
+
+          {todayPick ? (
+            <TodayPick book={todayPick} onPress={() => router.push(`/book/${todayPick.id}`)} />
+          ) : null}
+
           <BookRow
-            title="추천"
+            title="서점 직원이 골랐습니다"
+            staggered
             loading={recommended.isLoading}
             books={(recommended.data ?? []).map((b): RowBook => ({
-              key: `pick-${b.id}`, bookId: b.id, title: b.title, coverUrl: b.coverUrl,
+              key: `pick-${b.id}`, bookId: b.id, title: b.title, author: b.author, coverUrl: b.coverUrl,
             }))}
             onPressBook={openBook}
           />
           <BookRow
-            title="인기"
+            title="지금 붐비는 책"
             loading={popular.isLoading}
             books={(popular.data ?? []).map((p, i): RowBook => ({
               key: `popular-${p.book.id}`, bookId: p.book.id, title: p.book.title,
-              coverUrl: p.book.coverUrl, rank: i + 1,
+              author: p.book.author, coverUrl: p.book.coverUrl, rank: i + 1,
             }))}
             onPressBook={openBook}
           />
@@ -138,7 +171,7 @@ export default function SearchScreen() {
               <View>
                 {[0, 1, 2].map((i) => (
                   <View key={i} style={styles.row}>
-                    <View style={[styles.cover, { backgroundColor: colors.surface }]} />
+                    <View style={[styles.skeletonCover, { backgroundColor: colors.surface }]} />
                   </View>
                 ))}
               </View>
@@ -173,6 +206,49 @@ export default function SearchScreen() {
   );
 }
 
+/**
+ * '오늘의 한 칸' — 오려 붙인 메모 조각에 오늘의 추천 한 권을 얹는다.
+ * 표지 탭만 상세로 이동한다(카드 전체는 눌리지 않는다 — 중첩 프레서블 방지).
+ */
+function TodayPick({ book, onPress }: { book: BookSummary; onPress: () => void }) {
+  const { colors } = useTheme();
+  const timeLine = book.totalPages
+    ? `약 ${Math.max(1, Math.round(book.totalPages / 150))}시간이면 끝납니다`
+    : '가볍게 펼쳐보기 좋은 책';
+
+  return (
+    <View style={styles.todayWrap}>
+      <MemoScrap rotate={-1.5} style={styles.todayCard}>
+        <View style={styles.todayHeader}>
+          <Text style={[styles.todayTitle, { color: colors.text }]}>오늘의 한 칸</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>랜덤</Text>
+        </View>
+        <View style={styles.todayBody}>
+          <TiltCover
+            uri={book.coverUrl}
+            title={book.title}
+            width={66}
+            stacked
+            entering={false}
+            onPress={onPress}
+            accessibilityLabel={`${book.title} 상세`}
+          />
+          <View style={styles.todayInfo}>
+            <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
+              {book.title}
+            </Text>
+            <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
+              {book.author ?? '저자 미상'}
+              {book.totalPages ? ` · ${book.totalPages}쪽` : ''}
+            </Text>
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{timeLine}</Text>
+          </View>
+        </View>
+      </MemoScrap>
+    </View>
+  );
+}
+
 /** 결과 행 — 우측 담기 영역은 담기 → 상태 칩 2개 → 담김 ✓ 의 3상태. */
 function ResultRow({ book, colors, choosing, added, failed, pending, onPress, onOpenAdd, onPick }: {
   book: BookSummary;
@@ -193,15 +269,7 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
         accessibilityRole="button"
         accessibilityLabel={book.title}
       >
-        <View style={[styles.cover, { backgroundColor: colors.surfaceRaised }]}>
-          {book.coverUrl ? (
-            <Image source={{ uri: book.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-          ) : (
-            <Text numberOfLines={3} style={[typeScale.caption, styles.coverFallback, { color: colors.textMuted }]}>
-              {book.title}
-            </Text>
-          )}
-        </View>
+        <TiltCover uri={book.coverUrl} title={book.title} width={52} tilt={0} entering={false} />
 
         <View style={styles.rowBody}>
           <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
@@ -225,36 +293,20 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
       </Pressable>
 
       {added ? (
-        <Text style={[typeScale.label, { color: colors.textFaint }]}>담김 ✓</Text>
+        <Chip label="담김 ✓" active />
       ) : choosing ? (
-        <View style={styles.chips}>
+        <View style={styles.chipGroup}>
           {(
             [
               { status: 'READING', label: '읽는 중' },
               { status: 'WANT_TO_READ', label: '읽고 싶은' },
             ] as const
           ).map((c) => (
-            <Pressable
-              key={c.status}
-              disabled={pending}
-              onPress={() => onPick(c.status)}
-              accessibilityRole="button"
-              accessibilityLabel={c.label}
-              style={[styles.chip, { backgroundColor: colors.accentSoft, opacity: pending ? 0.5 : 1 }]}
-            >
-              <Text style={[typeScale.label, { color: colors.accent }]}>{c.label}</Text>
-            </Pressable>
+            <Chip key={c.status} label={c.label} disabled={pending} onPress={() => onPick(c.status)} />
           ))}
         </View>
       ) : (
-        <Pressable
-          onPress={onOpenAdd}
-          accessibilityRole="button"
-          accessibilityLabel="담기"
-          style={[styles.addButton, { borderColor: colors.accent }]}
-        >
-          <Text style={[typeScale.label, { color: colors.accent }]}>담기</Text>
-        </Pressable>
+        <Chip label="담기" onPress={onOpenAdd} />
       )}
     </View>
   );
@@ -266,12 +318,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
   },
   input: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
   explore: { ...layout.content, gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  moodSection: { gap: spacing.sm, paddingHorizontal: spacing.lg },
+  moodChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  todayWrap: { paddingHorizontal: spacing.lg },
+  todayCard: { gap: spacing.md },
+  todayHeader: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  todayTitle: { fontFamily: serif.bold, fontSize: 17, lineHeight: 24 },
+  todayBody: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  todayInfo: { flex: 1, gap: 4, paddingTop: spacing.xs },
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   row: {
     flexDirection: 'row',
@@ -285,8 +345,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     alignItems: 'center',
   },
-  cover: { width: 52, height: 78, borderRadius: radius.sm, overflow: 'hidden' },
-  coverFallback: { padding: spacing.xs },
+  skeletonCover: { width: 52, height: 78, borderRadius: radius.sm },
   rowBody: { flex: 1, gap: 3 },
   pageTag: {
     alignSelf: 'flex-start',
@@ -295,18 +354,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     marginTop: 2,
   },
-  chips: { gap: spacing.xs },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  addButton: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
+  chipGroup: { gap: spacing.xs },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
 });
