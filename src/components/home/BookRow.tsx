@@ -31,8 +31,10 @@ const BADGE_BLEED = 16;
 const TILT_BLEED = 5;
 
 /** 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressEmpty가 있으면 + 타일, 없으면 유령 표지. */
-export function BookRow({ title, books, loading, staggered = false, onPressBook, onPressAll, onPressEmpty }: {
+export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressEmpty }: {
   title: string;
+  /** 제목 옆 모노 악센트 라벨 (예: LIVE) */
+  label?: string;
   books: RowBook[];
   loading?: boolean;
   /**
@@ -62,6 +64,9 @@ export function BookRow({ title, books, loading, staggered = false, onPressBook,
       <View style={styles.header}>
         <View style={styles.headTitle}>
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>{title}</Text>
+          {label ? (
+            <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{label}</Text>
+          ) : null}
         </View>
         {onPressAll && !empty ? (
           <Pressable onPress={onPressAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">

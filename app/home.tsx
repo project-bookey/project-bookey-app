@@ -99,10 +99,11 @@ export default function HomeScreen() {
           onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         />
 
-        {/* 섹션은 HomeSection 으로 감싸 괘선·번호 아이브로우로 나눈다 — 번호는 화면 순서 */}
-        <HomeSection index={1} label="LIVE">
+        {/* 섹션은 HomeSection 으로 감싸 괘선으로 나눈다 */}
+        <HomeSection>
           <BookRow
             title="지금 붐비는 책"
+            label="LIVE"
             staggered
             loading={popular.isLoading}
             books={(popular.data ?? []).map((p, i): RowBook => ({
@@ -117,11 +118,11 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        <HomeSection index={2} label="PLAZA">
+        <HomeSection>
           <QuoteScraps />
         </HomeSection>
 
-        <HomeSection index={3} label="PICK">
+        <HomeSection>
           <BookRow
             title="추천"
             loading={recommended.isLoading}
@@ -136,7 +137,7 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        <HomeSection index={4} label="WANT">
+        <HomeSection>
           <BookRow
             title="읽고 싶은"
             loading={want.isLoading}
@@ -152,7 +153,7 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        <HomeSection index={5} label="READING">
+        <HomeSection>
           <BookRow
             title="읽는 중"
             loading={reading.isLoading}
@@ -169,11 +170,11 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        <HomeSection index={6} label="CHALLENGE">
+        <HomeSection>
           <ChallengeRow />
         </HomeSection>
 
-        <HomeSection index={7} label="CLUB">
+        <HomeSection>
           <ClubRow />
         </HomeSection>
       </Animated.ScrollView>
