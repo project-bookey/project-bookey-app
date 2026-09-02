@@ -4,9 +4,11 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { API_BASE_URL } from '@/api/client';
-import { libraryApi, notificationApi, statsApi } from '@/api/endpoints';
+import { libraryApi, notificationApi, quoteApi, statsApi } from '@/api/endpoints';
 import type { DailyStat, NotifyTone, ReadingRecord } from '@/api/types';
-import { PaperScreen, SectionNav, TiltCover, useCoverEntrance } from '@/components/collage';
+import {
+  MemoScrap, PaperScreen, SectionNav, StickyNote, TiltCover, useCoverEntrance,
+} from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle, formatDuration,
 } from '@/components/ui';
@@ -15,7 +17,7 @@ import { useThemePreference } from '@/store/themePreference';
 import type { ThemePreference } from '@/store/themePreference';
 import type { ColorTokens } from '@/theme';
 import { hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
-import { rowOffsetY, tiltFor } from '@/theme/tokens';
+import { rowOffsetY, serif, tiltFor } from '@/theme/tokens';
 
 const TONES: { value: NotifyTone; label: string; sample: string }[] = [
   { value: 'GENTLE', label: '다정', sample: '12쪽 남았어요. 오늘 10분이면 끝나요.' },
@@ -226,6 +228,8 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        <MyQuotes />
+
         <View style={[styles.block, styles.settings]}>
           <Rule />
           <Eyebrow>설정</Eyebrow>
@@ -321,6 +325,54 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </PaperScreen>
+  );
+}
+
+/**
+ * '내가 오려둔 문장' — 총 개수와 가장 최근 한 조각 (시안 2e).
+ *
+ * 목록 전체를 여기서 보여 주지 않는다. 총 개수(totalElements)만 세고 최신 한 건을 걸어 둔 뒤,
+ * 나머지는 광장으로 넘긴다 — 그래서 size 1 이면 충분하다.
+ * 0건이면 섹션을 통째로 감춘다.
+ */
+function MyQuotes() {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const mine = useQuery({ queryKey: ['quotes', 'mine'], queryFn: () => quoteApi.mine(0, 1) });
+
+  const latest = mine.data?.content?.[0];
+  const total = mine.data?.totalElements ?? 0;
+  if (!latest || total === 0) return null;
+
+  return (
+    <View style={[styles.block, styles.quoteSection]}>
+      <Rule />
+      <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
+        내가 오려둔 문장 {total}
+      </Text>
+      <View style={styles.quoteRow}>
+        <MemoScrap rotate={-1} style={styles.quoteScrap}>
+          <Text numberOfLines={4} style={[styles.quoteText, { color: colors.text }]}>
+            {latest.content}
+          </Text>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.quoteMeta, { color: colors.textFaint }]}>
+            {latest.bookTitle}
+            {latest.page != null ? ` · ${latest.page}쪽` : ''}
+          </Text>
+        </MemoScrap>
+        <Pressable
+          onPress={() => router.push('/plaza')}
+          accessibilityRole="button"
+          accessibilityLabel={`오려둔 문장 전부 보기, 총 ${total}개`}
+        >
+          <StickyNote rotate={1.5} style={styles.quoteAll}>
+            <Text style={[typeScale.label, styles.quoteAllLabel, { color: colors.onNote }]}>
+              전부{'\n'}보기
+            </Text>
+          </StickyNote>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -679,6 +731,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   legendCell: { width: 11, height: 11, borderRadius: radius.sm },
+
+  quoteSection: { gap: spacing.md },
+  quoteRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  quoteScrap: { flex: 1 },
+  quoteText: { fontFamily: serif.regular, fontSize: 13, lineHeight: 21 },
+  quoteMeta: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
+  quoteAll: { width: 66, alignItems: 'center', justifyContent: 'center' },
+  quoteAllLabel: { fontSize: 11, lineHeight: 15, textAlign: 'center' },
 
   settings: { gap: spacing.lg },
   toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: radius.md, overflow: 'hidden' },

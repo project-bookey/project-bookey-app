@@ -12,9 +12,10 @@ import { BookRow, RowBook } from '@/components/home/BookRow';
 import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
 import { HeroCollage } from '@/components/home/HeroCollage';
+import { QuoteScraps } from '@/components/home/QuoteScraps';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로 → 인기 → 추천 → 읽고 싶은 → 읽는 중 → 챌린지 → 모임 (2026-09-01 배치 보정) */
+/** 홈 — 검색 바 → 배너 → 히어로 → 인기 → 추천 → 읽고 싶은 → 읽는 중 → 챌린지 → 모임 → 오려둔 문장 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -40,6 +41,7 @@ export default function HomeScreen() {
     reading.refetch(); want.refetch(); stats.refetch();
     banners.refetch(); popular.refetch(); recommended.refetch();
     queryClient.invalidateQueries({ queryKey: ['challenges'] });
+    queryClient.invalidateQueries({ queryKey: ['plaza'] });
   };
 
   const openBook = (b: RowBook) => {
@@ -143,6 +145,8 @@ export default function HomeScreen() {
         <ChallengeRow />
 
         <ClubRow />
+
+        <QuoteScraps />
       </Animated.ScrollView>
     </PaperScreen>
   );
