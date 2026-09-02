@@ -9,6 +9,8 @@ import Animated, {
 
 import { useTheme } from '@/theme';
 import { coverShadow } from '@/theme/palette';
+import { BookBody, BoundFace } from './BoundBook';
+import type { BookBand } from './BoundBook';
 import { hairline, radius, serif, spacing, stagger, tiltFor } from '@/theme/tokens';
 
 /** 입장 정착 스프링 — 은은하게 내려앉는 느낌. */
@@ -117,6 +119,7 @@ export function TiltCover({
   entranceKey,
   stacked = false,
   stackOffset,
+  bound,
   onPress,
   children,
   accessibilityLabel,
@@ -145,6 +148,11 @@ export function TiltCover({
    * x·rotate 를 키운다. 값은 본 표지 프레임 좌표(기울기 적용 후) 기준. `stacked` 일 때만 쓰인다.
    */
   stackOffset?: Partial<StackOffset>;
+  /**
+   * 장정된 책으로 그린다 — 판 위 사진판·책등·띠지(BoundFace) + 책장 단면·꽂힌 리본(BookBody).
+   * 미지정이면 종전처럼 이미지 한 장을 표지 전체에 채운다.
+   */
+  bound?: { band?: BookBand; ribbonRight?: number };
   /** 지정하면 프레스 리프트가 켜진다. */
   onPress?: () => void;
   /** 표지 위에 얹을 오버레이 슬롯 — 랭크 배지·진행 바 등. */
@@ -202,6 +210,9 @@ export function TiltCover({
         />
       ) : null}
 
+      {/* 장정본 몸통 — 프레임 뒤에서 책장 단면·리본이 비친다 */}
+      {bound ? <BookBody width={width} height={height} ribbonRight={bound.ribbonRight} /> : null}
+
       <View
         style={[
           styles.frame,
@@ -226,7 +237,9 @@ export function TiltCover({
         </View>
 
         <View style={[styles.surface, { borderColor: colors.line }]}>
-          {uri ? (
+          {bound ? (
+            <BoundFace uri={uri} title={title} width={width} height={height} band={bound.band} />
+          ) : uri ? (
             <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
             // 무표지 폴백 — 세리프 제목을 표지처럼 앉힌다.

@@ -6,7 +6,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import type { ReadingRecord } from '@/api/types';
 import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
 import { useTheme } from '@/theme';
-import { radius, serif, spacing, typeScale } from '@/theme/tokens';
+import { radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
 
 /**
  * 시안(390px) 기준 지오메트리 — 실제 폭에 비례 환산한다.
@@ -170,6 +170,17 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           tilt={-4}
           stacked
           stackOffset={G.stack}
+          // 장정본 — 띠지에 상태와 진행을 적는다(노트와 겹치지만 표지 자체가 말하게).
+          bound={{
+            // 리본은 메모 조각(우측 14·폭 136)에 안 가리는 자리 — 표지 오른쪽 끝에서 44px 안쪽.
+            ribbonRight: 44,
+            band: {
+              title: statusLabel[record.status] ?? '읽는 중',
+              meta: hasPages
+                ? `${record.progress.currentPage} / ${record.progress.totalPages} · ${percent}%`
+                : `${percent}%`,
+            },
+          }}
           entranceKey={`hero:${record.book?.id ?? record.id}`}
           onPress={() => onDetail(record)}
           accessibilityLabel={`${record.book?.title ?? '책'} 상세`}
