@@ -39,9 +39,9 @@ const G = {
   memoWRatio: 136 / BASE_W,
   /**
    * 콜라주 판 기본 높이. 시안(336)대로 두면 메모 조각 아래가 비어 첫 섹션 괘선까지 너무 멀다는
-   * 피드백 — 메모 조각 바닥(≈268) 바로 밑에서 끊는다. 긴 노트일 때는 아래 ctaTop+64 하한이 지킨다.
+   * 피드백 — 메모 조각 바닥(≈268) 바로 밑에서 끊는다. 긴 노트일 때는 아래 ctaTop+58 하한이 지킨다.
    */
-  height: 284,
+  height: 278,
 } as const;
 
 /**
@@ -121,7 +121,7 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
   const noteTop = Math.round(G.noteTop * k);
   // 노트 높이를 재기 전에는 시안 좌표를 쓴다(첫 프레임 점프 방지).
   const ctaTop = Math.round(Math.max(G.ctaTop * k, noteH > 0 ? noteTop + noteH + 8 : 0));
-  const boardH = Math.max(Math.round(G.height * k), ctaTop + 64);
+  const boardH = Math.max(Math.round(G.height * k), ctaTop + 58);
 
   const memoRight = Math.round(W * G.memoRightRatio);
   const memoW = Math.round(clamp(W * G.memoWRatio, 126, 164));
