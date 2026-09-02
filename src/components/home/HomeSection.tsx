@@ -18,7 +18,7 @@ export function HomeSection({ index, label, children }: {
 }) {
   const { colors } = useTheme();
   return (
-    <View>
+    <View style={styles.wrap}>
       <View style={[styles.rule, { backgroundColor: colors.lineStrong }]} />
       <Text style={[typeScale.monoEyebrow, styles.eyebrow, { color: colors.textFaint }]}>
         {String(index).padStart(2, '0')} — <Text style={{ color: colors.accent }}>{label}</Text>
@@ -29,6 +29,8 @@ export function HomeSection({ index, label, children }: {
 }
 
 const styles = StyleSheet.create({
+  // 앞 섹션 행과 괘선 사이 — 컨테이너 gap(24)에 16을 더해 40px. 24만으로는 답답하다는 피드백.
+  wrap: { paddingTop: spacing.lg },
   rule: { height: hairline, marginHorizontal: spacing.lg },
   // 시안: 괘선 14px 아래 아이브로우, 그 6px 아래 세리프 제목(행 헤더).
   eyebrow: { fontSize: 9, letterSpacing: 2.2, marginHorizontal: spacing.lg, marginTop: 14, marginBottom: 6 },
