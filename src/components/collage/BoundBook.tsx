@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { hairline, mono, radius, serif } from '@/theme/tokens';
+import { hairline, mono, radius, sans, serif, typeScale } from '@/theme/tokens';
 
 /**
  * 시안(126×189) 기준 비율. 사진판 여백·책등 폭·띠지 위치는 표지 크기에 비례한다.
@@ -18,18 +18,24 @@ const R = {
 } as const;
 /** 책장 단면이 판 밖으로 비치는 두께(px). */
 const PAGE_OFFSET = 3;
-/** 리본 — 폭·판 밖으로 늘어진 길이·오른쪽 여백·판 안쪽으로 숨긴 길이·출구 그림자 길이(px). */
-const RIBBON = { w: 8, tail: 28, right: 16, inset: 10, exitShade: 14 } as const;
+/** 책갈피 — 두께·앞마구리(오른쪽 세로면) 밖으로 삐져나온 길이·판 안쪽으로 숨긴 길이·출구 그림자 길이(px), 세로 위치 비율. */
+const TAB = { thick: 7, out: 11, inset: 10, exitShade: 7, topRatio: 0.3 } as const;
+/** 메모장 — 안쪽 여백·괘선 간격·본문 활자·제목 높이(px). 126px 표지 기준 한 줄 12자 남짓. */
+const PAD = { inset: 8, lineH: 12, fontSize: 8.5, headerH: 14 } as const;
 
 /** 음영은 검정·흰색 알파라 팔레트와 무관 — 라이트 판은 밝아서 더 옅게 깐다. */
 const SHADE = {
   dark: { spine: ['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.22)', 'rgba(0,0,0,0)', 'rgba(255,255,255,0.10)'], plateEdge: 'rgba(0,0,0,0.55)' },
   light: { spine: ['rgba(0,0,0,0.38)', 'rgba(0,0,0,0.14)', 'rgba(0,0,0,0)', 'rgba(255,255,255,0.35)'], plateEdge: 'rgba(0,0,0,0.35)' },
 } as const;
+/** 메모장 괘선 — 종이 위 옅은 잉크선. */
+const RULE = 'rgba(0,0,0,0.12)';
 const SPINE_STOPS = [0, 0.45, 0.75, 1] as const;
 
 /** 띠지에 얹는 두 줄 — 상태(세리프)와 진행(모노). */
 export type BookBand = { title: string; meta?: string };
+/** 책 뒤에 끼워 둔 메모장 — 모노 제목(예: 줄거리)과 본문. 둘 다 없으면 빈 괘선 메모장. */
+export type BookNote = { title?: string; body?: string };
 
 /**
  * 장정된 책의 앞면 — 판(board) 위에 사진판을 오려 붙이고, 왼쪽에 책등 음영, 아래에 띠지를 두른다.
@@ -135,15 +141,10 @@ export function BoundFace({ uri, title, width, height, band }: {
 }
 
 /**
- * 장정된 책의 몸통 — 판 뒤로 비치는 책장 단면과, 책장 사이에 꽂혀 아래로 늘어진 민트 리본.
- * TiltCover 프레임 뒤(뒤장 스택 위)에 그린다. 리본 윗부분은 프레임에 가려 '꽂힌' 것처럼 보인다.
+ * 장정된 책의 몸통 — 판 뒤로 비치는 책장 단면과, 책장 사이에 꽂혀 오른쪽 세로면으로 살짝 삐져나온 민트 책갈피.
+ * TiltCover 프레임 뒤(뒤장 스택 위)에 그린다. 책갈피 안쪽은 프레임에 가려 '꽂힌' 것처럼 보인다.
  */
-export function BookBody({ width, height, ribbonRight = RIBBON.right }: {
-  width: number;
-  height: number;
-  /** 리본의 오른쪽 여백(px). 사용처가 다른 종잇조각에 가리지 않는 자리로 옮길 때 쓴다. */
-  ribbonRight?: number;
-}) {
+export function BookBody({ width, height }: { width: number; height: number }) {
   const { colors } = useTheme();
   return (
     <>
@@ -162,25 +163,61 @@ export function BookBody({ width, height, ribbonRight = RIBBON.right }: {
       <View
         pointerEvents="none"
         style={[
-          styles.ribbon,
+          styles.tab,
           {
-            right: ribbonRight,
-            top: height - RIBBON.inset,
-            width: RIBBON.w,
-            height: RIBBON.inset + RIBBON.tail,
+            left: width - TAB.inset,
+            top: Math.round(height * TAB.topRatio),
+            width: TAB.inset + TAB.out,
+            height: TAB.thick,
             backgroundColor: colors.accent,
           },
         ]}
       >
-        {/* 판 밑에서 나오는 출구 그림자 */}
+        {/* 판 옆에서 나오는 출구 그림자 */}
         <LinearGradient
           colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0)']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={[styles.ribbonShade, { top: RIBBON.inset, height: RIBBON.exitShade }]}
+          end={{ x: 1, y: 0 }}
+          style={[styles.tabShade, { left: TAB.inset, width: TAB.exitShade }]}
         />
       </View>
     </>
+  );
+}
+
+/**
+ * 책 뒤에 끼워 둔 메모장 — 괘선 종이 위에 모노 제목과 작은 본문(줄거리 등).
+ * TiltCover 의 뒤장(stack) 안을 채운다. 앞 책에 대부분 가려지고 오른쪽·위쪽 가장자리만 보이는 게 정상이다.
+ */
+export function BackNote({ width, height, note }: { width: number; height: number; note: BookNote }) {
+  const { colors } = useTheme();
+  const bodyTop = PAD.inset + (note.title ? PAD.headerH : 0);
+  const lines = Math.max(0, Math.floor((height - bodyTop - PAD.inset) / PAD.lineH));
+  return (
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.memoPad }]}>
+      {Array.from({ length: lines }, (_, i) => (
+        <View
+          key={i}
+          style={[styles.rule, { left: PAD.inset, right: PAD.inset, top: bodyTop + (i + 1) * PAD.lineH - 1 }]}
+        />
+      ))}
+      {note.title ? (
+        <Text
+          numberOfLines={1}
+          style={[typeScale.monoEyebrow, styles.noteTitle, { left: PAD.inset, top: PAD.inset, color: colors.onMemoPad }]}
+        >
+          {note.title}
+        </Text>
+      ) : null}
+      {note.body ? (
+        <Text
+          numberOfLines={lines}
+          style={[styles.noteBody, { left: PAD.inset, width: width - PAD.inset * 2, top: bodyTop, color: colors.onMemoPad }]}
+        >
+          {note.body}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -196,6 +233,9 @@ const styles = StyleSheet.create({
   bandTitle: { fontFamily: serif.extraBold },
   bandMeta: { fontFamily: mono.medium, letterSpacing: 1, marginTop: 2, opacity: 0.75 },
   pages: { position: 'absolute', borderRadius: radius.sm },
-  ribbon: { position: 'absolute' },
-  ribbonShade: { position: 'absolute', left: 0, right: 0 },
+  tab: { position: 'absolute' },
+  tabShade: { position: 'absolute', top: 0, bottom: 0 },
+  rule: { position: 'absolute', height: hairline, backgroundColor: RULE },
+  noteTitle: { position: 'absolute', fontSize: 7, letterSpacing: 1.5, opacity: 0.7 },
+  noteBody: { position: 'absolute', fontFamily: sans.regular, fontSize: PAD.fontSize, lineHeight: PAD.lineH },
 });

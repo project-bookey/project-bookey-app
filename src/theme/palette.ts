@@ -52,6 +52,10 @@ export type ColorTokens = {
   bookBand: string;
   /** 띠지 위 텍스트 */
   onBookBand: string;
+  /** 책 뒤에 끼워 둔 메모장 종이 */
+  memoPad: string;
+  /** 메모장 위 잉크 */
+  onMemoPad: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
@@ -84,6 +88,8 @@ export const darkColors: ColorTokens = {
   bookPage: '#e1dccf',
   bookBand: '#e8e6e1',
   onBookBand: '#0c0e0d',
+  memoPad: '#e9e4d6',
+  onMemoPad: '#2a2c27',
 };
 
 export const lightColors: ColorTokens = {
@@ -114,6 +120,8 @@ export const lightColors: ColorTokens = {
   bookPage: '#e1dccf',
   bookBand: '#171a16',
   onBookBand: '#e8e6e1',
+  memoPad: '#fbf9f2',
+  onMemoPad: '#3b3d38',
 };
 
 /** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. 새 민트 기준 재조정. */
