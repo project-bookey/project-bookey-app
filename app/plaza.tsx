@@ -16,13 +16,13 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ApiError } from '@/api/client';
-import { libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
+import { bookApi, libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
 import type { Page, PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, motion, radius, spacing, typeScale, useTheme } from '@/theme';
-import { serif } from '@/theme/tokens';
+import { sans, serif } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
@@ -32,6 +32,9 @@ const CARD_TILT = [-1.1, 0.8];
 const DELETE_CONFIRM_MS = 3000;
 /** 문장 길이 상한 — 서버 계약과 같은 값. */
 const CONTENT_MAX = 500;
+/** 컴포저 책 검색 — 탐색 화면과 같은 디바운스·최소 글자 수. */
+const SEARCH_DEBOUNCE_MS = 400;
+const SEARCH_MIN_CHARS = 2;
 /**
  * 푸터 액션 확장 터치 영역(네이티브 전용).
  *
@@ -237,6 +240,8 @@ export default function PlazaScreen() {
   const switchType = (next: PlazaItemType) => {
     if (next === type) return;
     setConfirmId(null);
+    // 완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
+    setComposing(false);
     setType(next);
   };
 
@@ -245,17 +250,20 @@ export default function PlazaScreen() {
       <View style={styles.chipRow}>
         <Chip label="밑줄" active={type === 'QUOTE'} onPress={() => switchType('QUOTE')} />
         <Chip label="완독 자랑" active={type === 'FINISH'} onPress={() => switchType('FINISH')} />
-        <Pressable
-          onPress={() => setComposing((open) => !open)}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: composing }}
-          accessibilityLabel={composing ? '문장 오려두기 닫기' : '문장 오려두기'}
-          style={[styles.composePill, { borderColor: colors.accent }]}
-        >
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-            {composing ? '닫기' : '+ 밑줄'}
-          </Text>
-        </Pressable>
+        {/* 오려두기는 밑줄 탭에서만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
+        {type === 'QUOTE' ? (
+          <Pressable
+            onPress={() => setComposing((open) => !open)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: composing }}
+            accessibilityLabel={composing ? '문장 오려두기 닫기' : '문장 오려두기'}
+            style={[styles.composePill, { borderColor: colors.accent }]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
+              {composing ? '닫기' : '+ 밑줄'}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {composing ? <QuoteComposer onDone={() => setComposing(false)} /> : null}
@@ -445,10 +453,21 @@ function FeedCard({
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {item.authorNickname}
           </Text>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
-            {item.bookTitle}
-            {quote && item.page != null ? ` · ${item.page}쪽` : ''}
-          </Text>
+          <View style={styles.whereRow}>
+            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
+              {item.bookTitle}
+              {quote && item.page != null ? ` · ${item.page}쪽` : ''}
+            </Text>
+            {/* 작성자가 그 책을 완독했으면 인증 마크 — 서버가 기록으로 판정한다 */}
+            {quote && item.authorFinished ? (
+              <Text
+                accessibilityLabel="완독 인증"
+                style={[typeScale.monoLabel, styles.finishedMark, { color: colors.accent, borderColor: colors.accent }]}
+              >
+                완독 ✓
+              </Text>
+            ) : null}
+          </View>
         </View>
       </View>
 
@@ -509,24 +528,50 @@ function FeedCard({
  * 문장 오려두기 패널 — 모달 대신 칩 행 아래로 펼쳐지는 카드(도서 상세 리뷰 폼과 같은 방식).
  * 읽는 중인 책이 있어야 문장을 오릴 수 있으므로, 없으면 탐색으로 안내만 한다.
  */
+/** 컴포저가 고른 책 — 내 서재 기록에서 왔으면 recordId 도 함께 담는다. */
+type PickedBook = { bookId: number; title: string; coverUrl?: string; recordId?: number };
+
 function QuoteComposer({ onDone }: { onDone: () => void }) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
 
-  // 홈·나와 같은 캐시 키를 쓴다 — 이미 받아 둔 목록이 있으면 그대로 재사용된다.
+  // 읽는 중인 책은 바로 고를 수 있는 빠른 선택지 — 홈·나와 같은 캐시 키라 받아 둔 목록을 재사용한다.
   const reading = useQuery({
     queryKey: ['library', 'READING'],
     queryFn: () => libraryApi.list('READING'),
   });
-  const records = (reading.data?.content ?? []).filter((r) => r.book?.id != null);
+  const quickPicks: PickedBook[] = (reading.data?.content ?? [])
+    .filter((r) => r.book?.id != null)
+    .map((r) => ({ bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id }));
 
-  const [recordId, setRecordId] = useState<number | null>(null);
+  // 어떤 책이든 검색해서 고를 수 있다 — 읽는 중이 아니어도 된다(서버는 bookId 만으로 받는다).
+  const [keyword, setKeyword] = useState('');
+  const [debounced, setDebounced] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(keyword.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+  const searching = debounced.length >= SEARCH_MIN_CHARS;
+  const search = useQuery({
+    queryKey: ['books', 'search', debounced],
+    queryFn: () => bookApi.search(debounced),
+    enabled: searching,
+  });
+  const results: PickedBook[] = (search.data ?? []).map((b) => ({
+    bookId: b.id,
+    title: b.title,
+    coverUrl: b.coverUrl,
+    // 검색으로 골라도 내 서재에 읽는 중 기록이 있으면 그 기록에 매단다.
+    recordId: quickPicks.find((q) => q.bookId === b.id)?.recordId,
+  }));
+
+  const [picked, setPicked] = useState<PickedBook | null>(null);
+  // 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 — 한 권만 읽는 사람은 바로 쓰기 시작한다.
+  const selected = picked ?? (searching ? null : quickPicks[0] ?? null);
+  const candidates = searching ? results : quickPicks;
+
   const [content, setContent] = useState('');
   const [pageText, setPageText] = useState('');
-
-  // 아직 안 골랐으면 첫 책을 기본으로 둔다 — 한 권만 읽는 사람은 바로 쓰기 시작할 수 있다.
-  const selected = records.find((r) => r.id === recordId) ?? records[0] ?? null;
 
   const trimmedPage = pageText.trim();
   const pageValue = trimmedPage === '' ? undefined : Number(trimmedPage);
@@ -539,8 +584,8 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
   const create = useMutation({
     mutationFn: () =>
       quoteApi.create({
-        bookId: selected!.book!.id,
-        readingRecordId: selected!.id,
+        bookId: selected!.bookId,
+        readingRecordId: selected!.recordId,
         content: body,
         page: pageValue,
       }),
@@ -557,66 +602,66 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
       : '오려두지 못했어요 · 다시 시도'
     : null;
 
-  if (reading.isLoading) {
-    return (
-      <Card style={styles.composer}>
-        <Text style={[typeScale.caption, { color: colors.textFaint }]}>읽는 중인 책을 찾는 중입니다.</Text>
-      </Card>
-    );
-  }
-
-  // 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패를 '읽는 중인 책이 없다'로 말하지 않는다.
-  if (reading.isError) {
-    return (
-      <Card style={styles.composer}>
-        <Text style={[typeScale.body, { color: colors.textMuted }]}>
-          읽는 중인 책을 불러오지 못했습니다.
-        </Text>
-        <Pressable onPress={() => reading.refetch()} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
-        </Pressable>
-      </Card>
-    );
-  }
-
-  if (records.length === 0) {
-    return (
-      <Card style={styles.composer}>
-        <Text style={[typeScale.body, { color: colors.textMuted }]}>
-          읽는 중인 책이 있어야 문장을 오릴 수 있습니다.
-        </Text>
-        <Pressable onPress={() => router.navigate('/search')} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>책 찾으러 가기 →</Text>
-        </Pressable>
-      </Card>
-    );
-  }
+  // 후보 행 아래 한 줄 안내 — 상태마다 다른 말을 한다.
+  const hint = searching
+    ? search.isLoading ? '찾는 중…' : search.isError ? null : candidates.length === 0 ? '검색 결과가 없어요.' : null
+    : reading.isLoading ? '읽는 중인 책을 찾는 중입니다.'
+      : reading.isError ? null
+        : candidates.length === 0 ? '읽는 중인 책이 없어요 — 위에서 책을 검색해 고르세요.' : null;
 
   return (
     <Card style={styles.composer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
-        {records.map((record) => {
-          const picked = selected?.id === record.id;
-          return (
-            <Pressable
-              key={record.id}
-              onPress={() => setRecordId(record.id)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: picked }}
-              accessibilityLabel={record.book?.title ?? '제목 없음'}
-              style={[styles.pick, { borderColor: picked ? colors.accent : 'transparent' }]}
-            >
-              <TiltCover
-                uri={record.book?.coverUrl}
-                title={record.book?.title}
-                width={52}
-                tilt={0}
-                entering={false}
-              />
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <TextInput
+        value={keyword}
+        onChangeText={setKeyword}
+        placeholder="책 제목·저자로 찾기"
+        placeholderTextColor={colors.textFaint}
+        autoCapitalize="none"
+        autoCorrect={false}
+        accessibilityLabel="책 검색"
+        style={[styles.searchInput, {
+          backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
+        }]}
+      />
+
+      {candidates.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
+          {candidates.map((candidate) => {
+            const isPicked = selected?.bookId === candidate.bookId;
+            return (
+              <Pressable
+                key={candidate.bookId}
+                onPress={() => setPicked(candidate)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isPicked }}
+                accessibilityLabel={candidate.title}
+                style={[styles.pick, { borderColor: isPicked ? colors.accent : 'transparent' }]}
+              >
+                <TiltCover uri={candidate.coverUrl} title={candidate.title} width={52} tilt={0} entering={false} />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
+
+      {hint ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{hint}</Text> : null}
+      {/* 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패는 실패라고 말하고 다시 시도를 준다. */}
+      {searching && search.isError ? (
+        <Pressable onPress={() => search.refetch()} hitSlop={8} accessibilityRole="button">
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · 다시 시도 →</Text>
+        </Pressable>
+      ) : null}
+      {!searching && reading.isError ? (
+        <Pressable onPress={() => reading.refetch()} hitSlop={8} accessibilityRole="button">
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>읽는 중인 책을 불러오지 못했어요 · 다시 시도 →</Text>
+        </Pressable>
+      ) : null}
+
+      {selected ? (
+        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.pickedLine, { color: colors.textMuted }]}>
+          {selected.title}{selected.recordId != null ? ' · 내 서재' : ''}
+        </Text>
+      ) : null}
 
       <TextInput
         value={content}
@@ -716,7 +761,17 @@ const styles = StyleSheet.create({
   avatarImage: { width: '100%', height: '100%' },
   authorText: { flex: 1 },
   nickname: { fontSize: 12 },
-  where: { fontSize: 9, letterSpacing: 0.4, marginTop: 2 },
+  whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
+  where: { fontSize: 9, letterSpacing: 0.4, flexShrink: 1 },
+  // 완독 인증 마크 — 민트 테두리의 작은 pill.
+  finishedMark: {
+    fontSize: 8,
+    letterSpacing: 0.6,
+    borderWidth: hairline,
+    borderRadius: radius.pill,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
   // 시안 2d 의 인용 본문 — quote 토큰을 15/1.65 로 줄이고 왼쪽에 악센트 선을 세운다.
   quote: { ...typeScale.quote, fontSize: 15, lineHeight: 25, borderLeftWidth: 2, paddingLeft: 11 },
   finishRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -730,6 +785,16 @@ const styles = StyleSheet.create({
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },
   pickRow: { gap: spacing.sm, paddingVertical: 2 },
   pick: { borderWidth: 2, borderRadius: radius.sm, padding: 2 },
+  // 책 검색 입력 — 쪽수 입력과 같은 재질, pill.
+  searchInput: {
+    borderWidth: hairline,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontFamily: sans.regular,
+    fontSize: 14,
+  },
+  pickedLine: { marginTop: -spacing.xs },
   contentInput: {
     minHeight: 92,
     borderWidth: hairline,
