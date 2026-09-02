@@ -1,16 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   LayoutChangeEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
-import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
+import { FocusRing, MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, percent,
@@ -46,6 +47,23 @@ const H = {
 
 /** 본문 좌우 여백 — 히어로 표제도 같은 거터에 맞춰 앉힌다. */
 const GUTTER = spacing.lg;
+
+/** 찍고 온 문장 조각을 화면 위에서 얼마나 띄워 세울지(px). */
+const FOCUS_TOP_GAP = 80;
+/**
+ * 찍고 온 조각을 따라다니는 시간(ms).
+ *
+ * 문장은 리뷰·세션보다 먼저 도착하므로, 한 번 뛰고 끝내면 뒤늦게 채워지는 섹션이
+ * 조각을 아래로 밀어내 엉뚱한 자리에 서게 된다(실측: 목표 580 → 실제 129).
+ * 그래서 이 창 동안은 자리를 다시 잴 때마다 조용히 따라붙는다. 강조 링이 살아 있는
+ * 시간과 대략 맞춰, 링이 꺼진 뒤에는 화면이 저 혼자 움직이지 않게 한다.
+ */
+const FOCUS_SETTLE_MS = 2200;
+/** 명령한 자리에서 이만큼 어긋나면 사람이 민 것으로 본다(px). */
+const FOCUS_DRIFT = 24;
+
+/** `measureLayout` 의 기준 노드 타입 — RN 타입 선언에 이름이 없어 여기서 뽑아 쓴다. */
+type MeasureBase = Parameters<View['measureLayout']>[0];
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -142,11 +160,114 @@ export default function BookDetailScreen() {
   const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
   const rating = pickRating(book.data);
 
+  /* ── 찍고 온 문장으로 뛰기 ────────────────────────────────────────────────
+     이 화면은 FlatList 가 아니라 ScrollView 라 scrollToIndex 가 없다.
+     대상 조각의 자리는 그때그때 `measureLayout` 으로 콘텐츠 기준 y 를 다시 재서 쓴다 —
+     onLayout 으로 모아 둔 상대 y 를 더하는 방식은 웹에서 어긋난다. 위쪽 섹션(진척·검증·
+     세션)이 뒤늦게 채워지면 조각은 아래로 밀리는데, 크기가 그대로면 onLayout 이 다시
+     오지 않아 옛 좌표로 뛰기 때문이다(실측: 목표 580 → 실제 129).                */
+  const scrollRef = useRef<ScrollView>(null);
+  /** 따라다니는 중인 조각과 그 유효 시각. */
+  const focus = useRef<{ node: View; until: number } | null>(null);
+  /** 창을 닫는 타이머 — 시간이 지나면 조각 인스턴스를 놓아 준다. */
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * 마지막으로 명령한 목적지 — 스크롤이 우리가 시킨 것인지 사람이 민 것인지 가리는 기준.
+   * `arrived` 는 그 자리에 한 번이라도 닿았는지(애니메이션 중의 중간값을 손짓으로 오해하지 않게),
+   * `contentH` 는 닿았을 때의 콘텐츠 높이(콘텐츠가 자라며 브라우저가 위치를 손보는 것과 구분).
+   */
+  const commanded = useRef<{ y: number; contentH: number; arrived: boolean } | null>(null);
+
+  /** 따라다니기를 끝낸다 — 타이머·조각 인스턴스·목적지를 한꺼번에 놓는다. */
+  const releaseFocus = useCallback(() => {
+    if (focusTimer.current) {
+      clearTimeout(focusTimer.current);
+      focusTimer.current = null;
+    }
+    focus.current = null;
+    commanded.current = null;
+  }, []);
+
+  // 화면을 떠날 때 타이머와 조각 참조를 남기지 않는다.
+  useEffect(() => releaseFocus, [releaseFocus]);
+
+  const alignFocus = useCallback((animated: boolean) => {
+    const target = focus.current;
+    const scroller = scrollRef.current;
+    if (target == null || scroller == null) return;
+    if (Date.now() > target.until) {
+      releaseFocus();
+      return;
+    }
+    /*
+      기준 노드는 `getInnerViewRef()` 로 받는다. `getInnerViewNode()` 는
+      `findNodeHandle(...)` 을 거쳐 **숫자 nativeTag** 를 돌려주는데, 새 아키텍처(Fabric)의
+      `ReactNativeElement.measureLayout` 은 기준이 호스트 인스턴스가 아니면 `onFail` 조차
+      부르지 않고 조용히 돌아선다 — 네이티브에서 링만 켜지고 스크롤은 안 되는 침묵 실패다.
+      (웹은 react-native-web 이 호스트 노드를 돌려줘 우연히 굴러갔을 뿐이다.)
+      RN 타입 선언에는 없는 메서드라 좁게 캐스팅하고, 없으면 예전 노드로 물러선다.
+    */
+    const inner = (scroller as { getInnerViewRef?: () => MeasureBase | null }).getInnerViewRef?.()
+      ?? scroller.getInnerViewNode();
+    if (inner == null) return;
+
+    target.node.measureLayout(
+      inner,
+      (_x, y) => {
+        const to = Math.max(0, y - FOCUS_TOP_GAP);
+        commanded.current = { y: to, contentH: -1, arrived: false };
+        scroller.scrollTo({ y: to, animated });
+      },
+      () => { /* 측정 실패(언마운트 등) — 조용히 넘어간다 */ },
+    );
+  }, [releaseFocus]);
+
+  /** '오려둔 문장' 섹션이 대상 조각을 찾으면 이걸 부른다. */
+  const focusOnCard = useCallback((node: View) => {
+    releaseFocus();
+    focus.current = { node, until: Date.now() + FOCUS_SETTLE_MS };
+    focusTimer.current = setTimeout(releaseFocus, FOCUS_SETTLE_MS);
+    alignFocus(true);
+  }, [alignFocus, releaseFocus]);
+
+  /**
+   * 사람이 스크롤을 만졌으면 따라다니기를 그만둔다.
+   *
+   * `onScrollBeginDrag` 만으로는 웹을 못 잡는다 — react-native-web 은 그 핸들러를 아예
+   * 전달하지 않아, 창이 열려 있는 동안 사용자가 휠로 움직여도 뒤늦게 온 섹션이 화면을
+   * 도로 끌어당긴다. 그래서 보고된 위치가 우리가 명령한 자리에서 벗어났는지로 가린다.
+   */
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const at = commanded.current;
+    if (at == null || focus.current == null) return;
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    // 문서 끝에 걸려 명령값에 못 미칠 수 있으니, 실제로 닿을 수 있는 자리와 견준다.
+    const reachable = Math.min(at.y, Math.max(0, contentSize.height - layoutMeasurement.height));
+    if (Math.abs(contentOffset.y - reachable) <= FOCUS_DRIFT) {
+      at.arrived = true;
+      at.contentH = contentSize.height;
+      return;
+    }
+    // 아직 가는 중이거나(애니메이션 중간값), 그 사이 콘텐츠가 자라 브라우저가 위치를
+    // 손본 것이면 사람이 민 게 아니다 — 곧 오는 정렬이 다시 맞춘다.
+    if (!at.arrived || contentSize.height !== at.contentH) return;
+    releaseFocus();
+  }, [releaseFocus]);
+
   return (
     <PaperScreen>
       <SubHeader category={headerCategory(info)} />
 
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.container}
+        // 늦게 도착한 섹션이 조각을 밀어내면 곧바로 다시 붙인다 — 창이 살아 있는 동안만.
+        onContentSizeChange={() => alignFocus(false)}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        // 손가락이 닿는 순간 따라다니기를 그만둔다(네이티브). 웹은 위 onScroll 이 받는다.
+        onScrollBeginDrag={releaseFocus}
+      >
         <Hero info={info} rating={rating} loading={book.isLoading} bound={bound} />
 
         <View style={styles.sections}>
@@ -272,6 +393,8 @@ export default function BookDetailScreen() {
               </Card>
             </View>
           ) : null}
+
+          <QuoteSection bookId={bookId} onFocusCard={focusOnCard} colors={colors} />
 
           <ReviewSection bookId={bookId} rid={rid} colors={colors} />
         </View>
@@ -686,6 +809,121 @@ function ProgressEditor({ rid, progress, colors }: {
   );
 }
 
+/**
+ * 오려둔 문장 — 이 책에서 독자들이 오려 둔 문장을 메모 조각으로 붙여 둔다.
+ * '나도 그럼' 수는 여기서도 표시 전용이다(토글은 광장에서만). 조각 자체엔 탭 액션이 없다.
+ * 0건이면 섹션을 통째로 감춘다 — 상세에 빈 상자를 남기지 않는다.
+ *
+ * 홈 스포트라이트에서 조각을 누르면 `focusQuoteId` 를 달고 들어온다. 그때는 그 조각으로
+ * 스크롤한 뒤 광장과 같은 FocusRing 으로 한 번만 강조하고, 파라미터는 즉시 비운다 —
+ * 뒤로 갔다 돌아와도 다시 튀지 않게. 대상 조각의 자리는 화면이 직접 재므로
+ * (부모의 alignFocus) 여기서는 그 조각의 ref 만 넘겨 준다.
+ */
+function QuoteSection({ bookId, onFocusCard, colors }: {
+  bookId: number;
+  /** 찍고 온 조각 — 화면이 이 노드를 재서 그 앞에 세운다. */
+  onFocusCard: (node: View) => void;
+  colors: ColorTokens;
+}) {
+  const router = useRouter();
+  const { focusQuoteId } = useLocalSearchParams<{ focusQuoteId?: string }>();
+
+  const quotes = useQuery({
+    queryKey: ['book', bookId, 'quotes'],
+    queryFn: () => bookApi.quotes(bookId),
+    enabled: Number.isFinite(bookId),
+  });
+  // 렌더마다 새 배열을 만들면 아래 effect 가 매번 다시 돈다 — 캐시가 바뀔 때만 새로 만든다.
+  const items = useMemo(() => quotes.data?.content ?? [], [quotes.data]);
+
+  /** 강조가 걸린 문장 — 페이드가 끝나면 스스로 지운다. 한 번에 한 장뿐이다. */
+  const [focusedId, setFocusedId] = useState<number | null>(null);
+  const clearFocus = useCallback(() => setFocusedId(null), []);
+
+  /** 조각 노드들 — 찍고 온 문장의 자리를 재려면 그 조각 자체가 필요하다. */
+  const cardNodes = useRef(new Map<number, View>());
+
+  /**
+   * 이미 처리한 focusQuoteId — setParams 로 비우는 게 다음 렌더에 반영되므로 그 사이
+   * effect 가 다시 돌아도 두 번 뛰지 않게 막는다(광장과 같은 규율). 파라미터가 비면
+   * 가드도 함께 풀어 — 홈에서 같은 문장을 다시 눌렀을 때는 또 움직여야 한다.
+   */
+  const focusHandled = useRef<string | null>(null);
+
+  useEffect(() => {
+    const raw = typeof focusQuoteId === 'string' ? focusQuoteId.trim() : '';
+    if (raw === '') {
+      focusHandled.current = null;
+      return;
+    }
+    if (focusHandled.current === raw) return;
+    // 목록이 와야 그 문장이 이 책에 있는지 안다. 도착하면 이 effect 가 다시 온다.
+    if (!quotes.isSuccess) return;
+
+    focusHandled.current = raw;
+    router.setParams({ focusQuoteId: '' });
+
+    const target = Number(raw);
+    if (!Number.isInteger(target)) return;
+    // 그 사이 지워졌거나 첫 페이지 밖의 문장이면 조각이 없다 — 조용히 넘어간다.
+    // (조각 ref 는 커밋 때 붙으므로 목록이 그려진 이 시점엔 이미 채워져 있다.)
+    const node = cardNodes.current.get(target);
+    if (node == null) return;
+
+    setFocusedId(target);
+    onFocusCard(node);
+    // items 는 조각 ref 가 채워지는 시점을 알려 주는 신호다 — 몸통에서 직접 읽지 않는다.
+  }, [focusQuoteId, quotes.isSuccess, items, router, onFocusCard]);
+
+  if (items.length === 0) return null;
+
+  const total = quotes.data?.totalElements;
+
+  return (
+    <View style={styles.quoteSection}>
+      <View style={styles.quoteHead}>
+        <Text style={[typeScale.titleSerif, styles.quoteTitle, { color: colors.text }]}>
+          오려둔 문장
+        </Text>
+        {total != null ? (
+          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+            {groupNumber(total)}개
+          </Text>
+        ) : null}
+      </View>
+
+      {items.map((quote, index) => (
+        <View
+          key={quote.id}
+          ref={(node) => {
+            if (node) cardNodes.current.set(quote.id, node);
+            else cardNodes.current.delete(quote.id);
+          }}
+        >
+          {/* 리뷰와 같은 ±1° 교차 회전 — 오려 붙인 티를 내되 읽기를 방해하지 않는다. */}
+          <MemoScrap rotate={index % 2 === 0 ? -1 : 1}>
+            {focusedId === quote.id ? (
+              <FocusRing onDone={clearFocus} borderRadius={radius.sm} />
+            ) : null}
+            {/* 상세에서는 줄을 자르지 않는다 — 문장을 보러 온 화면이다. */}
+            <Text style={[styles.quoteBody, { color: colors.text }]}>{quote.content}</Text>
+            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.quoteMeta, { color: colors.textFaint }]}>
+              {quote.authorNickname}
+              {quote.page != null ? ` · ${quote.page}쪽` : ''}
+            </Text>
+            {/* 표시 전용 — 토글은 광장에서만 한다. */}
+            {quote.agreeCount > 0 ? (
+              <Text style={[typeScale.monoLabel, styles.quoteHot, { color: colors.accent }]}>
+                나도 그럼 {quote.agreeCount}
+              </Text>
+            ) : null}
+          </MemoScrap>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** 리뷰 목록 + (record 있을 때) 인라인 작성 폼. */
 function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | null; colors: ColorTokens }) {
   const queryClient = useQueryClient();
@@ -882,6 +1120,15 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.md,
   },
+
+  // 조각 사이 간격은 리뷰 목록과 같은 md — 헤더도 같은 흐름 안에 둔다(조각 y 계산이 단순해진다).
+  quoteSection: { gap: spacing.md },
+  quoteHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  quoteTitle: { fontSize: 18, lineHeight: 26 },
+  // 홈 스포트라이트(17/28)보다 한 단 낮춰 목록 리듬에 맞춘다.
+  quoteBody: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
+  quoteMeta: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: spacing.sm },
+  quoteHot: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 3 },
 
   stars: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   formCard: { gap: spacing.md },

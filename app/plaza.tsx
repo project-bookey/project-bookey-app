@@ -5,23 +5,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import Animated, {
-  Easing,
-  cancelAnimation,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
 import type { Page, PlazaItem, PlazaItemType } from '@/api/types';
-import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { hairline, layout, motion, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { sans, serif } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
@@ -44,8 +35,6 @@ const SEARCH_MIN_CHARS = 2;
 const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 /** 찍고 온 카드를 어디에 세울지 — 0 은 화면 맨 위, 1 은 맨 아래. 위 여백을 조금 남긴다. */
 const FOCUS_VIEW_POSITION = 0.2;
-/** 강조 테두리가 사라지는 데 걸리는 시간(ms). */
-const FOCUS_FADE_MS = 2000;
 /**
  * `scrollToIndex` 실패 후 재시도까지의 대기(ms).
  *
@@ -378,42 +367,6 @@ function patchQuote(
   );
 }
 
-/**
- * 홈에서 찍고 온 문장에 걸리는 한 번짜리 강조.
- *
- * 카드 레이아웃·터치를 건드리지 않도록 겹쳐 놓는 테두리로만 만든다 — 절대 배치라
- * 카드 높이가 변하지 않고, `pointerEvents="none"` 이라 '나도 그럼'·'삭제'를 가리지 않는다.
- * 마운트가 곧 시작이고, 다 지워지면 부모의 강조 상태를 스스로 풀어 두 번 돌지 않는다.
- */
-function FocusRing({ onDone }: { onDone: () => void }) {
-  const { colors } = useTheme();
-  const glow = useSharedValue(0);
-
-  useEffect(() => {
-    glow.value = withSequence(
-      withTiming(1, { duration: motion.fast, easing: Easing.out(Easing.quad) }),
-      withTiming(0, { duration: FOCUS_FADE_MS, easing: Easing.out(Easing.quad) }, (done) => {
-        if (done) runOnJS(onDone)();
-      }),
-    );
-    // 페이드 도중에 카드가 사라지면 완료 콜백의 runOnJS 가 주인 없이 발화한다 —
-    // 애니메이션을 먼저 끊어 콜백 자체를 없앤다(QuoteScraps 와 같은 규율).
-    return () => cancelAnimation(glow);
-  }, [glow, onDone]);
-
-  const style = useAnimatedStyle(() => ({ opacity: glow.value }));
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      aria-hidden
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={[styles.focusRing, { borderColor: colors.accent }, style]}
-    />
-  );
-}
-
 /** 피드 카드 한 장 — 밑줄과 완독 자랑이 같은 카드 가족을 쓴다. */
 function FeedCard({
   item, index, mine, confirming, focused, error, onAgree, onDelete, onOpenBook, onFocusDone,
@@ -737,17 +690,6 @@ const styles = StyleSheet.create({
   },
 
   card: { marginHorizontal: spacing.lg, gap: spacing.md },
-  // 카드 안쪽 가장자리에 딱 붙는 강조 테두리 — 절대 배치라 카드 크기·간격에 손대지 않는다.
-  // Card 가 overflow:'hidden' 이라 모서리도 저절로 카드 곡률을 따른다.
-  focusRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderWidth: 2,
-    borderRadius: radius.lg,
-  },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   avatar: {
     width: 24,
