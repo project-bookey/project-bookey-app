@@ -23,7 +23,7 @@
 - 색은 `useTheme()` 의 `colors` 로만, 폰트·간격·반경은 `@/theme` 토큰만. 새 literal 금지.
 - 응답 DTO 는 자바 record. 스키마 이름 `QuoteCommentView` · `CreateQuoteCommentRequest` 확정(변경 금지).
 - 댓글 본문 300자 · 도배 제한 `quote:comment:{userId}` 1분 20건 · 목록 오래된 순 · 본인만 삭제.
-- 포트: 기존 dev 서버(main 트리, :8080)는 건드리지 않는다. 이 브랜치 서버는 **`SERVER_PORT=8090`** 으로 띄우고, 앱은 `BOOKEY_API_URL=http://localhost:8090 npm run types` · `EXPO_PUBLIC_API_URL=http://localhost:8090 npm run web` 으로 그 서버를 본다.
+- 포트: 기존 dev 서버(main 트리, :8080)는 건드리지 않는다. 이 브랜치 서버는 **`SERVER_PORT=8095`** 으로 띄우고, 앱은 `BOOKEY_API_URL=http://localhost:8095 npm run types` · `EXPO_PUBLIC_API_URL=http://localhost:8095 npm run web` 으로 그 서버를 본다.
 
 ---
 
@@ -835,7 +835,7 @@ cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-commen
 
 ---
 
-## Task 4 (B4): 서버 기동 스모크 (:8090)
+## Task 4 (B4): 서버 기동 스모크 (:8095)
 
 **Files:**
 - Create (gitignore 안): `.superpowers/smoke/quote-comments.mjs` (앱 worktree 루트 기준)
@@ -843,11 +843,11 @@ cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-commen
 **Interfaces:**
 - Consumes: B1~B3 의 API 전부. 로그인 계정 `tester1@dev.local / password1234`(이미 DB 에 있음). 두 번째 계정은 없으면 회원가입.
 
-- [ ] **Step 1: 서버 기동(백그라운드, 포트 8090)**
+- [ ] **Step 1: 서버 기동(백그라운드, 포트 8095)**
 
-Run (run_in_background): `cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-comments/server && SERVER_PORT=8090 JAVA_HOME="C:/Users/ANT010/.jdks/corretto-21.0.7" ./mvnw -q spring-boot:run 2>&1 | tail -40`
+Run (run_in_background): `cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-comments/server && SERVER_PORT=8095 JAVA_HOME="C:/Users/ANT010/.jdks/corretto-21.0.7" ./mvnw -q spring-boot:run 2>&1 | tail -40`
 
-기동 확인(최대 90초 기다림): `curl -s -m 3 -o /dev/null -w "%{http_code}\n" http://localhost:8090/openapi.json`
+기동 확인(최대 90초 기다림): `curl -s -m 3 -o /dev/null -w "%{http_code}\n" http://localhost:8095/openapi.json`
 Expected: `200`. 로그에 `Migrating schema "public" to version "9 - quote comments"` 가 한 번 찍힌다(같은 Postgres 를 :8080 서버와 공유 — 테이블 추가는 기존 서버의 `ddl-auto: validate` 를 깨지 않는다).
 
 - [ ] **Step 2: 스모크 스크립트 작성**
@@ -856,7 +856,7 @@ Expected: `200`. 로그에 `Migrating schema "public" to version "9 - quote comm
 
 ```js
 // 밑줄 댓글 API 스모크 — node .superpowers/smoke/quote-comments.mjs
-const BASE = process.env.BOOKEY_API_URL ?? 'http://localhost:8090';
+const BASE = process.env.BOOKEY_API_URL ?? 'http://localhost:8095';
 
 async function call(method, path, { token, body } = {}) {
   const res = await fetch(BASE + path, {
@@ -960,14 +960,14 @@ Expected: 모든 줄이 `OK`, 종료 코드 0. `FAIL` 이 있으면 서버 로�
 - Modify: `src/api/endpoints.ts` (`quoteApi`, import 목록)
 
 **Interfaces:**
-- Consumes: :8090 서버(B4)
+- Consumes: :8095 서버(B4)
 - Produces: `QuoteComment`, `CreateQuoteComment` 타입 · `quoteApi.get(quoteId)`, `quoteApi.byBook(bookId, page?, size?)`,
   `quoteApi.comments(quoteId, page?, size?)`, `quoteApi.addComment(quoteId, body: CreateQuoteComment)`,
   `quoteApi.removeComment(quoteId, commentId)`
 
 - [ ] **Step 1: 타입 재생성**
 
-Run: `BOOKEY_API_URL=http://localhost:8090 npm run types 2>&1 | tail -3 && grep -n "QuoteCommentView: {\|commentCount" src/api/generated.ts | head`
+Run: `BOOKEY_API_URL=http://localhost:8095 npm run types 2>&1 | tail -3 && grep -n "QuoteCommentView: {\|commentCount" src/api/generated.ts | head`
 Expected: `QuoteCommentView: {` 1개, `commentCount` 가 BookQuoteView·PlazaItemView 에 각 1개.
 
 - [ ] **Step 2: 별칭 추가**
@@ -2364,8 +2364,8 @@ git branch --show-current && git add src/components/book/BookQuotesTab.tsx "app/
 
 - [ ] **Step 1: 웹 기동(백그라운드)**
 
-Run (run_in_background): `EXPO_PUBLIC_API_URL=http://localhost:8090 npm run web 2>&1 | tail -20`
-확인: `curl -s -m 5 -o /dev/null -w "%{http_code}\n" http://localhost:8081/` → `200`. (:8090 서버가 살아 있어야 한다 — B4.)
+Run (run_in_background): `EXPO_PUBLIC_API_URL=http://localhost:8095 npm run web 2>&1 | tail -20`
+확인: `curl -s -m 5 -o /dev/null -w "%{http_code}\n" http://localhost:8081/` → `200`. (:8095 서버가 살아 있어야 한다 — B4.)
 
 - [ ] **Step 2: 육안 체크리스트** (브라우저 `http://localhost:8081`, `tester1@dev.local / password1234`)
 
@@ -2385,4 +2385,4 @@ Run: `cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-
 
 - [ ] **Step 4: 서버·웹 종료, 브랜치 마무리**
 
-백그라운드 작업(:8090 서버, :8081 웹)을 멈춘다. 이후 `superpowers:finishing-a-development-branch` 로 두 저장소를 각각 main 에 머지(no-ff)하고 `feature/quote-comments` 브랜치·worktree 를 정리한다. 앱 main 에 머지할 때 다른 세션의 dirty 파일(`app/book/[id].tsx` 등)이 공유 트리에 있으면 **머지는 worktree 가 아닌 main 체크아웃에서** 해야 하므로, 그 세션 작업이 커밋될 때까지 기다리거나 사용자에게 알린다.
+백그라운드 작업(:8095 서버, :8081 웹)을 멈춘다. 이후 `superpowers:finishing-a-development-branch` 로 두 저장소를 각각 main 에 머지(no-ff)하고 `feature/quote-comments` 브랜치·worktree 를 정리한다. 앱 main 에 머지할 때 다른 세션의 dirty 파일(`app/book/[id].tsx` 등)이 공유 트리에 있으면 **머지는 worktree 가 아닌 main 체크아웃에서** 해야 하므로, 그 세션 작업이 커밋될 때까지 기다리거나 사용자에게 알린다.
