@@ -29,9 +29,9 @@ export function HomeSection({ index, label, children }: {
 }
 
 const styles = StyleSheet.create({
-  // 앞 섹션 행과 괘선 사이 — 컨테이너 gap(24)에 16을 더해 40px. 24만으로는 답답하다는 피드백.
-  wrap: { paddingTop: spacing.lg },
+  // 괘선 위·아래 여백을 비슷하게 — 위는 컨테이너 gap(24)+4=28, 아래는 아이브로우까지 22.
+  // (처음 14/24 는 괘선이 제목에 붙어 답답했고, 40/14 는 위만 벌어져 비율이 안 맞았다.)
+  wrap: { paddingTop: spacing.xs },
   rule: { height: hairline, marginHorizontal: spacing.lg },
-  // 시안: 괘선 14px 아래 아이브로우, 그 6px 아래 세리프 제목(행 헤더).
-  eyebrow: { fontSize: 9, letterSpacing: 2.2, marginHorizontal: spacing.lg, marginTop: 14, marginBottom: 6 },
+  eyebrow: { fontSize: 9, letterSpacing: 2.2, marginHorizontal: spacing.lg, marginTop: 22, marginBottom: 6 },
 });
