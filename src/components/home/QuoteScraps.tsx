@@ -14,7 +14,6 @@ import Animated, {
 import { plazaApi } from '@/api/endpoints';
 import { MemoScrap, TiltCover } from '@/components/collage';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
-import { serif } from '@/theme/tokens';
 
 /** 광장에서 받아 오는 후보 수 — 이 안에서 '핫한 순'으로 다시 추린다. */
 const FEED_SIZE = 10;
@@ -25,12 +24,12 @@ const ROTATE_MS = 6000;
 /** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. 높이는 1.5배(108). */
 const COVER_W = 72;
 /**
- * 인용 조판 — 여기 숫자 하나를 고치면 QUOTE_MAX_H 와 ROW_H 가 함께 따라온다.
- * 손으로 맞춘 상수를 여러 군데 두면 다음에 크기를 손볼 때 반드시 어긋난다.
+ * 인용 조판 — 스포트라이트는 인용 토큰(`typeScale.quote`, 세리프 17/28)을 그대로 세운다.
+ * 줄높이는 QUOTE_MAX_H·ROW_H 계산에도 들어가므로 숫자를 베껴 적지 않고 토큰에서 읽는다 —
+ * 토큰이 바뀌면 인용 상자와 행 높이가 저절로 따라온다.
  */
 const QUOTE_LINES = 3;
-const QUOTE_SIZE = 15;
-const QUOTE_LH = 24;
+const QUOTE_LH = typeScale.quote.lineHeight;
 /** 메타(닉네임·책)·핫 지표 조판. */
 const META_SIZE = 10;
 const META_LH = 14;
@@ -57,13 +56,13 @@ const QUOTE_MAX_H = QUOTE_LINES * QUOTE_LH;
  * 인용 3줄 최악의 경우 필요한 높이:
  *
  *   스크랩 테두리 1×2 + 안쪽 여백 12×2  = 26
- *   인용 24 × 3                         = 72
+ *   인용 28 × 3                         = 84
  *   메타 lineHeight 14                  = 14
  *   핫   간격 3 + lineHeight 14         = 17
- *                                     합 = 129
+ *                                     합 = 141
  *
  * 여기에 인용과 메타 사이 숨 쉴 자리 겸, 글꼴 폴백으로 줄상자가 두꺼워질 때를 위한
- * 여유 15px 을 얹어 144 (종전 132 도 같은 방식으로 필요분 126 + 여유 6 이었다).
+ * 여유 15px 을 얹어 156 (인용을 15/24 로 쓰던 종전엔 같은 셈으로 144 였다).
  * 남는 자리는 메타의 `marginTop:'auto'` 가 인용 아래로 몰아 준다 —
  * 메타·핫 지표는 문장 길이와 무관하게 늘 조각 바닥에 붙는다.
  */
@@ -92,8 +91,9 @@ const EASE_OUT = Easing.out(Easing.quad);
  * 광장으로 가는 이동은 push 가 아니라 navigate 다 — 구역(서가·탐색·광장·나) 사이는
  * push 하면 오갈 때마다 스택에 같은 구역이 쌓인다.
  *
- * 조각을 누르면 `focusQuoteId` 를 달고 간다 — 광장이 그 문장 카드로 스크롤한 뒤
- * 한 번만 강조하고 파라미터를 비운다(app/plaza.tsx).
+ * 조각을 누르면 그 문장이 실린 책 상세로 `focusQuoteId` 를 달고 간다 —
+ * 상세의 '오려둔 문장' 섹션이 그 조각으로 스크롤한 뒤 한 번만 강조하고
+ * 파라미터를 비운다(app/book/[id].tsx). 헤더 '광장 →' 만 광장으로 남는다.
  */
 export function QuoteScraps() {
   const router = useRouter();
@@ -168,16 +168,33 @@ export function QuoteScraps() {
   const item = spotlight[index];
   if (!item) return null;
 
+  /** 헤더 '광장 →' — 목적지가 특정 문장이 아니라 구역 자체라 navigate 로 연다. */
+  const openPlaza = () => router.navigate('/plaza');
+
   /**
-   * 광장으로 보낸다. 문장 id 를 함께 넘기면 광장이 그 카드로 스크롤하고 한 번 강조한다.
-   * 헤더 '광장 →' 는 목적지가 특정 문장이 아니므로 파라미터 없이 그냥 연다.
+   * 조각을 누르면 그 문장이 실린 **책 상세**로 간다 — 문장을 보고 궁금해지는 건
+   * 광장의 다른 글이 아니라 그 책이다. 책 상세는 구역이 아닌 서브 루트이므로 push.
+   *
+   * focusQuoteId 를 달고 가면 상세의 '오려둔 문장' 섹션이 그 조각으로 스크롤해
+   * 한 번 강조한다(app/book/[id].tsx). 문장 id 가 없는 항목이면 파라미터를 생략하고,
+   * 책 자체를 알 수 없으면 종전대로 광장으로 보낸다.
    */
-  const openPlaza = (quoteId?: number | null) =>
-    router.navigate(
-      quoteId != null
-        ? { pathname: '/plaza', params: { focusQuoteId: String(quoteId) } }
-        : '/plaza',
-    );
+  const openQuote = () => {
+    if (item.bookId == null) {
+      router.navigate(
+        item.quoteId != null
+          ? { pathname: '/plaza', params: { focusQuoteId: String(item.quoteId) } }
+          : '/plaza',
+      );
+      return;
+    }
+    router.push({
+      pathname: '/book/[id]',
+      params: item.quoteId != null
+        ? { id: String(item.bookId), focusQuoteId: String(item.quoteId) }
+        : { id: String(item.bookId) },
+    });
+  };
   const agreeCount = item.agreeCount ?? 0;
 
   return (
@@ -185,7 +202,7 @@ export function QuoteScraps() {
       <View style={styles.header}>
         <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오려둔 문장</Text>
         <Pressable
-          onPress={() => openPlaza()}
+          onPress={openPlaza}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="광장으로"
@@ -196,11 +213,11 @@ export function QuoteScraps() {
 
       {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
           라벨만 현재 항목으로 바뀐다.
-          카드·표지 어디를 눌러도 광장의 '그 문장'으로 간다 — 표지 탭도 이 행 버튼이 받는다. */}
+          카드·표지 어디를 눌러도 그 문장이 실린 책 상세로 간다 — 표지 탭도 이 행 버튼이 받는다. */}
       <Pressable
-        onPress={() => openPlaza(item.quoteId)}
+        onPress={openQuote}
         accessibilityRole="button"
-        accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장 · 광장에서 보기`}
+        accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장 · 책 상세로`}
         style={styles.rowWrap}
       >
         <Animated.View style={[styles.row, groupStyle]}>
@@ -225,7 +242,7 @@ export function QuoteScraps() {
           {/*
             표지에도 onPress 를 달지 않는다 — 웹에서 accessibilityRole="button" 은 진짜
             <button> 으로 나가므로 행 버튼 안에 표지 버튼이 겹치면 중첩 버튼(잘못된 HTML)이 된다.
-            표지 탭은 행 버튼이 그대로 받아 광장으로 보낸다.
+            표지 탭은 행 버튼이 그대로 받아 책 상세로 보낸다.
 
             pointerEvents 는 터치만 막고 접근성 트리는 그대로 둔다 — 네이티브 스크린리더가
             표지에서 한 번 더 멈춰 책 제목을 되풀이한다. 세 플랫폼이 각각 다른 속성을 보므로
@@ -270,17 +287,11 @@ const styles = StyleSheet.create({
   // 3줄이 ROW_H 를 넘겨 아래 '추천' 행 위로 번진다. 조각 밖으로는 한 픽셀도 내보내지 않는다.
   card: { flex: 1, overflow: 'hidden' },
   // 인용은 제 줄 수만큼만 차지하고 3줄에서 끊긴다(QUOTE_MAX_H 주석 참고).
-  quote: {
-    fontFamily: serif.regular,
-    fontSize: QUOTE_SIZE,
-    lineHeight: QUOTE_LH,
-    maxHeight: QUOTE_MAX_H,
-    overflow: 'hidden',
-  },
+  quote: { ...typeScale.quote, maxHeight: QUOTE_MAX_H, overflow: 'hidden' },
   // 남는 자리를 인용 아래로 몰아 메타·핫 지표를 조각 바닥에 붙인다 —
   // 문장이 1줄이든 3줄이든 두 줄의 y 가 같아 회전해도 눈이 흔들리지 않는다.
   meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: 'auto' },
   hot: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: HOT_GAP },
-  // 표지(108)는 행(144)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
+  // 표지(108)는 행(156)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
   coverSlot: { justifyContent: 'center' },
 });
