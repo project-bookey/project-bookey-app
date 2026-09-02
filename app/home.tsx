@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import type { ReadingRecord } from '@/api/types';
@@ -10,8 +11,8 @@ import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
-import { HeroContinue } from '@/components/home/HeroContinue';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { HeroCollage } from '@/components/home/HeroCollage';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 홈 — 검색 바 → 배너 → 히어로 → 인기 → 추천 → 읽고 싶은 → 읽는 중 → 챌린지 → 모임 (2026-09-01 배치 보정) */
 export default function HomeScreen() {
@@ -45,34 +46,46 @@ export default function HomeScreen() {
     if (b.bookId != null) router.push(`/book/${b.bookId}`);
   };
 
+  // 히어로 패럴랙스용 스크롤 오프셋 — UI 스레드에서 바로 읽는다.
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+
   return (
     <PaperScreen>
       <SectionNav active="shelf" />
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={styles.container}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetchAll} />}
       >
         <Pressable
           onPress={() => router.push('/search')}
-          style={[styles.searchBar, { borderColor: colors.lineStrong }]}
+          style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
           accessibilityRole="button"
           accessibilityLabel="책 검색"
         >
-          <Text style={[typeScale.body, { color: colors.textMuted }]}>⌕ 책 제목·저자 검색</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>⌕</Text>
+          <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
         </Pressable>
 
         <BannerCarousel banners={banners.data ?? []} />
 
-        <HeroContinue
+        <HeroCollage
           record={hero}
           streakLine={streakLine}
           loading={reading.isLoading}
+          scrollY={scrollY}
           onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
           onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         />
 
         <BookRow
-          title="인기"
+          title="지금 붐비는 책"
+          label="LIVE"
+          staggered
           loading={popular.isLoading}
           books={(popular.data ?? []).map((p, i): RowBook => ({
             key: `popular-${p.book.id}`,
@@ -130,7 +143,7 @@ export default function HomeScreen() {
         <ChallengeRow />
 
         <ClubRow />
-      </ScrollView>
+      </Animated.ScrollView>
     </PaperScreen>
   );
 }
@@ -158,9 +171,12 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     marginHorizontal: spacing.lg,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 2,
+    borderWidth: hairline,
+    borderRadius: radius.pill,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
 });
