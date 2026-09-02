@@ -1279,6 +1279,20 @@ export type QuoteCardProps = {
   onOpenBook?: () => void;
 };
 
+/** 24px 아바타 — 사진이 없으면 닉네임 첫 글자. 밑줄 카드·완독 카드·댓글 행이 같이 쓴다. */
+export function QuoteAvatar({ uri, nickname }: { uri?: string | null; nickname: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
+      {uri ? (
+        <Image source={{ uri }} style={styles.avatarImage} resizeMode="cover" />
+      ) : (
+        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>{nickname.slice(0, 1)}</Text>
+      )}
+    </View>
+  );
+}
+
 /** 밑줄 카드 — 광장 피드와 밑줄 상세가 같은 카드를 쓴다(시안 2d · D1). */
 export function QuoteCard({
   authorNickname, authorAvatarUrl, bookTitle, page, content, agreeCount, agreedByMe, commentCount,
@@ -1295,15 +1309,7 @@ export function QuoteCard({
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
       <View style={styles.authorRow}>
-        <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-          {authorAvatarUrl ? (
-            <Image source={{ uri: authorAvatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-          ) : (
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-              {authorNickname.slice(0, 1)}
-            </Text>
-          )}
-        </View>
+        <QuoteAvatar uri={authorAvatarUrl} nickname={authorNickname} />
         <View style={styles.authorText}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {authorNickname}
@@ -1399,7 +1405,7 @@ const styles = StyleSheet.create({
 
 `app/plaza.tsx` 에서:
 
-(a) import 추가: `import { QuoteCard } from '@/components/quote/QuoteCard';`. `FOOT_HIT_SLOP` 상수(주석 포함)는 삭제. `Image` 가 더 이상 안 쓰이면 react-native import 에서 뺀다.
+(a) import 추가: `import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';`. `FOOT_HIT_SLOP` 상수(주석 포함)는 삭제. react-native import 에서 `Image` 를 뺀다(아바타는 `QuoteAvatar` 가 그린다).
 
 (b) `renderItem` 을 아래로 교체:
 ```tsx
@@ -1469,15 +1475,7 @@ function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onO
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
       <View style={styles.authorRow}>
-        <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-          {item.authorAvatarUrl ? (
-            <Image source={{ uri: item.authorAvatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-          ) : (
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-              {item.authorNickname.slice(0, 1)}
-            </Text>
-          )}
-        </View>
+        <QuoteAvatar uri={item.authorAvatarUrl} nickname={item.authorNickname} />
         <View style={styles.authorText}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {item.authorNickname}
@@ -1502,9 +1500,7 @@ function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onO
   );
 }
 ```
-(완독 카드는 `Image` 를 계속 쓰므로 (a) 의 `Image` import 는 남는다.)
-
-(d) 스타일: `card`, `authorRow`, `avatar`, `avatarImage`, `authorText`, `nickname`, `where`, `finishRow`, `finishText` 는 남기고, `quote`, `footRow`, `footLabel`, `footAction`, `deleteButton` 은 삭제. `card` 옆에 추가:
+(d) 스타일: `card`, `authorRow`, `authorText`, `nickname`, `where`, `finishRow`, `finishText` 는 남기고, `avatar`, `avatarImage`, `quote`, `footRow`, `footLabel`, `footAction`, `deleteButton` 은 삭제(아바타 스타일은 QuoteCard.tsx 로 옮겨졌다). `card` 옆에 추가:
 ```ts
   cardWrap: { marginHorizontal: spacing.lg },
 ```
@@ -1548,7 +1544,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text,
+  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text,
   TextInput, View,
 } from 'react-native';
 
@@ -1559,7 +1555,7 @@ import {
 } from '@/api/quoteCache';
 import type { QuoteComment } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { QuoteCard } from '@/components/quote/QuoteCard';
+import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { EmptyState, formatRelative } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -1765,15 +1761,7 @@ function CommentRow({ comment, confirming, error, onDelete }: {
   const { colors } = useTheme();
   return (
     <View style={styles.row}>
-      <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-        {comment.authorAvatarUrl ? (
-          <Image source={{ uri: comment.authorAvatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-        ) : (
-          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-            {comment.authorNickname.slice(0, 1)}
-          </Text>
-        )}
-      </View>
+      <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
       <View style={styles.rowBody}>
         <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
           {comment.authorNickname}
@@ -1870,16 +1858,6 @@ const styles = StyleSheet.create({
   more: { paddingVertical: spacing.md, alignItems: 'center' },
 
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.pill,
-    borderWidth: hairline,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: { width: '100%', height: '100%' },
   rowBody: { flex: 1, gap: 2 },
   nickname: { fontSize: 12 },
   body: { ...typeScale.body, fontSize: 13, lineHeight: 20 },
