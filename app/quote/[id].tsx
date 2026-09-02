@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -11,7 +12,7 @@ import { quoteApi } from '@/api/endpoints';
 import {
   bumpCommentPatch, invalidateQuoteLists, patchQuoteEverywhere, quoteCommentsKey, quoteKey,
 } from '@/api/quoteCache';
-import type { QuoteComment } from '@/api/types';
+import type { Page, QuoteComment } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
@@ -26,6 +27,20 @@ const BODY_MAX = 300;
 const DELETE_CONFIRM_MS = 3000;
 /** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 광장보다 얌전하게. */
 const CARD_TILT = -0.6;
+
+/** 로컬에 덧붙인 댓글이 다음 페이지에 다시 올 수 있어 id 로 걸러낸다. */
+function dedupeComments(pages: Page<QuoteComment>[] | undefined): QuoteComment[] {
+  const seen = new Set<number>();
+  const items: QuoteComment[] = [];
+  for (const page of pages ?? []) {
+    for (const item of page.content ?? []) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      items.push(item);
+    }
+  }
+  return items;
+}
 
 /**
  * 밑줄 상세(D1) — 광장에서 본 카드가 그대로 위에 오고, 아래로 댓글이 붙는다.
@@ -52,7 +67,7 @@ export default function QuoteDetailScreen() {
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
     enabled: Number.isFinite(quoteId),
   });
-  const items = comments.data?.pages.flatMap((p) => p.content ?? []) ?? [];
+  const items = dedupeComments(comments.data?.pages);
 
   // 삭제 재확인 — 밑줄과 댓글이 같은 타이머를 나눠 쓴다(한 번에 하나만 확인 상태).
   const [confirm, setConfirm] = useState<{ kind: 'quote' } | { kind: 'comment'; id: number } | null>(null);
@@ -101,8 +116,13 @@ export default function QuoteDetailScreen() {
   const removeComment = useMutation({
     mutationFn: (commentId: number) => quoteApi.removeComment(quoteId, commentId),
     onMutate: () => setCommentError(null),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: quoteCommentsKey(quoteId) });
+    onSuccess: (_, commentId) => {
+      // 무효화 대신 캐시에서 직접 지운다 — 지운 댓글이 오래된 순 페이지 어딘가에 있을 수 있어 모든 페이지를 훑는다.
+      queryClient.setQueryData<InfiniteData<Page<QuoteComment>>>(quoteCommentsKey(quoteId), (old) =>
+        old
+          ? { ...old, pages: old.pages.map((p) => ({ ...p, content: (p.content ?? []).filter((c) => c.id !== commentId) })) }
+          : old,
+      );
       patchQuoteEverywhere(queryClient, quoteId, bumpCommentPatch(-1));
     },
     onError: (error, commentId) => {
@@ -143,7 +163,8 @@ export default function QuoteDetailScreen() {
       <View style={styles.commentsHead}>
         <Text style={[styles.commentsTitle, { color: colors.text }]}>댓글</Text>
         {comments.isError ? (
-          <Pressable onPress={() => comments.refetch()} hitSlop={8} accessibilityRole="button">
+          <Pressable onPress={() => comments.refetch()} hitSlop={8} accessibilityRole="button"
+            accessibilityLabel="댓글 다시 불러오기">
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
           </Pressable>
         ) : null}
@@ -151,7 +172,12 @@ export default function QuoteDetailScreen() {
     </View>
   ) : null;
 
-  const empty = quote.isLoading ? (
+  const empty = !Number.isFinite(quoteId) ? (
+    <EmptyState
+      title="밑줄을 불러오지 못했습니다"
+      description="지워졌거나 없는 밑줄입니다."
+    />
+  ) : quote.isLoading ? (
     <View style={[styles.skeleton, { backgroundColor: colors.surface }]} />
   ) : quote.isError ? (
     <EmptyState
@@ -197,7 +223,7 @@ export default function QuoteDetailScreen() {
               </View>
             ) : comments.hasNextPage ? (
               <Pressable onPress={() => comments.fetchNextPage()} accessibilityRole="button"
-                hitSlop={8} style={styles.more}>
+                accessibilityLabel="댓글 더 보기" hitSlop={8} style={styles.more}>
                 <Text style={[typeScale.monoLabel, { color: colors.accent }]}>댓글 더 보기 →</Text>
               </Pressable>
             ) : null
@@ -256,9 +282,16 @@ function CommentComposer({ quoteId }: { quoteId: number }) {
 
   const create = useMutation({
     mutationFn: () => quoteApi.addComment(quoteId, { body: trimmed }),
-    onSuccess: () => {
+    onSuccess: (created) => {
       setBody('');
-      queryClient.invalidateQueries({ queryKey: quoteCommentsKey(quoteId) });
+      // 오래된 순이라 새 댓글은 마지막 페이지 끝에 붙는다 — invalidate 는 이미 받아 둔 페이지만 다시 받아 소용없다.
+      queryClient.setQueryData<InfiniteData<Page<QuoteComment>>>(quoteCommentsKey(quoteId), (old) => {
+        if (!old) return old;
+        const pages = old.pages.slice();
+        const lastIndex = pages.length - 1;
+        pages[lastIndex] = { ...pages[lastIndex], content: [...(pages[lastIndex].content ?? []), created] };
+        return { ...old, pages };
+      });
       patchQuoteEverywhere(queryClient, quoteId, bumpCommentPatch(1));
     },
   });
@@ -286,6 +319,7 @@ function CommentComposer({ quoteId }: { quoteId: number }) {
           onPress={() => create.mutate()}
           disabled={!canSubmit || create.isPending}
           accessibilityRole="button"
+          accessibilityLabel={create.isPending ? '남기는 중' : '댓글 남기기'}
           accessibilityState={{ disabled: !canSubmit || create.isPending }}
           style={[styles.send, {
             backgroundColor: colors.accent,

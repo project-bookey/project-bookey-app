@@ -25,7 +25,8 @@ export function useAgreeQuote(): (quoteId: number) => void {
         queryClient.cancelQueries({ queryKey: plazaFeedKey('QUOTE') }),
         queryClient.cancelQueries({ queryKey: PLAZA_HOME_KEY }),
         queryClient.cancelQueries({ queryKey: ['quotes', 'book'] }),
-        queryClient.cancelQueries({ queryKey: quoteKey(quoteId) }),
+        // exact: true — quoteCommentsKey 가 quoteKey 를 접두사로 쓰기 때문에 그냥 두면 댓글 조회까지 취소된다.
+        queryClient.cancelQueries({ queryKey: quoteKey(quoteId), exact: true }),
       ]);
       patchQuoteEverywhere(queryClient, quoteId, toggleAgreePatch);
     },
