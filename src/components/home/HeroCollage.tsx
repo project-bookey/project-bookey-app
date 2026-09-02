@@ -42,18 +42,18 @@ const G = {
 } as const;
 
 /**
- * 패럴랙스 계수 — 움직이는 레이어는 표지·종이 둘뿐이다(스크롤 성능).
- * 스티키 노트는 처음 0.45 로 가장 빠르게 밀었지만 스크롤을 내릴 때 노트만 따라 내려오는 것처럼
- * 보여(사용자 피드백) 판에 고정했다 — 종이에 붙인 메모는 종이와 함께 움직여야 자연스럽다.
+ * 패럴랙스 계수 — 이제 움직이는 레이어는 종이(표제·CTA·메모) 하나뿐이다.
+ * 스티키 노트(0.45)와 표지 스택(0.25)은 스크롤을 내릴 때 따라 내려오는 것처럼 보여
+ * (사용자 피드백) 차례로 판에 고정했다.
  */
-const P = { cover: 0.25, paper: 0.12 } as const;
+const P = { paper: 0.12 } as const;
 
 /**
  * 패럴랙스 입력 상한(px).
  *
  * 계수를 스크롤 전 구간에 곱하면 레이어가 히어로 판을 벗어나 무한히 밀린다.
- * 입력을 여기서 끊으면 가장 많이 밀리는 표지(0.25)의 드리프트가 160×0.25=40px 에서
- * 멈춰 아래 '지금 붐비는 책' 행을 넘보지 않는다. 캡 지점이면 히어로가 이미 화면
+ * 입력을 여기서 끊으면 종이 레이어(0.12)의 드리프트가 160×0.12≈19px 에서 멈춰
+ * 아래 '지금 붐비는 책' 행을 넘보지 않는다. 캡 지점이면 히어로가 이미 화면
  * 상단으로 밀려난 뒤라 눈에 보이는 차등 손실은 없다.
  */
 const HERO_PARALLAX_RANGE = 160;
@@ -84,8 +84,8 @@ function parallaxOffset(y: number) {
 /**
  * 서가 히어로 콜라주 — 도트 종이 위에 표지 스택·스티키 노트·CTA·메모 조각·시작한 달 캡션을 흩어 놓는다.
  *
- * 표지와 종이(CTA·메모·표제) 레이어가 스크롤 오프셋에 다른 계수를 곱해(패럴랙스) 서로 다른
- * 속도로 밀리고, 스티키 노트는 판에 고정이다. 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
+ * 표지 스택과 스티키 노트는 판에 고정이고, 종이(표제·CTA·메모) 레이어만 스크롤 오프셋에 계수를 곱해
+ * 살짝 밀린다(패럴랙스). 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
  */
 export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, onContinue, onDetail }: {
   record: ReadingRecord | null;
@@ -106,9 +106,6 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
   // 스티키 노트 실제 높이 — 긴 제목으로 노트가 커져도 CTA를 밀어낸다.
   const [noteH, setNoteH] = useState(0);
 
-  const coverStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: parallaxOffset(scrollY.value) * P.cover }],
-  }));
   const paperStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: parallaxOffset(scrollY.value) * P.paper }],
   }));
@@ -160,10 +157,8 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
 
   return (
     <View style={[styles.board, { height: boardH }]} onLayout={onBoardLayout}>
-      {/* ① 표지 스택 — 가장 느리게 밀린다 */}
-      <Animated.View
-        style={[styles.layer, { left: Math.round(W * G.coverLeftRatio), top: Math.round(G.coverTop * k) }, coverStyle]}
-      >
+      {/* ① 표지 스택 — 판에 고정(패럴랙스 없음) */}
+      <View style={[styles.layer, { left: Math.round(W * G.coverLeftRatio), top: Math.round(G.coverTop * k) }]}>
         <TiltCover
           uri={record.book?.coverUrl}
           title={record.book?.title}
@@ -185,7 +180,7 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
           onPress={() => onDetail(record)}
           accessibilityLabel={`${record.book?.title ?? '책'} 상세`}
         />
-      </Animated.View>
+      </View>
 
       {/* ② 스티키 노트 — 표지 위에 겹쳐 붙어 있고 판에 고정(패럴랙스 없음) */}
       <View
