@@ -67,6 +67,8 @@ export type QuoteAgree = Schemas['QuoteAgreeView'];
 export type CreateQuote = Schemas['CreateBookQuoteRequest'];
 export type PlazaItem = Schemas['PlazaItemView'];
 export type PlazaItemType = PlazaItem['type'];
+export type QuoteComment = Schemas['QuoteCommentView'];
+export type CreateQuoteComment = Schemas['CreateQuoteCommentRequest'];
 
 // ── 챌린지 ───────────────────────────────────────────────
 export type Challenge = Schemas['ChallengeView'];

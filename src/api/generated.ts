@@ -143,6 +143,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quotes/{quoteId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 댓글 목록 — 오래된 순 */
+        get: operations["list"];
+        put?: never;
+        /** 댓글 작성 */
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quotes/{quoteId}/agree": {
         parameters: {
             query?: never;
@@ -171,7 +189,7 @@ export interface paths {
         get: operations["listMine"];
         put?: never;
         /** 독후감 작성 — 기본 비공개 */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -220,7 +238,7 @@ export interface paths {
             cookie?: never;
         };
         /** 서재 목록 — 상태별 필터 */
-        get: operations["list"];
+        get: operations["list_1"];
         put?: never;
         /** 서재에 책 추가 */
         post: operations["add"];
@@ -309,7 +327,7 @@ export interface paths {
         get: operations["myClubs"];
         put?: never;
         /** 모임 만들기 — 초대 코드 자동 발급 */
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -361,7 +379,7 @@ export interface paths {
         get: operations["feed"];
         put?: never;
         /** 글 · 댓글 작성 */
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -514,7 +532,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 챌린지 생성 — 즉시 시작 */
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -785,10 +803,10 @@ export interface paths {
             cookie?: never;
         };
         /** 에디터 픽 목록 */
-        get: operations["list_1"];
+        get: operations["list_2"];
         put?: never;
         /** 에디터 픽 추가 */
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -854,10 +872,10 @@ export interface paths {
             cookie?: never;
         };
         /** 배너 전체 목록 — 비활성·기간 외 포함 */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /** 배너 생성 */
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -908,7 +926,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 관리자 계정 생성 (SUPER_ADMIN) */
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1166,7 +1184,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서별 세션 목록 */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1221,6 +1239,24 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quoteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 문장 한 건 — 상세 진입용 */
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        /** 문장 삭제 — 본인만 */
+        delete: operations["delete_4"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1336,7 +1372,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 알림 목록 */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1357,7 +1393,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1409,7 +1445,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 삭제 (작성자 또는 운영자) */
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1457,7 +1493,7 @@ export interface paths {
             cookie?: never;
         };
         /** 챌린지 단건 */
-        get: operations["get"];
+        get: operations["get_1"];
         put?: never;
         post?: never;
         /** 챌린지 포기 */
@@ -1594,7 +1630,7 @@ export interface paths {
             cookie?: never;
         };
         /** 활성 배너 목록 — 기간 내, 정렬 순 */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1801,13 +1837,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** 세션 삭제 */
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/quotes/{quoteId}": {
+    "/api/v1/quotes/{quoteId}/comments/{commentId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1817,8 +1853,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** 문장 삭제 — 본인만 */
-        delete: operations["delete_7"];
+        /** 댓글 삭제 — 본인만 */
+        delete: operations["delete_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2034,6 +2070,25 @@ export interface components {
             /** Format: int64 */
             agreeCount: number;
             agreedByMe: boolean;
+            mine: boolean;
+            /** Format: int64 */
+            commentCount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateQuoteCommentRequest: {
+            body: string;
+        };
+        QuoteCommentView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            quoteId: number;
+            /** Format: int64 */
+            authorId: number;
+            authorNickname: string;
+            authorAvatarUrl?: string;
+            body: string;
             mine: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -2634,6 +2689,18 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PageResponseQuoteCommentView: {
+            content?: components["schemas"]["QuoteCommentView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         BookDetail: {
             book: components["schemas"]["BookSummary"];
             description?: string;
@@ -2698,6 +2765,8 @@ export interface components {
             /** Format: int64 */
             agreeCount?: number;
             agreedByMe?: boolean;
+            /** Format: int64 */
+            commentCount?: number;
         };
         NotificationView: {
             /** Format: int64 */
@@ -3143,6 +3212,8 @@ export type SchemaReviewView = components['schemas']['ReviewView'];
 export type SchemaReportRequest = components['schemas']['ReportRequest'];
 export type SchemaCreateBookQuoteRequest = components['schemas']['CreateBookQuoteRequest'];
 export type SchemaBookQuoteView = components['schemas']['BookQuoteView'];
+export type SchemaCreateQuoteCommentRequest = components['schemas']['CreateQuoteCommentRequest'];
+export type SchemaQuoteCommentView = components['schemas']['QuoteCommentView'];
 export type SchemaQuoteAgreeView = components['schemas']['QuoteAgreeView'];
 export type SchemaCreatePostRequest = components['schemas']['CreatePostRequest'];
 export type SchemaPostView = components['schemas']['PostView'];
@@ -3204,6 +3275,7 @@ export type SchemaStatsSummary = components['schemas']['StatsSummary'];
 export type SchemaVerificationPreview = components['schemas']['VerificationPreview'];
 export type SchemaPageResponseReviewView = components['schemas']['PageResponseReviewView'];
 export type SchemaPageResponseBookQuoteView = components['schemas']['PageResponseBookQuoteView'];
+export type SchemaPageResponseQuoteCommentView = components['schemas']['PageResponseQuoteCommentView'];
 export type SchemaBookDetail = components['schemas']['BookDetail'];
 export type SchemaRatingSummary = components['schemas']['RatingSummary'];
 export type SchemaPageResponsePostView = components['schemas']['PageResponsePostView'];
@@ -3477,6 +3549,57 @@ export interface operations {
             };
         };
     };
+    list: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseQuoteCommentView"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuoteCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteCommentView"];
+                };
+            };
+        };
+    };
     agree: {
         parameters: {
             query?: never;
@@ -3522,7 +3645,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3588,7 +3711,7 @@ export interface operations {
             };
         };
     };
-    list: {
+    list_1: {
         parameters: {
             query?: {
                 status?: "WANT_TO_READ" | "READING" | "PAUSED" | "FINISHED" | "ABANDONED";
@@ -3755,7 +3878,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3853,7 +3976,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4071,7 +4194,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -4464,7 +4587,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4484,7 +4607,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4586,7 +4709,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -4606,7 +4729,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -4676,7 +4799,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -5146,7 +5269,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 readingRecordId?: number;
@@ -5232,6 +5355,48 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PageResponseReviewView"];
                 };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookQuoteView"];
+                };
+            };
+        };
+    };
+    delete_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5380,7 +5545,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 page?: number;
@@ -5425,7 +5590,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5510,7 +5675,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -5576,7 +5741,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5777,7 +5942,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6049,7 +6214,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6069,12 +6234,13 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_8: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 quoteId: number;
+                commentId: number;
             };
             cookie?: never;
         };
