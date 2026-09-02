@@ -1,10 +1,19 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData, QueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { ApiError } from '@/api/client';
 import { libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
@@ -12,7 +21,7 @@ import type { Page, PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, motion, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
@@ -30,6 +39,17 @@ const CONTENT_MAX = 500;
  * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
  */
 const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
+/** 찍고 온 카드를 어디에 세울지 — 0 은 화면 맨 위, 1 은 맨 아래. 위 여백을 조금 남긴다. */
+const FOCUS_VIEW_POSITION = 0.2;
+/** 강조 테두리가 사라지는 데 걸리는 시간(ms). */
+const FOCUS_FADE_MS = 2000;
+/**
+ * `scrollToIndex` 실패 후 재시도까지의 대기(ms).
+ *
+ * 아직 측정되지 않은 카드로 뛰면 FlatList 가 실패를 던진다. 근사 위치로 먼저 옮겨
+ * 그 구간을 렌더·측정하게 한 뒤 다시 정확히 맞춘다.
+ */
+const SCROLL_RETRY_MS = 320;
 
 /** 광장 피드 무한 쿼리 키. 홈 스포트라이트는 ['plaza','QUOTE','home'] 로 갈라 둔다(QuoteScraps). */
 const feedKey = (type: PlazaItemType) => ['plaza', type] as const;
@@ -46,6 +66,9 @@ type FeedCache = InfiniteData<Page<PlazaItem>>;
  *
  * 필터 칩은 세 개지만 성격이 다르다. '밑줄'·'완독 자랑'은 같은 피드의 type 이고,
  * '토론'은 피드가 아니라 모임 화면으로 나가는 링크다 — 눌러도 활성으로 남지 않는다.
+ *
+ * 홈 '오려둔 문장'(QuoteScraps)에서 `focusQuoteId` 를 달고 들어오면 그 문장 카드로
+ * 스크롤한 뒤 한 번만 강조한다 — 아래 '찍고 온 문장' 블록 참고.
  */
 export default function PlazaScreen() {
   const router = useRouter();
@@ -58,6 +81,10 @@ export default function PlazaScreen() {
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [removeError, setRemoveError] = useState<{ id: number; message: string } | null>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listRef = useRef<FlatList<PlazaItem>>(null);
+  /** 강조가 걸린 문장 — 페이드가 끝나면 스스로 지운다. 한 번에 한 장뿐이다. */
+  const [focusedId, setFocusedId] = useState<number | null>(null);
+  const clearFocus = useCallback(() => setFocusedId(null), []);
   /**
    * 토글이 날아가 있는 문장 id.
    *
@@ -79,7 +106,59 @@ export default function PlazaScreen() {
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
   });
 
-  const items = feed.data?.pages.flatMap((p) => p.content ?? []) ?? [];
+  // 렌더마다 새 배열을 만들면 FlatList 가 매번 데이터가 바뀐 줄 안다 — 캐시가 바뀔 때만 새로 만든다.
+  const items = useMemo(
+    () => feed.data?.pages.flatMap((p) => p.content ?? []) ?? [],
+    [feed.data],
+  );
+
+  /* ── 찍고 온 문장 ───────────────────────────────────────────────────────────
+     홈 스포트라이트가 넘긴 focusQuoteId 를 받아 그 카드로 스크롤하고 한 번 강조한다.
+     스포트라이트는 feed('QUOTE', 0, 10) 에서 뽑고 여기 첫 페이지도 같은 정렬의 10건이라
+     반드시 안에 있다 — 못 찾으면 그 사이 지워진 문장이므로 조용히 넘어간다.          */
+  const { focusQuoteId } = useLocalSearchParams<{ focusQuoteId?: string }>();
+  /**
+   * 이미 처리한 focusQuoteId.
+   *
+   * setParams 로 비우는 게 다음 렌더에 반영되므로, 그 사이 effect 가 다시 돌아도
+   * 두 번 스크롤하지 않게 막는다. 파라미터가 비면 가드도 함께 풀어 —
+   * 같은 문장을 홈에서 다시 눌렀을 때는 또 움직여야 한다.
+   */
+  const focusHandled = useRef<string | null>(null);
+
+  useEffect(() => {
+    const raw = typeof focusQuoteId === 'string' ? focusQuoteId.trim() : '';
+    if (raw === '') {
+      focusHandled.current = null;
+      return;
+    }
+    if (focusHandled.current === raw) return;
+    // 완독 자랑을 보던 중에 들어왔으면 밑줄로 되돌린다 — 전환 뒤 이 effect 가 다시 온다.
+    if (type !== 'QUOTE') {
+      setType('QUOTE');
+      return;
+    }
+    // 첫 페이지가 아직이면 기다린다. 도착하면 feed.isSuccess 가 바뀌어 다시 온다.
+    if (!feed.isSuccess) return;
+
+    focusHandled.current = raw;
+    // 파라미터는 1회용이다 — 뒤로 갔다 돌아와도 다시 튀지 않게 즉시 비운다.
+    router.setParams({ focusQuoteId: '' });
+
+    const target = Number(raw);
+    if (!Number.isInteger(target)) return;
+    const at = items.findIndex((it) => it.quoteId === target);
+    if (at < 0) return;
+
+    setFocusedId(target);
+    listRef.current?.scrollToIndex({ index: at, viewPosition: FOCUS_VIEW_POSITION, animated: true });
+  }, [focusQuoteId, type, feed.isSuccess, items, router]);
+
+  /** scrollToIndex 재시도 타이머 — 화면을 떠날 때 남겨 두지 않는다. */
+  const scrollRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (scrollRetry.current) clearTimeout(scrollRetry.current);
+  }, []);
 
   /**
    * '나도 그럼' 토글 — 무한 피드와 홈 스포트라이트 캐시를 함께 뒤집고, 실패하면 둘 다 되돌린다.
@@ -190,6 +269,7 @@ export default function PlazaScreen() {
     <PaperScreen>
       <SectionNav active="plaza" />
       <FlatList
+        ref={listRef}
         data={items}
         keyExtractor={itemKey}
         contentContainerStyle={styles.list}
@@ -198,12 +278,28 @@ export default function PlazaScreen() {
         onEndReached={() => {
           if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
         }}
+        // 카드 높이가 제각각이라 getItemLayout 을 줄 수 없다 — 아직 측정 안 된 카드로 뛰면 실패한다.
+        // 평균 높이로 근사 위치까지 먼저 옮겨 그 구간을 렌더시킨 뒤 다시 정확히 맞춘다.
+        onScrollToIndexFailed={({ index, averageItemLength }) => {
+          listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
+          if (scrollRetry.current) clearTimeout(scrollRetry.current);
+          scrollRetry.current = setTimeout(() => {
+            scrollRetry.current = null;
+            listRef.current?.scrollToIndex({
+              index,
+              viewPosition: FOCUS_VIEW_POSITION,
+              animated: true,
+            });
+          }, SCROLL_RETRY_MS);
+        }}
         renderItem={({ item, index }) => (
           <FeedCard
             item={item}
             index={index}
             mine={myId != null && item.authorId === myId}
             confirming={item.quoteId != null && confirmId === item.quoteId}
+            focused={item.quoteId != null && focusedId === item.quoteId}
+            onFocusDone={clearFocus}
             error={item.quoteId != null && removeError?.id === item.quoteId ? removeError.message : null}
             onAgree={() => {
               if (item.quoteId != null) pressAgree(item.quoteId);
@@ -277,17 +373,59 @@ function patchQuote(
   );
 }
 
+/**
+ * 홈에서 찍고 온 문장에 걸리는 한 번짜리 강조.
+ *
+ * 카드 레이아웃·터치를 건드리지 않도록 겹쳐 놓는 테두리로만 만든다 — 절대 배치라
+ * 카드 높이가 변하지 않고, `pointerEvents="none"` 이라 '나도 그럼'·'삭제'를 가리지 않는다.
+ * 마운트가 곧 시작이고, 다 지워지면 부모의 강조 상태를 스스로 풀어 두 번 돌지 않는다.
+ */
+function FocusRing({ onDone }: { onDone: () => void }) {
+  const { colors } = useTheme();
+  const glow = useSharedValue(0);
+
+  useEffect(() => {
+    glow.value = withSequence(
+      withTiming(1, { duration: motion.fast, easing: Easing.out(Easing.quad) }),
+      withTiming(0, { duration: FOCUS_FADE_MS, easing: Easing.out(Easing.quad) }, (done) => {
+        if (done) runOnJS(onDone)();
+      }),
+    );
+    // 페이드 도중에 카드가 사라지면 완료 콜백의 runOnJS 가 주인 없이 발화한다 —
+    // 애니메이션을 먼저 끊어 콜백 자체를 없앤다(QuoteScraps 와 같은 규율).
+    return () => cancelAnimation(glow);
+  }, [glow, onDone]);
+
+  const style = useAnimatedStyle(() => ({ opacity: glow.value }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[styles.focusRing, { borderColor: colors.accent }, style]}
+    />
+  );
+}
+
 /** 피드 카드 한 장 — 밑줄과 완독 자랑이 같은 카드 가족을 쓴다. */
-function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onOpenBook }: {
+function FeedCard({
+  item, index, mine, confirming, focused, error, onAgree, onDelete, onOpenBook, onFocusDone,
+}: {
   item: PlazaItem;
   index: number;
   mine: boolean;
   confirming: boolean;
+  /** 홈 스포트라이트에서 찍고 온 카드인지 — 강조 테두리가 한 번 지나간다. */
+  focused?: boolean;
   /** 삭제 실패 안내 — 이 카드에서 실패했을 때만 들어온다. */
   error?: string | null;
   onAgree: () => void;
   onDelete: () => void;
   onOpenBook: () => void;
+  /** 강조가 다 지워졌다 — 부모가 focusedId 를 푼다. */
+  onFocusDone: () => void;
 }) {
   const { colors } = useTheme();
   const tilt = CARD_TILT[index % CARD_TILT.length];
@@ -295,6 +433,7 @@ function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onO
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
+      {focused ? <FocusRing onDone={onFocusDone} /> : null}
       <View style={styles.authorRow}>
         <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
           {item.authorAvatarUrl ? (
@@ -556,6 +695,17 @@ const styles = StyleSheet.create({
   },
 
   card: { marginHorizontal: spacing.lg, gap: spacing.md },
+  // 카드 안쪽 가장자리에 딱 붙는 강조 테두리 — 절대 배치라 카드 크기·간격에 손대지 않는다.
+  // Card 가 overflow:'hidden' 이라 모서리도 저절로 카드 곡률을 따른다.
+  focusRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 2,
+    borderRadius: radius.lg,
+  },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   avatar: {
     width: 24,
