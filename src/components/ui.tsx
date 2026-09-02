@@ -30,11 +30,6 @@ function useStyles() {
   return { styles, colors };
 }
 
-export function Screen({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  const { styles } = useStyles();
-  return <View style={[styles.screen, style]}>{children}</View>;
-}
-
 /** 카드 — 종이 한 장. 얇은 테두리와 깊은 그림자로 책상 위에 올라온 느낌을 준다. */
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { styles } = useStyles();
@@ -332,7 +327,6 @@ export function percent(value?: number | null): string {
 
 function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: colors.bg },
     card: {
       backgroundColor: colors.surface,
       borderWidth: hairline,

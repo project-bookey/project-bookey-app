@@ -19,7 +19,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
-import { useTheme, sans } from '@/theme';
+import { useTheme } from '@/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,7 +32,7 @@ export default function RootLayout() {
   const restoreTheme = useThemePreference((s) => s.restore);
   const status = useAuth((s) => s.status);
   const [ready, setReady] = useState(false);
-  const { colors, mode } = useTheme();
+  const { mode } = useTheme();
   const [fontsLoaded] = useFonts({
     'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
     'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
@@ -66,32 +66,24 @@ export default function RootLayout() {
         <SafeAreaProvider>
           {/* 크롬이 배경과 동화되므로 상태바 아이콘도 테마 모드를 따라간다 */}
           <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: colors.chrome },
-              headerShadowVisible: false,
-              headerTintColor: colors.onChrome,
-              headerTitleStyle: { fontFamily: sans.semiBold, fontSize: 24 },
-              contentStyle: { backgroundColor: colors.bg },
-            }}
-          >
-            <Stack.Screen name="home" options={{ headerShown: false }} />
-            <Stack.Screen name="search" options={{ headerShown: false }} />
-            <Stack.Screen name="plaza" options={{ headerShown: false }} />
-            <Stack.Screen name="profile" options={{ headerShown: false }} />
-            <Stack.Screen name="library" options={{ headerShown: false }} />
-            <Stack.Screen name="clubs" options={{ headerShown: false }} />
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="notifications" options={{ headerShown: false }} />
-            <Stack.Screen name="timer" options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="challenge/new" options={{ headerShown: false }} />
-            <Stack.Screen name="challenge/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="club/join" options={{ headerShown: false }} />
-            <Stack.Screen name="club/create" options={{ headerShown: false }} />
-            <Stack.Screen name="club/[id]/index" options={{ headerShown: false }} />
-            <Stack.Screen name="club/[id]/posts" options={{ headerShown: false }} />
-            <Stack.Screen name="club/[id]/result" options={{ headerShown: false }} />
-            <Stack.Screen name="book/[id]" options={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="home" />
+            <Stack.Screen name="search" />
+            <Stack.Screen name="plaza" />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="library" />
+            <Stack.Screen name="clubs" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="timer" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="challenge/new" />
+            <Stack.Screen name="challenge/[id]" />
+            <Stack.Screen name="club/join" />
+            <Stack.Screen name="club/create" />
+            <Stack.Screen name="club/[id]/index" />
+            <Stack.Screen name="club/[id]/posts" />
+            <Stack.Screen name="club/[id]/result" />
+            <Stack.Screen name="book/[id]" />
           </Stack>
         </SafeAreaProvider>
       </QueryClientProvider>

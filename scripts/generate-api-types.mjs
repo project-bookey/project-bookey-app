@@ -39,6 +39,8 @@ try {
   const output = execFileSync('npx', ['--yes', 'openapi-typescript@7', tmp, '--root-types'], {
     encoding: 'utf8',
     maxBuffer: 32 * 1024 * 1024,
+    // Windows 에서는 npx 가 npx.cmd 배치 파일이라 셸을 거쳐야 실행된다(그냥 ENOENT/EINVAL).
+    shell: process.platform === 'win32',
   });
   writeFileSync(
     target,
