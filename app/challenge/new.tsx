@@ -7,7 +7,8 @@ import { ApiError } from '@/api/client';
 import { bookApi, challengeApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono } from '@/theme/tokens';
 
 /** 책 선택 상태 — "읽는 중" 목록에서 고르거나(record) 검색으로 아무 책이나 고른다(book). */
 type Pick =
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     borderRadius: radius.pill,
-    borderWidth: 1,
+    borderWidth: hairline,
     paddingHorizontal: spacing.lg,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
@@ -308,10 +309,12 @@ const styles = StyleSheet.create({
   },
   footer: { gap: spacing.sm, marginTop: spacing.lg },
   budgetRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // 챌린지 진행 화면의 쪽수 입력과 같은 모노 숫자 계열로 맞춘다.
   budgetInput: {
     width: 72,
     borderRadius: radius.md,
     padding: spacing.md,
+    fontFamily: mono.semiBold,
     fontSize: 18,
     textAlign: 'center',
   },

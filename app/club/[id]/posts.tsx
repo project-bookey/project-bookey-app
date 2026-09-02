@@ -79,10 +79,14 @@ export default function ClubPostsScreen() {
     <PaperScreen>
       <SubHeader category="토론" />
 
+      {/*
+        오프셋을 주지 않는다. 기존 90 은 네이티브 헤더 높이를 상쇄하려던 값인데,
+        헤더를 끄면서 KAV 의 frame.y 가 이미 SubHeader 를 포함하게 됐다. 그대로 두면
+        iOS 에서 이중 보정돼 컴포저가 키보드 위로 90px 떠버린다. (login.tsx 도 무오프셋)
+      */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
       >
         <View style={[styles.filterBar, { borderBottomColor: colors.line }]}>
           <Pressable
