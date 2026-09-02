@@ -1,5 +1,4 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -8,8 +7,10 @@ import {
 
 import { ApiError } from '@/api/client';
 import { libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
-import type { Page, PlazaItem, PlazaItemType } from '@/api/types';
+import { invalidateQuoteLists, plazaFeedKey } from '@/api/quoteCache';
+import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -31,16 +32,6 @@ const CONTENT_MAX = 500;
  */
 const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
-/** 광장 피드 무한 쿼리 키. 홈 스포트라이트는 ['plaza','QUOTE','home'] 로 갈라 둔다(QuoteScraps). */
-const feedKey = (type: PlazaItemType) => ['plaza', type] as const;
-/**
- * 홈 '오려둔 문장' 캐시 — '나도 그럼'을 누르면 여기도 같이 손봐야 한다.
- * QuoteScraps 의 쿼리 키와 한 쌍이다 — 한쪽만 바꾸면 홈 캐시가 조용히 어긋난다.
- */
-const HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
-
-type FeedCache = InfiniteData<Page<PlazaItem>>;
-
 /**
  * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 완독 자랑이 모이는 곳 (시안 2d).
  *
@@ -58,21 +49,14 @@ export default function PlazaScreen() {
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [removeError, setRemoveError] = useState<{ id: number; message: string } | null>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /**
-   * 토글이 날아가 있는 문장 id.
-   *
-   * 응답을 기다리는 사이 같은 문장을 또 누르면 두 뮤테이션이 서로의 스냅샷을 엇갈리게
-   * 되돌려 서버와 다른 카운트가 화면에 눌러앉는다(staleTime 15초 + 포커스 재조회 꺼짐이라
-   * 저절로 낫지 않는다). 그래서 문장 단위로 한 번에 하나씩만 보낸다.
-   */
-  const agreeing = useRef(new Set<number>());
+  const pressAgree = useAgreeQuote();
 
   useEffect(() => () => {
     if (confirmTimer.current) clearTimeout(confirmTimer.current);
   }, []);
 
   const feed = useInfiniteQuery({
-    queryKey: feedKey(type),
+    queryKey: plazaFeedKey(type),
     queryFn: ({ pageParam }) => plazaApi.feed(type, pageParam, PAGE_SIZE),
     initialPageParam: 0,
     // 서버가 page 를 생략해도 이미 받은 페이지 수로 다음 번호를 셀 수 있다.
@@ -81,57 +65,10 @@ export default function PlazaScreen() {
 
   const items = feed.data?.pages.flatMap((p) => p.content ?? []) ?? [];
 
-  /**
-   * '나도 그럼' 토글 — 무한 피드와 홈 스포트라이트 캐시를 함께 뒤집고, 실패하면 둘 다 되돌린다.
-   * 토글 결과는 서버가 알려주므로 성공 시 그 값으로 다시 맞춘다.
-   */
-  const agree = useMutation({
-    mutationFn: (quoteId: number) => quoteApi.agree(quoteId),
-    onMutate: async (quoteId) => {
-      await Promise.all([
-        queryClient.cancelQueries({ queryKey: feedKey('QUOTE') }),
-        queryClient.cancelQueries({ queryKey: HOME_KEY }),
-      ]);
-      const snapshot = {
-        feed: queryClient.getQueryData<FeedCache>(feedKey('QUOTE')),
-        home: queryClient.getQueryData<Page<PlazaItem>>(HOME_KEY),
-      };
-      patchQuote(queryClient, quoteId, toggleAgree);
-      return snapshot;
-    },
-    onError: (_error, _quoteId, snapshot) => {
-      if (!snapshot) return;
-      queryClient.setQueryData(feedKey('QUOTE'), snapshot.feed);
-      queryClient.setQueryData(HOME_KEY, snapshot.home);
-    },
-    onSuccess: (result, quoteId) => {
-      patchQuote(queryClient, quoteId, (item) => ({
-        ...item,
-        agreedByMe: result.agreed,
-        agreeCount: result.agreeCount,
-      }));
-    },
-    // 성공이든 실패든 잠금을 풀어 준다. 여기서 무효화하지 않는다 —
-    // 무한 피드 전 페이지를 다시 받아 오는 값이 토글 하나에 비해 너무 비싸다.
-    onSettled: (_result, _error, quoteId) => {
-      agreeing.current.delete(quoteId);
-    },
-  });
-
-  /** 응답을 기다리는 동안의 재탭은 삼킨다 — 낙관 갱신이 서로 어긋나지 않게. */
-  const pressAgree = (quoteId: number) => {
-    if (agreeing.current.has(quoteId)) return;
-    agreeing.current.add(quoteId);
-    agree.mutate(quoteId);
-  };
-
   const remove = useMutation({
     mutationFn: (quoteId: number) => quoteApi.remove(quoteId),
     onMutate: () => setRemoveError(null),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plaza'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
-    },
+    onSuccess: () => invalidateQuoteLists(queryClient),
     onError: (error, quoteId) => {
       setRemoveError({
         id: quoteId,
@@ -246,35 +183,6 @@ function itemKey(item: PlazaItem): string {
   return item.quoteId != null
     ? `q${item.quoteId}`
     : `f${item.authorId}-${item.bookId}-${item.occurredAt}`;
-}
-
-/** 항목 스스로의 현재 상태를 뒤집는다 — 캐시마다 값이 달라도 각자 일관되게 움직인다. */
-function toggleAgree(item: PlazaItem): PlazaItem {
-  const agreed = !(item.agreedByMe ?? false);
-  return {
-    ...item,
-    agreedByMe: agreed,
-    agreeCount: Math.max(0, (item.agreeCount ?? 0) + (agreed ? 1 : -1)),
-  };
-}
-
-/** 같은 문장이 무한 피드와 홈 스포트라이트 양쪽에 있으므로 두 캐시를 한 번에 손본다. */
-function patchQuote(
-  queryClient: QueryClient,
-  quoteId: number,
-  map: (item: PlazaItem) => PlazaItem,
-) {
-  const apply = (list: PlazaItem[]) =>
-    list.map((item) => (item.quoteId === quoteId ? map(item) : item));
-
-  queryClient.setQueryData<FeedCache>(feedKey('QUOTE'), (old) =>
-    old
-      ? { ...old, pages: old.pages.map((p) => ({ ...p, content: apply(p.content ?? []) })) }
-      : old,
-  );
-  queryClient.setQueryData<Page<PlazaItem>>(HOME_KEY, (old) =>
-    old ? { ...old, content: apply(old.content ?? []) } : old,
-  );
 }
 
 /** 피드 카드 한 장 — 밑줄과 완독 자랑이 같은 카드 가족을 쓴다. */
