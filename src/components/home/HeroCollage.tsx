@@ -33,7 +33,25 @@ const G = {
 /** 패럴랙스 계수 — 레이어 3개로 제한한다(스크롤 성능). */
 const P = { cover: 0.25, note: 0.45, paper: 0.12 } as const;
 
+/**
+ * 패럴랙스 입력 상한(px).
+ *
+ * 계수를 스크롤 전 구간에 곱하면 레이어가 히어로 판을 벗어나 무한히 밀린다 —
+ * 가장 많이 밀리는 노트(0.45)가 스크롤 222px 부근에서 아래 '지금 붐비는 책'
+ * 헤더와 표지를 덮었다. 입력을 여기서 끊으면 노트 드리프트가 160×0.45=72px 에서
+ * 멈춘다 — 390px 기준 실측으로 인기 행 헤더와 약 21px, 행 표지와 약 71px 간격을
+ * 유지하며 스크롤을 아무리 더 내려도 그대로다. 캡 지점이면 히어로가 이미 화면
+ * 상단으로 밀려난 뒤라 눈에 보이는 차등 손실은 없다.
+ */
+const HERO_PARALLAX_RANGE = 160;
+
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** 스크롤 오프셋을 패럴랙스 유효 구간으로 가둔다 — iOS 바운스의 음수도 막는다. */
+function parallaxOffset(y: number) {
+  'worklet';
+  return Math.min(Math.max(0, y), HERO_PARALLAX_RANGE);
+}
 
 /**
  * 서가 히어로 콜라주 — 도트 종이 위에 표지 스택·스티키 노트·CTA·메모 조각을 흩어 놓는다.
@@ -59,13 +77,13 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   const [noteH, setNoteH] = useState(0);
 
   const coverStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scrollY.value * P.cover }],
+    transform: [{ translateY: parallaxOffset(scrollY.value) * P.cover }],
   }));
   const noteStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scrollY.value * P.note }],
+    transform: [{ translateY: parallaxOffset(scrollY.value) * P.note }],
   }));
   const paperStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scrollY.value * P.paper }],
+    transform: [{ translateY: parallaxOffset(scrollY.value) * P.paper }],
   }));
 
   const W = boardW || Math.min(window.width, 560);
@@ -78,13 +96,25 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   const ctaTop = Math.round(Math.max(G.ctaTop * k, noteH > 0 ? noteTop + noteH + 8 : 0));
   const boardH = Math.max(Math.round(G.height * k), ctaTop + 64);
 
+  const memoRight = Math.round(W * G.memoRightRatio);
+  const memoW = Math.round(clamp(W * G.memoWRatio, 104, 136));
+  // CTA 행은 메모 조각 왼쪽 엣지 8px 앞에서 끊는다 — 긴 스트릭 문구가 메모 밑으로
+  // 깔리는 대신 말줄임되게 한다(둘은 같은 세로 띠에 있다).
+  const ctaRight = memoRight + memoW + 8;
+
   const onBoardLayout = (e: LayoutChangeEvent) => {
     const next = Math.round(e.nativeEvent.layout.width);
     if (next > 0 && next !== boardW) setBoardW(next);
   };
 
   if (loading) {
-    return <View style={[styles.skeleton, { height: G.height, backgroundColor: colors.surface }]} />;
+    // 실제 판과 같은 높이·같은 풀블리드 — 로딩이 끝날 때 아래 섹션이 튀지 않는다.
+    return (
+      <View
+        onLayout={onBoardLayout}
+        style={[styles.board, { height: boardH, backgroundColor: colors.surface }]}
+      />
+    );
   }
 
   if (!record) {
@@ -145,7 +175,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
 
       {/* ③ CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, paperStyle]}>
-        <View style={[styles.ctaRow, { left: Math.round(W * G.ctaLeftRatio), top: ctaTop }]}>
+        <View style={[styles.ctaRow, { left: Math.round(W * G.ctaLeftRatio), right: ctaRight, top: ctaTop }]}>
           <Pressable
             onPress={() => onContinue(record)}
             style={[styles.cta, cardShadow, { backgroundColor: colors.accent }]}
@@ -168,11 +198,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           pointerEvents="none"
           style={[
             styles.layer,
-            {
-              right: Math.round(W * G.memoRightRatio),
-              top: Math.round(G.memoTop * k),
-              width: clamp(W * G.memoWRatio, 104, 136),
-            },
+            { right: memoRight, top: Math.round(G.memoTop * k), width: memoW },
           ]}
         >
           {/* 고정 카피 — 데이터 연동 없음(책상에 붙여둔 지난 주의 쪽지) */}
@@ -190,7 +216,6 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
 
 const styles = StyleSheet.create({
   board: { position: 'relative' },
-  skeleton: { marginHorizontal: spacing.lg, borderRadius: radius.md },
   layer: { position: 'absolute' },
   noteEyebrow: { opacity: 0.7 },
   // 시안 21px 세리프 — 두 줄까지만 두고 넘치면 말줄임한다(긴 제목 대비).
@@ -201,7 +226,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    maxWidth: '92%',
   },
   cta: {
     borderRadius: radius.pill,

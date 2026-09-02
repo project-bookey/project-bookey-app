@@ -1,6 +1,7 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
-import { TiltCover } from '@/components/collage';
+import { TiltCover, useCoverEntrance } from '@/components/collage';
 import { useTheme } from '@/theme';
 import { hairline, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
 
@@ -97,55 +98,94 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
           data={books}
           keyExtractor={(b) => b.key}
           contentContainerStyle={listStyle}
-          renderItem={({ item, index }) => {
-            const offsetY = staggered ? rowOffsetY[index % rowOffsetY.length] : 0;
-            return (
-              <View style={styles.item}>
-                <TiltCover
-                  uri={item.coverUrl}
-                  title={item.title}
-                  width={COVER_W}
-                  index={index}
-                  tilt={staggered ? tiltFor(index) : 0}
-                  offsetY={offsetY}
-                  // 세션당 1회만 입장한다 — 탭을 오갈 때마다 재생되면 과하다.
-                  entranceKey={`${title}:${item.bookId ?? item.key}`}
-                  onPress={() => onPressBook(item)}
-                  accessibilityLabel={item.title}
-                >
-                  {item.rank != null ? (
-                    <View pointerEvents="none" style={[styles.rank, { backgroundColor: colors.accent }]}>
-                      <Text style={[typeScale.monoNumeral, { color: colors.onAccent }]}>{item.rank}</Text>
-                    </View>
-                  ) : null}
-                  {item.progress != null ? (
-                    <View pointerEvents="none" style={[styles.track, { backgroundColor: colors.scrimDim }]}>
-                      <View
-                        style={[
-                          styles.fill,
-                          { width: `${Math.round(item.progress * 100)}%`, backgroundColor: colors.accent },
-                        ]}
-                      />
-                    </View>
-                  ) : null}
-                </TiltCover>
-
-                {/* 표지가 내려간 만큼 아래 활자도 같이 내린다 — 한 조각처럼 읽히게. */}
-                <View style={[styles.meta, offsetY ? { transform: [{ translateY: offsetY }] } : null]}>
-                  <Text numberOfLines={1} style={[typeScale.caption, styles.metaTitle, { color: colors.text }]}>
-                    {item.title}
-                  </Text>
-                  {item.author ? (
-                    <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textFaint }]}>
-                      {item.author}
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-            );
-          }}
+          renderItem={({ item, index }) => (
+            <RowItem
+              item={item}
+              index={index}
+              rowTitle={title}
+              staggered={staggered}
+              onPress={() => onPressBook(item)}
+            />
+          )}
         />
       )}
+    </View>
+  );
+}
+
+/**
+ * 행의 한 칸 — 표지 + 그 아래 제목·저자.
+ *
+ * 표지와 활자는 같은 `entranceKey`·`index` 로 입장 진행값을 공유한다. 활자만 먼저
+ * 떠 있다가 표지가 뒤늦게 앉는 어긋남을 막고, 두 번째 마운트부터는 둘 다 조용히
+ * 정착 상태로 시작한다(1회성 가드도 한 벌만 쓴다).
+ */
+function RowItem({ item, index, rowTitle, staggered, onPress }: {
+  item: RowBook;
+  index: number;
+  rowTitle: string;
+  staggered: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const offsetY = staggered ? rowOffsetY[index % rowOffsetY.length] : 0;
+  // 세션당 1회만 입장한다 — 탭을 오갈 때마다 재생되면 과하다.
+  const entranceKey = `${rowTitle}:${item.bookId ?? item.key}`;
+  const metaProgress = useCoverEntrance(index, entranceKey);
+  const metaStyle = useAnimatedStyle(() => ({ opacity: metaProgress.value }));
+
+  return (
+    <View style={styles.item}>
+      <TiltCover
+        uri={item.coverUrl}
+        title={item.title}
+        width={COVER_W}
+        index={index}
+        tilt={staggered ? tiltFor(index) : 0}
+        offsetY={offsetY}
+        entranceKey={entranceKey}
+        onPress={onPress}
+        // 아래 활자를 접근성 트리에서 감췄으므로 저자까지 이 라벨에 합친다.
+        accessibilityLabel={item.author ? `${item.title}, ${item.author}` : item.title}
+      >
+        {item.rank != null ? (
+          <View pointerEvents="none" style={[styles.rank, { backgroundColor: colors.accent }]}>
+            <Text style={[typeScale.monoNumeral, { color: colors.onAccent }]}>{item.rank}</Text>
+          </View>
+        ) : null}
+        {item.progress != null ? (
+          <View pointerEvents="none" style={[styles.track, { backgroundColor: colors.scrimDim }]}>
+            <View
+              style={[
+                styles.fill,
+                { width: `${Math.round(item.progress * 100)}%`, backgroundColor: colors.accent },
+              ]}
+            />
+          </View>
+        ) : null}
+      </TiltCover>
+
+      {/* 표지가 내려간 만큼 아래 활자도 같이 내린다 — 한 조각처럼 읽히게.
+          표지 버튼이 이미 제목·저자를 읽어 주므로 여기는 접근성 트리에서 감춘다. */}
+      <Animated.View style={[styles.meta, offsetY ? { transform: [{ translateY: offsetY }] } : null, metaStyle]}>
+        <Pressable
+          onPress={onPress}
+          // aria-hidden 은 RN 이 네이티브의 accessibilityElementsHidden·
+          // importantForAccessibility 로, 웹이 그대로 aria-hidden 으로 옮긴다.
+          aria-hidden
+          focusable={false}
+          style={styles.metaTap}
+        >
+          <Text numberOfLines={1} style={[typeScale.caption, styles.metaTitle, { color: colors.text }]}>
+            {item.title}
+          </Text>
+          {item.author ? (
+            <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textFaint }]}>
+              {item.author}
+            </Text>
+          ) : null}
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -160,17 +200,13 @@ const styles = StyleSheet.create({
   },
   headTitle: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexShrink: 1 },
   title: { fontSize: 18, lineHeight: 26 },
-  list: {
-    paddingHorizontal: spacing.lg,
-    // 랭크 배지가 표지 위로 걸치므로 잘리지 않게 위를 띄운다.
-    paddingTop: BADGE_BLEED,
-    gap: spacing.md,
-    flexDirection: 'row',
-  },
-  // 지그재그 행은 아래로 밀린 표지만큼 여백을 더 둔다.
-  listStaggered: { paddingBottom: MAX_OFFSET },
+  list: { paddingHorizontal: spacing.lg, gap: spacing.md, flexDirection: 'row' },
+  // 지그재그 행에만: 위는 걸친 랭크 배지, 아래는 내려간 표지만큼 여백을 더 둔다.
+  // (배지도 지그재그도 없는 행에 같은 여백을 주면 행 간격이 들쭉날쭉해진다.)
+  listStaggered: { paddingTop: BADGE_BLEED, paddingBottom: MAX_OFFSET },
   item: { width: COVER_W },
-  meta: { gap: 2, marginTop: spacing.sm },
+  meta: { marginTop: spacing.sm },
+  metaTap: { gap: 2 },
   metaTitle: { fontFamily: sans.semiBold },
   cover: { width: COVER_W, height: COVER_H, borderRadius: radius.sm, overflow: 'hidden' },
   rank: {
