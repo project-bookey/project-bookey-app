@@ -47,5 +47,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: { fontSize: 10 },
-  icon: { width: 26, height: 26, resizeMode: 'contain' },
+  // 구역 네비의 로고 마크(22)와 같은 크기 — 헤더 양끝이 같은 무게로 보이게.
+  icon: { width: 22, height: 22, resizeMode: 'contain' },
 });

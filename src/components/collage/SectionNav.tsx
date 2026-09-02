@@ -84,7 +84,10 @@ export function SectionNav({ active }: { active: SectionKey }) {
           })}
           </View>
         </View>
-        <NotificationBell />
+        {/* 종도 마크와 같은 높이·같은 바닥선에 — 헤더 양끝이 한 줄로 읽힌다. */}
+        <View style={styles.bellWrap}>
+          <NotificationBell />
+        </View>
       </View>
     </View>
   );
@@ -105,6 +108,7 @@ const styles = StyleSheet.create({
   // 마크 22px 를 라벨 글자 상자(24, 밑줄 위 6px) 중심보다 3px 아래에 — 정중앙(7)은 떠 보인다는 피드백.
   markWrap: { marginBottom: 4 },
   mark: { width: 22, height: 22 },
+  bellWrap: { marginBottom: 4 },
   tabs: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
   // 활성 라벨은 titleSerif 를 19로 줄여 쓴다 — 네비에서 표제만큼 커지면 무겁다.
   activeLabel: { fontSize: 19, lineHeight: 24, paddingBottom: 4 },
