@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NotificationBell } from '@/components/home/NotificationBell';
@@ -16,13 +16,19 @@ const SECTIONS: { key: SectionKey; label: string; path: string }[] = [
   { key: 'me', label: '나', path: '/profile' },
 ];
 
+/** 로고 마크(북마크 B) — 다크는 흰 B, 라이트는 남색 B. */
+const LOGO = {
+  dark: require('../../../assets/logo-dark.png'),
+  light: require('../../../assets/logo.png'),
+} as const;
+
 /**
- * 상단 텍스트 라벨 네비 — 아이콘 탭바 대신 활자로 구역을 나눈다.
+ * 상단 텍스트 라벨 네비 — 왼쪽 로고 마크, 이어서 활자 구역 라벨, 오른쪽 종.
  * 네이티브 헤더가 없는 화면 최상단에 놓이므로 세이프에어리어를 직접 처리한다.
  */
 export function SectionNav({ active }: { active: SectionKey }) {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -31,7 +37,20 @@ export function SectionNav({ active }: { active: SectionKey }) {
       style={[styles.bar, { paddingTop: insets.top, borderBottomColor: colors.line }]}
     >
       <View style={styles.row}>
-        <View style={styles.tabs} accessibilityRole="tablist">
+        <View style={styles.lead}>
+          {/* 마크를 누르면 서가로 — 이미 서가면 아무 일도 하지 않는다. */}
+          <Pressable
+            onPress={() => {
+              if (active !== 'shelf') router.replace('/home');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="bookey 서가"
+            hitSlop={6}
+            style={styles.markWrap}
+          >
+            <Image source={LOGO[mode]} style={styles.mark} resizeMode="contain" />
+          </Pressable>
+          <View style={styles.tabs} accessibilityRole="tablist">
           {SECTIONS.map((section) => {
             const selected = section.key === active;
             return (
@@ -63,6 +82,7 @@ export function SectionNav({ active }: { active: SectionKey }) {
               </Pressable>
             );
           })}
+          </View>
         </View>
         <NotificationBell />
       </View>
@@ -72,14 +92,19 @@ export function SectionNav({ active }: { active: SectionKey }) {
 
 const styles = StyleSheet.create({
   bar: { borderBottomWidth: hairline },
+  // 위 18 · 아래 12 — 8/8 이던 때 답답하다는 피드백으로 키웠다(라벨 줄 포함 약 60px).
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingTop: 18,
+    paddingBottom: spacing.md,
   },
+  lead: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
+  // 마크 22px 를 라벨 글자 상자(24, 밑줄 위 6px)와 같은 중심에 — 밑줄 바닥에서 7px 띄운다.
+  markWrap: { marginBottom: 7 },
+  mark: { width: 22, height: 22 },
   tabs: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
   // 활성 라벨은 titleSerif 를 19로 줄여 쓴다 — 네비에서 표제만큼 커지면 무겁다.
   activeLabel: { fontSize: 19, lineHeight: 24, paddingBottom: 4 },
