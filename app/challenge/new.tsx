@@ -6,6 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { ApiError } from '@/api/client';
 import { bookApi, challengeApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
+import { PaperScreen, SubHeader } from '@/components/collage';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 책 선택 상태 — "읽는 중" 목록에서 고르거나(record) 검색으로 아무 책이나 고른다(book). */
@@ -85,7 +86,7 @@ export default function NewChallengeScreen() {
       {pick ? (
         <Text style={[typeScale.caption, { color: colors.textMuted }]}>선택: {pick.title}</Text>
       ) : null}
-      <Text style={[typeScale.section, { color: colors.text }]}>예산 시간</Text>
+      <Text style={[styles.heading, { color: colors.text }]}>예산 시간</Text>
       <View style={styles.budgetRow}>
         <TextInput
           value={hours}
@@ -124,7 +125,9 @@ export default function NewChallengeScreen() {
   );
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+    <PaperScreen>
+      <SubHeader category="새 챌린지" />
+
       <View style={styles.searchBarWrap}>
         <View
           style={[
@@ -174,7 +177,7 @@ export default function NewChallengeScreen() {
           keyExtractor={(r) => String(r.id)}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
-            <Text style={[typeScale.section, { color: colors.text, marginBottom: spacing.sm }]}>
+            <Text style={[styles.heading, { color: colors.text, marginBottom: spacing.sm }]}>
               어떤 책으로 도전할까요?
             </Text>
           }
@@ -220,7 +223,7 @@ export default function NewChallengeScreen() {
           ListFooterComponent={footer}
         />
       )}
-    </View>
+    </PaperScreen>
   );
 }
 
@@ -276,15 +279,15 @@ function SearchResultRow({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  searchBarWrap: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  heading: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 25 },
+  searchBarWrap: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     borderWidth: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
   list: { ...layout.content, padding: spacing.lg, gap: spacing.sm },
@@ -312,5 +315,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
-  cta: { paddingVertical: spacing.md, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.sm },
+  cta: { paddingVertical: spacing.md, borderRadius: radius.pill, alignItems: 'center', marginTop: spacing.sm },
 });

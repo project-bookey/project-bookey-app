@@ -82,10 +82,10 @@ export default function RootLayout() {
             <Stack.Screen name="library" options={{ headerShown: false }} />
             <Stack.Screen name="clubs" options={{ headerShown: false }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="notifications" options={{ title: '알림' }} />
-            <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
-            <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
-            <Stack.Screen name="challenge/[id]" options={{ title: '챌린지' }} />
+            <Stack.Screen name="notifications" options={{ headerShown: false }} />
+            <Stack.Screen name="timer" options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="challenge/new" options={{ headerShown: false }} />
+            <Stack.Screen name="challenge/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="club/join" options={{ headerShown: false }} />
             <Stack.Screen name="club/create" options={{ headerShown: false }} />
             <Stack.Screen name="club/[id]/index" options={{ headerShown: false }} />
