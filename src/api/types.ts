@@ -61,6 +61,13 @@ export type Review = Schemas['ReviewView'];
 export type VerificationPreview = Schemas['VerificationPreview'];
 export type VerificationLevel = NonNullable<Review['verificationLevel']>;
 
+// ── 밑줄 · 광장 ──────────────────────────────────────────
+export type BookQuote = Schemas['BookQuoteView'];
+export type QuoteAgree = Schemas['QuoteAgreeView'];
+export type CreateQuote = Schemas['CreateBookQuoteRequest'];
+export type PlazaItem = Schemas['PlazaItemView'];
+export type PlazaItemType = PlazaItem['type'];
+
 // ── 챌린지 ───────────────────────────────────────────────
 export type Challenge = Schemas['ChallengeView'];
 export type ChallengeStatus = Challenge['status'];

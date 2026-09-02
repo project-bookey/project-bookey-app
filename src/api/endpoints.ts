@@ -1,7 +1,8 @@
 import { api } from './client';
 import type {
-  Banner, BookDetail, BookLikeView, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  LibrarySummary, Me, Notification, NudgeMessageKey, Page, PopularBook, ReadingRecord, ReadingStatus,
+  Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
+  CreateQuote, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
+  PopularBook, QuoteAgree, ReadingRecord, ReadingStatus,
   Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
 } from './types';
 
@@ -117,6 +118,20 @@ export const reviewApi = {
   create: (body: { readingRecordId: number; rating?: number; body: string; tags?: string[] }) =>
     api<Review>('/api/v1/reviews', { method: 'POST', body }),
   mine: () => api<Page<Review>>('/api/v1/reviews/me'),
+};
+
+export const quoteApi = {
+  create: (body: CreateQuote) => api<BookQuote>('/api/v1/quotes', { method: 'POST', body }),
+  /** 내가 오려둔 문장. totalElements 가 총 개수다. */
+  mine: (page = 0, size = 20) => api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size } }),
+  remove: (quoteId: number) => api<void>(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' }),
+  /** '나도 그럼' 토글 — 서버가 토글 후 상태를 돌려준다. */
+  agree: (quoteId: number) => api<QuoteAgree>(`/api/v1/quotes/${quoteId}/agree`, { method: 'POST' }),
+};
+
+export const plazaApi = {
+  feed: (type: PlazaItemType, page = 0, size = 20) =>
+    api<Page<PlazaItem>>('/api/v1/plaza/feed', { query: { type, page, size } }),
 };
 
 export const challengeApi = {
