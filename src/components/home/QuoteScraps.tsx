@@ -91,9 +91,8 @@ const EASE_OUT = Easing.out(Easing.quad);
  * 광장으로 가는 이동은 push 가 아니라 navigate 다 — 구역(서가·탐색·광장·나) 사이는
  * push 하면 오갈 때마다 스택에 같은 구역이 쌓인다.
  *
- * 조각을 누르면 그 문장이 실린 책 상세로 `focusQuoteId` 를 달고 간다 —
- * 상세의 '오려둔 문장' 섹션이 그 조각으로 스크롤한 뒤 한 번만 강조하고
- * 파라미터를 비운다(app/book/[id].tsx). 헤더 '광장 →' 만 광장으로 남는다.
+ * 조각을 누르면 그 문장의 밑줄 상세(app/quote/[id].tsx)로 간다 — 문장 하나를 크게 보고
+ * 댓글까지 그 자리에서 읽는다. 헤더 '광장 →' 만 광장으로 남는다.
  */
 export function QuoteScraps() {
   const router = useRouter();
@@ -172,28 +171,18 @@ export function QuoteScraps() {
   const openPlaza = () => router.navigate('/plaza');
 
   /**
-   * 조각을 누르면 그 문장이 실린 **책 상세**로 간다 — 문장을 보고 궁금해지는 건
-   * 광장의 다른 글이 아니라 그 책이다. 책 상세는 구역이 아닌 서브 루트이므로 push.
+   * 조각을 누르면 그 문장의 **밑줄 상세**로 간다 — 스포트라이트에서 잘려 보이던 문장을
+   * 통째로 읽고 댓글까지 그 자리에서 잇는다. 상세는 구역이 아닌 서브 루트이므로 push.
    *
-   * focusQuoteId 를 달고 가면 상세의 '오려둔 문장' 섹션이 그 조각으로 스크롤해
-   * 한 번 강조한다(app/book/[id].tsx). 문장 id 가 없는 항목이면 파라미터를 생략하고,
-   * 책 자체를 알 수 없으면 종전대로 광장으로 보낸다.
+   * 문장 id 가 없는 항목(있어서는 안 되지만 응답이 비었을 때)은 갈 곳이 없으므로
+   * 종전대로 광장으로 보낸다 — 구역 사이라 navigate.
    */
   const openQuote = () => {
-    if (item.bookId == null) {
-      router.navigate(
-        item.quoteId != null
-          ? { pathname: '/plaza', params: { focusQuoteId: String(item.quoteId) } }
-          : '/plaza',
-      );
+    if (item.quoteId == null) {
+      router.navigate('/plaza');
       return;
     }
-    router.push({
-      pathname: '/book/[id]',
-      params: item.quoteId != null
-        ? { id: String(item.bookId), focusQuoteId: String(item.quoteId) }
-        : { id: String(item.bookId) },
-    });
+    router.push(`/quote/${item.quoteId}`);
   };
   const agreeCount = item.agreeCount ?? 0;
 
@@ -213,11 +202,11 @@ export function QuoteScraps() {
 
       {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
           라벨만 현재 항목으로 바뀐다.
-          카드·표지 어디를 눌러도 그 문장이 실린 책 상세로 간다 — 표지 탭도 이 행 버튼이 받는다. */}
+          카드·표지 어디를 눌러도 그 문장의 밑줄 상세로 간다 — 표지 탭도 이 행 버튼이 받는다. */}
       <Pressable
         onPress={openQuote}
         accessibilityRole="button"
-        accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장 · 책 상세로`}
+        accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장 · 밑줄 상세로`}
         style={styles.rowWrap}
       >
         <Animated.View style={[styles.row, groupStyle]}>
@@ -242,7 +231,7 @@ export function QuoteScraps() {
           {/*
             표지에도 onPress 를 달지 않는다 — 웹에서 accessibilityRole="button" 은 진짜
             <button> 으로 나가므로 행 버튼 안에 표지 버튼이 겹치면 중첩 버튼(잘못된 HTML)이 된다.
-            표지 탭은 행 버튼이 그대로 받아 책 상세로 보낸다.
+            표지 탭은 행 버튼이 그대로 받아 밑줄 상세로 보낸다.
 
             pointerEvents 는 터치만 막고 접근성 트리는 그대로 둔다 — 네이티브 스크린리더가
             표지에서 한 번 더 멈춰 책 제목을 되풀이한다. 세 플랫폼이 각각 다른 속성을 보므로

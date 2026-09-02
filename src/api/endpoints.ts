@@ -28,9 +28,6 @@ export const bookApi = {
     api<BookSummary>('/api/v1/books', { method: 'POST', body }),
   reviews: (bookId: number, verifiedOnly = false) =>
     api<Page<Review>>(`/api/v1/books/${bookId}/reviews`, { query: { verifiedOnly } }),
-  /** 이 책에서 오려둔 문장 — 최신순. totalElements 가 총 개수다. */
-  quotes: (bookId: number, page = 0, size = 20) =>
-    api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size } }),
   popular: (size = 20) => api<PopularBook[]>('/api/v1/books/popular', { query: { size } }),
   recommended: (size = 20) => api<BookSummary[]>('/api/v1/books/recommended', { query: { size } }),
 };
