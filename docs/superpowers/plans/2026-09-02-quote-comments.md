@@ -23,7 +23,7 @@
 - 색은 `useTheme()` 의 `colors` 로만, 폰트·간격·반경은 `@/theme` 토큰만. 새 literal 금지.
 - 응답 DTO 는 자바 record. 스키마 이름 `QuoteCommentView` · `CreateQuoteCommentRequest` 확정(변경 금지).
 - 댓글 본문 300자 · 도배 제한 `quote:comment:{userId}` 1분 20건 · 목록 오래된 순 · 본인만 삭제.
-- 포트: 기존 dev 서버(main 트리, :8080)는 건드리지 않는다. 이 브랜치 서버는 **`SERVER_PORT=8095`** 으로 띄우고, 앱은 `BOOKEY_API_URL=http://localhost:8095 npm run types` · `EXPO_PUBLIC_API_URL=http://localhost:8095 npm run web` 으로 그 서버를 본다.
+- 포트: 기존 dev 서버(main 트리, :8080)는 건드리지 않는다. 이 브랜치 서버는 **`SERVER_PORT=8095`** 으로 띄우고, 앱은 `BOOKEY_API_URL=http://localhost:8095 npm run types` · `EXPO_PUBLIC_API_URL=http://localhost:8095 npx expo start --web --port 8096` 으로 그 서버를 본다.
 
 ---
 
@@ -2364,10 +2364,10 @@ git branch --show-current && git add src/components/book/BookQuotesTab.tsx "app/
 
 - [ ] **Step 1: 웹 기동(백그라운드)**
 
-Run (run_in_background): `EXPO_PUBLIC_API_URL=http://localhost:8095 npm run web 2>&1 | tail -20`
-확인: `curl -s -m 5 -o /dev/null -w "%{http_code}\n" http://localhost:8081/` → `200`. (:8095 서버가 살아 있어야 한다 — B4.)
+Run (run_in_background): `EXPO_PUBLIC_API_URL=http://localhost:8095 npx expo start --web --port 8096 2>&1 | tail -20`
+확인: `curl -s -m 5 -o /dev/null -w "%{http_code}\n" http://localhost:8096/` → `200`. (:8095 서버가 살아 있어야 한다 — B4.)
 
-- [ ] **Step 2: 육안 체크리스트** (브라우저 `http://localhost:8081`, `tester1@dev.local / password1234`)
+- [ ] **Step 2: 육안 체크리스트** (브라우저 `http://localhost:8096`, `tester1@dev.local / password1234`)
 
 - 광장: 밑줄 카드 푸터에 `나도 그럼 N` `댓글 N`. 문장 또는 `댓글 N` 탭 → `/quote/[id]` 로 이동. 완독 자랑 카드는 그대로.
 - 상세: 광장과 같은 카드 + `책 보기 →`. 댓글 남기기 → 목록 맨 아래에 붙고 카드의 `댓글 N` +1. 뒤로 가면 광장 카드도 +1(재조회 없이).
@@ -2385,4 +2385,4 @@ Run: `cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-
 
 - [ ] **Step 4: 서버·웹 종료, 브랜치 마무리**
 
-백그라운드 작업(:8095 서버, :8081 웹)을 멈춘다. 이후 `superpowers:finishing-a-development-branch` 로 두 저장소를 각각 main 에 머지(no-ff)하고 `feature/quote-comments` 브랜치·worktree 를 정리한다. 앱 main 에 머지할 때 다른 세션의 dirty 파일(`app/book/[id].tsx` 등)이 공유 트리에 있으면 **머지는 worktree 가 아닌 main 체크아웃에서** 해야 하므로, 그 세션 작업이 커밋될 때까지 기다리거나 사용자에게 알린다.
+백그라운드 작업(:8095 서버, :8096 웹)을 멈춘다. 이후 `superpowers:finishing-a-development-branch` 로 두 저장소를 각각 main 에 머지(no-ff)하고 `feature/quote-comments` 브랜치·worktree 를 정리한다. 앱 main 에 머지할 때 다른 세션의 dirty 파일(`app/book/[id].tsx` 등)이 공유 트리에 있으면 **머지는 worktree 가 아닌 main 체크아웃에서** 해야 하므로, 그 세션 작업이 커밋될 때까지 기다리거나 사용자에게 알린다.
