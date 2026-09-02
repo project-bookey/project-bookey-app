@@ -50,7 +50,8 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
       ) : quotes.isError && items.length === 0 ? (
         <Card>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>밑줄을 불러오지 못했습니다.</Text>
-          <Pressable onPress={() => quotes.refetch()} hitSlop={8} accessibilityRole="button">
+          <Pressable onPress={() => quotes.refetch()} hitSlop={8} accessibilityRole="button"
+            accessibilityLabel="밑줄 다시 불러오기">
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
           </Pressable>
         </Card>

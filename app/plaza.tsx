@@ -7,7 +7,7 @@ import {
 
 import { ApiError } from '@/api/client';
 import { libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
-import { invalidateQuoteLists, plazaFeedKey } from '@/api/quoteCache';
+import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
@@ -60,7 +60,11 @@ export default function PlazaScreen() {
   const remove = useMutation({
     mutationFn: (quoteId: number) => quoteApi.remove(quoteId),
     onMutate: () => setRemoveError(null),
-    onSuccess: () => invalidateQuoteLists(queryClient),
+    onSuccess: (_result, quoteId) => {
+      invalidateQuoteLists(queryClient);
+      // 상세 캐시가 남아 있으면 지운 문장이 잠깐 보일 수 있다.
+      queryClient.removeQueries({ queryKey: quoteKey(quoteId) });
+    },
     onError: (error, quoteId) => {
       setRemoveError({
         id: quoteId,
@@ -283,8 +287,7 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
         page: draft.pageValue,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plaza'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      invalidateQuoteLists(queryClient);
       onDone();
     },
   });

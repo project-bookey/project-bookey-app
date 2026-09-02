@@ -286,7 +286,11 @@ function CommentComposer({ quoteId }: { quoteId: number }) {
       setBody('');
       // 오래된 순이라 새 댓글은 마지막 페이지 끝에 붙는다 — invalidate 는 이미 받아 둔 페이지만 다시 받아 소용없다.
       queryClient.setQueryData<InfiniteData<Page<QuoteComment>>>(quoteCommentsKey(quoteId), (old) => {
-        if (!old) return old;
+        if (!old) {
+          // 댓글 캐시가 없는 상태(예: 에러 상태)로는 붙일 페이지가 없다 — 목록을 다시 받아 오게 한다.
+          queryClient.invalidateQueries({ queryKey: quoteCommentsKey(quoteId) });
+          return old;
+        }
         const pages = old.pages.slice();
         const lastIndex = pages.length - 1;
         pages[lastIndex] = { ...pages[lastIndex], content: [...(pages[lastIndex].content ?? []), created] };
