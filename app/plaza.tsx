@@ -31,10 +31,13 @@ const CONTENT_MAX = 500;
  */
 const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
-/** 광장 피드 무한 쿼리 키. 홈 상위 3건은 ['plaza','QUOTE','top3'] 로 갈라 둔다(QuoteScrapRow). */
+/** 광장 피드 무한 쿼리 키. 홈 스포트라이트는 ['plaza','QUOTE','home'] 로 갈라 둔다(QuoteScraps). */
 const feedKey = (type: PlazaItemType) => ['plaza', type] as const;
-/** 홈 '오려둔 문장' 캐시 — '나도 그럼'을 누르면 여기도 같이 손봐야 한다. */
-const TOP3_KEY = ['plaza', 'QUOTE', 'top3'] as const;
+/**
+ * 홈 '오려둔 문장' 캐시 — '나도 그럼'을 누르면 여기도 같이 손봐야 한다.
+ * QuoteScraps 의 쿼리 키와 한 쌍이다 — 한쪽만 바꾸면 홈 캐시가 조용히 어긋난다.
+ */
+const HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
 
 type FeedCache = InfiniteData<Page<PlazaItem>>;
 
@@ -79,7 +82,7 @@ export default function PlazaScreen() {
   const items = feed.data?.pages.flatMap((p) => p.content ?? []) ?? [];
 
   /**
-   * '나도 그럼' 토글 — 무한 피드와 홈 상위 3건 캐시를 함께 뒤집고, 실패하면 둘 다 되돌린다.
+   * '나도 그럼' 토글 — 무한 피드와 홈 스포트라이트 캐시를 함께 뒤집고, 실패하면 둘 다 되돌린다.
    * 토글 결과는 서버가 알려주므로 성공 시 그 값으로 다시 맞춘다.
    */
   const agree = useMutation({
@@ -87,11 +90,11 @@ export default function PlazaScreen() {
     onMutate: async (quoteId) => {
       await Promise.all([
         queryClient.cancelQueries({ queryKey: feedKey('QUOTE') }),
-        queryClient.cancelQueries({ queryKey: TOP3_KEY }),
+        queryClient.cancelQueries({ queryKey: HOME_KEY }),
       ]);
       const snapshot = {
         feed: queryClient.getQueryData<FeedCache>(feedKey('QUOTE')),
-        top3: queryClient.getQueryData<Page<PlazaItem>>(TOP3_KEY),
+        home: queryClient.getQueryData<Page<PlazaItem>>(HOME_KEY),
       };
       patchQuote(queryClient, quoteId, toggleAgree);
       return snapshot;
@@ -99,7 +102,7 @@ export default function PlazaScreen() {
     onError: (_error, _quoteId, snapshot) => {
       if (!snapshot) return;
       queryClient.setQueryData(feedKey('QUOTE'), snapshot.feed);
-      queryClient.setQueryData(TOP3_KEY, snapshot.top3);
+      queryClient.setQueryData(HOME_KEY, snapshot.home);
     },
     onSuccess: (result, quoteId) => {
       patchQuote(queryClient, quoteId, (item) => ({
@@ -255,7 +258,7 @@ function toggleAgree(item: PlazaItem): PlazaItem {
   };
 }
 
-/** 같은 문장이 무한 피드와 홈 상위 3건 양쪽에 있으므로 두 캐시를 한 번에 손본다. */
+/** 같은 문장이 무한 피드와 홈 스포트라이트 양쪽에 있으므로 두 캐시를 한 번에 손본다. */
 function patchQuote(
   queryClient: QueryClient,
   quoteId: number,
@@ -269,7 +272,7 @@ function patchQuote(
       ? { ...old, pages: old.pages.map((p) => ({ ...p, content: apply(p.content ?? []) })) }
       : old,
   );
-  queryClient.setQueryData<Page<PlazaItem>>(TOP3_KEY, (old) =>
+  queryClient.setQueryData<Page<PlazaItem>>(HOME_KEY, (old) =>
     old ? { ...old, content: apply(old.content ?? []) } : old,
   );
 }
