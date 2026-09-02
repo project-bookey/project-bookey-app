@@ -38,6 +38,7 @@ export type PopularBook = Schemas['PopularBookView'];
 export type Session = Schemas['SessionView'];
 export type SessionEndResult = Schemas['SessionEndResult'];
 export type StatsSummary = Schemas['StatsSummary'];
+export type DailyStat = Schemas['DailyStat'];
 
 // ── 모임 ─────────────────────────────────────────────────
 export type ClubSummary = Schemas['ClubSummaryView'];

@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { TextStyle } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { API_BASE_URL } from '@/api/client';
 import { libraryApi, notificationApi, statsApi } from '@/api/endpoints';
-import type { NotifyTone } from '@/api/types';
-import { PaperScreen, SectionNav } from '@/components/collage';
+import type { DailyStat, NotifyTone, ReadingRecord } from '@/api/types';
+import { PaperScreen, SectionNav, TiltCover, useCoverEntrance } from '@/components/collage';
+import {
+  Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle, formatDuration,
+} from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import type { ThemePreference } from '@/store/themePreference';
 import type { ColorTokens } from '@/theme';
-import { hairline, layout, ornament, radius, spacing, type, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import { rowOffsetY, tiltFor } from '@/theme/tokens';
 
 const TONES: { value: NotifyTone; label: string; sample: string }[] = [
   { value: 'GENTLE', label: '다정', sample: '12쪽 남았어요. 오늘 10분이면 끝나요.' },
@@ -28,10 +31,20 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: '다크' },
 ];
 
+/** 선반에 올리는 최대 권수 — 넘치면 '전체보기'로 넘긴다. */
+const SHELF_CAP = 10;
+/** 선반 표지 폭(px) — 시안 2e 기준. */
+const SHELF_COVER_W = 100;
+/** 월별 차트 막대 영역 높이(px). */
+const CHART_H = 76;
+/** 막대로 세우는 최대 개월 수 — 시안 2e 의 6칸. */
+const CHART_MONTHS = 6;
+/** 히트맵에 그리는 최근 일수 — 통계 응답이 더 짧으면 응답 길이를 따른다. */
+const HEATMAP_DAYS = 90;
+
 /**
- * 탭 5. 프로필 — 알림 톤 · 설정 (§6).
- * 테마 인식 전환 완료 — 레거시 colors 미사용. 다크 외관은 전환 전과 픽셀 동일해야 한다
- * (수동 테마 전환 스펙). 프리미티브는 ui.tsx(다크 고정) 대신 아래 로컬 버전을 쓴다.
+ * 구역 4. 나 — 프로필 · 내 서재 선반 · 올해 읽은 시간 · 기록 · 설정 (시안 2e).
+ * 설정 영역은 스킨만 바뀌었고 호출하는 API·상태는 이전과 동일하다.
  */
 export default function ProfileScreen() {
   const router = useRouter();
@@ -44,7 +57,13 @@ export default function ProfileScreen() {
   const setPreference = useThemePreference((s) => s.setPreference);
 
   const summary = useQuery({ queryKey: ['library', 'summary'], queryFn: libraryApi.summary });
-  const stats = useQuery({ queryKey: ['stats', 90], queryFn: () => statsApi.summary(90) });
+  // 홈과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
+  const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
+  const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
+  // 차트 헤더가 '올해' 총합을 말하므로 한 해를 덮는 365일을 받는다.
+  // 서버가 기간을 줄여 내려주면 받은 범위만 집계한다 — 이때 헤더 총합은 잘린 만큼 실제보다 적다.
+  // 히트맵은 이 응답의 최근 구간만 잘라 쓴다.
+  const stats = useQuery({ queryKey: ['stats', 365], queryFn: () => statsApi.summary(365) });
 
   const updateSettings = useMutation({
     mutationFn: (body: Record<string, unknown>) => notificationApi.updateSettings(body),
@@ -56,200 +75,457 @@ export default function ProfileScreen() {
     },
   });
 
+  // 읽는 중을 앞에 세우고 읽고 싶은 책을 뒤에 잇는다 — 선반은 '지금 손이 가는 순서'다.
+  const shelf: ReadingRecord[] = [
+    ...(reading.data?.content ?? []),
+    ...(want.data?.content ?? []),
+  ].slice(0, SHELF_CAP);
+  const shelfLoading = reading.isLoading || want.isLoading;
+
+  const counts = summary.data;
+  const libraryTotal = counts
+    ? counts.reading + counts.wantToRead + counts.finished + counts.paused + counts.abandoned
+    : shelf.length;
+
+  const heatDaily = (stats.data?.daily ?? []).slice(-HEATMAP_DAYS);
+
   return (
     <PaperScreen>
       <SectionNav active="me" />
       <ScrollView contentContainerStyle={styles.container}>
-        <View>
-          <Text style={[type.display, { color: colors.text }]}>{user?.nickname}</Text>
-          <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>@{user?.handle}</Text>
-        </View>
-
-        <Card>
-          <Eyebrow>내 서재</Eyebrow>
-          <View style={styles.counts}>
-            <CountCell label="읽는 중" value={summary.data?.reading ?? 0} />
-            <CountCell label="완독" value={summary.data?.finished ?? 0} />
-            <CountCell label="읽고 싶은" value={summary.data?.wantToRead ?? 0} />
-            <CountCell label="하차" value={summary.data?.abandoned ?? 0} />
-          </View>
-        </Card>
-
-        {stats.isLoading ? null : (
-          <Card>
-            <Eyebrow>기록</Eyebrow>
-            {stats.data ? (
-              <>
-                <View style={styles.statRow}>
-                  <StatCell label="현재 스트릭" value={`${stats.data.currentStreakDays}일`} />
-                  <VRule />
-                  <StatCell label="최장 스트릭" value={`${stats.data.longestStreakDays}일`} />
-                  <VRule />
-                  <StatCell label="이번 주" value={formatDuration(stats.data.weekDurationSec)} />
-                </View>
-                <Heatmap daily={stats.data.daily} />
-                <View style={styles.legend}>
-                  <Text style={[type.caption, { color: colors.textFaint }]}>적음</Text>
-                  {[0, 0.2, 0.4, 0.6, 1].map((level) => (
-                    <View
-                      key={level}
-                      style={[styles.legendCell, { backgroundColor: cellColor(level, colors) }]}
-                    />
-                  ))}
-                  <Text style={[type.caption, { color: colors.textFaint }]}>많음</Text>
-                </View>
-                <View style={{ marginTop: spacing.sm }}>
-                  <Rule />
-                  <KeyValue label="총 독서시간" value={formatDuration(stats.data.totalDurationSec)} />
-                  <Rule />
-                  <KeyValue label="오늘" value={formatDuration(stats.data.todayDurationSec)} />
-                  <Rule />
-                  <KeyValue
-                    label="기록한 날"
-                    value={`${stats.data.daily.filter((d) => d.sessionCount > 0).length}일 / 90일`}
-                  />
-                </View>
-              </>
+        <View style={styles.profileRow}>
+          <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
+            {user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
             ) : (
-              <Text style={[type.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-                통계를 불러오지 못했습니다.
+              <Text style={[styles.avatarInitial, { color: colors.textMuted }]}>
+                {user?.nickname?.slice(0, 1) ?? '?'}
               </Text>
             )}
-          </Card>
-        )}
-
-        <View>
-          <Eyebrow>재촉 톤</Eyebrow>
-          <Text style={[type.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-            같은 상황이라도 어떻게 말을 걸지 고를 수 있습니다.
-          </Text>
-          <View style={[styles.toneList, { borderColor: colors.line }]}>
-            {TONES.map((tone) => {
-              const selected = user?.notifyTone === tone.value;
-              return (
-                <Pressable
-                  key={tone.value}
-                  style={[
-                    styles.toneRow,
-                    {
-                      borderBottomColor: colors.line,
-                      backgroundColor: selected ? colors.accentSoft : colors.surface,
-                    },
-                  ]}
-                  onPress={() => updateSettings.mutate({ notifyTone: tone.value })}
-                >
-                  <View
-                    style={[
-                      styles.radio,
-                      selected
-                        ? { backgroundColor: colors.text, borderColor: colors.text }
-                        : { borderColor: colors.textFaint },
-                    ]}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[type.label, { color: colors.text }]}>{tone.label}</Text>
-                    <Text style={[type.caption, styles.toneSample, { color: colors.textMuted }]}>
-                      {tone.sample}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+          </View>
+          <View style={styles.profileText}>
+            <Text numberOfLines={1} style={[styles.nickname, { color: colors.text }]}>
+              {user?.nickname ?? '독자'}
+            </Text>
+            {/* 서버 MeResponse 에 가입일이 없어 핸들로 대신한다 — 필드가 생기면 '{연도} 가입'으로 바꾼다. */}
+            <Text style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
+              @{user?.handle ?? '—'} · 완독 {counts?.finished ?? 0}권
+            </Text>
           </View>
         </View>
 
-        <Card>
-          <Eyebrow>알림</Eyebrow>
-          <View style={{ marginTop: spacing.sm }}>
-            <KeyValue
-              label="조용 시간"
-              value={`${user?.quietHoursStart ?? 22}:00 – ${user?.quietHoursEnd ?? 8}:00`}
-            />
-            <Rule />
-            <KeyValue label="하루 최대" value={`개인 ${user?.dailyNotifyCap ?? 2}건 · 모임 ${user?.clubNotifyCap ?? 3}건`} />
-            <Rule />
-            <View style={styles.switchRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[type.label, { color: colors.text }]}>찌르기 받기</Text>
-                <Text style={[type.caption, { color: colors.textFaint, marginTop: 2 }]}>
-                  모임원이 프리셋 문구로 보내는 가벼운 재촉입니다.
+        <View style={styles.shelfSection}>
+          <View style={styles.shelfHeader}>
+            <Text style={[typeScale.titleSerif, styles.shelfTitle, { color: colors.text }]}>내 서재</Text>
+            <Pressable
+              onPress={() => router.push('/library')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
+            >
+              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+                {libraryTotal}권 · 전체보기 →
+              </Text>
+            </Pressable>
+          </View>
+
+          {shelfLoading ? (
+            <View style={styles.shelfList}>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={[styles.shelfSkeleton, { backgroundColor: colors.surface }]} />
+              ))}
+            </View>
+          ) : shelf.length === 0 ? (
+            <View style={styles.shelfList}>
+              <Pressable
+                onPress={() => router.push('/search')}
+                accessibilityRole="button"
+                accessibilityLabel="책 추가"
+              >
+                <View style={[styles.shelfGhost, { borderColor: colors.lineStrong }]}>
+                  <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
+                </View>
+              </Pressable>
+              {[0, 1].map((i) => (
+                <View key={i} style={[styles.shelfGhost, { borderColor: colors.lineStrong }]} />
+              ))}
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.shelfList}
+            >
+              {shelf.map((record, index) => (
+                <ShelfItem
+                  key={record.id}
+                  record={record}
+                  index={index}
+                  onPress={() => {
+                    if (record.book?.id != null) {
+                      router.push(`/book/${record.book.id}?recordId=${record.id}`);
+                    }
+                  }}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        <View style={styles.block}>
+          <YearChart
+            daily={stats.data?.daily ?? []}
+            loading={stats.isLoading}
+            failed={!stats.isLoading && !stats.data}
+          />
+        </View>
+
+        {stats.isLoading ? null : (
+          <View style={styles.block}>
+            <Card>
+              <Eyebrow>기록</Eyebrow>
+              {stats.data ? (
+                <>
+                  <View style={styles.statRow}>
+                    <StatCell label="현재 스트릭" value={`${stats.data.currentStreakDays}일`} />
+                    <VRule />
+                    <StatCell label="최장 스트릭" value={`${stats.data.longestStreakDays}일`} />
+                    <VRule />
+                    <StatCell label="이번 주" value={formatDuration(stats.data.weekDurationSec)} />
+                  </View>
+                  <Heatmap daily={heatDaily} />
+                  <View style={styles.legend}>
+                    <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>적음</Text>
+                    {[0, 0.2, 0.4, 0.6, 1].map((level) => (
+                      <View
+                        key={level}
+                        style={[styles.legendCell, { backgroundColor: cellColor(level, colors) }]}
+                      />
+                    ))}
+                    <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>많음</Text>
+                  </View>
+                  <View style={{ marginTop: spacing.sm }}>
+                    <Rule />
+                    <KeyValue label="총 독서시간" value={formatDuration(stats.data.totalDurationSec)} />
+                    <Rule />
+                    <KeyValue label="오늘" value={formatDuration(stats.data.todayDurationSec)} />
+                    <Rule />
+                    <KeyValue
+                      label="기록한 날"
+                      value={`${heatDaily.filter((d) => d.sessionCount > 0).length}일 / ${heatDaily.length}일`}
+                    />
+                  </View>
+                </>
+              ) : (
+                <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+                  통계를 불러오지 못했습니다.
                 </Text>
-              </View>
-              <Toggle
-                value={user?.allowNudge ?? true}
-                onChange={(value) => updateSettings.mutate({ allowNudge: value })}
-              />
+              )}
+            </Card>
+          </View>
+        )}
+
+        <View style={[styles.block, styles.settings]}>
+          <Rule />
+          <Eyebrow>설정</Eyebrow>
+
+          <View>
+            <Eyebrow plain>재촉 톤</Eyebrow>
+            <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+              같은 상황이라도 어떻게 말을 걸지 고를 수 있습니다.
+            </Text>
+            <View style={[styles.toneList, { borderColor: colors.line }]}>
+              {TONES.map((tone) => {
+                const selected = user?.notifyTone === tone.value;
+                return (
+                  <Pressable
+                    key={tone.value}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    style={[
+                      styles.toneRow,
+                      {
+                        borderBottomColor: colors.line,
+                        backgroundColor: selected ? colors.accentSoft : colors.surface,
+                      },
+                    ]}
+                    onPress={() => updateSettings.mutate({ notifyTone: tone.value })}
+                  >
+                    <View
+                      style={[
+                        styles.radio,
+                        selected
+                          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+                          : { borderColor: colors.textFaint },
+                      ]}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[typeScale.label, { color: colors.text }]}>{tone.label}</Text>
+                      <Text style={[typeScale.caption, styles.toneSample, { color: colors.textMuted }]}>
+                        {tone.sample}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
-        </Card>
 
-        <Card>
-          <Eyebrow>화면 테마</Eyebrow>
-          <View style={[styles.themeSegments, { borderColor: colors.line, backgroundColor: colors.surface }]}>
-            {THEMES.map((option, index) => {
-              const active = preference === option.value;
-              return (
-                <Pressable
-                  key={option.value}
-                  onPress={() => setPreference(option.value)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  style={[
-                    styles.themeSegment,
-                    index > 0 && { borderLeftWidth: hairline, borderLeftColor: colors.line },
-                    active && { backgroundColor: colors.text },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      type.label,
-                      styles.themeSegmentLabel,
-                      { color: active ? colors.bg : colors.textMuted },
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <Card>
+            <Eyebrow plain>알림</Eyebrow>
+            <View style={{ marginTop: spacing.sm }}>
+              <KeyValue
+                label="조용 시간"
+                value={`${user?.quietHoursStart ?? 22}:00 – ${user?.quietHoursEnd ?? 8}:00`}
+              />
+              <Rule />
+              <KeyValue
+                label="하루 최대"
+                value={`개인 ${user?.dailyNotifyCap ?? 2}건 · 모임 ${user?.clubNotifyCap ?? 3}건`}
+              />
+              <Rule />
+              <View style={styles.switchRow}>
+                <Toggle
+                  label="찌르기 받기"
+                  description="모임원이 프리셋 문구로 보내는 가벼운 재촉입니다."
+                  value={user?.allowNudge ?? true}
+                  onChange={(value) => updateSettings.mutate({ allowNudge: value })}
+                />
+              </View>
+            </View>
+          </Card>
+
+          <Card>
+            <Eyebrow plain>화면 테마</Eyebrow>
+            <View style={{ marginTop: spacing.sm }}>
+              <Segmented options={THEMES} value={preference} onChange={setPreference} />
+            </View>
+            <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+              시스템은 기기 설정을 따릅니다.
+            </Text>
+          </Card>
+
+          <View style={{ gap: spacing.sm }}>
+            <Rule />
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>API {API_BASE_URL}</Text>
+            <Button
+              label="로그아웃"
+              variant="ghost"
+              onPress={async () => {
+                await logout();
+                router.replace('/login');
+              }}
+            />
           </View>
-          <Text style={[type.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-            시스템은 기기 설정을 따릅니다.
-          </Text>
-        </Card>
-
-        <View style={{ gap: spacing.sm }}>
-          <Rule />
-          <Text style={[type.caption, { color: colors.textFaint }]}>API {API_BASE_URL}</Text>
-          <GhostButton
-            label="로그아웃"
-            onPress={async () => {
-              await logout();
-              router.replace('/login');
-            }}
-          />
         </View>
       </ScrollView>
     </PaperScreen>
   );
 }
 
-function CountCell({ label, value }: { label: string; value: number }) {
+/**
+ * 선반 한 칸 — 표지 + 진행 트랙 + 제목 + 상태.
+ * 표지와 아래 활자는 같은 index·entranceKey 로 입장 진행값을 공유해 한 조각처럼 앉는다.
+ */
+function ShelfItem({ record, index, onPress }: {
+  record: ReadingRecord;
+  index: number;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
+  const offsetY = rowOffsetY[index % rowOffsetY.length];
+  // 책 id 와 기록 id 는 다른 시퀀스라 섞으면 서로 다른 책이 같은 키를 가질 수 있다 — 접두로 갈라 둔다.
+  const entranceKey = record.book?.id != null
+    ? `me-shelf:b${record.book.id}`
+    : `me-shelf:r${record.id}`;
+  const progress = useCoverEntrance(index, entranceKey);
+  const metaStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
+
+  const title = record.book?.title ?? '제목 없음';
+  const state = statusLabel[record.status] ?? record.status;
+  const reading = record.status === 'READING';
+  const rate = Math.max(0, Math.min(1, record.progress?.completionRate ?? 0));
+
   return (
-    <View style={styles.countCell}>
-      <Numeral style={{ fontSize: 20, fontWeight: '700' }}>{value}</Numeral>
-      <Text style={[type.caption, { color: colors.textFaint }]}>{label}</Text>
+    <View style={styles.shelfItem}>
+      <TiltCover
+        uri={record.book?.coverUrl}
+        title={title}
+        width={SHELF_COVER_W}
+        index={index}
+        tilt={tiltFor(index)}
+        offsetY={offsetY}
+        entranceKey={entranceKey}
+        onPress={onPress}
+        accessibilityLabel={`${title}, ${state}`}
+      />
+
+      {/* 표지가 내려간 만큼 아래 활자도 같이 내린다. 표지 버튼이 제목·상태를 이미 읽어 주므로
+          여기는 접근성 트리에서 감춘다. */}
+      <Animated.View
+        style={[styles.shelfMeta, offsetY ? { transform: [{ translateY: offsetY }] } : null, metaStyle]}
+        aria-hidden
+      >
+        {reading ? (
+          <View style={[styles.shelfTrack, { backgroundColor: colors.line }]}>
+            <View
+              style={[styles.shelfFill, { width: `${Math.round(rate * 100)}%`, backgroundColor: colors.accent }]}
+            />
+          </View>
+        ) : null}
+        <Text numberOfLines={2} style={[typeScale.caption, styles.shelfItemTitle, { color: colors.text }]}>
+          {title}
+        </Text>
+        <Text style={[typeScale.monoLabel, styles.shelfState, { color: colors.textFaint }]}>{state}</Text>
+      </Animated.View>
     </View>
   );
+}
+
+/**
+ * 올해 읽은 시간 — 통계 응답의 일별 기록을 월 버킷으로 접어 막대로 세운다.
+ *
+ * 제목이 '올해'라고 말하므로 집계도 **올해 것만** 센다. 헤더 총합은 올해 버킷 전체 합이고,
+ * 막대는 시안대로 마지막 6칸까지만 보여 준다 — 즉 1~3월이 화면에서 잘려도 총합에는 들어 있다.
+ * 서버가 기간을 줄여 내려주면(클램프) 받은 범위만 집계되므로 총합이 실제보다 적을 수 있다.
+ */
+function YearChart({ daily, loading, failed }: {
+  daily: DailyStat[];
+  loading?: boolean;
+  failed?: boolean;
+}) {
+  const { colors } = useTheme();
+  const thisYear = String(new Date().getFullYear());
+  const yearMonths = bucketByMonth(daily).filter((m) => m.key.startsWith(thisYear));
+
+  // 헤더는 올해 전체, 막대는 마지막 6칸.
+  const totalSec = yearMonths.reduce((sum, m) => sum + m.durationSec, 0);
+  const months = yearMonths.slice(-CHART_MONTHS);
+
+  const max = Math.max(1, ...months.map((m) => m.durationSec));
+  const last = months[months.length - 1];
+  // 최상급은 헤더와 같은 연 스코프로 고른다 — 헤더가 올해 전체를 말하는데 '가장 길었던 달'만
+  // 표시 6칸에서 뽑으면 잘려 나간 달이 더 길 때 거짓말이 된다.
+  const best = yearMonths.reduce(
+    (top, m) => (m.durationSec > top.durationSec ? m : top),
+    yearMonths[0] ?? { key: '', month: 0, durationSec: 0 },
+  );
+
+  // 이번 달이 표시 구간 최저면 회복을 권한다. 아니면 가장 길었던 달을 짚어 준다.
+  const lastIsLowest = last != null && months.length >= 2 && months.every((m) => m.durationSec >= last.durationSec);
+  const caption = last == null
+    ? null
+    : lastIsLowest
+      ? `${last.month}월은 아직 ${Math.floor(last.durationSec / 60)}분입니다. 회복 가능합니다.`
+      : `가장 길었던 달은 ${best.month}월, ${roughDuration(best.durationSec)}입니다.`;
+
+  const a11y = months.length
+    ? `월별 독서 시간. ${months.map((m) => `${m.month}월 ${formatDuration(m.durationSec)}`).join(', ')}`
+    : '월별 독서 시간 기록이 없습니다.';
+
+  return (
+    <Card style={styles.chartCard}>
+      <View style={styles.chartHeader}>
+        <Text style={[styles.chartTitle, { color: colors.text }]}>올해 읽은 시간</Text>
+        {/* 아직 못 세었거나 못 불러온 상태에서는 수치를 말하지 않는다 — 바로 아래 실패 문구와 어긋난다.
+            값이 있을 때는 캡션과 같은 포맷 규칙(1시간 미만을 '0시간'이라 적지 않는다). */}
+        <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
+          {loading || failed ? '—' : roughDuration(totalSec)}
+        </Text>
+      </View>
+
+      {loading || failed || months.length === 0 ? (
+        <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+          {loading
+            ? '기록을 세는 중입니다.'
+            // 기록 카드와 같은 문구를 쓴다 — 한 화면에서 실패를 두 가지로 말하지 않는다.
+            : failed
+              ? '통계를 불러오지 못했습니다.'
+              : '아직 쌓인 기록이 없습니다.'}
+        </Text>
+      ) : (
+        <>
+          <View accessible accessibilityLabel={a11y} style={styles.chartRow}>
+            {months.map((m) => (
+              <View key={m.key} style={styles.chartCol}>
+                <View style={styles.barSlot}>
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        // 값이 0인 달도 바닥 선으로 남긴다 — 빈 달이 사라지면 리듬이 끊긴다.
+                        height: Math.max(2, Math.round((m.durationSec / max) * CHART_H)),
+                        backgroundColor: colors.accent,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[typeScale.monoLabel, styles.barLabel, { color: colors.textFaint }]}>
+                  {m.month}월
+                </Text>
+              </View>
+            ))}
+          </View>
+          {caption ? (
+            <Text style={[typeScale.monoLabel, styles.chartCaption, { color: colors.textFaint }]}>
+              {caption}
+            </Text>
+          ) : null}
+        </>
+      )}
+    </Card>
+  );
+}
+
+type MonthBucket = { key: string; month: number; durationSec: number };
+
+/** 1시간 미만이면 분으로 말한다 — 'O시간'으로 반올림해 0시간이라 적지 않기 위해서. */
+function roughDuration(seconds: number): string {
+  return seconds >= 3600 ? `${Math.round(seconds / 3600)}시간` : `${Math.floor(seconds / 60)}분`;
+}
+
+/**
+ * 일별 기록을 'YYYY-MM' 버킷으로 합산한다.
+ *
+ * 버킷은 **응답의 첫 날과 끝 날 사이 모든 달**을 먼저 만들어 놓고 값을 더한다.
+ * 서버가 세션이 있는 날만 내려주도록 바뀌어도 기록 없는 달이 0으로 남아 라벨이 사라지지 않는다.
+ */
+function bucketByMonth(daily: DailyStat[]): MonthBucket[] {
+  if (daily.length === 0) return [];
+
+  const keys = daily.map((day) => day.date.slice(0, 7));
+  const first = keys.reduce((min, key) => (key < min ? key : min));
+  const last = keys.reduce((max, key) => (key > max ? key : max));
+
+  const buckets = new Map<string, MonthBucket>();
+  let year = Number(first.slice(0, 4));
+  let month = Number(first.slice(5, 7));
+  // 최대 24칸 — 날짜가 깨져 있어도 무한 루프에 빠지지 않게 상한을 둔다.
+  for (let guard = 0; guard < 24; guard++) {
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    buckets.set(key, { key, month, durationSec: 0 });
+    if (key >= last) break;
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+
+  for (const day of daily) {
+    const bucket = buckets.get(day.date.slice(0, 7));
+    if (bucket) bucket.durationSec += day.durationSec;
+  }
+  return [...buckets.values()];
 }
 
 function StatCell({ label, value }: { label: string; value: string }) {
   const { colors } = useTheme();
   return (
     <View style={styles.statCell}>
-      <Numeral style={{ fontSize: 20, fontWeight: '700' }}>{value}</Numeral>
-      <Text style={[type.caption, { color: colors.textFaint }]}>{label}</Text>
+      <Text style={[typeScale.monoNumeral, styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
     </View>
   );
 }
@@ -259,7 +535,7 @@ function VRule() {
   return <View style={[styles.vRule, { backgroundColor: colors.line }]} />;
 }
 
-/** 주 단위 열로 쌓는 각진 히트맵 — 기록 탭에서 이식, 램프는 테마 악센트 파생. */
+/** 주 단위 열로 쌓는 히트맵 — 램프는 테마 악센트 파생 4단계. */
 function Heatmap({ daily }: { daily: { date: string; durationSec: number }[] }) {
   const { colors } = useTheme();
   const max = Math.max(1, ...daily.map((d) => d.durationSec));
@@ -312,106 +588,89 @@ function cellColor(ratio: number, colors: ColorTokens): string {
   return colors.accent;
 }
 
-function formatDuration(seconds?: number | null): string {
-  const total = Math.max(0, Math.floor(seconds ?? 0));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  if (hours > 0) return `${hours}시간 ${minutes}분`;
-  if (minutes > 0) return `${minutes}분`;
-  return `${total}초`;
-}
-
-// ── 로컬 프리미티브 — ui.tsx(다크 고정)와 같은 모양의 테마 인식 버전 ──────────
-
-function Card({ children }: { children: ReactNode }) {
-  const { colors, cardShadow } = useTheme();
-  return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
-      {children}
-    </View>
-  );
-}
-
-function Eyebrow({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
-  return (
-    <Text style={[type.eyebrow, { color: colors.textMuted }]}>
-      <Text style={{ color: colors.accent, fontSize: 11 }}>{ornament.section} </Text>
-      {children}
-    </Text>
-  );
-}
-
-function Rule() {
-  const { colors } = useTheme();
-  return <View style={[styles.rule, { backgroundColor: colors.line }]} />;
-}
-
-function KeyValue({ label, value }: { label: string; value: ReactNode }) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.keyValue}>
-      <Text style={[type.caption, { color: colors.textMuted }]}>{label}</Text>
-      <Text style={[styles.keyValueValue, { color: colors.text }]}>{value}</Text>
-    </View>
-  );
-}
-
-function Numeral({ children, style }: { children: ReactNode; style?: TextStyle }) {
-  const { colors } = useTheme();
-  return <Text style={[styles.numeral, { color: colors.text }, style]}>{children}</Text>;
-}
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (value: boolean) => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
-      onPress={() => onChange(!value)}
-      style={[
-        styles.toggleTrack,
-        value
-          ? { backgroundColor: colors.text, borderColor: colors.text }
-          : { backgroundColor: colors.surfaceRaised, borderColor: colors.line },
-      ]}
-    >
-      <View
-        style={[
-          styles.toggleKnob,
-          value
-            ? { backgroundColor: colors.bg, alignSelf: 'flex-end' }
-            : { backgroundColor: colors.textFaint },
-        ]}
-      />
-    </Pressable>
-  );
-}
-
-function GhostButton({ label, onPress }: { label: string; onPress: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [styles.ghostButton, pressed && styles.pressed]}
-    >
-      <Text style={[type.label, styles.ghostButtonLabel, { color: colors.text }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
-  card: { borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, overflow: 'hidden' },
-  counts: { flexDirection: 'row', marginTop: spacing.md },
-  countCell: { flex: 1, gap: 3 },
+  container: { ...layout.content, gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
+  block: { paddingHorizontal: spacing.lg },
+
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.pill,
+    borderWidth: hairline,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: { width: '100%', height: '100%' },
+  avatarInitial: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 28 },
+  profileText: { flex: 1, gap: 4 },
+  // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 21로 줄여 쓴다.
+  nickname: { ...typeScale.displaySerif, fontSize: 21, lineHeight: 28 },
+  profileMeta: { letterSpacing: 0.4 },
+
+  shelfSection: { gap: spacing.sm },
+  shelfHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingHorizontal: spacing.lg,
+  },
+  shelfTitle: { fontSize: 18, lineHeight: 26 },
+  // 지그재그로 내려간 표지와 그 아래 활자가 잘리지 않게 아래 여백을 크게 둔다.
+  shelfList: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.lg,
+  },
+  shelfItem: { width: SHELF_COVER_W },
+  shelfMeta: { marginTop: spacing.sm, gap: spacing.xs },
+  shelfTrack: { height: 2, width: '100%', overflow: 'hidden' },
+  shelfFill: { height: 2 },
+  // 브리프대로 caption 계열 — 앞에 얹은 typeScale.caption 을 덮지 않도록 행간만 조인다.
+  shelfItemTitle: { lineHeight: 16 },
+  shelfState: { fontSize: 9, letterSpacing: 0.6 },
+  shelfSkeleton: {
+    width: SHELF_COVER_W,
+    height: Math.round(SHELF_COVER_W * 1.5),
+    borderRadius: radius.sm,
+  },
+  shelfGhost: {
+    width: SHELF_COVER_W,
+    height: Math.round(SHELF_COVER_W * 1.5),
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+
+  // 책상에 비스듬히 놓인 종이 한 장 — 기울기는 아주 얕게만 준다.
+  chartCard: { gap: spacing.md, transform: [{ rotate: '-0.6deg' }] },
+  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  chartTitle: { ...typeScale.titleSerif, fontSize: 16, lineHeight: 22 },
+  chartRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-end' },
+  chartCol: { flex: 1, alignItems: 'center', gap: 6 },
+  barSlot: { height: CHART_H, width: '100%', justifyContent: 'flex-end' },
+  bar: { width: '100%', opacity: 0.85 },
+  barLabel: { fontSize: 9, letterSpacing: 0.4 },
+  chartCaption: { fontSize: 9, letterSpacing: 0.4, lineHeight: 14 },
+
   statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
   statCell: { flex: 1, gap: 3 },
+  statValue: { fontSize: 18 },
   vRule: { width: hairline, marginHorizontal: spacing.md },
   heatmap: { flexDirection: 'row', gap: 3, flexWrap: 'wrap', marginTop: spacing.md },
   heatWeek: { gap: 3 },
-  heatCell: { width: 11, height: 11 },
+  heatCell: { width: 11, height: 11, borderRadius: radius.sm },
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -419,8 +678,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     justifyContent: 'flex-end',
   },
-  legendCell: { width: 11, height: 11 },
-  toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: 12, overflow: 'hidden' },
+  legendCell: { width: 11, height: 11, borderRadius: radius.sm },
+
+  settings: { gap: spacing.lg },
+  toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: radius.md, overflow: 'hidden' },
   toneRow: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -428,42 +689,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     borderBottomWidth: hairline,
   },
-  radio: { width: 16, height: 16, borderRadius: 999, borderWidth: hairline, marginTop: 2 },
+  radio: { width: 16, height: 16, borderRadius: radius.pill, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  themeSegments: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  },
-  themeSegment: { flex: 1, paddingVertical: spacing.sm + 2, alignItems: 'center' },
-  themeSegmentLabel: { fontSize: 12 },
-  rule: { height: hairline },
-  keyValue: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingVertical: spacing.sm,
-  },
-  keyValueValue: { fontSize: 13, fontWeight: '700' },
-  numeral: { fontSize: 13, fontWeight: '700' },
-  toggleTrack: {
-    width: 46,
-    height: 26,
-    borderWidth: hairline,
-    borderRadius: radius.pill,
-    padding: 2,
-    justifyContent: 'center',
-  },
-  toggleKnob: { width: 20, height: 20, borderRadius: radius.pill },
-  ghostButton: { minHeight: 32, alignItems: 'center', justifyContent: 'center' },
-  ghostButtonLabel: { fontSize: 11.5 },
-  pressed: { opacity: 0.7 },
+  switchRow: { paddingVertical: spacing.sm },
 });
