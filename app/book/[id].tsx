@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Fragment, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   LayoutChangeEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
@@ -10,6 +11,7 @@ import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
+import { BookQuotesTab } from '@/components/book/BookQuotesTab';
 import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import {
@@ -686,7 +688,40 @@ function ProgressEditor({ rid, progress, colors }: {
   );
 }
 
-/** 리뷰 목록 + (record 있을 때) 인라인 작성 폼. */
+type RecordTab = 'REVIEW' | 'QUOTE';
+const RECORD_TABS: { value: RecordTab; label: string }[] = [
+  { value: 'REVIEW', label: '리뷰' },
+  { value: 'QUOTE', label: '밑줄' },
+];
+
+/** 섹션 제목 자리에 놓는 두 글자 탭 — 켜진 쪽만 밝고 아래 민트 밑줄 토막(A1). 개수는 적지 않는다. */
+function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, colors }: {
+  tabs: { value: T; label: string }[];
+  value: T;
+  onChange: (next: T) => void;
+  action?: ReactNode;
+  colors: ColorTokens;
+}) {
+  return (
+    <View style={styles.tabHeader}>
+      <View style={styles.tabRow}>
+        {tabs.map((t) => {
+          const active = t.value === value;
+          return (
+            <Pressable key={t.value} onPress={() => onChange(t.value)} hitSlop={8}
+              accessibilityRole="tab" accessibilityState={{ selected: active }} style={styles.tab}>
+              <Text style={[styles.tabTitle, { color: active ? colors.text : colors.textFaint }]}>{t.label}</Text>
+              <View style={[styles.tabRule, { backgroundColor: active ? colors.accent : 'transparent' }]} />
+            </Pressable>
+          );
+        })}
+      </View>
+      {action}
+    </View>
+  );
+}
+
+/** 리뷰 | 밑줄 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 밑줄 탭을 한 제목줄 아래에 둔다. */
 function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | null; colors: ColorTokens }) {
   const queryClient = useQueryClient();
   const reviews = useQuery({
@@ -695,10 +730,20 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
     enabled: Number.isFinite(bookId),
   });
 
+  const [tab, setTab] = useState<RecordTab>('REVIEW');
   const [open, setOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
   const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
+
+  // 탭을 바꾸면 펼쳐져 있던 작성 폼은 닫는다 — 다른 탭 밑에 폼이 숨어 있지 않게.
+  const switchTab = (next: RecordTab) => {
+    if (next === tab) return;
+    setOpen(false);
+    setQuoteOpen(false);
+    setTab(next);
+  };
 
   const create = useMutation({
     mutationFn: () =>
@@ -719,94 +764,103 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
       : null;
 
   const items = reviews.data?.content ?? [];
-  const total = reviews.data ? reviews.data.totalElements ?? items.length : null;
+
+  // 우측 액션은 탭별 — 리뷰는 '쓰기', 밑줄은 '오려두기'. 둘 다 이 책의 읽기 기록이 있어야 보인다.
+  const action = tab === 'REVIEW'
+    ? (rid != null && !done && !open ? (
+        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8}>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>쓰기 →</Text>
+        </Pressable>
+      ) : null)
+    : (rid != null && !quoteOpen ? (
+        <Pressable onPress={() => setQuoteOpen(true)} accessibilityRole="button" hitSlop={8}>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>오려두기 →</Text>
+        </Pressable>
+      ) : null);
 
   return (
     <View style={styles.section}>
-      <SectionHeader
-        title={total != null ? `리뷰 ${groupNumber(total)}` : '리뷰'}
-        action={
-          rid != null && !done && !open ? (
-            <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8}>
-              <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>쓰기 →</Text>
-            </Pressable>
-          ) : null
-        }
-      />
+      <TabbedSectionHeader tabs={RECORD_TABS} value={tab} onChange={switchTab} action={action} colors={colors} />
 
-      {open ? (
-        <Card style={styles.formCard}>
-          <View style={styles.stars}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Pressable key={n} onPress={() => setRating(n === rating ? 0 : n)} hitSlop={6}
-                accessibilityRole="button" accessibilityLabel={`별점 ${n}`}>
-                <Text style={{ fontSize: 24, color: n <= rating ? colors.accent : colors.lineStrong }}>★</Text>
-              </Pressable>
-            ))}
-            <Text style={[typeScale.caption, { color: colors.textFaint, marginLeft: spacing.sm }]}>
-              {rating > 0 ? `${rating}점` : '별점 선택 (선택 사항)'}
-            </Text>
-          </View>
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            placeholder="이 책은 어땠나요?"
-            placeholderTextColor={colors.textFaint}
-            multiline
-            style={[styles.reviewInput, {
-              backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-            }]}
-          />
-          {errorMessage ? (
-            <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
-          ) : null}
-          <View style={styles.formActions}>
-            <Button
-              label={create.isPending ? '등록 중…' : '등록'}
-              onPress={() => create.mutate()}
-              disabled={body.trim().length === 0 || create.isPending}
-              style={styles.formButton}
-            />
-            <Button
-              label="취소"
-              variant="outline"
-              onPress={() => setOpen(false)}
-              disabled={create.isPending}
-              style={styles.formButton}
-            />
-          </View>
-        </Card>
-      ) : null}
-
-      {items.length === 0 ? (
-        <Card>
-          <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-            아직 리뷰가 없어요. 이 책의 첫 리뷰를 남겨보세요.
-          </Text>
-        </Card>
+      {tab === 'QUOTE' ? (
+        <BookQuotesTab bookId={bookId} rid={rid} open={quoteOpen} onClose={() => setQuoteOpen(false)} />
       ) : (
-        <View style={styles.reviewList}>
-          {items.map((review, index) => {
-            const verified = review.verificationLevel === 'VERIFIED_FULL';
-            return (
-              // 오려 붙인 메모 조각 — 인덱스 기준 ±1° 교차 회전으로 붙인 티를 낸다
-              <MemoScrap key={review.id} rotate={index % 2 === 0 ? -1 : 1}>
-                <View style={styles.reviewHead}>
-                  <Text numberOfLines={1} style={[typeScale.label, styles.reviewAuthor, { color: colors.text }]}>
-                    {review.authorNickname}
-                  </Text>
-                  {review.rating ? (
-                    <Text style={[typeScale.monoNumeral, { color: colors.accent }]}>★ {review.rating}</Text>
-                  ) : null}
-                </View>
-                <Text style={[styles.reviewBody, { color: colors.textMuted }]}>{review.body}</Text>
-                <Text style={[typeScale.monoEyebrow, { color: verified ? colors.accent : colors.textFaint }]}>
-                  {VERIFICATION_LABEL[review.verificationLevel]}
+        <>
+          {open ? (
+            <Card style={styles.formCard}>
+              <View style={styles.stars}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Pressable key={n} onPress={() => setRating(n === rating ? 0 : n)} hitSlop={6}
+                    accessibilityRole="button" accessibilityLabel={`별점 ${n}`}>
+                    <Text style={{ fontSize: 24, color: n <= rating ? colors.accent : colors.lineStrong }}>★</Text>
+                  </Pressable>
+                ))}
+                <Text style={[typeScale.caption, { color: colors.textFaint, marginLeft: spacing.sm }]}>
+                  {rating > 0 ? `${rating}점` : '별점 선택 (선택 사항)'}
                 </Text>
-              </MemoScrap>
-            );
-          })}
-        </View>
+              </View>
+              <TextInput
+                value={body}
+                onChangeText={setBody}
+                placeholder="이 책은 어땠나요?"
+                placeholderTextColor={colors.textFaint}
+                multiline
+                style={[styles.reviewInput, {
+                  backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
+                }]}
+              />
+              {errorMessage ? (
+                <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
+              ) : null}
+              <View style={styles.formActions}>
+                <Button
+                  label={create.isPending ? '등록 중…' : '등록'}
+                  onPress={() => create.mutate()}
+                  disabled={body.trim().length === 0 || create.isPending}
+                  style={styles.formButton}
+                />
+                <Button
+                  label="취소"
+                  variant="outline"
+                  onPress={() => setOpen(false)}
+                  disabled={create.isPending}
+                  style={styles.formButton}
+                />
+              </View>
+            </Card>
+          ) : null}
+
+          {items.length === 0 ? (
+            <Card>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                아직 리뷰가 없어요. 이 책의 첫 리뷰를 남겨보세요.
+              </Text>
+            </Card>
+          ) : (
+            <View style={styles.reviewList}>
+              {items.map((review, index) => {
+                const verified = review.verificationLevel === 'VERIFIED_FULL';
+                return (
+                  // 오려 붙인 메모 조각 — 인덱스 기준 ±1° 교차 회전으로 붙인 티를 낸다
+                  <MemoScrap key={review.id} rotate={index % 2 === 0 ? -1 : 1}>
+                    <View style={styles.reviewHead}>
+                      <Text numberOfLines={1} style={[typeScale.label, styles.reviewAuthor, { color: colors.text }]}>
+                        {review.authorNickname}
+                      </Text>
+                      {review.rating ? (
+                        <Text style={[typeScale.monoNumeral, { color: colors.accent }]}>★ {review.rating}</Text>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.reviewBody, { color: colors.textMuted }]}>{review.body}</Text>
+                    <Text style={[typeScale.monoEyebrow, { color: verified ? colors.accent : colors.textFaint }]}>
+                      {VERIFICATION_LABEL[review.verificationLevel]}
+                    </Text>
+                  </MemoScrap>
+                );
+              })}
+            </View>
+          )}
+        </>
       )}
     </View>
   );
@@ -897,6 +951,12 @@ const styles = StyleSheet.create({
   },
   formActions: { flexDirection: 'row', gap: spacing.sm },
   formButton: { flex: 1 },
+  // 리뷰|밑줄 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
+  tabHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  tabRow: { flexDirection: 'row', gap: 18 },
+  tab: { gap: 6 },
+  tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
+  tabRule: { width: 22, height: 2 },
   reviewList: { gap: spacing.md },
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   reviewAuthor: { flexShrink: 1 },
