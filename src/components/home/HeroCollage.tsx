@@ -16,15 +16,16 @@ const BASE_W = 390;
 const G = {
   /** 표지 스택 */
   coverW: 126,
-  coverLeftRatio: 100 / BASE_W,
+  /** 시안은 100 — 왼쪽 표제 캡션에 숨통을 주려고 14px 오른쪽으로(사용자 조정) */
+  coverLeftRatio: 114 / BASE_W,
   coverTop: 24,
   /**
    * 뒤장 — 시안은 (150,10)·120×176·+6° 로 오른쪽 위에 부채꼴로 펼쳐져 있다.
    * 본 표지 중심 대비 (+47,-18) 을 -4° 프레임 좌표로 환산한 값이고, 회전은 프레임 안 상대값.
    */
   stack: { x: 48, y: -15, rotate: 10, scale: 0.95 },
-  /** 시작한 달 캡션 — 표지 왼쪽 위 빈 종이에, 표지 윗변(y≈20~29)과 겹치지 않는 높이 */
-  shelfTop: 8,
+  /** 시작한 달 표제 — 표지 왼쪽 위 빈 종이. 아이브로우+두 줄 표제+밑줄이 노트(118) 위에서 끝난다 */
+  shelfTop: 14,
   /** 스티키 노트 */
   noteLeftRatio: 20 / BASE_W,
   noteTop: 118,
@@ -57,13 +58,19 @@ const HERO_PARALLAX_RANGE = 160;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** 읽기 시작한 달 캡션 — `— 9월의 서가`. 해가 다르면 연도를 앞에 붙이고, 시작일이 없으면 null. */
-function shelfLabel(startedAt: string | undefined, now = new Date()): string | null {
+/**
+ * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 서가`.
+ * 해가 다르면 아이브로우에만 연도를 붙인다(`SINCE 2025.12.03`). 시작일이 없으면 null.
+ */
+function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebrow: string; title: string } | null {
   if (!startedAt) return null;
   const d = new Date(startedAt);
   if (Number.isNaN(d.getTime())) return null;
-  const month = `${d.getMonth() + 1}월의 서가`;
-  return d.getFullYear() === now.getFullYear() ? `— ${month}` : `— ${d.getFullYear()}년 ${month}`;
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const year = d.getFullYear() === now.getFullYear() ? '' : `${d.getFullYear()}.`;
+  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의
+서가` };
 }
 
 /** 스크롤 오프셋을 패럴랙스 유효 구간으로 가둔다 — iOS 바운스의 음수도 막는다. */
@@ -141,7 +148,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   }
 
   const percent = Math.round((record.progress.completionRate ?? 0) * 100);
-  const shelf = shelfLabel(record.startedAt);
+  const shelf = shelfCaption(record.startedAt);
   const hasPages = record.progress.totalPages > 0;
   const pageLine = [
     record.book?.author ?? '저자 미상',
@@ -194,21 +201,18 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
         </StickyNote>
       </Animated.View>
 
-      {/* ③ 시작한 달 캡션 + CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
+      {/* ③ 시작한 달 표제 + CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, paperStyle]}>
         {shelf ? (
-          <Text
-            numberOfLines={1}
-            style={[
-              typeScale.monoEyebrow,
-              styles.handCaption,
-              styles.shelf,
-              // 오른쪽 경계는 판 절반 — 연도가 붙어도 표지 위로 넘어가지 않게.
-              { left: Math.round(W * G.ctaLeftRatio), top: Math.round(G.shelfTop * k), right: Math.round(W / 2), color: colors.textMuted },
-            ]}
+          // 잡지 챕터 표제 — 민트 아이브로우, 세리프 두 줄, 구역 네비와 같은 민트 밑줄 토막.
+          <View
+            pointerEvents="none"
+            style={[styles.shelf, { left: Math.round(W * G.ctaLeftRatio), top: Math.round(G.shelfTop * k) }]}
           >
-            {shelf}
-          </Text>
+            <Text style={[typeScale.monoEyebrow, styles.shelfEyebrow, { color: colors.accent }]}>{shelf.eyebrow}</Text>
+            <Text style={[styles.shelfTitle, { color: colors.text }]}>{shelf.title}</Text>
+            <View style={[styles.shelfRule, { backgroundColor: colors.accent }]} />
+          </View>
         ) : null}
         <View style={[styles.ctaRow, { left: Math.round(W * G.ctaLeftRatio), right: ctaRight, top: ctaTop }]}>
           <Pressable
@@ -223,7 +227,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           {streakLine ? (
             <Text
               numberOfLines={1}
-              style={[typeScale.monoEyebrow, styles.handCaption, styles.streak, { color: colors.textMuted }]}
+              style={[typeScale.monoEyebrow, styles.streak, { color: colors.textMuted }]}
             >
               {streakLine}
             </Text>
@@ -268,10 +272,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg + 2,
     paddingVertical: spacing.md - 2,
   },
-  // 손으로 적은 캡션 — 한글이 섞여 모노 아이브로우의 넓은 자간은 덜어내고 살짝 기울인다.
-  handCaption: { letterSpacing: 0.3, transform: [{ rotate: '-3deg' }] },
-  shelf: { position: 'absolute' },
-  streak: { flexShrink: 1 },
+  shelf: { position: 'absolute', transform: [{ rotate: '-2deg' }] },
+  shelfEyebrow: { fontSize: 9 },
+  // 시안 23px 세리프 두 줄 — 노트 표제(21)보다 한 단 크게, 자간은 살짝 조인다.
+  shelfTitle: { fontFamily: serif.extraBold, fontSize: 23, lineHeight: 26, marginTop: 5, letterSpacing: -0.2 },
+  shelfRule: { width: 26, height: 2, marginTop: 7 },
+  // 한글이 섞이는 캡션이라 모노 아이브로우의 넓은 자간은 덜어낸다.
+  streak: { flexShrink: 1, letterSpacing: 0.3, transform: [{ rotate: '-3deg' }] },
   memo: { paddingVertical: 9, paddingHorizontal: 11 },
   memoQuote: { fontFamily: serif.regular, fontSize: 12, lineHeight: 18 },
   memoSign: { fontSize: 8, letterSpacing: 0.5, marginTop: 5 },
