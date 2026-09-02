@@ -80,17 +80,17 @@ export default function RootLayout() {
             <Stack.Screen name="plaza" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
             <Stack.Screen name="library" options={{ headerShown: false }} />
-            <Stack.Screen name="clubs" options={{ title: '토론 모임' }} />
+            <Stack.Screen name="clubs" options={{ headerShown: false }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
             <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
             <Stack.Screen name="challenge/[id]" options={{ title: '챌린지' }} />
-            <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
-            <Stack.Screen name="club/create" options={{ title: '모임 만들기' }} />
-            <Stack.Screen name="club/[id]/index" options={{ title: '모임' }} />
-            <Stack.Screen name="club/[id]/posts" options={{ title: '토론' }} />
-            <Stack.Screen name="club/[id]/result" options={{ title: '모임 결산' }} />
+            <Stack.Screen name="club/join" options={{ headerShown: false }} />
+            <Stack.Screen name="club/create" options={{ headerShown: false }} />
+            <Stack.Screen name="club/[id]/index" options={{ headerShown: false }} />
+            <Stack.Screen name="club/[id]/posts" options={{ headerShown: false }} />
+            <Stack.Screen name="club/[id]/result" options={{ headerShown: false }} />
             <Stack.Screen name="book/[id]" options={{ headerShown: false }} />
           </Stack>
         </SafeAreaProvider>

@@ -6,8 +6,10 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { clubApi } from '@/api/endpoints';
 import { ApiError } from '@/api/client';
 import { BookCover } from '@/components/BookCover';
-import { Button, Card, Eyebrow, KeyValue, Rule, Screen, Toggle } from '@/components/ui';
-import { colors, fonts, hairline, spacing, type } from '@/theme';
+import { PaperScreen, SubHeader } from '@/components/collage';
+import { Button, Card, Eyebrow, KeyValue, Rule, Toggle } from '@/components/ui';
+import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono, sans } from '@/theme/tokens';
 
 /**
  * 코드로 참가 (§12.1).
@@ -16,6 +18,7 @@ import { colors, fonts, hairline, spacing, type } from '@/theme';
 export default function ClubJoinScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
   const [code, setCode] = useState('');
   const [shareProgress, setShareProgress] = useState(true);
   const [adoptTarget, setAdoptTarget] = useState(true);
@@ -41,8 +44,12 @@ export default function ClubJoinScreen() {
     onError: (e) => setError(e instanceof ApiError ? e.message : '참가하지 못했습니다.'),
   });
 
+  const errorStyle = [typeScale.caption, { color: colors.danger }];
+
   return (
-    <Screen>
+    <PaperScreen>
+      <SubHeader category="코드로 참가" />
+
       <ScrollView contentContainerStyle={styles.container}>
         <View>
           <Eyebrow>초대 코드</Eyebrow>
@@ -57,13 +64,18 @@ export default function ClubJoinScreen() {
             autoCapitalize="characters"
             autoCorrect={false}
             maxLength={8}
-            style={styles.codeInput}
+            style={[
+              styles.codeInput,
+              { borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text },
+            ]}
           />
-          <Text style={styles.hint}>대소문자와 하이픈은 자동으로 정리됩니다.</Text>
+          <Text style={[styles.hint, { color: colors.textFaint }]}>
+            대소문자와 하이픈은 자동으로 정리됩니다.
+          </Text>
         </View>
 
         {ready && preview.isError ? (
-          <Text style={styles.error}>유효하지 않은 초대 코드입니다.</Text>
+          <Text style={errorStyle}>유효하지 않은 초대 코드입니다.</Text>
         ) : null}
 
         {preview.data ? (
@@ -75,10 +87,14 @@ export default function ClubJoinScreen() {
                 width={52}
               />
               <View style={{ flex: 1, gap: 3 }}>
-                <Text style={styles.clubName}>{preview.data.name}</Text>
-                <Text style={styles.clubBook}>{preview.data.book?.title}</Text>
+                <Text style={[styles.clubName, { color: colors.text }]}>{preview.data.name}</Text>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                  {preview.data.book?.title}
+                </Text>
                 {preview.data.description ? (
-                  <Text numberOfLines={2} style={styles.clubDesc}>{preview.data.description}</Text>
+                  <Text numberOfLines={2} style={[styles.clubDesc, { color: colors.textFaint }]}>
+                    {preview.data.description}
+                  </Text>
                 ) : null}
               </View>
             </View>
@@ -95,9 +111,11 @@ export default function ClubJoinScreen() {
             />
 
             {preview.data.alreadyMember ? (
-              <Text style={styles.notice}>이미 참가 중인 모임입니다.</Text>
+              <Text style={[typeScale.caption, { color: colors.accent }]}>
+                이미 참가 중인 모임입니다.
+              </Text>
             ) : preview.data.joinBlockedReason ? (
-              <Text style={styles.error}>{preview.data.joinBlockedReason}</Text>
+              <Text style={errorStyle}>{preview.data.joinBlockedReason}</Text>
             ) : null}
           </Card>
         ) : null}
@@ -105,10 +123,10 @@ export default function ClubJoinScreen() {
         {preview.data?.joinable ? (
           <Card style={{ gap: spacing.md }}>
             <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
-            <Text style={styles.consentText}>
+            <Text style={[styles.consentText, { color: colors.textMuted }]}>
               · 이 책이 내 서재에 자동으로 등록됩니다{'\n'}
-              · 내 <Text style={styles.bold}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 모임원에게 보입니다{'\n'}
-              · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={styles.bold}>공유되지 않습니다</Text>
+              · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 모임원에게 보입니다{'\n'}
+              · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={[styles.bold, { color: colors.text }]}>공유되지 않습니다</Text>
             </Text>
 
             <Rule />
@@ -127,7 +145,7 @@ export default function ClubJoinScreen() {
           </Card>
         ) : null}
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={errorStyle}>{error}</Text> : null}
 
         <Button
           label="참가하기"
@@ -136,7 +154,7 @@ export default function ClubJoinScreen() {
           onPress={() => join.mutate()}
         />
       </ScrollView>
-    </Screen>
+    </PaperScreen>
   );
 }
 
@@ -150,25 +168,18 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     borderWidth: hairline,
-    borderColor: colors.lineStrong,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    fontFamily: fonts.mono,
+    borderRadius: radius.md,
+    fontFamily: mono.semiBold,
     fontSize: 30,
-    fontWeight: '700',
     letterSpacing: 8,
     textAlign: 'center',
     paddingVertical: spacing.lg,
-    color: colors.ink,
     marginTop: spacing.sm,
   },
-  hint: { ...type.caption, color: colors.textFaint, marginTop: spacing.sm },
+  hint: { ...typeScale.caption, marginTop: spacing.sm },
   previewHead: { flexDirection: 'row', gap: spacing.md },
-  clubName: { ...type.title, color: colors.ink },
-  clubBook: { ...type.caption, color: colors.textMuted },
-  clubDesc: { ...type.caption, color: colors.textFaint, marginTop: 2, lineHeight: 16 },
-  consentText: { ...type.body, color: colors.textMuted, lineHeight: 22 },
-  bold: { fontWeight: '700', color: colors.ink },
-  notice: { ...type.caption, color: colors.accent },
-  error: { ...type.caption, color: colors.danger },
+  clubName: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
+  clubDesc: { ...typeScale.caption, marginTop: 2, lineHeight: 16 },
+  consentText: { ...typeScale.body, lineHeight: 22 },
+  bold: { fontFamily: sans.semiBold },
 });
