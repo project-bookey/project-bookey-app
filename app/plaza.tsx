@@ -23,6 +23,13 @@ const CARD_TILT = [-1.1, 0.8];
 const DELETE_CONFIRM_MS = 3000;
 /** 문장 길이 상한 — 서버 계약과 같은 값. */
 const CONTENT_MAX = 500;
+/**
+ * 푸터 액션 확장 터치 영역(네이티브 전용).
+ *
+ * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키우고,
+ * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
+ */
+const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
 /** 광장 피드 무한 쿼리 키. 홈 상위 3건은 ['plaza','QUOTE','top3'] 로 갈라 둔다(QuoteScrapRow). */
 const feedKey = (type: PlazaItemType) => ['plaza', type] as const;
@@ -46,7 +53,16 @@ export default function PlazaScreen() {
   const [type, setType] = useState<PlazaItemType>('QUOTE');
   const [composing, setComposing] = useState(false);
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [removeError, setRemoveError] = useState<{ id: number; message: string } | null>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * 토글이 날아가 있는 문장 id.
+   *
+   * 응답을 기다리는 사이 같은 문장을 또 누르면 두 뮤테이션이 서로의 스냅샷을 엇갈리게
+   * 되돌려 서버와 다른 카운트가 화면에 눌러앉는다(staleTime 15초 + 포커스 재조회 꺼짐이라
+   * 저절로 낫지 않는다). 그래서 문장 단위로 한 번에 하나씩만 보낸다.
+   */
+  const agreeing = useRef(new Set<number>());
 
   useEffect(() => () => {
     if (confirmTimer.current) clearTimeout(confirmTimer.current);
@@ -92,13 +108,32 @@ export default function PlazaScreen() {
         agreeCount: result.agreeCount,
       }));
     },
+    // 성공이든 실패든 잠금을 풀어 준다. 여기서 무효화하지 않는다 —
+    // 무한 피드 전 페이지를 다시 받아 오는 값이 토글 하나에 비해 너무 비싸다.
+    onSettled: (_result, _error, quoteId) => {
+      agreeing.current.delete(quoteId);
+    },
   });
+
+  /** 응답을 기다리는 동안의 재탭은 삼킨다 — 낙관 갱신이 서로 어긋나지 않게. */
+  const pressAgree = (quoteId: number) => {
+    if (agreeing.current.has(quoteId)) return;
+    agreeing.current.add(quoteId);
+    agree.mutate(quoteId);
+  };
 
   const remove = useMutation({
     mutationFn: (quoteId: number) => quoteApi.remove(quoteId),
+    onMutate: () => setRemoveError(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plaza'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    },
+    onError: (error, quoteId) => {
+      setRemoveError({
+        id: quoteId,
+        message: error instanceof ApiError ? error.message : '삭제하지 못했어요 · 다시 시도',
+      });
     },
   });
 
@@ -166,8 +201,9 @@ export default function PlazaScreen() {
             index={index}
             mine={myId != null && item.authorId === myId}
             confirming={item.quoteId != null && confirmId === item.quoteId}
+            error={item.quoteId != null && removeError?.id === item.quoteId ? removeError.message : null}
             onAgree={() => {
-              if (item.quoteId != null) agree.mutate(item.quoteId);
+              if (item.quoteId != null) pressAgree(item.quoteId);
             }}
             onDelete={() => {
               if (item.quoteId != null) pressDelete(item.quoteId);
@@ -239,11 +275,13 @@ function patchQuote(
 }
 
 /** 피드 카드 한 장 — 밑줄과 완독 자랑이 같은 카드 가족을 쓴다. */
-function FeedCard({ item, index, mine, confirming, onAgree, onDelete, onOpenBook }: {
+function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onOpenBook }: {
   item: PlazaItem;
   index: number;
   mine: boolean;
   confirming: boolean;
+  /** 삭제 실패 안내 — 이 카드에서 실패했을 때만 들어온다. */
+  error?: string | null;
   onAgree: () => void;
   onDelete: () => void;
   onOpenBook: () => void;
@@ -294,27 +332,35 @@ function FeedCard({ item, index, mine, confirming, onAgree, onDelete, onOpenBook
       )}
 
       {quote ? (
-        <View style={styles.footRow}>
-          <Pressable onPress={onAgree} hitSlop={6} accessibilityRole="button"
-            accessibilityState={{ selected: item.agreedByMe ?? false }}
-            accessibilityLabel={`나도 그럼 ${item.agreeCount ?? 0}`}>
-            <Text style={[typeScale.monoLabel, styles.footLabel, {
-              color: item.agreedByMe ? colors.accent : colors.textMuted,
-            }]}>
-              나도 그럼 {item.agreeCount ?? 0}
-            </Text>
-          </Pressable>
-          {mine ? (
-            <Pressable onPress={onDelete} hitSlop={6} accessibilityRole="button"
-              accessibilityLabel={confirming ? '삭제 확인' : '삭제'} style={styles.deleteButton}>
+        <>
+          <View style={styles.footRow}>
+            {/* 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓힌다. */}
+            <Pressable onPress={onAgree} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
+              accessibilityRole="button"
+              accessibilityState={{ selected: item.agreedByMe ?? false }}
+              accessibilityLabel={`나도 그럼 ${item.agreeCount ?? 0}`}>
               <Text style={[typeScale.monoLabel, styles.footLabel, {
-                color: confirming ? colors.danger : colors.textFaint,
+                color: item.agreedByMe ? colors.accent : colors.textMuted,
               }]}>
-                {confirming ? '한 번 더' : '삭제'}
+                나도 그럼 {item.agreeCount ?? 0}
               </Text>
             </Pressable>
+            {mine ? (
+              <Pressable onPress={onDelete} hitSlop={FOOT_HIT_SLOP} accessibilityRole="button"
+                accessibilityLabel={confirming ? '삭제 확인' : '삭제'}
+                style={[styles.footAction, styles.deleteButton]}>
+                <Text style={[typeScale.monoLabel, styles.footLabel, {
+                  color: confirming ? colors.danger : colors.textFaint,
+                }]}>
+                  {confirming ? '한 번 더' : '삭제'}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {error ? (
+            <Text style={[typeScale.caption, { color: colors.warn }]}>{error}</Text>
           ) : null}
-        </View>
+        </>
       ) : null}
     </Card>
   );
@@ -376,6 +422,20 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
     return (
       <Card style={styles.composer}>
         <Text style={[typeScale.caption, { color: colors.textFaint }]}>읽는 중인 책을 찾는 중입니다.</Text>
+      </Card>
+    );
+  }
+
+  // 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패를 '읽는 중인 책이 없다'로 말하지 않는다.
+  if (reading.isError) {
+    return (
+      <Card style={styles.composer}>
+        <Text style={[typeScale.body, { color: colors.textMuted }]}>
+          읽는 중인 책을 불러오지 못했습니다.
+        </Text>
+        <Pressable onPress={() => reading.refetch()} hitSlop={8} accessibilityRole="button">
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+        </Pressable>
       </Card>
     );
   }
@@ -513,6 +573,8 @@ const styles = StyleSheet.create({
   finishText: { flex: 1, gap: spacing.xs },
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   footLabel: { fontSize: 10, letterSpacing: 0.4 },
+  // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
+  footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
   deleteButton: { marginLeft: 'auto' },
 
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },

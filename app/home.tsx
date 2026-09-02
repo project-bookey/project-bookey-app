@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Pressable, RefreshControl, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
@@ -34,9 +34,13 @@ export default function HomeScreen() {
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
 
+  // '오려둔 문장' 쿼리는 QuoteScraps 안에 있어 여기서 직접 못 본다 — 키로 조회해
+  // 새로고침 인디케이터가 그 섹션이 다 돌 때까지 함께 남게 한다.
+  const quotesFetching = useIsFetching({ queryKey: ['plaza', 'QUOTE', 'top3'] }) > 0;
+
   const refreshing =
     reading.isFetching || want.isFetching || stats.isFetching ||
-    banners.isFetching || popular.isFetching || recommended.isFetching;
+    banners.isFetching || popular.isFetching || recommended.isFetching || quotesFetching;
   const refetchAll = () => {
     reading.refetch(); want.refetch(); stats.refetch();
     banners.refetch(); popular.refetch(); recommended.refetch();

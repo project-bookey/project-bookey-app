@@ -340,15 +340,17 @@ function MyQuotes() {
   const { colors } = useTheme();
   const mine = useQuery({ queryKey: ['quotes', 'mine'], queryFn: () => quoteApi.mine(0, 1) });
 
+  // 렌더 여부는 '최신 한 건이 있는가'로만 가른다 — 서버가 totalElements 를 생략해도
+  // 실제로 있는 문장이 사라지지 않는다. 개수는 값이 있을 때만 덧붙인다.
   const latest = mine.data?.content?.[0];
-  const total = mine.data?.totalElements ?? 0;
-  if (!latest || total === 0) return null;
+  const total = mine.data?.totalElements;
+  if (!latest) return null;
 
   return (
     <View style={[styles.block, styles.quoteSection]}>
       <Rule />
       <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
-        내가 오려둔 문장 {total}
+        내가 오려둔 문장{total != null ? ` ${total}` : ''}
       </Text>
       <View style={styles.quoteRow}>
         <MemoScrap rotate={-1} style={styles.quoteScrap}>
@@ -363,7 +365,7 @@ function MyQuotes() {
         <Pressable
           onPress={() => router.push('/plaza')}
           accessibilityRole="button"
-          accessibilityLabel={`오려둔 문장 전부 보기, 총 ${total}개`}
+          accessibilityLabel={total != null ? `오려둔 문장 전부 보기, 총 ${total}개` : '오려둔 문장 전부 보기'}
         >
           <StickyNote rotate={1.5} style={styles.quoteAll}>
             <Text style={[typeScale.label, styles.quoteAllLabel, { color: colors.onNote }]}>
