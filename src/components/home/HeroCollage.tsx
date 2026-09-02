@@ -64,7 +64,7 @@ const HERO_PARALLAX_RANGE = 160;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /**
- * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 서가`.
+ * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 나의 책`.
  * 해가 다르면 아이브로우에만 연도를 붙인다(`SINCE 2025.12.03`). 시작일이 없으면 null.
  */
 function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebrow: string; title: string } | null {
@@ -74,8 +74,7 @@ function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebro
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const year = d.getFullYear() === now.getFullYear() ? '' : `${d.getFullYear()}.`;
-  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의
-서가` };
+  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의\n나의 책` };
 }
 
 /** 스크롤 오프셋을 패럴랙스 유효 구간으로 가둔다 — iOS 바운스의 음수도 막는다. */
