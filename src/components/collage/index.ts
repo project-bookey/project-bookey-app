@@ -10,4 +10,4 @@ export { SectionNav } from './SectionNav';
 export type { SectionKey } from './SectionNav';
 export { StickyNote } from './StickyNote';
 export { SubHeader } from './SubHeader';
-export { TiltCover } from './TiltCover';
+export { TiltCover, useCoverEntrance } from './TiltCover';

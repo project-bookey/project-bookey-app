@@ -30,6 +30,42 @@ const SETTLE_RISE = 14;
 const enteredKeys = new Set<string>();
 
 /**
+ * 표지 입장 정착 진행값(0 → 1)을 만든다.
+ *
+ * 표지 옆 활자처럼 **표지와 같은 리듬으로 함께 정착해야 하는 요소**가 있으면
+ * 같은 index·entranceKey 로 이 훅을 호출한다 — 스태거 지연과 1회성 가드가
+ * 이 한 곳에만 있게 해서 타이밍이 어긋나지 않는다.
+ *
+ * 키 등록은 effect 에서, 입장 여부 판정은 render 에서 한다. 같은 커밋에서
+ * 같은 키로 여러 번 호출해도 판정이 모두 render 단계에 끝나므로 함께 입장한다.
+ */
+export function useCoverEntrance(index = 0, entranceKey?: string, entering = true) {
+  // 이미 한 번 입장한 표지는(키가 있을 때) 다시 마운트돼도 정착 상태로 시작한다.
+  const shouldEnter = entering && !(entranceKey != null && enteredKeys.has(entranceKey));
+
+  // 0 → 1 로 한 번만 진행하는 입장 값. 입장이 필요 없으면 처음부터 1.
+  const progress = useSharedValue(shouldEnter ? 0 : 1);
+  // 같은 인스턴스에서 effect 가 다시 돌아도(스트릭트 모드 등) 재발화하지 않도록 잠근다.
+  const settled = useRef(false);
+
+  useEffect(() => {
+    if (settled.current) return;
+    settled.current = true;
+    if (!shouldEnter) {
+      progress.value = 1;
+      return;
+    }
+    if (entranceKey != null) enteredKeys.add(entranceKey);
+    const delay = Math.min(index, stagger.max) * stagger.step;
+    progress.value = withDelay(delay, withSpring(1, SETTLE_SPRING));
+    // 의도적으로 마운트 시 1회만 실행한다 — 의존성 배열을 채우면 재발화한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return progress;
+}
+
+/**
  * 콜라주 표지 — 표지 동적 효과의 단일 소스.
  *
  * 세 가지를 한 컴포넌트가 담당한다.
@@ -83,28 +119,8 @@ export function TiltCover({
   const height = Math.round(width * 1.5);
   const angle = tilt ?? tiltFor(index);
 
-  // 이미 한 번 입장한 표지는(키가 있을 때) 다시 마운트돼도 정착 상태로 시작한다.
-  const shouldEnter = entering && !(entranceKey != null && enteredKeys.has(entranceKey));
-
-  // 0 → 1 로 한 번만 진행하는 입장 값. 입장이 필요 없으면 처음부터 1.
-  const progress = useSharedValue(shouldEnter ? 0 : 1);
+  const progress = useCoverEntrance(index, entranceKey, entering);
   const pressed = useSharedValue(0);
-  // 같은 인스턴스에서 effect 가 다시 돌아도(스트릭트 모드 등) 재발화하지 않도록 잠근다.
-  const settled = useRef(false);
-
-  useEffect(() => {
-    if (settled.current) return;
-    settled.current = true;
-    if (!shouldEnter) {
-      progress.value = 1;
-      return;
-    }
-    if (entranceKey != null) enteredKeys.add(entranceKey);
-    const delay = Math.min(index, stagger.max) * stagger.step;
-    progress.value = withDelay(delay, withSpring(1, SETTLE_SPRING));
-    // 의도적으로 마운트 시 1회만 실행한다 — 의존성 배열을 채우면 재발화한다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const frameStyle = useAnimatedStyle(() => {
     const p = progress.value;

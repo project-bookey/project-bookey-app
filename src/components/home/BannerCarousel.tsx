@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Banner } from '@/api/types';
-import { darkColors, ornament, radius, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const CARD_H = 108;
 
@@ -21,9 +21,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   if (banners.length === 0) {
     return (
       <View style={[styles.wrap, styles.placeholder, { borderColor: colors.lineStrong }]}>
-        <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-          {ornament.section} 이벤트 준비 중
-        </Text>
+        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>이벤트 준비 중</Text>
       </View>
     );
   }
@@ -60,7 +58,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
               ) : null}
               <View style={styles.cardBody}>
                 <View style={[styles.tag, { backgroundColor: darkColors.accent }]}>
-                  <Text style={[typeScale.overline, { color: darkColors.onAccent }]}>EVENT</Text>
+                  <Text style={[typeScale.monoEyebrow, { color: darkColors.onAccent }]}>EVENT</Text>
                 </View>
                 <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: darkColors.text }]}>
                   {item.title}
@@ -103,7 +101,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.xs + 2,
     paddingVertical: 2,
-    borderRadius: radius.sm,
+    borderRadius: radius.pill,
     marginBottom: spacing.xs,
   },
   placeholder: {
