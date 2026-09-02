@@ -32,12 +32,6 @@ export type ColorTokens = {
   scrimDim: string;
   /** 포스터 하단→투명 그라데이션 색 스톱. 렌더링은 화면 작업 때 expo-linear-gradient 로. */
   scrimStops: readonly [string, string];
-  /** 헤더·탭바 크롬 — 블랙 크롬 폐기, 배경과 동화(=bg) */
-  chrome: string;
-  /** 크롬 위 텍스트·활성 탭 (=text) */
-  onChrome: string;
-  /** 크롬 위 비활성 탭 (=textFaint) */
-  onChromeFaint: string;
   /** 배경 보조 톤 — 섹션 구분·서브 배경 */
   bgAlt: string;
   /** surface 보다 더 깊은 면 — 콜라주 책상 바닥 */
@@ -72,9 +66,6 @@ export const darkColors: ColorTokens = {
   dangerSoft: '#3A1714',
   scrimDim: 'rgba(0,0,0,0.55)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
-  chrome: '#0c0e0d',
-  onChrome: '#e8e6e1',
-  onChromeFaint: '#6f6d66',
   bgAlt: '#131413',
   surfaceDeep: '#141712',
   dotGrid: '#1b1e1a',
@@ -101,9 +92,6 @@ export const lightColors: ColorTokens = {
   dangerSoft: '#FBE4E1',
   scrimDim: 'rgba(0,0,0,0.45)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
-  chrome: '#faf8f4',
-  onChrome: '#1a1c18',
-  onChromeFaint: '#8b887f',
   bgAlt: '#f4f1ea',
   surfaceDeep: '#f1eee6',
   dotGrid: '#e7e3d9',
