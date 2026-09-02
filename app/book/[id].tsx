@@ -5,6 +5,7 @@ import {
   LayoutChangeEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
@@ -58,6 +59,11 @@ const FOCUS_TOP_GAP = 80;
  * 시간과 대략 맞춰, 링이 꺼진 뒤에는 화면이 저 혼자 움직이지 않게 한다.
  */
 const FOCUS_SETTLE_MS = 2200;
+/** 명령한 자리에서 이만큼 어긋나면 사람이 민 것으로 본다(px). */
+const FOCUS_DRIFT = 24;
+
+/** `measureLayout` 의 기준 노드 타입 — RN 타입 선언에 이름이 없어 여기서 뽑아 쓴다. */
+type MeasureBase = Parameters<View['measureLayout']>[0];
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -163,27 +169,90 @@ export default function BookDetailScreen() {
   const scrollRef = useRef<ScrollView>(null);
   /** 따라다니는 중인 조각과 그 유효 시각. */
   const focus = useRef<{ node: View; until: number } | null>(null);
+  /** 창을 닫는 타이머 — 시간이 지나면 조각 인스턴스를 놓아 준다. */
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * 마지막으로 명령한 목적지 — 스크롤이 우리가 시킨 것인지 사람이 민 것인지 가리는 기준.
+   * `arrived` 는 그 자리에 한 번이라도 닿았는지(애니메이션 중의 중간값을 손짓으로 오해하지 않게),
+   * `contentH` 는 닿았을 때의 콘텐츠 높이(콘텐츠가 자라며 브라우저가 위치를 손보는 것과 구분).
+   */
+  const commanded = useRef<{ y: number; contentH: number; arrived: boolean } | null>(null);
+
+  /** 따라다니기를 끝낸다 — 타이머·조각 인스턴스·목적지를 한꺼번에 놓는다. */
+  const releaseFocus = useCallback(() => {
+    if (focusTimer.current) {
+      clearTimeout(focusTimer.current);
+      focusTimer.current = null;
+    }
+    focus.current = null;
+    commanded.current = null;
+  }, []);
+
+  // 화면을 떠날 때 타이머와 조각 참조를 남기지 않는다.
+  useEffect(() => releaseFocus, [releaseFocus]);
 
   const alignFocus = useCallback((animated: boolean) => {
     const target = focus.current;
     const scroller = scrollRef.current;
     if (target == null || scroller == null) return;
     if (Date.now() > target.until) {
-      focus.current = null;
+      releaseFocus();
       return;
     }
+    /*
+      기준 노드는 `getInnerViewRef()` 로 받는다. `getInnerViewNode()` 는
+      `findNodeHandle(...)` 을 거쳐 **숫자 nativeTag** 를 돌려주는데, 새 아키텍처(Fabric)의
+      `ReactNativeElement.measureLayout` 은 기준이 호스트 인스턴스가 아니면 `onFail` 조차
+      부르지 않고 조용히 돌아선다 — 네이티브에서 링만 켜지고 스크롤은 안 되는 침묵 실패다.
+      (웹은 react-native-web 이 호스트 노드를 돌려줘 우연히 굴러갔을 뿐이다.)
+      RN 타입 선언에는 없는 메서드라 좁게 캐스팅하고, 없으면 예전 노드로 물러선다.
+    */
+    const inner = (scroller as { getInnerViewRef?: () => MeasureBase | null }).getInnerViewRef?.()
+      ?? scroller.getInnerViewNode();
+    if (inner == null) return;
+
     target.node.measureLayout(
-      scroller.getInnerViewNode(),
-      (_x, y) => scroller.scrollTo({ y: Math.max(0, y - FOCUS_TOP_GAP), animated }),
+      inner,
+      (_x, y) => {
+        const to = Math.max(0, y - FOCUS_TOP_GAP);
+        commanded.current = { y: to, contentH: -1, arrived: false };
+        scroller.scrollTo({ y: to, animated });
+      },
       () => { /* 측정 실패(언마운트 등) — 조용히 넘어간다 */ },
     );
-  }, []);
+  }, [releaseFocus]);
 
   /** '오려둔 문장' 섹션이 대상 조각을 찾으면 이걸 부른다. */
   const focusOnCard = useCallback((node: View) => {
+    releaseFocus();
     focus.current = { node, until: Date.now() + FOCUS_SETTLE_MS };
+    focusTimer.current = setTimeout(releaseFocus, FOCUS_SETTLE_MS);
     alignFocus(true);
-  }, [alignFocus]);
+  }, [alignFocus, releaseFocus]);
+
+  /**
+   * 사람이 스크롤을 만졌으면 따라다니기를 그만둔다.
+   *
+   * `onScrollBeginDrag` 만으로는 웹을 못 잡는다 — react-native-web 은 그 핸들러를 아예
+   * 전달하지 않아, 창이 열려 있는 동안 사용자가 휠로 움직여도 뒤늦게 온 섹션이 화면을
+   * 도로 끌어당긴다. 그래서 보고된 위치가 우리가 명령한 자리에서 벗어났는지로 가린다.
+   */
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const at = commanded.current;
+    if (at == null || focus.current == null) return;
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    // 문서 끝에 걸려 명령값에 못 미칠 수 있으니, 실제로 닿을 수 있는 자리와 견준다.
+    const reachable = Math.min(at.y, Math.max(0, contentSize.height - layoutMeasurement.height));
+    if (Math.abs(contentOffset.y - reachable) <= FOCUS_DRIFT) {
+      at.arrived = true;
+      at.contentH = contentSize.height;
+      return;
+    }
+    // 아직 가는 중이거나(애니메이션 중간값), 그 사이 콘텐츠가 자라 브라우저가 위치를
+    // 손본 것이면 사람이 민 게 아니다 — 곧 오는 정렬이 다시 맞춘다.
+    if (!at.arrived || contentSize.height !== at.contentH) return;
+    releaseFocus();
+  }, [releaseFocus]);
 
   return (
     <PaperScreen>
@@ -194,8 +263,10 @@ export default function BookDetailScreen() {
         contentContainerStyle={styles.container}
         // 늦게 도착한 섹션이 조각을 밀어내면 곧바로 다시 붙인다 — 창이 살아 있는 동안만.
         onContentSizeChange={() => alignFocus(false)}
-        // 손가락이 닿는 순간 따라다니기를 그만둔다 — 읽는 사람 손을 이기지 않는다.
-        onScrollBeginDrag={() => { focus.current = null; }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        // 손가락이 닿는 순간 따라다니기를 그만둔다(네이티브). 웹은 위 onScroll 이 받는다.
+        onScrollBeginDrag={releaseFocus}
       >
         <Hero info={info} rating={rating} loading={book.isLoading} bound={bound} />
 
