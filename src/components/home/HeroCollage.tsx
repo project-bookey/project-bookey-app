@@ -23,6 +23,8 @@ const G = {
    * 본 표지 중심 대비 (+47,-18) 을 -4° 프레임 좌표로 환산한 값이고, 회전은 프레임 안 상대값.
    */
   stack: { x: 48, y: -15, rotate: 10, scale: 0.95 },
+  /** 시작한 달 캡션 — 표지 왼쪽 위 빈 종이에, 표지 윗변(y≈20~29)과 겹치지 않는 높이 */
+  shelfTop: 8,
   /** 스티키 노트 */
   noteLeftRatio: 20 / BASE_W,
   noteTop: 118,
@@ -55,6 +57,15 @@ const HERO_PARALLAX_RANGE = 160;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
+/** 읽기 시작한 달 캡션 — `— 9월의 서가`. 해가 다르면 연도를 앞에 붙이고, 시작일이 없으면 null. */
+function shelfLabel(startedAt: string | undefined, now = new Date()): string | null {
+  if (!startedAt) return null;
+  const d = new Date(startedAt);
+  if (Number.isNaN(d.getTime())) return null;
+  const month = `${d.getMonth() + 1}월의 서가`;
+  return d.getFullYear() === now.getFullYear() ? `— ${month}` : `— ${d.getFullYear()}년 ${month}`;
+}
+
 /** 스크롤 오프셋을 패럴랙스 유효 구간으로 가둔다 — iOS 바운스의 음수도 막는다. */
 function parallaxOffset(y: number) {
   'worklet';
@@ -62,7 +73,7 @@ function parallaxOffset(y: number) {
 }
 
 /**
- * 서가 히어로 콜라주 — 도트 종이 위에 표지 스택·스티키 노트·CTA·메모 조각을 흩어 놓는다.
+ * 서가 히어로 콜라주 — 도트 종이 위에 표지 스택·스티키 노트·CTA·메모 조각·시작한 달 캡션을 흩어 놓는다.
  *
  * 레이어마다 스크롤 오프셋에 다른 계수를 곱해(패럴랙스) 종이들이 각각 다른
  * 속도로 밀린다. 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
@@ -130,6 +141,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   }
 
   const percent = Math.round((record.progress.completionRate ?? 0) * 100);
+  const shelf = shelfLabel(record.startedAt);
   const hasPages = record.progress.totalPages > 0;
   const pageLine = [
     record.book?.author ?? '저자 미상',
@@ -182,8 +194,22 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
         </StickyNote>
       </Animated.View>
 
-      {/* ③ CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
+      {/* ③ 시작한 달 캡션 + CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, paperStyle]}>
+        {shelf ? (
+          <Text
+            numberOfLines={1}
+            style={[
+              typeScale.monoEyebrow,
+              styles.handCaption,
+              styles.shelf,
+              // 오른쪽 경계는 판 절반 — 연도가 붙어도 표지 위로 넘어가지 않게.
+              { left: Math.round(W * G.ctaLeftRatio), top: Math.round(G.shelfTop * k), right: Math.round(W / 2), color: colors.textMuted },
+            ]}
+          >
+            {shelf}
+          </Text>
+        ) : null}
         <View style={[styles.ctaRow, { left: Math.round(W * G.ctaLeftRatio), right: ctaRight, top: ctaTop }]}>
           <Pressable
             onPress={() => onContinue(record)}
@@ -197,7 +223,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           {streakLine ? (
             <Text
               numberOfLines={1}
-              style={[typeScale.monoEyebrow, styles.streak, { color: colors.textMuted }]}
+              style={[typeScale.monoEyebrow, styles.handCaption, styles.streak, { color: colors.textMuted }]}
             >
               {streakLine}
             </Text>
@@ -242,8 +268,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg + 2,
     paddingVertical: spacing.md - 2,
   },
-  // 한글이 섞이는 캡션이라 모노 아이브로우의 넓은 자간은 덜어낸다.
-  streak: { flexShrink: 1, letterSpacing: 0.3, transform: [{ rotate: '-3deg' }] },
+  // 손으로 적은 캡션 — 한글이 섞여 모노 아이브로우의 넓은 자간은 덜어내고 살짝 기울인다.
+  handCaption: { letterSpacing: 0.3, transform: [{ rotate: '-3deg' }] },
+  shelf: { position: 'absolute' },
+  streak: { flexShrink: 1 },
   memo: { paddingVertical: 9, paddingHorizontal: 11 },
   memoQuote: { fontFamily: serif.regular, fontSize: 12, lineHeight: 18 },
   memoSign: { fontSize: 8, letterSpacing: 0.5, marginTop: 5 },
