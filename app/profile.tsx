@@ -37,6 +37,8 @@ const SHELF_CAP = 10;
 const SHELF_COVER_W = 100;
 /** 월별 차트 막대 영역 높이(px). */
 const CHART_H = 76;
+/** 막대로 세우는 최대 개월 수 — 시안 2e 의 6칸. */
+const CHART_MONTHS = 6;
 /** 히트맵에 그리는 최근 일수 — 통계 응답이 더 짧으면 응답 길이를 따른다. */
 const HEATMAP_DAYS = 90;
 
@@ -58,8 +60,10 @@ export default function ProfileScreen() {
   // 홈과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
   const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
   const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
-  // 월별 차트가 6개월을 그리므로 180일로 받는다. 히트맵은 이 응답의 최근 구간만 잘라 쓴다.
-  const stats = useQuery({ queryKey: ['stats', 180], queryFn: () => statsApi.summary(180) });
+  // 차트 헤더가 '올해' 총합을 말하므로 한 해를 덮는 365일을 받는다.
+  // 서버가 기간을 줄여 내려주면 받은 범위만 집계한다 — 이때 헤더 총합은 잘린 만큼 실제보다 적다.
+  // 히트맵은 이 응답의 최근 구간만 잘라 쓴다.
+  const stats = useQuery({ queryKey: ['stats', 365], queryFn: () => statsApi.summary(365) });
 
   const updateSettings = useMutation({
     mutationFn: (body: Record<string, unknown>) => notificationApi.updateSettings(body),
@@ -170,7 +174,11 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.block}>
-          <YearChart daily={stats.data?.daily ?? []} loading={stats.isLoading} />
+          <YearChart
+            daily={stats.data?.daily ?? []}
+            loading={stats.isLoading}
+            failed={!stats.isLoading && !stats.data}
+          />
         </View>
 
         {stats.isLoading ? null : (
@@ -223,8 +231,8 @@ export default function ProfileScreen() {
           <Eyebrow>설정</Eyebrow>
 
           <View>
-            <Text style={[typeScale.bodyStrong, { color: colors.text }]}>재촉 톤</Text>
-            <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.xs }]}>
+            <Eyebrow plain>재촉 톤</Eyebrow>
+            <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
               같은 상황이라도 어떻게 말을 걸지 고를 수 있습니다.
             </Text>
             <View style={[styles.toneList, { borderColor: colors.line }]}>
@@ -265,7 +273,7 @@ export default function ProfileScreen() {
           </View>
 
           <Card>
-            <Eyebrow>알림</Eyebrow>
+            <Eyebrow plain>알림</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <KeyValue
                 label="조용 시간"
@@ -289,7 +297,7 @@ export default function ProfileScreen() {
           </Card>
 
           <Card>
-            <Eyebrow>화면 테마</Eyebrow>
+            <Eyebrow plain>화면 테마</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <Segmented options={THEMES} value={preference} onChange={setPreference} />
             </View>
@@ -327,7 +335,10 @@ function ShelfItem({ record, index, onPress }: {
 }) {
   const { colors } = useTheme();
   const offsetY = rowOffsetY[index % rowOffsetY.length];
-  const entranceKey = `me-shelf:${record.book?.id ?? record.id}`;
+  // 책 id 와 기록 id 는 다른 시퀀스라 섞으면 서로 다른 책이 같은 키를 가질 수 있다 — 접두로 갈라 둔다.
+  const entranceKey = record.book?.id != null
+    ? `me-shelf:b${record.book.id}`
+    : `me-shelf:r${record.id}`;
   const progress = useCoverEntrance(index, entranceKey);
   const metaStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
 
@@ -374,13 +385,24 @@ function ShelfItem({ record, index, onPress }: {
 
 /**
  * 올해 읽은 시간 — 통계 응답의 일별 기록을 월 버킷으로 접어 막대로 세운다.
- * 서버가 기간을 줄여 내려줘도(예: 90일) 응답에 실제로 담긴 개월만 그린다.
+ *
+ * 제목이 '올해'라고 말하므로 집계도 **올해 것만** 센다. 헤더 총합은 올해 버킷 전체 합이고,
+ * 막대는 시안대로 마지막 6칸까지만 보여 준다 — 즉 1~3월이 화면에서 잘려도 총합에는 들어 있다.
+ * 서버가 기간을 줄여 내려주면(클램프) 받은 범위만 집계되므로 총합이 실제보다 적을 수 있다.
  */
-function YearChart({ daily, loading }: { daily: DailyStat[]; loading?: boolean }) {
+function YearChart({ daily, loading, failed }: {
+  daily: DailyStat[];
+  loading?: boolean;
+  failed?: boolean;
+}) {
   const { colors } = useTheme();
-  const months = bucketByMonth(daily);
+  const thisYear = String(new Date().getFullYear());
+  const yearMonths = bucketByMonth(daily).filter((m) => m.key.startsWith(thisYear));
 
-  const totalSec = months.reduce((sum, m) => sum + m.durationSec, 0);
+  // 헤더는 올해 전체, 막대는 마지막 6칸.
+  const totalSec = yearMonths.reduce((sum, m) => sum + m.durationSec, 0);
+  const months = yearMonths.slice(-CHART_MONTHS);
+
   const max = Math.max(1, ...months.map((m) => m.durationSec));
   const last = months[months.length - 1];
   const best = months.reduce(
@@ -388,13 +410,13 @@ function YearChart({ daily, loading }: { daily: DailyStat[]; loading?: boolean }
     months[0] ?? { key: '', month: 0, durationSec: 0 },
   );
 
-  // 이번 달이 구간 최저면 회복을 권한다. 아니면 가장 길었던 달을 짚어 준다.
+  // 이번 달이 표시 구간 최저면 회복을 권한다. 아니면 가장 길었던 달을 짚어 준다.
   const lastIsLowest = last != null && months.length >= 2 && months.every((m) => m.durationSec >= last.durationSec);
   const caption = last == null
     ? null
     : lastIsLowest
       ? `${last.month}월은 아직 ${Math.floor(last.durationSec / 60)}분입니다. 회복 가능합니다.`
-      : `가장 길었던 달은 ${best.month}월, ${Math.round(best.durationSec / 3600)}시간입니다.`;
+      : `가장 길었던 달은 ${best.month}월, ${roughDuration(best.durationSec)}입니다.`;
 
   const a11y = months.length
     ? `월별 독서 시간. ${months.map((m) => `${m.month}월 ${formatDuration(m.durationSec)}`).join(', ')}`
@@ -409,9 +431,14 @@ function YearChart({ daily, loading }: { daily: DailyStat[]; loading?: boolean }
         </Text>
       </View>
 
-      {loading || months.length === 0 ? (
+      {loading || failed || months.length === 0 ? (
         <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-          {loading ? '기록을 세는 중입니다.' : '아직 쌓인 기록이 없습니다.'}
+          {loading
+            ? '기록을 세는 중입니다.'
+            // 기록 카드와 같은 문구를 쓴다 — 한 화면에서 실패를 두 가지로 말하지 않는다.
+            : failed
+              ? '통계를 불러오지 못했습니다.'
+              : '아직 쌓인 기록이 없습니다.'}
         </Text>
       ) : (
         <>
@@ -449,19 +476,44 @@ function YearChart({ daily, loading }: { daily: DailyStat[]; loading?: boolean }
 
 type MonthBucket = { key: string; month: number; durationSec: number };
 
-/** 일별 기록을 'YYYY-MM' 버킷으로 합산한다. 최근 6개월까지만 남긴다. */
+/** 1시간 미만이면 분으로 말한다 — 'O시간'으로 반올림해 0시간이라 적지 않기 위해서. */
+function roughDuration(seconds: number): string {
+  return seconds >= 3600 ? `${Math.round(seconds / 3600)}시간` : `${Math.floor(seconds / 60)}분`;
+}
+
+/**
+ * 일별 기록을 'YYYY-MM' 버킷으로 합산한다.
+ *
+ * 버킷은 **응답의 첫 날과 끝 날 사이 모든 달**을 먼저 만들어 놓고 값을 더한다.
+ * 서버가 세션이 있는 날만 내려주도록 바뀌어도 기록 없는 달이 0으로 남아 라벨이 사라지지 않는다.
+ */
 function bucketByMonth(daily: DailyStat[]): MonthBucket[] {
+  if (daily.length === 0) return [];
+
+  const keys = daily.map((day) => day.date.slice(0, 7));
+  const first = keys.reduce((min, key) => (key < min ? key : min));
+  const last = keys.reduce((max, key) => (key > max ? key : max));
+
   const buckets = new Map<string, MonthBucket>();
-  for (const day of daily) {
-    const key = day.date.slice(0, 7);
-    const bucket = buckets.get(key);
-    if (bucket) {
-      bucket.durationSec += day.durationSec;
-    } else {
-      buckets.set(key, { key, month: Number(key.slice(5, 7)), durationSec: day.durationSec });
+  let year = Number(first.slice(0, 4));
+  let month = Number(first.slice(5, 7));
+  // 최대 24칸 — 날짜가 깨져 있어도 무한 루프에 빠지지 않게 상한을 둔다.
+  for (let guard = 0; guard < 24; guard++) {
+    const key = `${year}-${String(month).padStart(2, '0')}`;
+    buckets.set(key, { key, month, durationSec: 0 });
+    if (key >= last) break;
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
     }
   }
-  return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key)).slice(-6);
+
+  for (const day of daily) {
+    const bucket = buckets.get(day.date.slice(0, 7));
+    if (bucket) bucket.durationSec += day.durationSec;
+  }
+  return [...buckets.values()];
 }
 
 function StatCell({ label, value }: { label: string; value: string }) {
@@ -578,7 +630,8 @@ const styles = StyleSheet.create({
   shelfMeta: { marginTop: spacing.sm, gap: spacing.xs },
   shelfTrack: { height: 2, width: '100%', overflow: 'hidden' },
   shelfFill: { height: 2 },
-  shelfItemTitle: { ...typeScale.bodyStrong, fontSize: 11.5, lineHeight: 16 },
+  // 브리프대로 caption 계열 — 앞에 얹은 typeScale.caption 을 덮지 않도록 행간만 조인다.
+  shelfItemTitle: { lineHeight: 16 },
   shelfState: { fontSize: 9, letterSpacing: 0.6 },
   shelfSkeleton: {
     width: SHELF_COVER_W,
