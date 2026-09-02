@@ -2,7 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -11,11 +11,11 @@ import { invalidateQuoteLists, plazaFeedKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
+import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { serif } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
@@ -23,8 +23,6 @@ const PAGE_SIZE = 10;
 const CARD_TILT = [-1.1, 0.8];
 /** 삭제 재확인이 살아 있는 시간(ms). 지나면 조용히 원래 라벨로 돌아간다. */
 const DELETE_CONFIRM_MS = 3000;
-/** 문장 길이 상한 — 서버 계약과 같은 값. */
-const CONTENT_MAX = 500;
 
 /**
  * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 완독 자랑이 모이는 곳 (시안 2d).
@@ -267,27 +265,22 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
   const records = (reading.data?.content ?? []).filter((r) => r.book?.id != null);
 
   const [recordId, setRecordId] = useState<number | null>(null);
-  const [content, setContent] = useState('');
-  const [pageText, setPageText] = useState('');
+  // 문장·쪽수 칸과 그 검증은 도서 상세 밑줄 탭과 같은 것을 쓴다.
+  const draft = useQuoteDraft();
 
   // 아직 안 골랐으면 첫 책을 기본으로 둔다 — 한 권만 읽는 사람은 바로 쓰기 시작할 수 있다.
   const selected = records.find((r) => r.id === recordId) ?? records[0] ?? null;
 
-  const trimmedPage = pageText.trim();
-  const pageValue = trimmedPage === '' ? undefined : Number(trimmedPage);
-  const pageValid = pageValue === undefined
-    || (Number.isInteger(pageValue) && pageValue >= 1);
-
-  const body = content.trim();
-  const canSubmit = selected != null && body.length > 0 && body.length <= CONTENT_MAX && pageValid;
+  // 광장은 책을 골라야 오릴 수 있다 — 공용 검증에 그 조건만 덧붙인다.
+  const canSubmit = selected != null && draft.canSubmit;
 
   const create = useMutation({
     mutationFn: () =>
       quoteApi.create({
         bookId: selected!.book!.id,
         readingRecordId: selected!.id,
-        content: body,
-        page: pageValue,
+        content: draft.body,
+        page: draft.pageValue,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plaza'] });
@@ -363,55 +356,26 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
         })}
       </ScrollView>
 
-      <TextInput
-        value={content}
-        onChangeText={setContent}
-        placeholder="마음에 걸린 문장을 옮겨 적어 보세요."
-        placeholderTextColor={colors.textFaint}
-        multiline
-        maxLength={CONTENT_MAX}
-        accessibilityLabel="문장"
-        style={[styles.contentInput, {
-          backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-        }]}
+      <QuoteDraftFields
+        draft={draft}
+        trailing={(
+          <Pressable
+            onPress={() => create.mutate()}
+            disabled={!canSubmit || create.isPending}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSubmit || create.isPending }}
+            style={[styles.submit, {
+              backgroundColor: colors.accent,
+              opacity: !canSubmit || create.isPending ? 0.35 : 1,
+            }]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
+              {create.isPending ? '오리는 중…' : '오려두기'}
+            </Text>
+          </Pressable>
+        )}
       />
 
-      <View style={styles.composerMeta}>
-        <TextInput
-          value={pageText}
-          onChangeText={setPageText}
-          placeholder="쪽(선택)"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="number-pad"
-          accessibilityLabel="쪽수"
-          style={[styles.pageInput, {
-            backgroundColor: colors.surfaceDeep,
-            borderColor: pageValid ? colors.line : colors.danger,
-            color: colors.text,
-          }]}
-        />
-        <Text style={[typeScale.monoLabel, { color: content.length >= CONTENT_MAX ? colors.warn : colors.textFaint }]}>
-          {content.length}/{CONTENT_MAX}
-        </Text>
-        <Pressable
-          onPress={() => create.mutate()}
-          disabled={!canSubmit || create.isPending}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canSubmit || create.isPending }}
-          style={[styles.submit, {
-            backgroundColor: colors.accent,
-            opacity: !canSubmit || create.isPending ? 0.35 : 1,
-          }]}
-        >
-          <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
-            {create.isPending ? '오리는 중…' : '오려두기'}
-          </Text>
-        </Pressable>
-      </View>
-
-      {!pageValid ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>쪽수는 1 이상의 숫자로 적어 주세요.</Text>
-      ) : null}
       {errorMessage ? (
         <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
       ) : null}
@@ -448,25 +412,6 @@ const styles = StyleSheet.create({
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },
   pickRow: { gap: spacing.sm, paddingVertical: 2 },
   pick: { borderWidth: 2, borderRadius: radius.sm, padding: 2 },
-  contentInput: {
-    minHeight: 92,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    fontFamily: serif.regular,
-    fontSize: 15,
-    lineHeight: 25,
-    textAlignVertical: 'top',
-  },
-  composerMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  pageInput: {
-    width: 84,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    ...typeScale.monoNumeral,
-  },
   submit: {
     marginLeft: 'auto',
     borderRadius: radius.pill,

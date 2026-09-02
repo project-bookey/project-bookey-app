@@ -1,21 +1,18 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { quoteApi } from '@/api/endpoints';
 import { bookQuotesKey, invalidateQuoteLists } from '@/api/quoteCache';
 import type { BookQuote } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
+import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { Button, Card } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-import { serif } from '@/theme/tokens';
+import { spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받는 밑줄 수 — 섹션 안에 붙는 조각이라 적게. */
 const PAGE_SIZE = 5;
-/** 문장 길이 상한 — 서버 계약과 같은 값. */
-const CONTENT_MAX = 500;
 
 /**
  * 도서 상세 리뷰 섹션의 '밑줄' 탭 — 이 책에 달린 밑줄을 점선 메모 조각으로 늘어놓는다.
@@ -50,7 +47,7 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
         <View style={styles.center}>
           <ActivityIndicator size="small" color={colors.accent} />
         </View>
-      ) : quotes.isError ? (
+      ) : quotes.isError && items.length === 0 ? (
         <Card>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>밑줄을 불러오지 못했습니다.</Text>
           <Pressable onPress={() => quotes.refetch()} hitSlop={8} accessibilityRole="button">
@@ -73,6 +70,14 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
             <View style={styles.center}>
               <ActivityIndicator size="small" color={colors.accent} />
             </View>
+          ) : quotes.isError ? (
+            // 다음 쪽을 못 받아도 이미 펼쳐 둔 조각은 그대로 둔다 — '더 보기' 자리에 다시 시도만 놓는다.
+            <Pressable
+              onPress={() => (quotes.hasNextPage ? quotes.fetchNextPage() : quotes.refetch())}
+              accessibilityRole="button" accessibilityLabel="밑줄 다시 불러오기" hitSlop={8}
+              style={styles.center}>
+              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
+            </Pressable>
           ) : quotes.hasNextPage ? (
             <Pressable onPress={() => quotes.fetchNextPage()} accessibilityRole="button" hitSlop={8}
               style={styles.center}>
@@ -117,17 +122,12 @@ function QuoteScrap({ quote, rotate, onPress }: { quote: BookQuote; rotate: numb
 function QuoteComposer({ bookId, rid, onDone }: { bookId: number; rid: number; onDone: () => void }) {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const [content, setContent] = useState('');
-  const [pageText, setPageText] = useState('');
-
-  const trimmedPage = pageText.trim();
-  const pageValue = trimmedPage === '' ? undefined : Number(trimmedPage);
-  const pageValid = pageValue === undefined || (Number.isInteger(pageValue) && pageValue >= 1);
-  const body = content.trim();
-  const canSubmit = body.length > 0 && body.length <= CONTENT_MAX && pageValid;
+  // 문장·쪽수 칸과 그 검증은 광장 오려두기와 같은 것을 쓴다.
+  const draft = useQuoteDraft();
 
   const create = useMutation({
-    mutationFn: () => quoteApi.create({ bookId, readingRecordId: rid, content: body, page: pageValue }),
+    mutationFn: () =>
+      quoteApi.create({ bookId, readingRecordId: rid, content: draft.body, page: draft.pageValue }),
     onSuccess: () => {
       invalidateQuoteLists(queryClient);
       onDone();
@@ -140,45 +140,13 @@ function QuoteComposer({ bookId, rid, onDone }: { bookId: number; rid: number; o
 
   return (
     <Card style={styles.composer}>
-      <TextInput
-        value={content}
-        onChangeText={setContent}
-        placeholder="마음에 걸린 문장을 옮겨 적어 보세요."
-        placeholderTextColor={colors.textFaint}
-        multiline
-        maxLength={CONTENT_MAX}
-        accessibilityLabel="문장"
-        style={[styles.contentInput, {
-          backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-        }]}
-      />
-      <View style={styles.composerMeta}>
-        <TextInput
-          value={pageText}
-          onChangeText={setPageText}
-          placeholder="쪽(선택)"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="number-pad"
-          accessibilityLabel="쪽수"
-          style={[styles.pageInput, {
-            backgroundColor: colors.surfaceDeep,
-            borderColor: pageValid ? colors.line : colors.danger,
-            color: colors.text,
-          }]}
-        />
-        <Text style={[typeScale.monoLabel, { color: content.length >= CONTENT_MAX ? colors.warn : colors.textFaint }]}>
-          {content.length}/{CONTENT_MAX}
-        </Text>
-      </View>
-      {!pageValid ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>쪽수는 1 이상의 숫자로 적어 주세요.</Text>
-      ) : null}
+      <QuoteDraftFields draft={draft} />
       {errorMessage ? <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text> : null}
       <View style={styles.composerActions}>
         <Button
           label={create.isPending ? '오리는 중…' : '오려두기'}
           onPress={() => create.mutate()}
-          disabled={!canSubmit || create.isPending}
+          disabled={!draft.canSubmit || create.isPending}
           style={styles.composerButton}
         />
         <Button label="취소" variant="outline" onPress={onDone} disabled={create.isPending} style={styles.composerButton} />
@@ -191,32 +159,13 @@ const styles = StyleSheet.create({
   wrap: { gap: spacing.md },
   list: { gap: spacing.md },
   center: { paddingVertical: spacing.md, alignItems: 'center' },
-  // 인용 본문 — 명조 14/1.7, 왼쪽에 악센트 선.
-  scrapText: { fontFamily: serif.regular, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 10 },
+  // 인용 본문 — 밑줄 카드와 같은 만듦새로, quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
+  scrapText: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
   scrapMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
   scrapMetaText: { fontSize: 9, letterSpacing: 0.4 },
   scrapWho: { flex: 1 },
 
   composer: { gap: spacing.md },
-  contentInput: {
-    minHeight: 92,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    fontFamily: serif.regular,
-    fontSize: 15,
-    lineHeight: 25,
-    textAlignVertical: 'top',
-  },
-  composerMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  pageInput: {
-    width: 84,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    ...typeScale.monoNumeral,
-  },
   composerActions: { flexDirection: 'row', gap: spacing.sm },
   composerButton: { flex: 1 },
 });
