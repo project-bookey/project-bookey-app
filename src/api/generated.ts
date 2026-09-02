@@ -2765,6 +2765,7 @@ export interface components {
             /** Format: int64 */
             agreeCount?: number;
             agreedByMe?: boolean;
+            authorFinished?: boolean;
             /** Format: int64 */
             commentCount?: number;
         };

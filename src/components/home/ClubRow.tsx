@@ -21,7 +21,9 @@ export function ClubRow() {
   );
 
   const open = (club: ClubPreview) => {
-    router.push(club.alreadyMember ? `/club/${club.id}` : '/clubs');
+    // 모임 목록은 상단 구역이라 push 가 아니라 navigate — 스택에 구역이 겹치지 않게.
+    if (club.alreadyMember) router.push(`/club/${club.id}`);
+    else router.navigate('/clubs');
   };
 
   return (
@@ -30,7 +32,7 @@ export function ClubRow() {
         <View style={styles.headTitle}>
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 모임</Text>
         </View>
-        <Pressable onPress={() => router.push('/clubs')} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
+        <Pressable onPress={() => router.navigate('/clubs')} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
           <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>전체보기 ›</Text>
         </Pressable>
       </View>

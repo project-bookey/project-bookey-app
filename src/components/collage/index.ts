@@ -6,6 +6,7 @@ export { BackNote, BookBody, BoundFace } from './BoundBook';
 export type { BookBand, BookNote } from './BoundBook';
 export { Chip } from './Chip';
 export { DotGridBackground } from './DotGridBackground';
+export { FocusRing } from './FocusRing';
 export { MemoScrap } from './MemoScrap';
 export { PaperScreen } from './PaperScreen';
 export { SectionNav } from './SectionNav';

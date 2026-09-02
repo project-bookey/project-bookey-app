@@ -1,5 +1,6 @@
-import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
@@ -11,11 +12,12 @@ import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
-import { HeroCollage } from '@/components/home/HeroCollage';
+import { HeroPager } from '@/components/home/HeroPager';
+import { HomeSection } from '@/components/home/HomeSection';
 import { QuoteScraps } from '@/components/home/QuoteScraps';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로 → 인기 → 오려둔 문장 → 추천 → 읽고 싶은 → 읽는 중 → 챌린지 → 모임 */
+/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 인기 → 오려둔 문장 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -28,15 +30,19 @@ export default function HomeScreen() {
   const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
   const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
 
-  const records = reading.data?.content ?? [];
-  const hero = pickHero(records);
+  // 히어로는 읽는 중 전권을 쓸어넘기는 페이저다 — 첫 장이 예전 히어로(밀린 책 우선).
+  const heroRecords = orderHeroRecords(reading.data?.content ?? []);
+  const [heroPage, setHeroPage] = useState(0);
   // 히어로 뒤 메모장에 적을 줄거리 — 요약에는 없어 상세를 따로 읽는다(책 상세 화면과 캐시 키 공유).
-  const heroBookId = hero?.book?.id;
-  const heroBook = useQuery({
-    queryKey: ['book', heroBookId],
-    queryFn: () => bookApi.detail(heroBookId as number),
-    enabled: heroBookId != null,
+  // 보고 있는 장과 그다음 한 장만 받는다 — 홈에 들어서자마자 권수만큼 상세를 부르지 않게.
+  const heroBooks = useQueries({
+    queries: heroRecords.map((r, i) => ({
+      queryKey: ['book', r.book?.id],
+      queryFn: () => bookApi.detail(r.book?.id as number),
+      enabled: r.book?.id != null && i <= heroPage + 1,
+    })),
   });
+  const heroSynopses = heroBooks.map((q) => q.data?.description);
   const streakLine = stats.data
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
@@ -88,9 +94,11 @@ export default function HomeScreen() {
 
         <BannerCarousel banners={banners.data ?? []} />
 
-        <HeroCollage
-          record={hero}
-          synopsis={heroBook.data?.description}
+        <HeroPager
+          records={heroRecords}
+          synopses={heroSynopses}
+          page={heroPage}
+          onPageChange={setHeroPage}
           streakLine={streakLine}
           loading={reading.isLoading}
           scrollY={scrollY}
@@ -98,69 +106,67 @@ export default function HomeScreen() {
           onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         />
 
-        <BookRow
-          title="지금 붐비는 책"
-          label="LIVE"
-          staggered
-          loading={popular.isLoading}
-          books={(popular.data ?? []).map((p, i): RowBook => ({
-            key: `popular-${p.book.id}`,
-            bookId: p.book.id,
-            title: p.book.title,
-            author: p.book.author,
-            coverUrl: p.book.coverUrl,
-            rank: i + 1,
-          }))}
-          onPressBook={openBook}
-        />
+        {/* 섹션은 HomeSection 으로 감싸 괘선으로 나눈다 */}
+        <HomeSection>
+          <BookRow
+            title="지금 붐비는 책"
+            label="LIVE"
+            staggered
+            loading={popular.isLoading}
+            books={(popular.data ?? []).map((p, i): RowBook => ({
+              key: `popular-${p.book.id}`,
+              bookId: p.book.id,
+              title: p.book.title,
+              author: p.book.author,
+              coverUrl: p.book.coverUrl,
+              rank: i + 1,
+            }))}
+            onPressBook={openBook}
+          />
+        </HomeSection>
 
-        <QuoteScraps />
+        <HomeSection>
+          <QuoteScraps />
+        </HomeSection>
 
-        <BookRow
-          title="추천"
-          loading={recommended.isLoading}
-          books={(recommended.data ?? []).map((b): RowBook => ({
-            key: `pick-${b.id}`,
-            bookId: b.id,
-            title: b.title,
-            author: b.author,
-            coverUrl: b.coverUrl,
-          }))}
-          onPressBook={openBook}
-        />
+        <HomeSection>
+          <BookRow
+            title="추천"
+            loading={recommended.isLoading}
+            books={(recommended.data ?? []).map((b): RowBook => ({
+              key: `pick-${b.id}`,
+              bookId: b.id,
+              title: b.title,
+              author: b.author,
+              coverUrl: b.coverUrl,
+            }))}
+            onPressBook={openBook}
+          />
+        </HomeSection>
 
-        <BookRow
-          title="읽고 싶은"
-          loading={want.isLoading}
-          books={(want.data?.content ?? []).map((r): RowBook => ({
-            key: `want-${r.id}`,
-            bookId: r.book?.id,
-            title: r.book?.title ?? '',
-            coverUrl: r.book?.coverUrl,
-          }))}
-          onPressBook={openBook}
-          onPressAll={() => router.push('/library')}
-          onPressEmpty={() => router.navigate('/search')}
-        />
+        <HomeSection>
+          <BookRow
+            title="읽고 싶은"
+            loading={want.isLoading}
+            books={(want.data?.content ?? []).map((r): RowBook => ({
+              key: `want-${r.id}`,
+              bookId: r.book?.id,
+              title: r.book?.title ?? '',
+              coverUrl: r.book?.coverUrl,
+            }))}
+            onPressBook={openBook}
+            onPressAll={() => router.push('/library')}
+            onPressEmpty={() => router.navigate('/search')}
+          />
+        </HomeSection>
 
-        <BookRow
-          title="읽는 중"
-          loading={reading.isLoading}
-          books={records.map((r): RowBook => ({
-            key: `reading-${r.id}`,
-            bookId: r.book?.id,
-            title: r.book?.title ?? '',
-            coverUrl: r.book?.coverUrl,
-            progress: r.progress.completionRate ?? 0,
-          }))}
-          onPressBook={openBook}
-          onPressAll={() => router.push('/library')}
-          onPressEmpty={() => router.navigate('/search')}
-        />
+        <HomeSection>
+          <ChallengeRow />
+        </HomeSection>
 
-        <ChallengeRow />
-
-        <ClubRow />
+        <HomeSection>
+          <ClubRow />
+        </HomeSection>
       </Animated.ScrollView>
     </PaperScreen>
   );
@@ -171,13 +177,24 @@ const LAG_RANK: Record<string, number> = {
   L4_NEGLECTED: 4, L3_SERIOUS: 3, L2_DELAYED: 2, L1_CAUTION: 1, L0_NORMAL: 0,
 };
 
+/** 최근 활동순 — 마지막으로 읽은 시각 내림차순(ISO 문자열이라 사전순 비교로 충분). */
+const byRecency = (a: ReadingRecord, b: ReadingRecord) =>
+  (b.lastReadAt ?? '').localeCompare(a.lastReadAt ?? '');
+
 function pickHero(records: ReadingRecord[]): ReadingRecord | null {
   if (records.length === 0) return null;
   return [...records].sort((a, b) => {
     const lag = (LAG_RANK[b.progress.lagLevel ?? ''] ?? 0) - (LAG_RANK[a.progress.lagLevel ?? ''] ?? 0);
     if (lag !== 0) return lag;
-    return (b.lastReadAt ?? '').localeCompare(a.lastReadAt ?? '');
+    return byRecency(a, b);
   })[0];
+}
+
+/** 히어로 페이저 순서: 첫 장은 예전과 같은 히어로(밀린 책), 나머지는 최근 활동순. */
+function orderHeroRecords(records: ReadingRecord[]): ReadingRecord[] {
+  const hero = pickHero(records);
+  if (!hero) return [];
+  return [hero, ...records.filter((r) => r.id !== hero.id).sort(byRecency)];
 }
 
 const styles = StyleSheet.create({

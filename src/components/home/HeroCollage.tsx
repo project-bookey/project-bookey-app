@@ -37,8 +37,11 @@ const G = {
   memoRightRatio: 14 / BASE_W,
   memoTop: 202,
   memoWRatio: 136 / BASE_W,
-  /** 콜라주 판 기본 높이 — 시안 336 에서 다음 섹션 gap(24) 몫을 덜어낸 값 */
-  height: 316,
+  /**
+   * 콜라주 판 기본 높이. 시안(336)대로 두면 메모 조각 아래가 비어 첫 섹션 괘선까지 너무 멀다는
+   * 피드백 — 메모 조각 바닥(≈268) 바로 밑에서 끊는다. 긴 노트일 때는 아래 ctaTop+58 하한이 지킨다.
+   */
+  height: 278,
 } as const;
 
 /**
@@ -61,7 +64,7 @@ const HERO_PARALLAX_RANGE = 160;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /**
- * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 서가`.
+ * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 나의 책`.
  * 해가 다르면 아이브로우에만 연도를 붙인다(`SINCE 2025.12.03`). 시작일이 없으면 null.
  */
 function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebrow: string; title: string } | null {
@@ -71,8 +74,7 @@ function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebro
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const year = d.getFullYear() === now.getFullYear() ? '' : `${d.getFullYear()}.`;
-  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의
-서가` };
+  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의\n나의 책` };
 }
 
 /** 스크롤 오프셋을 패럴랙스 유효 구간으로 가둔다 — iOS 바운스의 음수도 막는다. */
@@ -118,7 +120,7 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
   const noteTop = Math.round(G.noteTop * k);
   // 노트 높이를 재기 전에는 시안 좌표를 쓴다(첫 프레임 점프 방지).
   const ctaTop = Math.round(Math.max(G.ctaTop * k, noteH > 0 ? noteTop + noteH + 8 : 0));
-  const boardH = Math.max(Math.round(G.height * k), ctaTop + 64);
+  const boardH = Math.max(Math.round(G.height * k), ctaTop + 58);
 
   const memoRight = Math.round(W * G.memoRightRatio);
   const memoW = Math.round(clamp(W * G.memoWRatio, 126, 164));
