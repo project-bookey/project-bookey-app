@@ -2,7 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -10,6 +10,7 @@ import { libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, plazaFeedKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
@@ -24,13 +25,6 @@ const CARD_TILT = [-1.1, 0.8];
 const DELETE_CONFIRM_MS = 3000;
 /** 문장 길이 상한 — 서버 계약과 같은 값. */
 const CONTENT_MAX = 500;
-/**
- * 푸터 액션 확장 터치 영역(네이티브 전용).
- *
- * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키우고,
- * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
- */
-const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
 /**
  * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 완독 자랑이 모이는 곳 (시안 2d).
@@ -148,6 +142,9 @@ export default function PlazaScreen() {
             onDelete={() => {
               if (item.quoteId != null) pressDelete(item.quoteId);
             }}
+            onOpen={() => {
+              if (item.quoteId != null) router.push(`/quote/${item.quoteId}`);
+            }}
             onOpenBook={() => router.push(`/book/${item.bookId}`)}
           />
         )}
@@ -185,8 +182,8 @@ function itemKey(item: PlazaItem): string {
     : `f${item.authorId}-${item.bookId}-${item.occurredAt}`;
 }
 
-/** 피드 카드 한 장 — 밑줄과 완독 자랑이 같은 카드 가족을 쓴다. */
-function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onOpenBook }: {
+/** 피드 카드 한 장 — 밑줄은 공용 QuoteCard, 완독 자랑은 표지 행. 같은 교차 회전을 쓴다. */
+function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onOpen, onOpenBook }: {
   item: PlazaItem;
   index: number;
   mine: boolean;
@@ -195,84 +192,60 @@ function FeedCard({ item, index, mine, confirming, error, onAgree, onDelete, onO
   error?: string | null;
   onAgree: () => void;
   onDelete: () => void;
+  onOpen: () => void;
   onOpenBook: () => void;
 }) {
   const { colors } = useTheme();
   const tilt = CARD_TILT[index % CARD_TILT.length];
-  const quote = item.type === 'QUOTE';
+
+  if (item.type === 'QUOTE') {
+    return (
+      <View style={styles.cardWrap}>
+        <QuoteCard
+          tilt={tilt}
+          authorNickname={item.authorNickname}
+          authorAvatarUrl={item.authorAvatarUrl}
+          bookTitle={item.bookTitle}
+          page={item.page}
+          content={item.content ?? ''}
+          agreeCount={item.agreeCount ?? 0}
+          agreedByMe={item.agreedByMe ?? false}
+          commentCount={item.commentCount ?? 0}
+          mine={mine}
+          confirming={confirming}
+          error={error}
+          onAgree={onAgree}
+          onDelete={mine ? onDelete : undefined}
+          onOpen={onOpen}
+        />
+      </View>
+    );
+  }
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
       <View style={styles.authorRow}>
-        <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-          {item.authorAvatarUrl ? (
-            <Image source={{ uri: item.authorAvatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-          ) : (
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-              {item.authorNickname.slice(0, 1)}
-            </Text>
-          )}
-        </View>
+        <QuoteAvatar uri={item.authorAvatarUrl} nickname={item.authorNickname} />
         <View style={styles.authorText}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {item.authorNickname}
           </Text>
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
             {item.bookTitle}
-            {quote && item.page != null ? ` · ${item.page}쪽` : ''}
           </Text>
         </View>
       </View>
-
-      {quote ? (
-        <Text style={[styles.quote, { color: colors.text, borderLeftColor: colors.accent }]}>
-          {item.content}
-        </Text>
-      ) : (
-        <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={`${item.bookTitle} 상세`} style={styles.finishRow}>
-          <TiltCover uri={item.bookCoverUrl} title={item.bookTitle} width={44} entering={false} />
-          <View style={styles.finishText}>
-            <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
-              {item.bookTitle}
-            </Text>
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-              완독 · {formatRelative(item.occurredAt)}
-            </Text>
-          </View>
-        </Pressable>
-      )}
-
-      {quote ? (
-        <>
-          <View style={styles.footRow}>
-            {/* 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓힌다. */}
-            <Pressable onPress={onAgree} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-              accessibilityRole="button"
-              accessibilityState={{ selected: item.agreedByMe ?? false }}
-              accessibilityLabel={`나도 그럼 ${item.agreeCount ?? 0}`}>
-              <Text style={[typeScale.monoLabel, styles.footLabel, {
-                color: item.agreedByMe ? colors.accent : colors.textMuted,
-              }]}>
-                나도 그럼 {item.agreeCount ?? 0}
-              </Text>
-            </Pressable>
-            {mine ? (
-              <Pressable onPress={onDelete} hitSlop={FOOT_HIT_SLOP} accessibilityRole="button"
-                accessibilityLabel={confirming ? '삭제 확인' : '삭제'}
-                style={[styles.footAction, styles.deleteButton]}>
-                <Text style={[typeScale.monoLabel, styles.footLabel, {
-                  color: confirming ? colors.danger : colors.textFaint,
-                }]}>
-                  {confirming ? '한 번 더' : '삭제'}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-          {error ? (
-            <Text style={[typeScale.caption, { color: colors.warn }]}>{error}</Text>
-          ) : null}
-        </>
-      ) : null}
+      <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={`${item.bookTitle} 상세`} style={styles.finishRow}>
+        <TiltCover uri={item.bookCoverUrl} title={item.bookTitle} width={44} entering={false} />
+        <View style={styles.finishText}>
+          <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
+            {item.bookTitle}
+          </Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
+            완독 · {formatRelative(item.occurredAt)}
+          </Text>
+        </View>
+      </Pressable>
     </Card>
   );
 }
@@ -464,29 +437,13 @@ const styles = StyleSheet.create({
   },
 
   card: { marginHorizontal: spacing.lg, gap: spacing.md },
+  cardWrap: { marginHorizontal: spacing.lg },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.pill,
-    borderWidth: hairline,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: { width: '100%', height: '100%' },
   authorText: { flex: 1 },
   nickname: { fontSize: 12 },
   where: { fontSize: 9, letterSpacing: 0.4, marginTop: 2 },
-  // 시안 2d 의 인용 본문 — quote 토큰을 15/1.65 로 줄이고 왼쪽에 악센트 선을 세운다.
-  quote: { ...typeScale.quote, fontSize: 15, lineHeight: 25, borderLeftWidth: 2, paddingLeft: 11 },
   finishRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   finishText: { flex: 1, gap: spacing.xs },
-  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  footLabel: { fontSize: 10, letterSpacing: 0.4 },
-  // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
-  footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
-  deleteButton: { marginLeft: 'auto' },
 
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },
   pickRow: { gap: spacing.sm, paddingVertical: 2 },

@@ -46,8 +46,8 @@ const EASE_OUT = Easing.out(Easing.quad);
  *
  * 광장 화면의 무한 쿼리와 캐시를 나눠 쓴다(['plaza','QUOTE'] vs 여기 ['plaza','QUOTE','home']).
  * 서로 다른 항목을 담지만 같은 문장이 겹칠 수 있어, '나도 그럼' 낙관 업데이트는
- * 광장 화면(app/plaza.tsx 의 patchQuote)에서 두 캐시를 함께 손본다 —
- * **이 키를 바꾸면 그쪽 HOME_KEY 도 같이 바꿔야 한다**.
+ * src/api/quoteCache.ts 의 patchQuoteEverywhere 가 두 캐시를 함께 손본다 —
+ * **이 키를 바꾸면 그쪽 PLAZA_HOME_KEY 도 같이 바꿔야 한다**.
  *
  * '나도 그럼' 수는 여기선 표시 전용이다. 홈에서는 누를 수 없고, 무엇이 붐비는지만 알린다.
  *
