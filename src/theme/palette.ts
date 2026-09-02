@@ -44,6 +44,14 @@ export type ColorTokens = {
   onNote: string;
   /** 중간 톤 회색 — textMuted/textFaint 사이 보조 텍스트 */
   mid: string;
+  /** 장정된 책 판(board) — 다크는 어두운 천, 라이트는 리넨 */
+  bookBoard: string;
+  /** 책장 단면(페이지 블록)의 종이색 */
+  bookPage: string;
+  /** 띠지 — 판과 반전되는 종이(다크)/먹지(라이트) */
+  bookBand: string;
+  /** 띠지 위 텍스트 */
+  onBookBand: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
@@ -72,6 +80,10 @@ export const darkColors: ColorTokens = {
   note: '#3ddc97',
   onNote: '#0c0e0d',
   mid: '#8c8981',
+  bookBoard: '#1e221d',
+  bookPage: '#e1dccf',
+  bookBand: '#e8e6e1',
+  onBookBand: '#0c0e0d',
 };
 
 export const lightColors: ColorTokens = {
@@ -98,6 +110,10 @@ export const lightColors: ColorTokens = {
   note: '#177a54',
   onNote: '#ffffff',
   mid: '#6e6b63',
+  bookBoard: '#d9d2c2',
+  bookPage: '#e1dccf',
+  bookBand: '#171a16',
+  onBookBand: '#e8e6e1',
 };
 
 /** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. 새 민트 기준 재조정. */
