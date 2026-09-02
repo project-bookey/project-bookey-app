@@ -65,7 +65,7 @@
 
 ---
 
-## Task B1: 댓글 테이블·엔티티·리포지토리
+## Task 1 (B1): 댓글 테이블·엔티티·리포지토리
 
 **Files:**
 - Create: `<BE>/server/src/main/resources/db/migration/V9__quote_comments.sql`
@@ -239,7 +239,7 @@ cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-commen
 
 ---
 
-## Task B2: `commentCount` 필드 + 밑줄 단건 조회
+## Task 2 (B2): `commentCount` 필드 + 밑줄 단건 조회
 
 **Files:**
 - Modify: `<BE>/server/src/main/java/app/bookey/api/quote/dto/QuoteDtos.java`
@@ -502,7 +502,7 @@ cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-commen
 
 ---
 
-## Task B3: 댓글 서비스·컨트롤러·에러 코드
+## Task 3 (B3): 댓글 서비스·컨트롤러·에러 코드
 
 **Files:**
 - Modify: `<BE>/server/src/main/java/app/bookey/api/quote/dto/QuoteDtos.java`
@@ -835,7 +835,7 @@ cd /d/Develop/workspace/myproject/project-bookey-backend/.worktrees/quote-commen
 
 ---
 
-## Task B4: 서버 기동 스모크 (:8090)
+## Task 4 (B4): 서버 기동 스모크 (:8090)
 
 **Files:**
 - Create (gitignore 안): `.superpowers/smoke/quote-comments.mjs` (앱 worktree 루트 기준)
@@ -952,7 +952,7 @@ Expected: 모든 줄이 `OK`, 종료 코드 0. `FAIL` 이 있으면 서버 로�
 
 ---
 
-## Task A1: 타입 재생성 · 별칭 · 엔드포인트
+## Task 5 (A1): 타입 재생성 · 별칭 · 엔드포인트
 
 **Files:**
 - Regenerate: `src/api/generated.ts`
@@ -1019,7 +1019,7 @@ git branch --show-current && git add src/api/generated.ts src/api/types.ts src/a
 
 ---
 
-## Task A2: 밑줄 캐시 모듈 + 나도 그럼 훅, 광장 리팩터링
+## Task 6 (A2): 밑줄 캐시 모듈 + 나도 그럼 훅, 광장 리팩터링
 
 **Files:**
 - Create: `src/api/quoteCache.ts`
@@ -1228,7 +1228,7 @@ git branch --show-current && git add src/api/quoteCache.ts src/components/quote/
 
 ---
 
-## Task A3: 공용 `QuoteCard` + 광장 카드 교체(댓글 수·상세 진입)
+## Task 7 (A3): 공용 `QuoteCard` + 광장 카드 교체(댓글 수·상세 진입)
 
 **Files:**
 - Create: `src/components/quote/QuoteCard.tsx`
@@ -1518,7 +1518,7 @@ git branch --show-current && git add src/components/quote/QuoteCard.tsx app/plaz
 
 ---
 
-## Task A4: 밑줄 상세 화면 `app/quote/[id].tsx`
+## Task 8 (A4): 밑줄 상세 화면 `app/quote/[id].tsx`
 
 **Files:**
 - Create: `app/quote/[id].tsx`
@@ -1897,7 +1897,7 @@ git branch --show-current && git add "app/quote/[id].tsx" app/_layout.tsx && git
 
 ---
 
-## Task A5: 도서 상세 — 리뷰 | 밑줄 탭 + 책별 밑줄 목록 + 인라인 오려두기
+## Task 9 (A5): 도서 상세 — 리뷰 | 밑줄 탭 + 책별 밑줄 목록 + 인라인 오려두기
 
 **Files:**
 - Create: `src/components/book/BookQuotesTab.tsx`
@@ -2358,7 +2358,7 @@ git branch --show-current && git add src/components/book/BookQuotesTab.tsx "app/
 
 ---
 
-## Task A6: 웹 육안 확인 · 마무리
+## Task 10 (A6): 웹 육안 확인 · 마무리
 
 **Files:** 없음(검증). 실패 시 해당 태스크 파일을 고치고 `수정:` 커밋.
 
