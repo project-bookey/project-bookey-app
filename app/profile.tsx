@@ -405,9 +405,11 @@ function YearChart({ daily, loading, failed }: {
 
   const max = Math.max(1, ...months.map((m) => m.durationSec));
   const last = months[months.length - 1];
-  const best = months.reduce(
+  // 최상급은 헤더와 같은 연 스코프로 고른다 — 헤더가 올해 전체를 말하는데 '가장 길었던 달'만
+  // 표시 6칸에서 뽑으면 잘려 나간 달이 더 길 때 거짓말이 된다.
+  const best = yearMonths.reduce(
     (top, m) => (m.durationSec > top.durationSec ? m : top),
-    months[0] ?? { key: '', month: 0, durationSec: 0 },
+    yearMonths[0] ?? { key: '', month: 0, durationSec: 0 },
   );
 
   // 이번 달이 표시 구간 최저면 회복을 권한다. 아니면 가장 길었던 달을 짚어 준다.
@@ -426,9 +428,10 @@ function YearChart({ daily, loading, failed }: {
     <Card style={styles.chartCard}>
       <View style={styles.chartHeader}>
         <Text style={[styles.chartTitle, { color: colors.text }]}>올해 읽은 시간</Text>
-        {/* 캡션과 같은 포맷 규칙 — 1시간 미만을 '0시간'이라 적지 않는다. */}
+        {/* 아직 못 세었거나 못 불러온 상태에서는 수치를 말하지 않는다 — 바로 아래 실패 문구와 어긋난다.
+            값이 있을 때는 캡션과 같은 포맷 규칙(1시간 미만을 '0시간'이라 적지 않는다). */}
         <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-          {roughDuration(totalSec)}
+          {loading || failed ? '—' : roughDuration(totalSec)}
         </Text>
       </View>
 
