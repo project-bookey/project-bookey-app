@@ -18,6 +18,11 @@ const LIFT_SPRING = { damping: 18, stiffness: 220, mass: 0.6 };
 /** 입장 시 아래에서 올라오는 거리(px). */
 const SETTLE_RISE = 14;
 
+/** 뒤장 어긋남 — 본 표지 프레임 좌표계(기울기 포함) 기준. px·도·배율. */
+export type StackOffset = { x: number; y: number; rotate: number; scale: number };
+/** 기본 뒤장 — 본 표지보다 5도 더 기울고 살짝 어긋난 겹침. */
+const STACK_DEFAULT: StackOffset = { x: 7, y: -6, rotate: 5, scale: 1 };
+
 /**
  * 이미 입장 애니를 마친 표지 키 모음 — 앱 세션 동안만 사는 메모리 캐시다
  * (영속 저장 아님, 앱을 다시 켜면 비어 있다).
@@ -111,6 +116,7 @@ export function TiltCover({
   entering = true,
   entranceKey,
   stacked = false,
+  stackOffset,
   onPress,
   children,
   accessibilityLabel,
@@ -134,6 +140,11 @@ export function TiltCover({
   entranceKey?: string;
   /** 뒤에 표지 한 장을 더 겹쳐 스택처럼 보이게 한다. */
   stacked?: boolean;
+  /**
+   * 뒤장의 어긋남. 기본은 살짝 어긋난 겹침이고, 히어로처럼 부채꼴로 펼치려면
+   * x·rotate 를 키운다. 값은 본 표지 프레임 좌표(기울기 적용 후) 기준. `stacked` 일 때만 쓰인다.
+   */
+  stackOffset?: Partial<StackOffset>;
   /** 지정하면 프레스 리프트가 켜진다. */
   onPress?: () => void;
   /** 표지 위에 얹을 오버레이 슬롯 — 랭크 배지·진행 바 등. */
@@ -144,6 +155,7 @@ export function TiltCover({
   const height = Math.round(width * 1.5);
   const angle = tilt ?? tiltFor(index);
   const fallback = fallbackMetrics(width);
+  const stack = { ...STACK_DEFAULT, ...stackOffset };
 
   const progress = useCoverEntrance(index, entranceKey, entering);
   const pressed = useSharedValue(0);
@@ -168,7 +180,8 @@ export function TiltCover({
   const body = (
     <Animated.View style={[{ width, height }, frameStyle]}>
       {stacked ? (
-        // 뒤에 겹친 빈 표지 — 본 표지보다 5도 더 기울고 살짝 어긋나 있다.
+        // 뒤에 겹친 빈 표지 — 기본은 살짝 어긋난 겹침, stackOffset 으로 부채꼴까지 펼친다.
+        // 그림자는 본 표지와 같은 rest — 펼쳐졌을 때 뒤장도 종이처럼 떠 보이게.
         <View
           style={[
             styles.stack,
@@ -177,8 +190,14 @@ export function TiltCover({
               height,
               backgroundColor: colors.surfaceDeep,
               borderColor: colors.lineStrong,
-              transform: [{ translateX: 7 }, { translateY: -6 }, { rotate: '5deg' }],
+              transform: [
+                { translateX: stack.x },
+                { translateY: stack.y },
+                { rotate: `${stack.rotate}deg` },
+                { scale: stack.scale },
+              ],
             },
+            coverShadow[mode].rest,
           ]}
         />
       ) : null}

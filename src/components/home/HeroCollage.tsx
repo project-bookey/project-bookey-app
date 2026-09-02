@@ -8,26 +8,34 @@ import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
 import { useTheme } from '@/theme';
 import { radius, serif, spacing, typeScale } from '@/theme/tokens';
 
-/** 시안(390px) 기준 지오메트리 — 실제 폭에 비례 환산한다. */
+/**
+ * 시안(390px) 기준 지오메트리 — 실제 폭에 비례 환산한다.
+ * 시안 HTML은 content-box 라 노트·메모 폭은 패딩·테두리를 더한 바깥 폭으로 옮겼다.
+ */
 const BASE_W = 390;
 const G = {
   /** 표지 스택 */
   coverW: 126,
   coverLeftRatio: 100 / BASE_W,
   coverTop: 24,
+  /**
+   * 뒤장 — 시안은 (150,10)·120×176·+6° 로 오른쪽 위에 부채꼴로 펼쳐져 있다.
+   * 본 표지 중심 대비 (+47,-18) 을 -4° 프레임 좌표로 환산한 값이고, 회전은 프레임 안 상대값.
+   */
+  stack: { x: 48, y: -15, rotate: 10, scale: 0.95 },
   /** 스티키 노트 */
   noteLeftRatio: 20 / BASE_W,
   noteTop: 118,
-  noteWRatio: 190 / BASE_W,
+  noteWRatio: 218 / BASE_W,
   /** CTA 행 */
   ctaLeftRatio: 24 / BASE_W,
   ctaTop: 220,
   /** 메모 조각 */
   memoRightRatio: 14 / BASE_W,
   memoTop: 202,
-  memoWRatio: 112 / BASE_W,
-  /** 콜라주 판 기본 높이 */
-  height: 300,
+  memoWRatio: 136 / BASE_W,
+  /** 콜라주 판 기본 높이 — 시안 336 에서 다음 섹션 gap(24) 몫을 덜어낸 값 */
+  height: 316,
 } as const;
 
 /** 패럴랙스 계수 — 레이어 3개로 제한한다(스크롤 성능). */
@@ -97,7 +105,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   const boardH = Math.max(Math.round(G.height * k), ctaTop + 64);
 
   const memoRight = Math.round(W * G.memoRightRatio);
-  const memoW = Math.round(clamp(W * G.memoWRatio, 104, 136));
+  const memoW = Math.round(clamp(W * G.memoWRatio, 126, 164));
   // CTA 행은 메모 조각 왼쪽 엣지 8px 앞에서 끊는다 — 긴 스트릭 문구가 메모 밑으로
   // 깔리는 대신 말줄임되게 한다(둘은 같은 세로 띠에 있다).
   const ctaRight = memoRight + memoW + 8;
@@ -142,6 +150,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           width={coverW}
           tilt={-4}
           stacked
+          stackOffset={G.stack}
           entranceKey={`hero:${record.book?.id ?? record.id}`}
           onPress={() => onDetail(record)}
           accessibilityLabel={`${record.book?.title ?? '책'} 상세`}
@@ -152,7 +161,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
       <Animated.View
         style={[
           styles.layer,
-          { left: Math.round(W * G.noteLeftRatio), top: noteTop, width: clamp(W * G.noteWRatio, 172, 250) },
+          { left: Math.round(W * G.noteLeftRatio), top: noteTop, width: clamp(W * G.noteWRatio, 196, 280) },
           noteStyle,
         ]}
         onLayout={(e) => {
@@ -182,7 +191,8 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
             accessibilityRole="button"
             accessibilityLabel="이어서 읽기"
           >
-            <Text style={[typeScale.label, { color: colors.onAccent }]}>▶ 이어서 읽기</Text>
+            {/* 시안 라벨 — '읽기'를 붙이면 스트릭 캡션이 메모 조각에 닿아 말줄임된다. */}
+            <Text style={[typeScale.label, { color: colors.onAccent }]}>▶ 이어서</Text>
           </Pressable>
           {streakLine ? (
             <Text
