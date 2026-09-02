@@ -67,8 +67,10 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetchAll} />}
       >
+        {/* 구역(서가·탐색·광장·나) 이동은 push 가 아니라 navigate 다 — push 하면
+            서가↔탐색을 오갈 때마다 스택에 같은 구역이 쌓여 뒤로 가기가 길어진다. */}
         <Pressable
-          onPress={() => router.push('/search')}
+          onPress={() => router.navigate('/search')}
           style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
           accessibilityRole="button"
           accessibilityLabel="책 검색"
@@ -128,7 +130,7 @@ export default function HomeScreen() {
           }))}
           onPressBook={openBook}
           onPressAll={() => router.push('/library')}
-          onPressEmpty={() => router.push('/search')}
+          onPressEmpty={() => router.navigate('/search')}
         />
 
         <BookRow
@@ -143,7 +145,7 @@ export default function HomeScreen() {
           }))}
           onPressBook={openBook}
           onPressAll={() => router.push('/library')}
-          onPressEmpty={() => router.push('/search')}
+          onPressEmpty={() => router.navigate('/search')}
         />
 
         <ChallengeRow />

@@ -6,7 +6,8 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { challengeApi } from '@/api/endpoints';
 import type { Challenge } from '@/api/types';
 import { formatClock } from '@/components/ui';
-import { radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono } from '@/theme/tokens';
 
 /** 서버 remainingSec 스냅샷 + 로컬 1초 티크 — 표시 전용, 판정은 서버. */
 export function useRemainingSec(challenge: Challenge | undefined, dataUpdatedAt: number) {
@@ -45,11 +46,13 @@ function ChallengeCard({ challenge, dataUpdatedAt }: { challenge: Challenge; dat
       <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: colors.text }]}>
         {challenge.book?.title}
       </Text>
-      <Text style={[{ fontFamily: sans.extraBold, fontSize: 18 }, { color: colors.accent }]}>
-        {formatClock(remaining)}
-      </Text>
+      <Text style={[styles.clock, { color: colors.accent }]}>{formatClock(remaining)}</Text>
       <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-        {challenge.running ? '▶ 진행 중' : '⏸ 일시정지'} · {challenge.currentPage}/{challenge.totalPages}쪽
+        {challenge.running ? '▶ 진행 중' : '⏸ 일시정지'} ·{' '}
+        <Text style={styles.pages}>
+          {challenge.currentPage}/{challenge.totalPages}
+        </Text>
+        쪽
       </Text>
     </Pressable>
   );
@@ -64,7 +67,9 @@ export function ChallengeRow() {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={[typeScale.section, { color: colors.text }]}>챌린지</Text>
+        <View style={styles.headTitle}>
+          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>챌린지</Text>
+        </View>
       </View>
       <FlatList
         horizontal
@@ -79,8 +84,8 @@ export function ChallengeRow() {
             accessibilityLabel="새 챌린지"
             style={[styles.card, styles.createTile, { borderColor: colors.lineStrong }]}
           >
-            <Text style={[typeScale.title, { color: colors.textMuted }]}>+</Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>새 챌린지</Text>
+            <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>새 챌린지</Text>
           </Pressable>
         }
         renderItem={({ item }) => (
@@ -99,6 +104,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     paddingHorizontal: spacing.lg,
   },
+  headTitle: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexShrink: 1 },
+  // 표지 행(BookRow)과 같은 머리글 크기 — 홈에서 섹션 위계가 어긋나지 않게.
+  title: { fontSize: 18, lineHeight: 26 },
+  // 남은 시간 — 매초 바뀌는 숫자라 폭이 고정되는 모노로 앉힌다.
+  clock: { fontFamily: mono.semiBold, fontSize: 18, letterSpacing: 1 },
+  pages: { fontFamily: mono.regular, fontSize: 11 },
   list: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   card: { width: 150, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
   cover: { width: 52, height: 78, borderRadius: radius.sm, overflow: 'hidden' },

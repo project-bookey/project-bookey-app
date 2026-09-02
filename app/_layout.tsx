@@ -66,24 +66,26 @@ export default function RootLayout() {
         <SafeAreaProvider>
           {/* 크롬이 배경과 동화되므로 상태바 아이콘도 테마 모드를 따라간다 */}
           <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
+          {/* 헤더는 전역으로 끈다(화면 안의 SectionNav·SubHeader 가 대신한다).
+              그래도 title 은 남긴다 — 웹에서 브라우저 탭·히스토리 제목으로 쓰인다. */}
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="home" />
-            <Stack.Screen name="search" />
-            <Stack.Screen name="plaza" />
-            <Stack.Screen name="profile" />
-            <Stack.Screen name="library" />
-            <Stack.Screen name="clubs" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="notifications" />
-            <Stack.Screen name="timer" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="challenge/new" />
-            <Stack.Screen name="challenge/[id]" />
-            <Stack.Screen name="club/join" />
-            <Stack.Screen name="club/create" />
-            <Stack.Screen name="club/[id]/index" />
-            <Stack.Screen name="club/[id]/posts" />
-            <Stack.Screen name="club/[id]/result" />
-            <Stack.Screen name="book/[id]" />
+            <Stack.Screen name="home" options={{ title: '서가' }} />
+            <Stack.Screen name="search" options={{ title: '탐색' }} />
+            <Stack.Screen name="plaza" options={{ title: '광장' }} />
+            <Stack.Screen name="profile" options={{ title: '나' }} />
+            <Stack.Screen name="library" options={{ title: '서재' }} />
+            <Stack.Screen name="clubs" options={{ title: '토론 모임' }} />
+            <Stack.Screen name="login" options={{ title: '로그인' }} />
+            <Stack.Screen name="notifications" options={{ title: '알림' }} />
+            <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
+            <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
+            <Stack.Screen name="challenge/[id]" options={{ title: '챌린지' }} />
+            <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
+            <Stack.Screen name="club/create" options={{ title: '모임 만들기' }} />
+            <Stack.Screen name="club/[id]/index" options={{ title: '모임' }} />
+            <Stack.Screen name="club/[id]/posts" options={{ title: '토론' }} />
+            <Stack.Screen name="club/[id]/result" options={{ title: '결산' }} />
+            <Stack.Screen name="book/[id]" options={{ title: '도서' }} />
           </Stack>
         </SafeAreaProvider>
       </QueryClientProvider>

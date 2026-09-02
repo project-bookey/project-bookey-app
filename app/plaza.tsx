@@ -446,7 +446,7 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
         <Text style={[typeScale.body, { color: colors.textMuted }]}>
           읽는 중인 책이 있어야 문장을 오릴 수 있습니다.
         </Text>
-        <Pressable onPress={() => router.push('/search')} hitSlop={8} accessibilityRole="button">
+        <Pressable onPress={() => router.navigate('/search')} hitSlop={8} accessibilityRole="button">
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>책 찾으러 가기 →</Text>
         </Pressable>
       </Card>

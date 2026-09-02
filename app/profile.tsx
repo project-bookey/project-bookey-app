@@ -140,7 +140,7 @@ export default function ProfileScreen() {
           ) : shelf.length === 0 ? (
             <View style={styles.shelfList}>
               <Pressable
-                onPress={() => router.push('/search')}
+                onPress={() => router.navigate('/search')}
                 accessibilityRole="button"
                 accessibilityLabel="책 추가"
               >
@@ -363,7 +363,7 @@ function MyQuotes() {
           </Text>
         </MemoScrap>
         <Pressable
-          onPress={() => router.push('/plaza')}
+          onPress={() => router.navigate('/plaza')}
           accessibilityRole="button"
           accessibilityLabel={total != null ? `오려둔 문장 전부 보기, 총 ${total}개` : '오려둔 문장 전부 보기'}
         >

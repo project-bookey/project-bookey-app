@@ -18,6 +18,9 @@ const TOP_N = 3;
  * 광장 화면에서 두 캐시를 함께 손본다.
  *
  * 0건이면 섹션을 통째로 감춘다 — 홈 마지막에 빈 상자를 남기지 않는다.
+ *
+ * 광장으로 가는 이동은 push 가 아니라 navigate 다 — 구역(서가·탐색·광장·나) 사이는
+ * push 하면 오갈 때마다 스택에 같은 구역이 쌓인다.
  */
 export function QuoteScraps() {
   const router = useRouter();
@@ -36,7 +39,7 @@ export function QuoteScraps() {
       <View style={styles.header}>
         <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오려둔 문장</Text>
         <Pressable
-          onPress={() => router.push('/plaza')}
+          onPress={() => router.navigate('/plaza')}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="광장으로"
@@ -49,7 +52,7 @@ export function QuoteScraps() {
         {items.map((item, index) => (
           <Pressable
             key={item.quoteId ?? `${item.authorId}-${item.occurredAt}`}
-            onPress={() => router.push('/plaza')}
+            onPress={() => router.navigate('/plaza')}
             accessibilityRole="button"
             accessibilityLabel={`${item.authorNickname}가 오려둔 ${item.bookTitle}의 문장`}
           >

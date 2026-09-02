@@ -5,6 +5,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { clubApi } from '@/api/endpoints';
 import type { ClubPreview } from '@/api/types';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono } from '@/theme/tokens';
 
 /**
  * 홈 추천 모임 행 — 공개 모임 카드 + 맨 끝 '+ 모임 만들기' 타일.
@@ -26,9 +27,11 @@ export function ClubRow() {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={[typeScale.section, { color: colors.text }]}>추천 모임</Text>
+        <View style={styles.headTitle}>
+          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 모임</Text>
+        </View>
         <Pressable onPress={() => router.push('/clubs')} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
-          <Text style={[typeScale.label, { color: colors.textMuted }]}>전체보기 ›</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>전체보기 ›</Text>
         </Pressable>
       </View>
       <FlatList
@@ -53,8 +56,8 @@ export function ClubRow() {
             accessibilityLabel="모임 만들기"
             style={[styles.card, styles.createTile, { borderColor: colors.lineStrong }]}
           >
-            <Text style={[typeScale.title, { color: colors.textMuted }]}>+</Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>모임 만들기</Text>
+            <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 만들기</Text>
           </Pressable>
         }
         renderItem={({ item }) => (
@@ -76,12 +79,15 @@ export function ClubRow() {
             <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: colors.text }]}>{item.name}</Text>
             <View style={styles.metaRow}>
               <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                인원 {item.memberCount}/{item.memberLimit}
+                인원{' '}
+                <Text style={styles.count}>
+                  {item.memberCount}/{item.memberLimit}
+                </Text>
               </Text>
               <View style={[styles.badge, {
                 backgroundColor: item.status === 'RECRUITING' ? colors.accentSoft : colors.surfaceRaised,
               }]}>
-                <Text style={[typeScale.overline, {
+                <Text style={[typeScale.monoEyebrow, {
                   color: item.status === 'RECRUITING' ? colors.accent : colors.textMuted,
                 }]}>
                   {item.status === 'RECRUITING' ? '모집 중' : '진행 중'}
@@ -103,6 +109,10 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     paddingHorizontal: spacing.lg,
   },
+  headTitle: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexShrink: 1 },
+  // 표지 행(BookRow)과 같은 머리글 크기 — 홈에서 섹션 위계가 어긋나지 않게.
+  title: { fontSize: 18, lineHeight: 26 },
+  count: { fontFamily: mono.regular, fontSize: 11 },
   list: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   skeletonRow: { flexDirection: 'row', gap: spacing.sm },
   card: { width: 150, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
