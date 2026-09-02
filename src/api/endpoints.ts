@@ -51,7 +51,7 @@ export const libraryApi = {
 };
 
 export const sessionApi = {
-  current: () => api<Session | null>('/api/v1/sessions/current'),
+  current: async () => (await api<Session | null | undefined>('/api/v1/sessions/current')) ?? null,
   start: (readingRecordId: number, startPage?: number) =>
     api<Session>('/api/v1/sessions/start', { method: 'POST', body: { readingRecordId, startPage } }),
   end: (sessionId: number, body: { endPage?: number; foregroundRatio?: number; interactionCount?: number; memo?: string }) =>

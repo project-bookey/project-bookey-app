@@ -186,41 +186,43 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
   onPick: (status: ReadingStatus) => void;
 }) {
   return (
-    <Pressable
-      style={styles.row}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={book.title}
-    >
-      <View style={[styles.cover, { backgroundColor: colors.surfaceRaised }]}>
-        {book.coverUrl ? (
-          <Image source={{ uri: book.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : (
-          <Text numberOfLines={3} style={[typeScale.caption, styles.coverFallback, { color: colors.textMuted }]}>
+    <View style={styles.row}>
+      <Pressable
+        style={styles.rowMain}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={book.title}
+      >
+        <View style={[styles.cover, { backgroundColor: colors.surfaceRaised }]}>
+          {book.coverUrl ? (
+            <Image source={{ uri: book.coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : (
+            <Text numberOfLines={3} style={[typeScale.caption, styles.coverFallback, { color: colors.textMuted }]}>
+              {book.title}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.rowBody}>
+          <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
             {book.title}
           </Text>
-        )}
-      </View>
-
-      <View style={styles.rowBody}>
-        <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
-          {book.title}
-        </Text>
-        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
-          {book.author ?? '저자 미상'}
-          {book.publisher ? ` · ${book.publisher}` : ''}
-        </Text>
-        {book.totalPages ? (
-          <View style={[styles.pageTag, { backgroundColor: colors.surfaceRaised }]}>
-            <Text style={[typeScale.overline, { color: colors.textMuted }]}>{book.totalPages}쪽</Text>
-          </View>
-        ) : (
-          <View style={[styles.pageTag, { backgroundColor: colors.warnSoft }]}>
-            <Text style={[typeScale.overline, { color: colors.warn }]}>쪽수 없음</Text>
-          </View>
-        )}
-        {failed ? <Text style={[typeScale.caption, { color: colors.warn }]}>담지 못했어요 · 다시 시도</Text> : null}
-      </View>
+          <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
+            {book.author ?? '저자 미상'}
+            {book.publisher ? ` · ${book.publisher}` : ''}
+          </Text>
+          {book.totalPages ? (
+            <View style={[styles.pageTag, { backgroundColor: colors.surfaceRaised }]}>
+              <Text style={[typeScale.overline, { color: colors.textMuted }]}>{book.totalPages}쪽</Text>
+            </View>
+          ) : (
+            <View style={[styles.pageTag, { backgroundColor: colors.warnSoft }]}>
+              <Text style={[typeScale.overline, { color: colors.warn }]}>쪽수 없음</Text>
+            </View>
+          )}
+          {failed ? <Text style={[typeScale.caption, { color: colors.warn }]}>담지 못했어요 · 다시 시도</Text> : null}
+        </View>
+      </Pressable>
 
       {added ? (
         <Text style={[typeScale.label, { color: colors.textFaint }]}>담김 ✓</Text>
@@ -254,7 +256,7 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
           <Text style={[typeScale.label, { color: colors.accent }]}>담기</Text>
         </Pressable>
       )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -275,6 +277,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
     alignItems: 'center',
   },
   cover: { width: 52, height: 78, borderRadius: radius.sm, overflow: 'hidden' },
