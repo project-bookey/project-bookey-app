@@ -5,8 +5,7 @@ import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 
 import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
-import { BookCover } from '@/components/BookCover';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
   Button, Loading, ProgressBar, Rule, formatClock, formatDuration, percent,
 } from '@/components/ui';
@@ -146,7 +145,13 @@ export default function TimerScreen() {
 
       <Pressable style={styles.container} onPress={() => { interactions.current += 1; }}>
         <View style={styles.bookRow}>
-          <BookCover url={record.data?.book?.coverUrl} title={record.data?.book?.title} width={46} />
+          <TiltCover
+            uri={record.data?.book?.coverUrl}
+            title={record.data?.book?.title}
+            width={46}
+            tilt={0}
+            entering={false}
+          />
           <View style={{ flex: 1 }}>
             <Text numberOfLines={2} style={[styles.bookTitle, { color: colors.text }]}>
               {record.data?.book?.title}

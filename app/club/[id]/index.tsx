@@ -6,8 +6,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import type { Checkpoint, ClubHome, MemberProgress, NudgeMessageKey } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
   Button, Card, Eyebrow, Loading, Numeral, ProgressBar, Rule, Tag,
   formatDuration, formatRelative, percent,
@@ -79,7 +78,7 @@ export default function ClubHomeScreen() {
         refreshControl={undefined}
       >
         <View style={styles.header}>
-          <BookCover url={data.book?.coverUrl} title={data.book?.title} width={58} />
+          <TiltCover uri={data.book?.coverUrl} title={data.book?.title} width={58} tilt={0} entering={false} />
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>{data.book?.title}</Text>

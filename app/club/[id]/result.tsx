@@ -3,8 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
-import { BookCover } from '@/components/BookCover';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
   Card, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, formatDuration, percent,
 } from '@/components/ui';
@@ -46,7 +45,7 @@ export default function ClubResultScreen() {
 
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
-          <BookCover url={data.book?.coverUrl} title={data.book?.title} width={56} />
+          <TiltCover uri={data.book?.coverUrl} title={data.book?.title} width={56} tilt={0} entering={false} />
           <View style={{ flex: 1 }}>
             <Eyebrow>모임 결산</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>

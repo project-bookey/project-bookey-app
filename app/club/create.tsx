@@ -6,8 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { clubApi, libraryApi } from '@/api/endpoints';
 import type { ReadingRecord } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Button, Card, Eyebrow, Field, Rule, Segmented, Toggle } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -113,7 +112,13 @@ export default function ClubCreateScreen() {
                     selected && { backgroundColor: colors.accentSoft },
                   ]}
                 >
-                  <BookCover url={record.book?.coverUrl} title={record.book?.title} width={38} />
+                  <TiltCover
+                    uri={record.book?.coverUrl}
+                    title={record.book?.title}
+                    width={38}
+                    tilt={0}
+                    entering={false}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text numberOfLines={1} style={[typeScale.label, { color: colors.text }]}>
                       {record.book?.title}

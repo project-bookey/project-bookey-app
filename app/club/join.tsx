@@ -5,8 +5,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import { ApiError } from '@/api/client';
-import { BookCover } from '@/components/BookCover';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Button, Card, Eyebrow, KeyValue, Rule, Toggle } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, sans } from '@/theme/tokens';
@@ -81,10 +80,12 @@ export default function ClubJoinScreen() {
         {preview.data ? (
           <Card style={{ gap: spacing.md }}>
             <View style={styles.previewHead}>
-              <BookCover
-                url={preview.data.book?.coverUrl}
+              <TiltCover
+                uri={preview.data.book?.coverUrl}
                 title={preview.data.book?.title}
                 width={52}
+                tilt={0}
+                entering={false}
               />
               <View style={{ flex: 1, gap: 3 }}>
                 <Text style={[styles.clubName, { color: colors.text }]}>{preview.data.name}</Text>

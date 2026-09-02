@@ -4,8 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubSummary } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
   Button, EmptyState, Loading, Numeral, ProgressBar, Tag, percent,
 } from '@/components/ui';
@@ -68,7 +67,7 @@ function ClubRow({ club, onPress }: { club: ClubSummary; onPress: () => void }) 
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
   return (
     <Pressable style={styles.row} onPress={onPress}>
-      <BookCover url={club.book?.coverUrl} title={club.book?.title} width={48} />
+      <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={48} tilt={0} entering={false} />
       <View style={styles.rowBody}>
         <View style={styles.rowHead}>
           <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>{club.name}</Text>
