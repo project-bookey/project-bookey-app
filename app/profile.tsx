@@ -426,8 +426,9 @@ function YearChart({ daily, loading, failed }: {
     <Card style={styles.chartCard}>
       <View style={styles.chartHeader}>
         <Text style={[styles.chartTitle, { color: colors.text }]}>올해 읽은 시간</Text>
+        {/* 캡션과 같은 포맷 규칙 — 1시간 미만을 '0시간'이라 적지 않는다. */}
         <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-          {Math.round(totalSec / 3600)}시간
+          {roughDuration(totalSec)}
         </Text>
       </View>
 
