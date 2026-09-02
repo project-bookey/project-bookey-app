@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   lead: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
-  // 마크 22px 를 라벨 글자 상자(24, 밑줄 위 6px)와 같은 중심에 — 밑줄 바닥에서 7px 띄운다.
-  markWrap: { marginBottom: 7 },
+  // 마크 22px 를 라벨 글자 상자(24, 밑줄 위 6px) 중심보다 3px 아래에 — 정중앙(7)은 떠 보인다는 피드백.
+  markWrap: { marginBottom: 4 },
   mark: { width: 22, height: 22 },
   tabs: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
   // 활성 라벨은 titleSerif 를 19로 줄여 쓴다 — 네비에서 표제만큼 커지면 무겁다.
