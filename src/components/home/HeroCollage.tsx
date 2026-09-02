@@ -85,8 +85,10 @@ function parallaxOffset(y: number) {
  * 레이어마다 스크롤 오프셋에 다른 계수를 곱해(패럴랙스) 종이들이 각각 다른
  * 속도로 밀린다. 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
  */
-export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, onDetail }: {
+export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, onContinue, onDetail }: {
   record: ReadingRecord | null;
+  /** 책 소개(줄거리) — 뒤에 끼운 메모장에 적힌다. 없으면 빈 괘선 메모장. */
+  synopsis?: string;
   /** `N일 연속 · 오늘 M분` — CTA 옆 모노 캡션 */
   streakLine?: string;
   loading?: boolean;
@@ -170,16 +172,15 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           tilt={-4}
           stacked
           stackOffset={G.stack}
-          // 장정본 — 띠지에 상태와 진행을 적는다(노트와 겹치지만 표지 자체가 말하게).
+          // 장정본 — 띠지에 상태와 진행을 적고(노트와 겹치지만 표지 자체가 말하게), 뒤장은 줄거리 메모장.
           bound={{
-            // 리본은 메모 조각(우측 14·폭 136)에 안 가리는 자리 — 표지 오른쪽 끝에서 44px 안쪽.
-            ribbonRight: 44,
             band: {
               title: statusLabel[record.status] ?? '읽는 중',
               meta: hasPages
                 ? `${record.progress.currentPage} / ${record.progress.totalPages} · ${percent}%`
                 : `${percent}%`,
             },
+            backNote: synopsis ? { title: '줄거리', body: synopsis } : {},
           }}
           entranceKey={`hero:${record.book?.id ?? record.id}`}
           onPress={() => onDetail(record)}
