@@ -4,20 +4,23 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubSummary } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Button, EmptyState, Loading, Numeral, ProgressBar, Screen, Tag, percent,
+  Button, EmptyState, Loading, Numeral, ProgressBar, Tag, percent,
 } from '@/components/ui';
-import { colors, hairline, spacing, type, layout } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 탭 3. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12) */
 export default function ClubsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const clubs = useQuery({ queryKey: ['clubs'], queryFn: clubApi.myClubs });
   const items = (clubs.data?.content ?? []).filter(Boolean);
 
   return (
-    <Screen>
+    <PaperScreen>
+      <SubHeader category="토론 모임" />
+
       <View style={styles.actions}>
         <Button
           label="코드로 참가"
@@ -38,7 +41,9 @@ export default function ClubsScreen() {
         data={items}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: hairline, backgroundColor: colors.line }} />
+        )}
         refreshing={clubs.isFetching}
         onRefresh={() => clubs.refetch()}
         ListEmptyComponent={
@@ -53,45 +58,51 @@ export default function ClubsScreen() {
           <ClubRow club={item} onPress={() => router.push(`/club/${item.id}`)} />
         )}
       />
-    </Screen>
+    </PaperScreen>
   );
 }
 
 function ClubRow({ club, onPress }: { club: ClubSummary; onPress: () => void }) {
+  const { colors } = useTheme();
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
   return (
     <Pressable style={styles.row} onPress={onPress}>
-      <BookCover url={club.book?.coverUrl} title={club.book?.title} width={48} />
+      <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={48} tilt={0} entering={false} />
       <View style={styles.rowBody}>
         <View style={styles.rowHead}>
-          <Text numberOfLines={1} style={styles.name}>{club.name}</Text>
+          <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>{club.name}</Text>
           {ended ? (
             <Tag label="종료" />
           ) : (
-            <Numeral style={styles.dday}>
+            <Numeral style={[styles.dday, { color: colors.accent }]}>
               {club.daysLeft >= 0 ? `D-${club.daysLeft}` : '기간 종료'}
             </Numeral>
           )}
         </View>
-        <Text numberOfLines={1} style={styles.book}>
+        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
           {club.book?.title ?? '도서 없음'} · {club.memberCount}명
         </Text>
 
         <View style={styles.progressBlock}>
           <View style={styles.progressLine}>
-            <Text style={styles.progressLabel}>나</Text>
+            <Text style={[styles.progressLabel, { color: colors.textMuted }]}>나</Text>
             <View style={styles.progressTrackWrap}>
               <ProgressBar value={club.myCompletionRate} height={5} />
             </View>
-            <Numeral style={styles.progressValue}>{percent(club.myCompletionRate)}</Numeral>
+            <Numeral style={[styles.progressValue, { color: colors.text }]}>
+              {percent(club.myCompletionRate)}
+            </Numeral>
           </View>
           <View style={styles.progressLine}>
             <Text style={[styles.progressLabel, { color: colors.textFaint }]}>평균</Text>
-            <View style={styles.avgTrack}>
+            <View style={[styles.avgTrack, { backgroundColor: colors.line }]}>
               <View
                 style={[
                   styles.avgFill,
-                  { width: `${Math.min(100, (club.averageCompletionRate ?? 0) * 100)}%` },
+                  {
+                    width: `${Math.min(100, (club.averageCompletionRate ?? 0) * 100)}%`,
+                    backgroundColor: colors.textFaint,
+                  },
                 ]}
               />
             </View>
@@ -108,18 +119,16 @@ function ClubRow({ club, onPress }: { club: ClubSummary; onPress: () => void }) 
 const styles = StyleSheet.create({
   actions: { ...layout.content, flexDirection: 'row', gap: spacing.sm, padding: spacing.lg },
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  separator: { height: hairline, backgroundColor: colors.line },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.lg },
   rowBody: { flex: 1, gap: 4 },
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  name: { ...type.subtitle, color: colors.ink, flexShrink: 1 },
-  dday: { fontSize: 12, fontWeight: '700', color: colors.accent },
-  book: { ...type.caption, color: colors.textMuted },
+  name: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23, flexShrink: 1 },
+  dday: { fontSize: 12 },
   progressBlock: { gap: 5, marginTop: spacing.sm },
   progressLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  progressLabel: { ...type.caption, color: colors.textMuted, width: 24 },
+  progressLabel: { ...typeScale.caption, width: 24 },
   progressTrackWrap: { flex: 1 },
-  progressValue: { fontSize: 11, width: 40, textAlign: 'right', color: colors.text },
-  avgTrack: { flex: 1, height: 5, borderRadius: 999, backgroundColor: colors.trackEmpty },
-  avgFill: { height: '100%', borderRadius: 999, backgroundColor: colors.textFaint },
+  progressValue: { fontSize: 11, width: 40, textAlign: 'right' },
+  avgTrack: { flex: 1, height: 5, borderRadius: radius.pill, overflow: 'hidden' },
+  avgFill: { height: '100%', borderRadius: radius.pill },
 });

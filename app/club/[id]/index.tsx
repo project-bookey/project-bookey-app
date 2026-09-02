@@ -6,12 +6,14 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import type { Checkpoint, ClubHome, MemberProgress, NudgeMessageKey } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Button, Card, Eyebrow, Loading, Numeral, ProgressBar, Rule, Screen, Tag,
+  Button, Card, Eyebrow, Loading, Numeral, ProgressBar, Rule, Tag,
   formatDuration, formatRelative, percent,
 } from '@/components/ui';
-import { colors, fonts, hairline, paceStyle, spacing, type, layout } from '@/theme';
+import type { ColorTokens } from '@/theme';
+import { getPaceStyle, hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono } from '@/theme/tokens';
 
 const NUDGES: { key: NudgeMessageKey; label: string }[] = [
   { key: 'READ_TOGETHER', label: '같이 읽어요' },
@@ -23,6 +25,7 @@ const NUDGES: { key: NudgeMessageKey; label: string }[] = [
 export default function ClubHomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const clubId = Number(id);
   const [nudgeTarget, setNudgeTarget] = useState<MemberProgress | null>(null);
@@ -47,26 +50,38 @@ export default function ClubHomeScreen() {
   });
 
   if (club.isLoading) {
-    return <Screen><Loading /></Screen>;
+    return (
+      <PaperScreen>
+        <SubHeader category="모임" />
+        <Loading />
+      </PaperScreen>
+    );
   }
   if (!club.data) {
-    return <Screen><Text style={styles.error}>모임을 불러오지 못했습니다.</Text></Screen>;
+    return (
+      <PaperScreen>
+        <SubHeader category="모임" />
+        <Text style={[styles.error, { color: colors.danger }]}>모임을 불러오지 못했습니다.</Text>
+      </PaperScreen>
+    );
   }
 
   const data: ClubHome = club.data;
   const ended = data.status === 'ENDED' || data.status === 'ARCHIVED';
 
   return (
-    <Screen>
+    <PaperScreen>
+      <SubHeader category="모임" />
+
       <ScrollView
         contentContainerStyle={styles.container}
         refreshControl={undefined}
       >
         <View style={styles.header}>
-          <BookCover url={data.book?.coverUrl} title={data.book?.title} width={58} />
+          <TiltCover uri={data.book?.coverUrl} title={data.book?.title} width={58} tilt={0} entering={false} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={styles.title}>{data.name}</Text>
-            <Text style={styles.book}>{data.book?.title}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>{data.book?.title}</Text>
             <View style={styles.headerTags}>
               <Tag label={data.myRole === 'HOST' ? '호스트' : '멤버'} />
               <Tag label={`${data.memberCount}/${data.memberLimit}명`} />
@@ -84,23 +99,26 @@ export default function ClubHomeScreen() {
             <SummaryCell
               label="모임 평균"
               value={percent(data.averageCompletionRate)}
+              colors={colors}
             />
-            <View style={styles.vRule} />
+            <View style={[styles.vRule, { backgroundColor: colors.line }]} />
             <SummaryCell
               label="내 순위"
               value={`${data.myRank} / ${data.memberCount}`}
+              colors={colors}
             />
-            <View style={styles.vRule} />
+            <View style={[styles.vRule, { backgroundColor: colors.line }]} />
             <SummaryCell
               label="기간"
               value={`${compactDate(data.startsAt)}–${compactDate(data.endsAt)}`}
+              colors={colors}
             />
           </View>
           <Rule />
           <View style={styles.codeRow}>
             <View>
               <Eyebrow>초대 코드</Eyebrow>
-              <Text style={styles.code}>{data.joinCode}</Text>
+              <Text style={[styles.code, { color: colors.text }]}>{data.joinCode}</Text>
             </View>
             <Button
               label="토론 열기"
@@ -116,12 +134,14 @@ export default function ClubHomeScreen() {
             <Eyebrow>다음 체크포인트</Eyebrow>
             <Card style={{ marginTop: spacing.sm, gap: spacing.sm }}>
               <View style={styles.checkpointHead}>
-                <Text style={styles.checkpointTitle}>{data.nextCheckpoint.title}</Text>
-                <Numeral style={styles.checkpointTarget}>
+                <Text style={[styles.checkpointTitle, { color: colors.text }]}>
+                  {data.nextCheckpoint.title}
+                </Text>
+                <Numeral style={[styles.checkpointTarget, { color: colors.accent }]}>
                   ~{data.nextCheckpoint.targetPage}쪽
                 </Numeral>
               </View>
-              <Text style={styles.checkpointMeta}>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>
                 마감 {new Date(data.nextCheckpoint.dueAt).toLocaleDateString('ko-KR')} ·{' '}
                 {data.nextCheckpoint.achievedCount}/{data.nextCheckpoint.memberCount}명 달성
               </Text>
@@ -138,6 +158,7 @@ export default function ClubHomeScreen() {
                 <MemberRow
                   member={member}
                   rank={index + 1}
+                  colors={colors}
                   onNudge={() => setNudgeTarget(member)}
                 />
               </View>
@@ -148,14 +169,14 @@ export default function ClubHomeScreen() {
         {data.checkpoints.length > 0 ? (
           <View>
             <Eyebrow>체크포인트 진행</Eyebrow>
-            <CheckpointGrid checkpoints={data.checkpoints} />
+            <CheckpointGrid checkpoints={data.checkpoints} colors={colors} />
           </View>
         ) : null}
 
         {nudgeTarget ? (
           <Card style={{ gap: spacing.sm }}>
             <Eyebrow>{nudgeTarget.nickname}님에게 보내기</Eyebrow>
-            <Text style={styles.nudgeHint}>
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>
               프리셋 문구만 보낼 수 있습니다. 같은 사람에게 24시간에 한 번.
             </Text>
             <View style={styles.nudgeButtons}>
@@ -191,7 +212,7 @@ export default function ClubHomeScreen() {
           }}
         />
       </ScrollView>
-    </Screen>
+    </PaperScreen>
   );
 }
 
@@ -201,28 +222,33 @@ function compactDate(iso: string): string {
   return `${Number(month)}/${Number(day)}`;
 }
 
-function SummaryCell({ label, value }: { label: string; value: string }) {
+function SummaryCell({ label, value, colors }: {
+  label: string;
+  value: string;
+  colors: ColorTokens;
+}) {
   return (
     <View style={styles.summaryCell}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Numeral style={styles.summaryValue}>{value}</Numeral>
+      <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
+      <Numeral style={[styles.summaryValue, { color: colors.text }]}>{value}</Numeral>
     </View>
   );
 }
 
-function MemberRow({ member, rank, onNudge }: {
+function MemberRow({ member, rank, colors, onNudge }: {
   member: MemberProgress;
   rank: number;
+  colors: ColorTokens;
   onNudge: () => void;
 }) {
-  const pace = member.paceStatus ? paceStyle[member.paceStatus] : null;
+  const pace = member.paceStatus ? getPaceStyle(colors)[member.paceStatus] : null;
 
   return (
-    <View style={[styles.memberRow, member.isMe && styles.memberRowMe]}>
-      <Numeral style={styles.rank}>{rank}</Numeral>
+    <View style={[styles.memberRow, member.isMe && { backgroundColor: colors.surfaceRaised }]}>
+      <Numeral style={[styles.rank, { color: colors.textFaint }]}>{rank}</Numeral>
       <View style={{ flex: 1, gap: 4 }}>
         <View style={styles.memberHead}>
-          <Text style={styles.memberName}>
+          <Text style={[typeScale.label, { color: colors.text }]}>
             {member.nickname}
             {member.isMe ? ' (나)' : ''}
           </Text>
@@ -235,28 +261,33 @@ function MemberRow({ member, rank, onNudge }: {
           <>
             <ProgressBar value={member.completionRate} height={5} />
             <View style={styles.memberMeta}>
-              <Numeral style={styles.memberNumeral}>
+              <Numeral style={[styles.memberNumeral, { color: colors.textMuted }]}>
                 {member.currentPage}쪽 · {percent(member.completionRate)} ·{' '}
                 {formatDuration(member.totalDurationSec)}
               </Numeral>
-              <Text style={styles.memberTime}>{formatRelative(member.lastReadAt)}</Text>
+              <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+                {formatRelative(member.lastReadAt)}
+              </Text>
             </View>
           </>
         ) : (
-          <Text style={styles.private}>진척 비공개</Text>
+          <Text style={[typeScale.caption, { color: colors.textFaint }]}>진척 비공개</Text>
         )}
       </View>
 
       {member.nudgeable ? (
-        <Pressable onPress={onNudge} style={styles.nudgeButton}>
-          <Text style={styles.nudgeButtonText}>찌르기</Text>
+        <Pressable onPress={onNudge} style={[styles.nudgeButton, { borderColor: colors.line }]}>
+          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>찌르기</Text>
         </Pressable>
       ) : null}
     </View>
   );
 }
 
-function CheckpointGrid({ checkpoints }: { checkpoints: Checkpoint[] }) {
+function CheckpointGrid({ checkpoints, colors }: {
+  checkpoints: Checkpoint[];
+  colors: ColorTokens;
+}) {
   return (
     <View style={styles.grid}>
       {checkpoints.map((cp) => {
@@ -266,22 +297,24 @@ function CheckpointGrid({ checkpoints }: { checkpoints: Checkpoint[] }) {
             <View
               style={[
                 styles.gridMark,
-                state === 'met' && styles.gridMarkMet,
-                state === 'missed' && styles.gridMarkMissed,
+                { borderColor: colors.line, backgroundColor: colors.surface },
+                state === 'met' && { backgroundColor: colors.accent, borderColor: colors.accent },
+                state === 'missed' && { borderColor: colors.danger },
               ]}
             >
               <Text
                 style={[
                   styles.gridMarkText,
-                  state === 'met' && { color: colors.bg },
+                  { color: colors.textFaint },
+                  state === 'met' && { color: colors.onAccent },
                   state === 'missed' && { color: colors.danger },
                 ]}
               >
                 {state === 'met' ? '✓' : state === 'missed' ? '×' : '·'}
               </Text>
             </View>
-            <Text style={styles.gridLabel}>{cp.seq}주</Text>
-            <Numeral style={styles.gridPage}>{cp.targetPage}</Numeral>
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>{cp.seq}주</Text>
+            <Numeral style={[styles.gridPage, { color: colors.textFaint }]}>{cp.targetPage}</Numeral>
           </View>
         );
       })}
@@ -339,61 +372,40 @@ function notify(message: string) {
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   header: { flexDirection: 'row', gap: spacing.md },
-  title: { ...type.title, color: colors.ink },
-  book: { ...type.caption, color: colors.textMuted },
+  title: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
   headerTags: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs, flexWrap: 'wrap' },
   summaryRow: { flexDirection: 'row', alignItems: 'stretch' },
   summaryCell: { flex: 1, gap: 4 },
-  summaryLabel: { ...type.caption, color: colors.textFaint },
-  summaryValue: { fontSize: 14, fontWeight: '700', color: colors.ink },
-  vRule: { width: hairline, backgroundColor: colors.line, marginHorizontal: spacing.md },
+  summaryValue: { fontSize: 14 },
+  vRule: { width: hairline, marginHorizontal: spacing.md },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  code: {
-    fontFamily: fonts.mono,
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: 5,
-    color: colors.ink,
-  },
+  code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 5 },
   checkpointHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  checkpointTitle: { ...type.subtitle, color: colors.ink },
-  checkpointTarget: { fontSize: 14, color: colors.accent, fontWeight: '700' },
-  checkpointMeta: { ...type.caption, color: colors.textMuted },
+  checkpointTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
+  checkpointTarget: { fontSize: 14 },
   memberRow: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, alignItems: 'center' },
-  memberRowMe: { backgroundColor: colors.surfaceAlt },
-  rank: { fontSize: 12, color: colors.textFaint, width: 14 },
+  rank: { fontSize: 12, width: 14 },
   memberHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
-  memberName: { ...type.label, color: colors.ink },
   memberMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  memberNumeral: { fontSize: 11, color: colors.textMuted },
-  memberTime: { ...type.caption, color: colors.textFaint },
-  private: { ...type.caption, color: colors.textFaint },
+  memberNumeral: { fontSize: 11 },
   nudgeButton: {
     borderWidth: hairline,
-    borderColor: colors.line,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
   },
-  nudgeButtonText: { fontSize: 11, fontWeight: '700', color: colors.textMuted },
-  nudgeHint: { ...type.caption, color: colors.textFaint },
   nudgeButtons: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   grid: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, flexWrap: 'wrap' },
   gridCell: { alignItems: 'center', gap: 4, width: 52 },
   gridMark: {
     width: 34,
     height: 34,
-    borderRadius: 8,
+    borderRadius: radius.md,
     borderWidth: hairline,
-    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
   },
-  gridMarkMet: { backgroundColor: colors.ink, borderColor: colors.ink },
-  gridMarkMissed: { borderColor: colors.danger },
-  gridMarkText: { fontSize: 14, fontWeight: '700', color: colors.textFaint },
-  gridLabel: { ...type.caption, color: colors.textMuted },
-  gridPage: { fontSize: 10, color: colors.textFaint },
-  error: { ...type.body, color: colors.danger, padding: spacing.lg },
+  gridMarkText: { fontFamily: mono.semiBold, fontSize: 14 },
+  gridPage: { fontSize: 10 },
+  error: { ...typeScale.body, padding: spacing.lg },
 });

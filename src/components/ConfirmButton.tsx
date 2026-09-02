@@ -83,9 +83,9 @@ export function ConfirmButton({ label, question, confirmLabel = '확정', tone =
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   button: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     alignItems: 'center',
   },
   idle: { alignSelf: 'stretch' },

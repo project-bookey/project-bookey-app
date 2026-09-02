@@ -26,6 +26,8 @@ if (Platform.OS === 'ios') {
 
 type SocialProvider = 'APPLE' | 'KAKAO' | 'GOOGLE';
 
+const BUTTON_HEIGHT = 48;
+
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
  * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 소셜은 로그인=최초 가입.
@@ -265,7 +267,7 @@ export default function LoginScreen() {
               <Apple.AppleAuthenticationButton
                 buttonType={Apple.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={Apple.AppleAuthenticationButtonStyle.WHITE}
-                cornerRadius={radius.md}
+                cornerRadius={BUTTON_HEIGHT / 2}
                 style={styles.appleButton}
                 onPress={submitApple}
               />
@@ -310,8 +312,6 @@ export default function LoginScreen() {
   );
 }
 
-const BUTTON_HEIGHT = 48;
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: darkColors.bg },
   fill: { flex: 1 },
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   cta: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     backgroundColor: darkColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
   ghost: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   appleButton: { height: BUTTON_HEIGHT, width: '100%' },
   kakaoButton: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     backgroundColor: '#FEE500',
     alignItems: 'center',
     justifyContent: 'center',
@@ -378,8 +378,8 @@ const styles = StyleSheet.create({
   kakaoLabel: { ...typeScale.bodyStrong, color: '#191919' },
   googleButton: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderRadius: radius.pill,
+    borderWidth: hairline,
     borderColor: darkColors.lineStrong,
     alignItems: 'center',
     justifyContent: 'center',

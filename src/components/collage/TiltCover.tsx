@@ -65,6 +65,31 @@ export function useCoverEntrance(index = 0, entranceKey?: string, entering = tru
   return progress;
 }
 
+/** 이 폭 미만은 '소폭 표지'로 보고 폴백 활자를 좁은 판에 맞춰 줄인다. */
+const FALLBACK_COMPACT_W = 56;
+
+/**
+ * 무표지 폴백의 활자·여백을 표지 폭에서 계산한다.
+ *
+ * 기본 수식(w/7 · 행간 w/5)은 96px 같은 큰 표지를 기준으로 잡혀 있어서, 모임 만들기
+ * 책 픽커(38px)처럼 좁은 표지에서는 3줄이 표지 높이를 넘겨 잘렸다. 소폭에서는 구
+ * BookCover 비율(w/6.5)과 타이트한 행간으로 낮추고, 여백을 좁히고 장식 괘선을 생략해
+ * 판 안에 들어오게 한다. 56px 이상은 종전 그대로다 — 96px 기준 모양은 변하지 않는다.
+ */
+function fallbackMetrics(width: number) {
+  if (width < FALLBACK_COMPACT_W) {
+    const fontSize = Math.max(8, Math.round(width / 6.5));
+    return { fontSize, lineHeight: fontSize + 3, padding: 4, gap: 0, rule: false };
+  }
+  return {
+    fontSize: Math.max(11, Math.round(width / 7)),
+    lineHeight: Math.max(15, Math.round(width / 5)),
+    padding: spacing.sm,
+    gap: spacing.sm,
+    rule: true,
+  };
+}
+
 /**
  * 콜라주 표지 — 표지 동적 효과의 단일 소스.
  *
@@ -118,6 +143,7 @@ export function TiltCover({
   const { colors, mode } = useTheme();
   const height = Math.round(width * 1.5);
   const angle = tilt ?? tiltFor(index);
+  const fallback = fallbackMetrics(width);
 
   const progress = useCoverEntrance(index, entranceKey, entering);
   const pressed = useSharedValue(0);
@@ -185,16 +211,18 @@ export function TiltCover({
             <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
             // 무표지 폴백 — 세리프 제목을 표지처럼 앉힌다.
-            <View style={styles.fallback}>
-              <View style={[styles.fallbackRule, { backgroundColor: colors.textFaint }]} />
+            <View style={[styles.fallback, { padding: fallback.padding, gap: fallback.gap }]}>
+              {fallback.rule ? (
+                <View style={[styles.fallbackRule, { backgroundColor: colors.textFaint }]} />
+              ) : null}
               <Text
                 numberOfLines={3}
                 style={[
                   styles.fallbackTitle,
                   {
                     color: colors.textMuted,
-                    fontSize: Math.max(11, Math.round(width / 7)),
-                    lineHeight: Math.max(15, Math.round(width / 5)),
+                    fontSize: fallback.fontSize,
+                    lineHeight: fallback.lineHeight,
                   },
                 ]}
               >
@@ -257,13 +285,8 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
     overflow: 'hidden',
   },
-  fallback: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.sm,
-  },
+  // 여백·간격은 폭에 따라 fallbackMetrics 가 정한다.
+  fallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   fallbackRule: { width: 16, height: 1.5 },
   fallbackTitle: { fontFamily: serif.bold, textAlign: 'center' },
 });

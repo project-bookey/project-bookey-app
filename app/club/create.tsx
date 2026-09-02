@@ -6,9 +6,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { clubApi, libraryApi } from '@/api/endpoints';
 import type { ReadingRecord } from '@/api/types';
-import { BookCover } from '@/components/BookCover';
-import { Button, Card, Eyebrow, Field, Rule, Screen, Segmented, Toggle } from '@/components/ui';
-import { colors, hairline, spacing, type } from '@/theme';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { Button, Card, Eyebrow, Field, Rule, Segmented, Toggle } from '@/components/ui';
+import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const DURATIONS = [
   { value: '2', label: '2주' },
@@ -21,6 +21,7 @@ const DURATIONS = [
 export default function ClubCreateScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -69,7 +70,9 @@ export default function ClubCreateScreen() {
   const canSubmit = name.trim().length > 0 && bookId !== null;
 
   return (
-    <Screen>
+    <PaperScreen>
+      <SubHeader category="모임 만들기" />
+
       <ScrollView contentContainerStyle={styles.container}>
         <Field
           label="모임 이름"
@@ -88,10 +91,12 @@ export default function ClubCreateScreen() {
 
         <View>
           <Eyebrow>선정 도서</Eyebrow>
-          <Text style={styles.helper}>내 서재의 책 중에서 고릅니다.</Text>
-          <View style={styles.bookList}>
+          <Text style={[styles.helper, { color: colors.textFaint }]}>
+            내 서재의 책 중에서 고릅니다.
+          </Text>
+          <View style={[styles.bookList, { borderColor: colors.line }]}>
             {candidates.length === 0 ? (
-              <Text style={styles.empty}>
+              <Text style={[styles.empty, { color: colors.textFaint }]}>
                 서재가 비어 있어요. 먼저 책을 검색해 담아주세요.
               </Text>
             ) : null}
@@ -101,17 +106,35 @@ export default function ClubCreateScreen() {
                 <Pressable
                   key={record.book!.id}
                   onPress={() => setBookId(record.book!.id)}
-                  style={[styles.bookRow, selected && styles.bookRowSelected]}
+                  style={[
+                    styles.bookRow,
+                    { borderBottomColor: colors.line, backgroundColor: colors.surface },
+                    selected && { backgroundColor: colors.accentSoft },
+                  ]}
                 >
-                  <BookCover url={record.book?.coverUrl} title={record.book?.title} width={38} />
+                  <TiltCover
+                    uri={record.book?.coverUrl}
+                    title={record.book?.title}
+                    width={38}
+                    tilt={0}
+                    entering={false}
+                  />
                   <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={styles.bookTitle}>{record.book?.title}</Text>
-                    <Text style={styles.bookMeta}>
+                    <Text numberOfLines={1} style={[typeScale.label, { color: colors.text }]}>
+                      {record.book?.title}
+                    </Text>
+                    <Text style={[styles.bookMeta, { color: colors.textFaint }]}>
                       {record.book?.totalPages ? `${record.book.totalPages}쪽` : '페이지 수 미상'}
                       {record.book?.author ? ` · ${record.book.author}` : ''}
                     </Text>
                   </View>
-                  <View style={[styles.radio, selected && styles.radioOn]} />
+                  <View
+                    style={[
+                      styles.radio,
+                      { borderColor: colors.textFaint },
+                      selected && { backgroundColor: colors.accent, borderColor: colors.accent },
+                    ]}
+                  />
                 </Pressable>
               );
             })}
@@ -127,7 +150,7 @@ export default function ClubCreateScreen() {
               onChange={(v) => setWeeks(v as typeof weeks)}
             />
           </View>
-          <Text style={styles.helper}>
+          <Text style={[styles.helper, { color: colors.textFaint }]}>
             {toIso(today)} → {toIso(endsAt)}
           </Text>
         </View>
@@ -160,7 +183,9 @@ export default function ClubCreateScreen() {
           />
         </Card>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text>
+        ) : null}
 
         <Button
           label="모임 만들기"
@@ -169,7 +194,7 @@ export default function ClubCreateScreen() {
           onPress={() => create.mutate()}
         />
       </ScrollView>
-    </Screen>
+    </PaperScreen>
   );
 }
 
@@ -182,12 +207,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  helper: { ...type.caption, color: colors.textFaint, marginTop: spacing.sm },
+  helper: { ...typeScale.caption, marginTop: spacing.sm },
   bookList: {
     marginTop: spacing.sm,
     borderWidth: hairline,
-    borderColor: colors.line,
-    borderRadius: 12,
+    borderRadius: radius.md,
     overflow: 'hidden',
   },
   bookRow: {
@@ -196,20 +220,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.md,
     borderBottomWidth: hairline,
-    borderBottomColor: colors.line,
-    backgroundColor: colors.surface,
   },
-  bookRowSelected: { backgroundColor: colors.accentSoft },
-  bookTitle: { ...type.label, color: colors.ink },
-  bookMeta: { ...type.caption, color: colors.textFaint, marginTop: 2 },
+  bookMeta: { ...typeScale.caption, marginTop: 2 },
   radio: {
     width: 16,
     height: 16,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: hairline,
-    borderColor: colors.textFaint,
   },
-  radioOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  empty: { ...type.caption, color: colors.textFaint, padding: spacing.lg },
-  error: { ...type.caption, color: colors.danger },
+  empty: { ...typeScale.caption, padding: spacing.lg },
 });

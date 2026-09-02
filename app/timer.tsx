@@ -5,11 +5,12 @@ import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 
 import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
-import { BookCover } from '@/components/BookCover';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Button, Loading, Numeral, ProgressBar, Rule, Screen, formatClock, formatDuration, percent,
+  Button, Loading, ProgressBar, Rule, formatClock, formatDuration, percent,
 } from '@/components/ui';
-import { colors, fonts, hairline, layout, spacing, type } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono, serif } from '@/theme/tokens';
 
 /**
  * 독서 타이머 (§F3).
@@ -21,6 +22,7 @@ import { colors, fonts, hairline, layout, spacing, type } from '@/theme';
 export default function TimerScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
   const { recordId } = useLocalSearchParams<{ recordId: string }>();
   const id = Number(recordId);
 
@@ -126,20 +128,35 @@ export default function TimerScreen() {
   });
 
   if (record.isLoading || current.isLoading) {
-    return <Screen><Loading /></Screen>;
+    return (
+      <PaperScreen>
+        <SubHeader category="타이머" />
+        <Loading />
+      </PaperScreen>
+    );
   }
 
   const progress = record.data?.progress;
   const running = Boolean(session);
 
   return (
-    <Screen>
+    <PaperScreen>
+      <SubHeader category="타이머" />
+
       <Pressable style={styles.container} onPress={() => { interactions.current += 1; }}>
         <View style={styles.bookRow}>
-          <BookCover url={record.data?.book?.coverUrl} title={record.data?.book?.title} width={46} />
+          <TiltCover
+            uri={record.data?.book?.coverUrl}
+            title={record.data?.book?.title}
+            width={46}
+            tilt={0}
+            entering={false}
+          />
           <View style={{ flex: 1 }}>
-            <Text numberOfLines={2} style={styles.bookTitle}>{record.data?.book?.title}</Text>
-            <Text style={styles.bookMeta}>
+            <Text numberOfLines={2} style={[styles.bookTitle, { color: colors.text }]}>
+              {record.data?.book?.title}
+            </Text>
+            <Text style={[styles.bookMeta, { color: colors.textMuted }]}>
               {progress?.currentPage}
               {progress && progress.totalPages > 0 ? ` / ${progress.totalPages}쪽` : '쪽'}
               {progress?.completionRate != null ? ` · ${percent(progress.completionRate)}` : ''}
@@ -148,8 +165,8 @@ export default function TimerScreen() {
         </View>
 
         <View style={styles.clockBox}>
-          <Text style={styles.clock}>{formatClock(elapsed)}</Text>
-          <Text style={styles.clockLabel}>
+          <Text style={[styles.clock, { color: colors.text }]}>{formatClock(elapsed)}</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
             {running ? '기록 중' : '시작을 누르면 기록됩니다'}
           </Text>
         </View>
@@ -159,7 +176,9 @@ export default function TimerScreen() {
         {running ? (
           <View style={styles.endForm}>
             <Rule />
-            <Text style={styles.formLabel}>몇 쪽까지 읽었나요?</Text>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
+              몇 쪽까지 읽었나요?
+            </Text>
             <View style={styles.pageRow}>
               <TextInput
                 value={endPage}
@@ -168,11 +187,11 @@ export default function TimerScreen() {
                   setEndPage(text.replace(/[^0-9]/g, ''));
                 }}
                 keyboardType="number-pad"
-                style={styles.pageInput}
+                style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
                 placeholder="0"
                 placeholderTextColor={colors.textFaint}
               />
-              <Text style={styles.pageSuffix}>
+              <Text style={[styles.pageSuffix, { color: colors.textMuted }]}>
                 {progress && progress.totalPages > 0 ? `/ ${progress.totalPages}쪽` : '쪽'}
               </Text>
             </View>
@@ -181,7 +200,10 @@ export default function TimerScreen() {
               onChangeText={setMemo}
               placeholder="이번 세션 메모 (선택)"
               placeholderTextColor={colors.textFaint}
-              style={styles.memoInput}
+              style={[
+                styles.memoInput,
+                { borderColor: colors.line, backgroundColor: colors.surface, color: colors.text },
+              ]}
               multiline
             />
             <Button
@@ -190,7 +212,9 @@ export default function TimerScreen() {
               loading={end.isPending}
               disabled={!session || end.isPending}
             />
-            {endError ? <Text style={styles.error}>{endError}</Text> : null}
+            {endError ? (
+              <Text style={[styles.error, { color: colors.danger }]}>{endError}</Text>
+            ) : null}
           </View>
         ) : (
           <View style={styles.startArea}>
@@ -199,57 +223,45 @@ export default function TimerScreen() {
               onPress={() => start.mutate()}
               loading={start.isPending}
             />
-            <Text style={styles.hint}>
+            <Text style={[styles.hint, { color: colors.textFaint }]}>
               누적 {formatDuration(progress?.totalDurationSec ?? 0)} 읽었습니다.
             </Text>
           </View>
         )}
       </Pressable>
-    </Screen>
+    </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { ...layout.content, flex: 1, padding: spacing.lg, gap: spacing.xl },
   bookRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  bookTitle: { ...type.subtitle, color: colors.ink },
-  bookMeta: { ...type.caption, color: colors.textMuted, marginTop: 3 },
+  bookTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
+  bookMeta: { ...typeScale.caption, marginTop: 3 },
   clockBox: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
-  clock: {
-    fontFamily: fonts.mono,
-    fontSize: 58,
-    fontWeight: '700',
-    color: colors.ink,
-    letterSpacing: 2,
-  },
-  clockLabel: { ...type.caption, color: colors.textFaint, letterSpacing: 0.4 },
+  // 경과 시간 — 화면의 주인공. 모노 숫자를 크게 앉힌다.
+  clock: { fontFamily: mono.semiBold, fontSize: 58, letterSpacing: 2 },
   startArea: { gap: spacing.md },
-  hint: { ...type.caption, color: colors.textFaint, textAlign: 'center' },
-  error: { ...type.caption, color: colors.danger, lineHeight: 17 },
+  hint: { ...typeScale.caption, textAlign: 'center' },
+  error: { ...typeScale.caption, lineHeight: 17 },
   endForm: { gap: spacing.md },
-  formLabel: { ...type.eyebrow, color: colors.textFaint },
   pageRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   pageInput: {
     flex: 1,
     borderBottomWidth: 2,
-    borderBottomColor: colors.ink,
     minWidth: 0,
-    fontFamily: fonts.mono,
+    fontFamily: mono.semiBold,
     fontSize: 34,
-    fontWeight: '700',
-    color: colors.ink,
     paddingVertical: spacing.sm,
   },
-  pageSuffix: { ...type.body, color: colors.textMuted, fontFamily: fonts.mono, flexShrink: 0 },
+  pageSuffix: { fontFamily: mono.regular, fontSize: 15, flexShrink: 0 },
   memoInput: {
     borderWidth: hairline,
-    borderColor: colors.line,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     padding: spacing.md,
     minHeight: 64,
-    fontSize: 14,
-    color: colors.text,
+    fontFamily: serif.regular,
+    fontSize: 15,
     textAlignVertical: 'top',
   },
 });

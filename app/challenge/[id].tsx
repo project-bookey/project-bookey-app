@@ -8,9 +8,11 @@ import { challengeApi } from '@/api/endpoints';
 import type { Challenge } from '@/api/types';
 import { Confetti } from '@/components/Confetti';
 import { ConfirmButton } from '@/components/ConfirmButton';
+import { PaperScreen, SubHeader } from '@/components/collage';
 import { useRemainingSec } from '@/components/home/ChallengeRow';
 import { formatClock } from '@/components/ui';
-import { layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { mono } from '@/theme/tokens';
 
 /** 챌린지 진행 — 타임워치·일시정지/재개·쪽수 기록·성공 폭죽·실패 재도전. */
 export default function ChallengeScreen() {
@@ -73,7 +75,11 @@ export default function ChallengeScreen() {
     .find((v) => v != null) ?? null;
 
   if (!challenge) {
-    return <View style={[styles.screen, { backgroundColor: colors.bg }]} />;
+    return (
+      <PaperScreen>
+        <SubHeader category="챌린지" />
+      </PaperScreen>
+    );
   }
 
   const succeeded = challenge.status === 'SUCCEEDED';
@@ -84,15 +90,17 @@ export default function ChallengeScreen() {
   const gaugeColor = ratio < 0.2 ? colors.warn : colors.accent;
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+    <PaperScreen>
+      <SubHeader category="챌린지" />
+
       <ScrollView contentContainerStyle={styles.container}>
-        <Text numberOfLines={1} style={[typeScale.title, { color: colors.text, textAlign: 'center' }]}>
+        <Text numberOfLines={1} style={[styles.bookTitle, { color: colors.text }]}>
           {challenge.book?.title}
         </Text>
 
         {succeeded ? (
-          <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
-            <Text style={[typeScale.display, { color: colors.text, textAlign: 'center' }]}>완독! 🎉</Text>
+          <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <Text style={[typeScale.displaySerif, { color: colors.text, textAlign: 'center' }]}>완독! 🎉</Text>
             <Text style={[typeScale.body, { color: colors.textMuted, textAlign: 'center' }]}>
               {formatClock(usedSec)} 만에 {challenge.totalPages}쪽을 읽었어요.
             </Text>
@@ -102,8 +110,8 @@ export default function ChallengeScreen() {
             </Pressable>
           </View>
         ) : failed ? (
-          <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
-            <Text style={[typeScale.display, { color: colors.text, textAlign: 'center' }]}>시간이 다 됐어요</Text>
+          <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <Text style={[typeScale.displaySerif, { color: colors.text, textAlign: 'center' }]}>시간이 다 됐어요</Text>
             <Text style={[typeScale.body, { color: colors.textMuted, textAlign: 'center' }]}>
               {challenge.currentPage}/{challenge.totalPages}쪽까지 읽었어요. 다시 도전해볼까요?
             </Text>
@@ -121,8 +129,8 @@ export default function ChallengeScreen() {
             </Pressable>
           </View>
         ) : challenge.status === 'CANCELLED' ? (
-          <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
-            <Text style={[typeScale.display, { color: colors.text, textAlign: 'center' }]}>포기한 챌린지예요</Text>
+          <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <Text style={[typeScale.displaySerif, { color: colors.text, textAlign: 'center' }]}>포기한 챌린지예요</Text>
             <Pressable onPress={() => router.replace('/home')} accessibilityRole="button"
               style={[styles.cta, { backgroundColor: colors.accent }]}>
               <Text style={[typeScale.label, { color: colors.onAccent }]}>홈으로</Text>
@@ -130,7 +138,7 @@ export default function ChallengeScreen() {
           </View>
         ) : (
           <>
-            <Text style={[styles.clock, { fontFamily: sans.extraBold, color: colors.text }]}>
+            <Text style={[styles.clock, { color: colors.text }]}>
               {formatClock(remaining)}
             </Text>
             <View style={[styles.gauge, { backgroundColor: colors.line }]}>
@@ -154,7 +162,7 @@ export default function ChallengeScreen() {
               </Text>
             </Pressable>
 
-            <View style={[styles.pageCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.pageCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
               <Text style={[typeScale.overline, { color: colors.accent }]}>지금 몇 쪽인가요?</Text>
               <View style={styles.pageRow}>
                 <TextInput
@@ -194,20 +202,33 @@ export default function ChallengeScreen() {
         ) : null}
       </ScrollView>
       <Confetti run={succeeded} />
-    </View>
+    </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
-  clock: { fontSize: 56, textAlign: 'center', letterSpacing: 1 },
-  gauge: { height: 6, borderRadius: radius.none, overflow: 'hidden' },
+  bookTitle: { ...typeScale.titleSerif, textAlign: 'center' },
+  // 스톱워치 — 타이머와 같은 모노 대형 숫자.
+  clock: { fontFamily: mono.semiBold, fontSize: 56, textAlign: 'center', letterSpacing: 1 },
+  gauge: { height: 6, borderRadius: radius.pill, overflow: 'hidden' },
   gaugeFill: { height: 6 },
-  cta: { paddingVertical: spacing.md, borderRadius: radius.md, alignItems: 'center' },
-  resultCard: { borderRadius: radius.md, padding: spacing.xl, gap: spacing.md },
-  pageCard: { borderRadius: radius.md, padding: spacing.lg, gap: spacing.sm },
+  cta: { paddingVertical: spacing.md, borderRadius: radius.pill, alignItems: 'center' },
+  resultCard: { borderRadius: radius.md, borderWidth: hairline, padding: spacing.xl, gap: spacing.md },
+  pageCard: { borderRadius: radius.md, borderWidth: hairline, padding: spacing.lg, gap: spacing.sm },
   pageRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  pageInput: { width: 88, borderRadius: radius.md, padding: spacing.md, fontSize: 18, textAlign: 'center' },
-  recordButton: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: radius.md, marginLeft: 'auto' },
+  pageInput: {
+    width: 88,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontFamily: mono.semiBold,
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  recordButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.pill,
+    marginLeft: 'auto',
+  },
 });
