@@ -88,6 +88,7 @@ export default function RootLayout() {
             <Stack.Screen name="book/[id]" options={{ title: '도서' }} />
             <Stack.Screen name="quote/[id]" options={{ title: '밑줄' }} />
             <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
+            <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />
           </Stack>
         </SafeAreaProvider>
