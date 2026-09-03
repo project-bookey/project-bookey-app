@@ -157,12 +157,12 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               <View style={styles.center}>
                 <ActivityIndicator size="small" color={colors.accent} />
               </View>
-            ) : list.isError ? (
+            ) : list.isError && items.length === 0 ? (
               <Pressable onPress={() => list.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도" style={styles.center}>
                 <Text style={[typeScale.monoLabel, { color: colors.accent }]}>밑줄을 불러오지 못했어요 · 다시 시도</Text>
               </Pressable>
             ) : items.length === 0 ? (
-              <Text style={[typeScale.caption, styles.center, { color: colors.textFaint }]}>
+              <Text style={[typeScale.caption, styles.centerText, { color: colors.textFaint }]}>
                 아직 오려둔 문장이 없어요. 위에서 바로 오려 두세요.
               </Text>
             ) : (
@@ -191,17 +191,28 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               })
             )}
 
-            {list.hasNextPage ? (
+            {list.isFetchingNextPage ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : list.isError && items.length > 0 ? (
+              // 다음 쪽을 못 받아도 이미 펼쳐 둔 조각은 그대로 둔다 — '더 보기' 자리에 다시 시도만 놓는다.
+              <Pressable
+                onPress={() => (list.hasNextPage ? list.fetchNextPage() : list.refetch())}
+                accessibilityRole="button"
+                accessibilityLabel="밑줄 다시 불러오기"
+                style={styles.center}
+              >
+                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
+              </Pressable>
+            ) : list.hasNextPage ? (
               <Pressable
                 onPress={() => list.fetchNextPage()}
-                disabled={list.isFetchingNextPage}
                 accessibilityRole="button"
                 accessibilityLabel="밑줄 더 보기"
                 style={styles.center}
               >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-                  {list.isFetchingNextPage ? '불러오는 중…' : '더 보기 →'}
-                </Text>
+                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>더 보기 →</Text>
               </Pressable>
             ) : null}
           </ScrollView>
@@ -223,7 +234,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
   },
   chips: { flexDirection: 'row', paddingTop: spacing.xs },
-  center: { paddingVertical: spacing.md, alignItems: 'center', textAlign: 'center' },
+  // 상자(View·Pressable)용과 글자용을 가른다 — textAlign 은 Text 에만 뜻이 있다.
+  center: { paddingVertical: spacing.md, alignItems: 'center' },
+  centerText: { paddingVertical: spacing.md, textAlign: 'center' },
   dim: { opacity: 0.35 },
   // 체크 표식 — 조각 오른쪽에 한 글자. 여백으로 조각과 떨어뜨린다.
   mark: { fontSize: 14, paddingHorizontal: spacing.xs },

@@ -25,6 +25,8 @@ import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme'
 const POST_QUOTE_MAX = 10;
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 const TITLE_MAX = 300;
+/** '떼기' 접근성 라벨에 싣는 문장 길이 — 조각이 여럿일 때 어느 것을 떼는지 소리로 갈리게. */
+const DETACH_LABEL_CHARS = 40;
 
 const VISIBILITY_CAPTION: Record<PostVisibility, string> = {
   PUBLIC: '광장·책 상세에 실립니다',
@@ -47,9 +49,18 @@ export default function PostEditorScreen() {
   const fromBook = !editing && Number.isFinite(bookParam);
   const category = editing ? '독후감 고치기' : '독후감 쓰기';
 
-  const post = useQuery({ queryKey: postKey(postId), queryFn: () => postApi.get(postId), enabled: editing });
+  // 꺼진 쿼리에도 키는 있어야 한다 — NaN 을 키에 넣으면 서로 다른 화면이 한 자리를 나눠 쓰게 되므로 자리 키를 둔다.
+  const post = useQuery({
+    queryKey: editing ? postKey(postId) : ['post', 'pending'],
+    queryFn: () => postApi.get(postId),
+    enabled: editing,
+  });
   // 책 상세와 같은 키 — 거기서 받아 둔 책이면 다시 부르지 않는다.
-  const book = useQuery({ queryKey: ['book', bookParam], queryFn: () => bookApi.detail(bookParam), enabled: fromBook });
+  const book = useQuery({
+    queryKey: fromBook ? ['book', bookParam] : ['book', 'pending'],
+    queryFn: () => bookApi.detail(bookParam),
+    enabled: fromBook,
+  });
 
   if ((editing && post.isLoading) || (fromBook && book.isLoading)) {
     return (
@@ -63,9 +74,28 @@ export default function PostEditorScreen() {
   // 쿼리 객체 너머로는 좁혀지지 않아 한 번 꺼내 둔다 — 아래 분기가 전부 이 값으로 판단한다.
   const loaded = post.data;
   if (editing && !loaded) {
+    // 지워졌거나 남의 글인 것(404·403)과 그냥 못 받은 것은 다른 이야기다 — 뒤엣것에는 다시 시도를 준다.
+    const gone = post.error instanceof ApiError && (post.error.status === 404 || post.error.status === 403);
     return (
       <Shell category={category}>
-        <EmptyState title="독후감을 불러오지 못했습니다" description="지워졌거나 볼 수 없는 글입니다." />
+        {gone ? (
+          <EmptyState title="독후감을 불러오지 못했습니다" description="지워졌거나 볼 수 없는 글입니다." />
+        ) : (
+          <EmptyState
+            title="독후감을 불러오지 못했습니다"
+            description="잠시 후 다시 시도해 주세요."
+            action={(
+              <Pressable
+                onPress={() => post.refetch()}
+                accessibilityRole="button"
+                accessibilityLabel="다시 시도"
+                style={styles.retry}
+              >
+                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+              </Pressable>
+            )}
+          />
+        )}
       </Shell>
     );
   }
@@ -276,6 +306,8 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
               onRetry={uploads.retry}
               onRemove={uploads.remove}
               max={POST_IMAGE_MAX}
+              disabled={uploads.picking}
+              notice={uploads.notice}
             />
           </View>
 
@@ -297,7 +329,13 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
                 key={quote.id}
                 quote={quote}
                 rotate={i % 2 === 0 ? -1 : 1}
-                trailing={<FootAction label="떼기" onPress={() => detach(quote.id)} accessibilityLabel="밑줄 떼기" />}
+                trailing={(
+                  <FootAction
+                    label="떼기"
+                    onPress={() => detach(quote.id)}
+                    accessibilityLabel={`밑줄 떼기: ${quote.content.slice(0, DETACH_LABEL_CHARS)}`}
+                  />
+                )}
               />
             ))}
           </View>
@@ -345,6 +383,8 @@ const styles = StyleSheet.create({
   // 모노 한 줄 — 여백으로 터치 상자를 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
   unpick: { alignSelf: 'flex-start', paddingVertical: spacing.sm, marginVertical: -spacing.xs },
   pickQuotes: { minHeight: 36, justifyContent: 'center', paddingLeft: spacing.md },
+  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다.
+  retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
   skeleton: { ...layout.content, padding: spacing.lg },
   skeletonBlock: { height: 240, borderRadius: radius.md },
 });

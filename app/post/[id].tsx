@@ -265,8 +265,9 @@ const styles = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg, paddingLeft: spacing.xs, paddingTop: spacing.xs },
   heroText: { flex: 1, gap: spacing.xs },
   title: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 30 },
-  // 모노 한 줄 — 여백으로 터치 상자를 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
-  bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.sm, marginVertical: -spacing.xs },
+  // 모노 한 줄 — 10px 활자라 글자 상자만으로는 손가락이 닿지 않는다. 여백으로 36px 까지 넓히고
+  // 같은 만큼 음수 마진으로 되돌려 히어로의 리듬은 그대로 둔다(푸터 액션과 같은 규율).
+  bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.md, marginVertical: -spacing.sm },
   bookLinkText: { fontSize: 10, letterSpacing: 0.6 },
 
   byline: { flexDirection: 'row', alignItems: 'center', gap: 9 },

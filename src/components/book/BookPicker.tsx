@@ -66,8 +66,16 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
 
   // undefined = 아직 안 골랐다(기본값이 선다) · null = '책 없음'으로 골랐다(기본값도 서지 않는다).
   const [picked, setPicked] = useState<PickedBook | null | undefined>(opts?.initial);
+  // 기록이 안 붙은 책(수정 화면·시트가 넘긴 initial)은 읽는 중 목록에서 같은 책의 기록을 찾아 붙인다 —
+  // 검색 결과 보강과 같은 방식이다. 기록이 붙어야 여기서 오린 밑줄이 내 독서 기록에 매인다.
+  const withRecord = (book: PickedBook): PickedBook => {
+    if (book.recordId != null) return book;
+    const found = quickPicks.find((q) => q.bookId === book.bookId)?.recordId;
+    return found != null ? { ...book, recordId: found } : book;
+  };
   // 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 — 한 권만 읽는 사람은 바로 쓰기 시작한다.
-  const selected = picked !== undefined ? picked : searching ? null : quickPicks[0] ?? null;
+  const chosen = picked !== undefined ? picked : searching ? null : quickPicks[0] ?? null;
+  const selected = chosen != null ? withRecord(chosen) : chosen;
   const candidates = searching ? results : quickPicks;
 
   // 후보 행 아래 한 줄 안내 — 상태마다 다른 말을 한다.

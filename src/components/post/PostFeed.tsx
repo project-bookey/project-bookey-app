@@ -9,7 +9,7 @@ import { postFeedKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PostCard } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, FootAction } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받아오는 독후감 건수 — 광장 피드와 같은 크기. */
@@ -85,7 +85,12 @@ export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactEl
             title="독후감을 불러오지 못했어요"
             description="잠시 후 다시 시도해 주세요."
             action={(
-              <Pressable onPress={() => feed.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
+              <Pressable
+                onPress={() => feed.refetch()}
+                accessibilityRole="button"
+                accessibilityLabel="다시 시도"
+                style={styles.retry}
+              >
                 <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
               </Pressable>
             )}
@@ -99,6 +104,16 @@ export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactEl
           <View style={styles.footer}>
             <ActivityIndicator size="small" color={colors.accent} />
           </View>
+        ) : feed.isError && items.length > 0 ? (
+          // 다음 쪽을 못 받아도 이미 깔아 둔 카드는 그대로 둔다 — 발치에 다시 시도만 놓는다.
+          <View style={styles.footer}>
+            <FootAction
+              label="더 불러오지 못했어요 · 다시 시도"
+              onPress={() => (feed.hasNextPage ? feed.fetchNextPage() : feed.refetch())}
+              tone="accent"
+              accessibilityLabel="독후감 더 불러오기"
+            />
+          </View>
         ) : null
       }
     />
@@ -111,4 +126,6 @@ const styles = StyleSheet.create({
   skeletonList: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   skeleton: { height: 160, borderRadius: radius.md },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
+  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다.
+  retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

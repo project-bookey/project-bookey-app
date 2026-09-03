@@ -20,6 +20,9 @@ export type PhotoUpload = {
 /** 다시 올릴 때 필요한 만큼만 남긴 자산. */
 type PickedAsset = { uri: string; width?: number; height?: number };
 
+/** 네이티브에서 사진첩 권한을 거부했을 때 띠 아래에 다는 한 줄 — 웹은 권한이 없어 뜨지 않는다. */
+const PERMISSION_NOTICE = '사진첩 접근을 허용해 주세요';
+
 /**
  * 독후감 사진 업로드 — 고르기·병렬 업로드·다시 올리기·떼기.
  *
@@ -34,6 +37,10 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   remove: (key: string) => void;
   /** 올라가는 중인 사진이 하나라도 있으면 참. */
   busy: boolean;
+  /** 고르기 창이 떠 있는 동안 참 — 고스트 타일을 잠그는 데 쓴다. */
+  picking: boolean;
+  /** 띠 아래에 보일 한 줄 안내(권한 거부 등) — 없으면 null. */
+  notice: string | null;
   /** 올라간 사진의 id — 타일 순서 그대로. */
   imageIds: number[];
 } {
@@ -47,6 +54,8 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   // 화면을 떠난 뒤 도착한 업로드 결과는 버린다. 웹은 고른 파일의 objectURL 도 이때 돌려준다.
   const alive = useRef(true);
   useEffect(() => {
+    // 정리에서 내려간 깃발을 다시 세운다 — StrictMode 는 마운트 직후 한 번 정리했다가 다시 실행한다.
+    alive.current = true;
     const held = assets.current;
     return () => {
       alive.current = false;
@@ -59,6 +68,10 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   // pick 은 비동기라 고르기 창이 닫힌 시점의 장수를 ref 로 본다.
   const count = useRef(photos.length);
   count.current = photos.length;
+  // 고르기 창은 한 번에 하나만 — 두 번 눌러도 창이 겹치지 않게 ref 로 막고, 잠금은 state 로 그린다.
+  const [picking, setPicking] = useState(false);
+  const pickingRef = useRef(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const patch = useCallback((key: string, next: Partial<PhotoUpload>) => {
     // 이미 뗀 타일(키 없음)이면 아무 일도 없다 — 늦게 온 결과가 되살아나지 않는다.
@@ -76,26 +89,44 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   }, [patch]);
 
   const pick = useCallback(async () => {
+    // 고르기 창이 이미 떠 있으면 무시한다 — 창이 겹치면 남은 장수 계산이 어긋난다.
+    if (pickingRef.current) return;
     if (max - count.current <= 0) return;
-    // 웹은 사진첩 권한이 없다(항상 허용) — 네이티브만 묻는다.
-    if (Platform.OS !== 'web') {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) return;
+    pickingRef.current = true;
+    setPicking(true);
+    // 창이 닫히는 순간 잠금을 푼다 — 올라가는 동안에도 더 고를 수 있어야 한다.
+    const release = () => {
+      pickingRef.current = false;
+      if (alive.current) setPicking(false);
+    };
+    let tiles: PhotoUpload[] = [];
+    try {
+      // 웹은 사진첩 권한이 없다(항상 허용) — 네이티브만 묻는다.
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          if (alive.current) setNotice(PERMISSION_NOTICE);
+          return;
+        }
+      }
+      if (alive.current) setNotice(null);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        ...IMAGE_PICKER_OPTIONS,
+        selectionLimit: max - count.current,
+      });
+      if (result.canceled) return;
+      // 웹 파일 창은 selectionLimit 을 모른다 — 남은 장수만큼만 받는다.
+      const chosen = result.assets.slice(0, Math.max(0, max - count.current));
+      if (chosen.length === 0) return;
+      tiles = chosen.map((asset): PhotoUpload => {
+        const key = `${asset.uri}#${seq.current++}`;
+        assets.current.set(key, { uri: asset.uri, width: asset.width, height: asset.height });
+        return { key, localUri: asset.uri, status: 'uploading' };
+      });
+      setPhotos((prev) => [...prev, ...tiles]);
+    } finally {
+      release();
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      ...IMAGE_PICKER_OPTIONS,
-      selectionLimit: max - count.current,
-    });
-    if (result.canceled) return;
-    // 웹 파일 창은 selectionLimit 을 모른다 — 남은 장수만큼만 받는다.
-    const chosen = result.assets.slice(0, Math.max(0, max - count.current));
-    if (chosen.length === 0) return;
-    const tiles = chosen.map((asset): PhotoUpload => {
-      const key = `${asset.uri}#${seq.current++}`;
-      assets.current.set(key, { uri: asset.uri, width: asset.width, height: asset.height });
-      return { key, localUri: asset.uri, status: 'uploading' };
-    });
-    setPhotos((prev) => [...prev, ...tiles]);
     await Promise.all(tiles.map((tile) => upload(tile.key, assets.current.get(tile.key)!)));
   }, [max, upload]);
 
@@ -119,6 +150,8 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
     retry,
     remove,
     busy: photos.some((p) => p.status === 'uploading'),
+    picking,
+    notice,
     imageIds: photos.flatMap((p) => (p.status === 'done' && p.image ? [p.image.id] : [])),
   };
 }
