@@ -17,6 +17,7 @@ import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { PlazaItem, Post } from '@/api/types';
 import { MemoScrap, TiltCover } from '@/components/collage';
 import { HomeSection } from '@/components/home/HomeSection';
+import { HOT_GAP, META_LH, META_SIZE, QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
 
@@ -33,29 +34,8 @@ const SLOTS = ['quote', 'post', 'quote', 'post', 'quote'] as const;
 const ROTATE_MS = 6000;
 /** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. 높이는 1.5배(108). */
 const COVER_W = 72;
-/**
- * 인용 조판 — 스포트라이트는 인용 토큰(`typeScale.quote`, 세리프 17/28)을 그대로 세운다.
- * 줄높이는 QUOTE_MAX_H·ROW_H 계산에도 들어가므로 숫자를 베껴 적지 않고 토큰에서 읽는다 —
- * 토큰이 바뀌면 인용 상자와 행 높이가 저절로 따라온다.
- */
-const QUOTE_LINES = 3;
-const QUOTE_LH = typeScale.quote.lineHeight;
-/** 메타(닉네임·책)·핫 지표 조판. */
-const META_SIZE = 10;
-const META_LH = 14;
-/** 핫 지표와 메타 사이 간격(px). */
-const HOT_GAP = 3;
-
-/**
- * 인용 상자 높이 상한(px) — 딱 3줄.
- *
- * `numberOfLines` 만으로는 부족하다. 웹에서는 이 Text 가 조각(flex 컨테이너)의 자식이라
- * `-webkit-line-clamp` 가 걸린 `display:-webkit-box` 가 블록으로 바뀌어(computed `flow-root`)
- * 말줄임표만 찍히고 **네 번째 줄이 상자 높이만큼 그대로 그려진다** — 잘린 반 줄이 메타 위로
- * 겹쳐 보인다. 상자 자체를 3줄로 못 박아 넷째 줄이 놓일 자리를 없앤다.
- * 독후감 조각(PostScrap 의 home)도 같은 셈으로 제목+발췌를 이만한 상자에 가둔다.
- */
-const QUOTE_MAX_H = QUOTE_LINES * QUOTE_LH;
+// 인용·메타 조판(QUOTE_LINES·QUOTE_MAX_H·META_*·HOT_GAP)은 독후감 조각과 나눠 쓰는 값이라
+// scrapMetrics 한 곳에 있다 — 스포트라이트는 인용 토큰(`typeScale.quote`, 세리프 17/28)을 그대로 세운다.
 
 /**
  * 행 고정 높이(px).
