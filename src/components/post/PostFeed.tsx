@@ -5,8 +5,7 @@ import { useMemo } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { postApi } from '@/api/endpoints';
-import { postFeedKey } from '@/api/postCache';
-import type { Post } from '@/api/types';
+import { flattenPosts, postFeedKey } from '@/api/postCache';
 import { PostCard } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
 import { EmptyState, FootAction } from '@/components/ui';
@@ -38,17 +37,7 @@ export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactEl
   });
 
   // 렌더마다 새 배열을 만들면 FlatList 가 매번 데이터가 바뀐 줄 안다 — 캐시가 바뀔 때만 새로 만든다.
-  // 페이지 사이에 새 글이 끼면 같은 글이 두 페이지에 걸쳐 오므로 id 로 한 번 거른다(키 충돌 방지).
-  const items = useMemo(() => {
-    const seen = new Set<number>();
-    const list: Post[] = [];
-    for (const post of feed.data?.pages.flatMap((p) => p.content ?? []) ?? []) {
-      if (seen.has(post.id)) continue;
-      seen.add(post.id);
-      list.push(post);
-    }
-    return list;
-  }, [feed.data]);
+  const items = useMemo(() => flattenPosts(feed.data?.pages), [feed.data]);
 
   return (
     <FlatList
