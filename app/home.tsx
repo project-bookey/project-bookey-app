@@ -5,6 +5,8 @@ import { Pressable, RefreshControl, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
 import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
+import { POST_HOME_KEY } from '@/api/postCache';
+import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { ReadingRecord } from '@/api/types';
 import { PaperScreen, SectionNav } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
@@ -14,10 +16,10 @@ import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
 import { HeroPager } from '@/components/home/HeroPager';
 import { HomeSection } from '@/components/home/HomeSection';
-import { QuoteScraps } from '@/components/home/QuoteScraps';
+import { HomeScraps } from '@/components/home/HomeScraps';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 인기 → 오려둔 문장 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
+/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 인기 → 오려둔 글 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -47,18 +49,20 @@ export default function HomeScreen() {
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
 
-  // '오려둔 문장' 쿼리는 QuoteScraps 안에 있어 여기서 직접 못 본다 — 키로 조회해
+  // '오려둔 글' 쿼리(밑줄·독후감)는 HomeScraps 안에 있어 여기서 직접 못 본다 — 키로 조회해
   // 새로고침 인디케이터가 그 섹션이 다 돌 때까지 함께 남게 한다.
-  const quotesFetching = useIsFetching({ queryKey: ['plaza', 'QUOTE', 'home'] }) > 0;
+  const scrapsFetching =
+    useIsFetching({ queryKey: PLAZA_HOME_KEY }) + useIsFetching({ queryKey: POST_HOME_KEY }) > 0;
 
   const refreshing =
     reading.isFetching || want.isFetching || stats.isFetching ||
-    banners.isFetching || popular.isFetching || recommended.isFetching || quotesFetching;
+    banners.isFetching || popular.isFetching || recommended.isFetching || scrapsFetching;
   const refetchAll = () => {
     reading.refetch(); want.refetch(); stats.refetch();
     banners.refetch(); popular.refetch(); recommended.refetch();
     queryClient.invalidateQueries({ queryKey: ['challenges'] });
     queryClient.invalidateQueries({ queryKey: ['plaza'] });
+    queryClient.invalidateQueries({ queryKey: POST_HOME_KEY });
   };
 
   const openBook = (b: RowBook) => {
@@ -125,9 +129,9 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        <HomeSection>
-          <QuoteScraps />
-        </HomeSection>
+        {/* '오려둔 글'만 섹션 틀을 제 안에서 두른다 — 밑줄·독후감이 둘 다 0건이면 통째로
+            사라져야 하는데, 여기서 감싸면 괘선과 여백만 남는다(HomeScraps 주석 참고). */}
+        <HomeScraps />
 
         <HomeSection>
           <BookRow

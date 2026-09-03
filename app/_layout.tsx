@@ -90,6 +90,7 @@ export default function RootLayout() {
             <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
             <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />
+            <Stack.Screen name="post/mine" options={{ title: '내 독후감' }} />
           </Stack>
         </SafeAreaProvider>
       </QueryClientProvider>

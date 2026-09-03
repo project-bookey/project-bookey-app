@@ -10,7 +10,7 @@ import type { Page, Post } from '@/api/types';
  * 키와 패치를 여기 한 곳에 둔다(밑줄의 quoteCache 와 같은 꼴).
  */
 export const postFeedKey = ['posts', 'feed'] as const;
-/** 홈 독후감 스포트라이트 — 피드와 갈라 둔 키(Page 하나). */
+/** 홈 '오려둔 글' 스포트라이트의 독후감 몫(HomeScraps) — 피드와 갈라 둔 키(Page 하나). */
 export const POST_HOME_KEY = ['posts', 'home'] as const;
 /** 책별 독후감(도서 상세 독후감 탭). */
 export const bookPostsKey = (bookId: number) => ['posts', 'book', bookId] as const;
@@ -22,6 +22,21 @@ export const postKey = (postId: number) => ['post', postId] as const;
 export const postCommentsKey = (postId: number) => ['post', postId, 'comments'] as const;
 
 export type PostListCache = InfiniteData<Page<Post>>;
+
+/**
+ * 무한 목록의 페이지들을 한 배열로 편다(광장 피드·내 독후감이 같이 쓴다).
+ * 페이지 사이에 새 글이 끼면 같은 글이 두 페이지에 걸쳐 오므로 id 로 한 번 거른다 — 키 충돌 방지.
+ */
+export function flattenPosts(pages: Page<Post>[] | undefined): Post[] {
+  const seen = new Set<number>();
+  const list: Post[] = [];
+  for (const post of pages?.flatMap((p) => p.content ?? []) ?? []) {
+    if (seen.has(post.id)) continue;
+    seen.add(post.id);
+    list.push(post);
+  }
+  return list;
+}
 
 /** 다섯 캐시가 공통으로 가진 반응 필드 — 패치는 이것만 건드린다. */
 export type PostReaction = { likedByMe?: boolean; likeCount?: number; commentCount?: number };
