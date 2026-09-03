@@ -9,8 +9,8 @@ import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 /** 본문 오른쪽에 붙인 사진 조각(px) — 표지(44)보다 조금 크게, 인화지를 얹은 크기. */
 const THUMB = 56;
 
-/** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. */
-const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크' } as const;
+/** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. 상세 바이라인도 같이 쓴다. */
+export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크' } as const;
 
 /**
  * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다(밑줄의 QuoteCard 와 같은 꼴).
