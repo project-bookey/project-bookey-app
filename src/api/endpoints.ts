@@ -1,9 +1,9 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  CreateQuote, CreateQuoteComment, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
-  PopularBook, QuoteAgree, QuoteComment, ReadingRecord, ReadingStatus,
-  Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
+  CreatePost, CreatePostComment, CreateQuote, CreateQuoteComment, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
+  PopularBook, Post, PostComment, PostImage, PostLike, QuoteAgree, QuoteComment, ReadingRecord, ReadingStatus,
+  Review, Session, SessionEndResult, StatsSummary, TokenResponse, UpdatePost, VerificationPreview,
 } from './types';
 
 export const authApi = {
@@ -122,8 +122,9 @@ export const reviewApi = {
 
 export const quoteApi = {
   create: (body: CreateQuote) => api<BookQuote>('/api/v1/quotes', { method: 'POST', body }),
-  /** 내가 오려둔 문장. totalElements 가 총 개수다. */
-  mine: (page = 0, size = 20) => api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size } }),
+  /** 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만 — 독후감 작성 시 밑줄 고르기에 쓴다. */
+  mine: (page = 0, size = 20, bookId?: number) =>
+    api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size, bookId } }),
   /** 밑줄 한 건 — 상세 진입·새로고침·딥링크. */
   get: (quoteId: number) => api<BookQuote>(`/api/v1/quotes/${quoteId}`),
   /** 책별 밑줄 — 최신순. 도서 상세 밑줄 탭은 5건씩 받는다. */
@@ -144,6 +145,28 @@ export const quoteApi = {
 export const plazaApi = {
   feed: (type: PlazaItemType, page = 0, size = 20) =>
     api<Page<PlazaItem>>('/api/v1/plaza/feed', { query: { type, page, size } }),
+};
+
+/** 독후감 — 광장 피드·도서별 목록·내 글, 좋아요·댓글, 붙일 사진 업로드. */
+export const postApi = {
+  feed: (page = 0, size = 10) => api<Page<Post>>('/api/v1/posts/feed', { query: { page, size } }),
+  byBook: (bookId: number, page = 0, size = 5) =>
+    api<Page<Post>>(`/api/v1/books/${bookId}/posts`, { query: { page, size } }),
+  mine: (page = 0, size = 20) => api<Page<Post>>('/api/v1/posts', { query: { page, size } }),
+  get: (postId: number) => api<Post>(`/api/v1/posts/${postId}`),
+  create: (body: CreatePost) => api<Post>('/api/v1/posts', { method: 'POST', body }),
+  update: (postId: number, body: UpdatePost) =>
+    api<Post>(`/api/v1/posts/${postId}`, { method: 'PATCH', body }),
+  remove: (postId: number) => api<void>(`/api/v1/posts/${postId}`, { method: 'DELETE' }),
+  like: (postId: number) => api<PostLike>(`/api/v1/posts/${postId}/like`, { method: 'POST' }),
+  comments: (postId: number, page = 0, size = 30) =>
+    api<Page<PostComment>>(`/api/v1/posts/${postId}/comments`, { query: { page, size } }),
+  addComment: (postId: number, body: CreatePostComment) =>
+    api<PostComment>(`/api/v1/posts/${postId}/comments`, { method: 'POST', body }),
+  removeComment: (postId: number, commentId: number) =>
+    api<void>(`/api/v1/posts/${postId}/comments/${commentId}`, { method: 'DELETE' }),
+  /** 사진 업로드 — multipart. Content-Type 은 런타임이 boundary 와 함께 붙인다. */
+  uploadImage: (form: FormData) => api<PostImage>('/api/v1/posts/images', { method: 'POST', body: form }),
 };
 
 export const challengeApi = {
