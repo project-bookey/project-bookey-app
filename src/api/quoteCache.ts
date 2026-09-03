@@ -66,10 +66,15 @@ export function patchQuoteEverywhere(queryClient: QueryClient, quoteId: number, 
       : old,
   );
   queryClient.setQueryData<BookQuote>(quoteKey(quoteId), (old) => (old ? patchQuote(old) : old));
-  // 독후감 상세(['post', id])에 첨부된 밑줄도 같은 문장이다 — 다섯째 자리. ['post', id, 'comments'] 도
-  // 접두에 걸리지만 quotes 배열이 없으면 그대로 돌려준다.
-  queryClient.setQueriesData<Post>({ queryKey: ['post'] }, (old) =>
-    old && Array.isArray(old.quotes) ? { ...old, quotes: old.quotes.map(patchQuote) } : old,
+  // 독후감 상세(['post', id])에 첨부된 밑줄도 같은 문장이다 — 다섯째 자리. 접두 매칭이라
+  // ['post', id, 'comments'] 까지 걸리므로 길이 2 인 키만 고르고, 그 문장을 실제로 담은 캐시일 때만
+  // 새 객체를 돌려준다(안 그러면 관계없는 상세까지 다시 그린다).
+  queryClient.setQueriesData<Post>(
+    { queryKey: ['post'], predicate: (query) => query.queryKey.length === 2 },
+    (old) =>
+      old && Array.isArray(old.quotes) && old.quotes.some((quote) => quote.id === quoteId)
+        ? { ...old, quotes: old.quotes.map(patchQuote) }
+        : old,
   );
 }
 

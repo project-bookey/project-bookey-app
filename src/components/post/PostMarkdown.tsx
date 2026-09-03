@@ -16,6 +16,11 @@ import { mono, serif } from '@/theme/tokens';
  * 토큰마다 우리 활자·색을 직접 입힌다(Parser 가 넘기는 styles 인자는 무시한다 — 라이브러리
  * 기본 팔레트라 우리 테마와 맞지 않는다). 인라인 강조는 RN Text 중첩 상속에 기댄다:
  * 굵게 안의 기울임은 부모의 명조 볼드를 물려받고 fontStyle 만 얹는다.
+ *
+ * 마크다운 표준과 의도적으로 다른 곳:
+ * - 인라인 HTML 은 해석하지 않고 태그째 본문 활자로 보여 준다 — 서버가 걸러도 앱에서 실행될 여지를 없앤다.
+ * - 표는 격자 대신 셀을 ' | ' 로 이어 한 줄씩 그린다 — 좁은 화면에서 가로 스크롤을 만들지 않는다.
+ * - 링크는 http/https 만 링크로 세운다 — 다른 스킴은 눌리지 않는 평문이라 눌러도 되는 것처럼 보이지 않는다.
  */
 
 /** 표제 단계별 크기 — h4~h6 은 h3 와 같다. */
@@ -25,9 +30,11 @@ const HEADING_SIZE: Record<number, { fontSize: number; lineHeight: number }> = {
   3: { fontSize: 17, lineHeight: 24 },
 };
 
-/** http/https 만 연다 — mailto·javascript: 같은 스킴은 무시한다. */
+/** http/https 만 링크로 친다 — mailto·javascript: 같은 스킴은 링크가 아니다. */
+const isHttpUrl = (href: string) => /^https?:\/\//i.test(href);
+
 function openHttpLink(href: string) {
-  if (!/^https?:\/\//i.test(href)) return;
+  if (!isHttpUrl(href)) return;
   Linking.openURL(href).catch(() => {});
 }
 
@@ -108,6 +115,8 @@ class CollageRenderer extends Renderer implements RendererInterface {
   }
 
   link(children: string | ReactNode[], href: string, _styles?: TextStyle, title?: string): ReactNode {
+    // 열 수 없는 스킴은 링크 꼴을 주지 않는다 — 악센트·밑줄·link role 없이 평문으로 둔다.
+    if (!isHttpUrl(href)) return <Text key={this.getKey()}>{children}</Text>;
     return (
       <Text
         key={this.getKey()}
@@ -169,6 +178,8 @@ class CollageRenderer extends Renderer implements RendererInterface {
   }
 
   linkImage(href: string, imageUrl: string, alt?: string, style?: ImageStyle, title?: string | null): ReactNode {
+    // link() 와 같은 규칙 — 열 수 없는 스킴이면 눌리지 않는 그림만 남긴다.
+    if (!isHttpUrl(href)) return this.image(imageUrl, alt, style, title ?? undefined);
     return (
       <Pressable key={this.getKey()} accessibilityRole="link" accessibilityLabel={alt || title || '이미지 링크'} onPress={() => openHttpLink(href)}>
         {this.image(imageUrl, alt, style, title ?? undefined)}
