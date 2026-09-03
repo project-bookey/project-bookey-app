@@ -11,8 +11,11 @@ import { typeScale } from '@/theme';
 
 /** 인용 줄 수 — 스포트라이트의 밑줄은 세 줄에서 끊는다. */
 export const QUOTE_LINES = 3;
-/** 인용 줄높이(px) — 숫자를 베끼지 않고 토큰에서 읽는다(토큰이 바뀌면 상자도 따라 움직인다). */
-export const QUOTE_LH = typeScale.quote.lineHeight;
+/**
+ * 인용 줄높이(px) — 숫자를 베끼지 않고 토큰에서 읽는다(토큰이 바뀌면 상자도 따라 움직인다).
+ * 밖에서 쓰는 곳은 없다 — 조각들이 보는 것은 이 값이 아니라 아래 QUOTE_MAX_H 다.
+ */
+const QUOTE_LH = typeScale.quote.lineHeight;
 
 /**
  * 글 상자 높이 상한(px) — 딱 인용 3줄.

@@ -8,8 +8,11 @@ import { spacing, typeScale, useTheme } from '@/theme';
 
 /** 발췌 줄 수 — 홈은 제목 두 줄 아래로 두 줄, 책·프로필은 더 읽힌다. */
 const EXCERPT_LINES = { home: 2, book: 2, profile: 3 } as const;
-/** 홈 제목 줄 수 — 상자 높이 계산에 쓴다(numberOfLines 와 같은 값이어야 한다). */
-const HOME_TITLE_LINES = 2;
+/**
+ * 제목 줄 수 — 홈 전용이 아니라 세 variant 가 모두 이 값으로 끊는다(발췌만 자리마다 다르다).
+ * 홈은 여기에 더해 상자 높이 계산에도 쓴다(numberOfLines 와 같은 값이어야 한다).
+ */
+const TITLE_LINES = 2;
 
 /** 제목·발췌 줄높이(px) — 스타일과 상자 상한이 같은 값을 봐야 해서 상수로 둔다. */
 const TITLE_LH = 22;
@@ -61,7 +64,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
     <MemoScrap rotate={rotate} style={home ? styles.homeCard : undefined}>
       <View style={home ? styles.homeText : undefined}>
         <Text
-          numberOfLines={HOME_TITLE_LINES}
+          numberOfLines={TITLE_LINES}
           style={[styles.title, home && styles.homeTitle, { color: colors.text }]}
         >
           {post.title}
@@ -133,7 +136,7 @@ const styles = StyleSheet.create({
   excerpt: { ...typeScale.quote, fontSize: 13, lineHeight: EXCERPT_LH },
   // numberOfLines 는 줄 수만 자를 뿐 글자 상자는 못 자른다 — 웹에서 line-clamp 가 블록으로
   // 풀리면 잘린 줄이 상자 높이만큼 그대로 그려져 아랫줄을 밀어낸다(HomeScraps 의 quote 와 같은 방어).
-  homeTitle: { maxHeight: HOME_TITLE_LINES * TITLE_LH, overflow: 'hidden' },
+  homeTitle: { maxHeight: TITLE_LINES * TITLE_LH, overflow: 'hidden' },
   homeExcerpt: { maxHeight: EXCERPT_LINES.home * EXCERPT_LH, overflow: 'hidden' },
   meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: spacing.sm },
   // 남는 자리를 글 위로 몰아 메타·핫 줄을 조각 바닥에 붙인다 — 글 길이와 무관하게 두 줄의 y 가 같다.

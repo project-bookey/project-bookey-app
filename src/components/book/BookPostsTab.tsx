@@ -44,7 +44,7 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
   if (posts.isError && items.length === 0) {
     return (
       <Card>
-        <Text style={[typeScale.body, { color: colors.textMuted }]}>독후감을 불러오지 못했습니다.</Text>
+        <Text style={[typeScale.body, { color: colors.textMuted }]}>독후감을 불러오지 못했어요.</Text>
         <Pressable onPress={() => posts.refetch()} hitSlop={8} accessibilityRole="button"
           accessibilityLabel="독후감 다시 불러오기" style={styles.action}>
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
@@ -96,5 +96,6 @@ const styles = StyleSheet.create({
   list: { gap: spacing.md },
   center: { paddingVertical: spacing.md, alignItems: 'center' },
   // 웹은 hitSlop 을 무시한다 — 목록 액션은 여백으로 36px 상자를 만든다(책 상세 탭 액션과 같은 값).
-  action: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm },
+  // 늘린 좌우 여백만큼 음수 마진으로 되돌린다 — '다시 시도 →'는 위 본문과 왼쪽 끝이 맞아야 한다.
+  action: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
 });

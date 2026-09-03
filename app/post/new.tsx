@@ -79,10 +79,10 @@ export default function PostEditorScreen() {
     return (
       <Shell category={category}>
         {gone ? (
-          <EmptyState title="독후감을 불러오지 못했습니다" description="지워졌거나 볼 수 없는 글입니다." />
+          <EmptyState title="독후감을 불러오지 못했어요" description="지워졌거나 볼 수 없는 글이에요." />
         ) : (
           <EmptyState
-            title="독후감을 불러오지 못했습니다"
+            title="독후감을 불러오지 못했어요"
             description="잠시 후 다시 시도해 주세요."
             action={(
               <Pressable

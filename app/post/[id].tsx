@@ -96,20 +96,20 @@ export default function PostDetailScreen() {
   // 404 와 403(남의 비공개 글)은 같은 안내다 — 있는지 없는지를 굳이 가르지 않는다.
   const placeholder = !Number.isFinite(postId) ? (
     <EmptyState
-      title="독후감을 불러오지 못했습니다"
-      description="지워졌거나 볼 수 없는 글입니다."
+      title="독후감을 불러오지 못했어요"
+      description="지워졌거나 볼 수 없는 글이에요."
     />
   ) : post.isLoading ? (
     <View style={[styles.skeleton, { backgroundColor: colors.surface }]} />
   ) : post.isError ? (
     post.error instanceof ApiError && (post.error.status === 404 || post.error.status === 403) ? (
       <EmptyState
-        title="독후감을 불러오지 못했습니다"
-        description="지워졌거나 볼 수 없는 글입니다."
+        title="독후감을 불러오지 못했어요"
+        description="지워졌거나 볼 수 없는 글이에요."
       />
     ) : (
       <EmptyState
-        title="독후감을 불러오지 못했습니다"
+        title="독후감을 불러오지 못했어요"
         description="잠시 후 다시 시도해 주세요."
         action={
           <Pressable onPress={() => post.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">

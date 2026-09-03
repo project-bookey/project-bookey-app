@@ -52,7 +52,7 @@ export default function MyPostsScreen() {
         query={mine}
         showVisibility
         errorTitle="독후감을 불러오지 못했어요"
-        emptyTitle="아직 독후감이 없습니다"
+        emptyTitle="아직 독후감이 없어요"
         emptyDescription="첫 독후감을 남겨보세요."
         emptyAction={<Button label="첫 독후감 쓰기" onPress={() => router.push('/post/new')} />}
       />
