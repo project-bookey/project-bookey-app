@@ -172,9 +172,10 @@ export function CommentThread({
     </View>
   ) : null;
 
-  // FlatList 는 ListEmptyComponent 로 엘리먼트만 받아서 ReactNode 인 placeholder 를 한 번 감싼다.
+  // FlatList 는 ListEmptyComponent 를 cloneElement 로 다시 만들며 onLayout 을 끼워 넣는다 —
+  // Fragment 로 감싸면 React 가 경고하므로 ReactNode 인 placeholder 는 View 로 받는다.
   const empty = (
-    <>
+    <View>
       {placeholder ?? (
         comments.isLoading ? (
           <View style={styles.footer}>
@@ -186,7 +187,7 @@ export function CommentThread({
           </Text>
         )
       )}
-    </>
+    </View>
   );
 
   return (
