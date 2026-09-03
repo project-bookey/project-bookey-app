@@ -91,7 +91,10 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
   );
 }
 
-/** 밑줄 조각 — 문장 + 모노 메타(작성자 · 쪽 · 나도 그럼 · 댓글). 통째로 눌러 상세로. */
+/**
+ * 밑줄 조각 — 문장과 쪽수만. 통째로 눌러 상세로 간다.
+ * 작성자·나도 그럼·댓글 수는 조각에서 빼고 상세에서 본다 — 조각은 문장이 먼저 읽히게.
+ */
 function QuoteScrap({ quote, rotate, onPress }: { quote: BookQuote; rotate: number; onPress: () => void }) {
   const { colors } = useTheme();
   return (
@@ -100,20 +103,11 @@ function QuoteScrap({ quote, rotate, onPress }: { quote: BookQuote; rotate: numb
         <Text style={[styles.scrapText, { color: colors.text, borderLeftColor: colors.accent }]}>
           {quote.content}
         </Text>
-        <View style={styles.scrapMeta}>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.scrapMetaText, styles.scrapWho, { color: colors.textMuted }]}>
-            {quote.authorNickname}
-            {quote.page != null ? ` · ${quote.page}쪽` : ''}
+        {quote.page != null ? (
+          <Text style={[typeScale.monoLabel, styles.scrapPage, { color: colors.textMuted }]}>
+            {quote.page}쪽
           </Text>
-          <Text style={[typeScale.monoLabel, styles.scrapMetaText, {
-            color: quote.agreedByMe ? colors.accent : colors.textFaint,
-          }]}>
-            나도 그럼 {quote.agreeCount}
-          </Text>
-          <Text style={[typeScale.monoLabel, styles.scrapMetaText, { color: colors.accent }]}>
-            댓글 {quote.commentCount}
-          </Text>
-        </View>
+        ) : null}
       </MemoScrap>
     </Pressable>
   );
@@ -162,9 +156,7 @@ const styles = StyleSheet.create({
   center: { paddingVertical: spacing.md, alignItems: 'center' },
   // 인용 본문 — 밑줄 카드와 같은 만듦새로, quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
   scrapText: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
-  scrapMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
-  scrapMetaText: { fontSize: 9, letterSpacing: 0.4 },
-  scrapWho: { flex: 1 },
+  scrapPage: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
 
   composer: { gap: spacing.md },
   composerActions: { flexDirection: 'row', gap: spacing.sm },
