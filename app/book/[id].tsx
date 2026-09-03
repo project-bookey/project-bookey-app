@@ -10,24 +10,19 @@ import {
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import { bookReviewsKey } from '@/api/reviewCache';
-import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
+import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookQuotesTab } from '@/components/book/BookQuotesTab';
-import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
+import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
+import { ReviewScrap } from '@/components/review/ReviewScrap';
+import { VERIFICATION_LABEL } from '@/components/review/verification';
 import {
   Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, percent,
 } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
 import { getLagStyle, hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
-
-const VERIFICATION_LABEL: Record<VerificationLevel, string> = {
-  VERIFIED_FULL: '완독 검증',
-  VERIFIED_PARTIAL: '부분 검증',
-  UNVERIFIED: '미검증',
-  FLAGGED: '검토 중',
-};
 
 /** 시안 2c(390px) 기준 히어로 지오메트리 — 세로·표지 폭만 실제 폭에 비례 환산한다. */
 const BASE_W = 390;
@@ -724,6 +719,7 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
 
 /** 리뷰 | 밑줄 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 밑줄 탭을 한 제목줄 아래에 둔다. */
 function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | null; colors: ColorTokens }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const reviews = useQuery({
     queryKey: bookReviewsKey(bookId),
@@ -839,26 +835,15 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
             </Card>
           ) : (
             <View style={styles.reviewList}>
-              {items.map((review, index) => {
-                const verified = review.verificationLevel === 'VERIFIED_FULL';
-                return (
-                  // 오려 붙인 메모 조각 — 인덱스 기준 ±1° 교차 회전으로 붙인 티를 낸다
-                  <MemoScrap key={review.id} rotate={index % 2 === 0 ? -1 : 1}>
-                    <View style={styles.reviewHead}>
-                      <Text numberOfLines={1} style={[typeScale.label, styles.reviewAuthor, { color: colors.text }]}>
-                        {review.authorNickname}
-                      </Text>
-                      {review.rating ? (
-                        <Text style={[typeScale.monoNumeral, { color: colors.accent }]}>★ {review.rating}</Text>
-                      ) : null}
-                    </View>
-                    <Text style={[styles.reviewBody, { color: colors.textMuted }]}>{review.body}</Text>
-                    <Text style={[typeScale.monoEyebrow, { color: verified ? colors.accent : colors.textFaint }]}>
-                      {VERIFICATION_LABEL[review.verificationLevel]}
-                    </Text>
-                  </MemoScrap>
-                );
-              })}
+              {/* 오려 붙인 메모 조각 — 인덱스 기준 ±1° 교차 회전으로 붙인 티를 낸다. 눌러서 전문을 읽는다. */}
+              {items.map((review, index) => (
+                <ReviewScrap
+                  key={review.id}
+                  review={review}
+                  rotate={index % 2 === 0 ? -1 : 1}
+                  onPress={() => router.push(`/review/${review.id}`)}
+                />
+              ))}
             </View>
           )}
         </>
@@ -959,8 +944,5 @@ const styles = StyleSheet.create({
   tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
   tabRule: { width: 22, height: 2 },
   reviewList: { gap: spacing.md },
-  reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  reviewAuthor: { flexShrink: 1 },
   // 인용 본문 — 시안 14/1.6 세리프.
-  reviewBody: { fontFamily: serif.regular, fontSize: 14, lineHeight: 23, marginTop: spacing.sm },
 });
