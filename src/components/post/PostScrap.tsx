@@ -42,12 +42,61 @@ export function PostScrap({ post, rotate, variant, onPress }: {
   /** 기울기(도) — 목록은 index 에 따라 ±1 로 교차. */
   rotate: number;
   variant: 'home' | 'profile' | 'book';
-  onPress: () => void;
+  /**
+   * 누를 때 갈 곳. 넘기지 않으면 조각은 버튼이 아니라 종잇조각 그림으로만 그려진다 —
+   * 이미 바깥이 통째로 버튼인 자리(홈 스포트라이트는 카드+표지 한 쌍이 한 버튼이다)에서
+   * 웹의 중첩 `<button>` 을 피하려면 여기를 비워 두고 바깥에 맡긴다. 라벨도 바깥이 읽어 준다.
+   */
+  onPress?: () => void;
 }) {
   const { colors } = useTheme();
 
   const home = variant === 'home';
   const visibility = post.visibility === 'PUBLIC' ? '공개' : VISIBILITY_LABEL[post.visibility];
+
+  const memo = (
+    <MemoScrap rotate={rotate} style={home ? styles.homeCard : undefined}>
+      <View style={home ? styles.homeText : undefined}>
+        <Text numberOfLines={2} style={[styles.title, { color: colors.text }]}>
+          {post.title}
+        </Text>
+        <Text
+          numberOfLines={EXCERPT_LINES[variant]}
+          style={[styles.excerpt, { color: colors.textMuted }]}
+        >
+          {post.excerpt}
+        </Text>
+      </View>
+
+      <Text
+        numberOfLines={1}
+        style={[typeScale.monoLabel, styles.meta, home && styles.metaBottom, { color: colors.textFaint }]}
+      >
+        {variant === 'home' ? (
+          <>
+            {/* 무엇의 조각인지부터 — 밑줄과 섞여 돌아가는 자리라 종류를 색으로도 가른다. */}
+            <Text style={{ color: colors.accent }}>독후감</Text>
+            {` · ${post.authorNickname} · ${post.bookTitle ?? '책 없음'}`}
+          </>
+        ) : variant === 'profile' ? (
+          `${post.bookTitle ?? '책 없음'} · ${visibility} · 조회 ${post.viewCount}`
+        ) : (
+          `${post.authorNickname} · 좋아요 ${post.likeCount} · 댓글 ${post.commentCount}`
+        )}
+      </Text>
+
+      {/* 홈에서는 밑줄 조각의 핫 줄과 같은 자리에 반응 수를 세운다 — 표시 전용(누를 수 없다). */}
+      {home ? (
+        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
+          좋아요 {post.likeCount} · 댓글 {post.commentCount}
+        </Text>
+      ) : null}
+    </MemoScrap>
+  );
+
+  // 바깥이 버튼인 자리 — 조각은 자리만 채운다. homeCard 의 flex:1 이 Pressable 몫까지 받아
+  // 행을 그대로 꽉 채우므로 크기는 달라지지 않는다.
+  if (!onPress) return memo;
 
   return (
     <Pressable
@@ -56,43 +105,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
       accessibilityLabel={`${post.authorNickname}의 독후감 ${post.title}`}
       style={home ? styles.fill : undefined}
     >
-      <MemoScrap rotate={rotate} style={home ? styles.homeCard : undefined}>
-        <View style={home ? styles.homeText : undefined}>
-          <Text numberOfLines={2} style={[styles.title, { color: colors.text }]}>
-            {post.title}
-          </Text>
-          <Text
-            numberOfLines={EXCERPT_LINES[variant]}
-            style={[styles.excerpt, { color: colors.textMuted }]}
-          >
-            {post.excerpt}
-          </Text>
-        </View>
-
-        <Text
-          numberOfLines={1}
-          style={[typeScale.monoLabel, styles.meta, home && styles.metaBottom, { color: colors.textFaint }]}
-        >
-          {variant === 'home' ? (
-            <>
-              {/* 무엇의 조각인지부터 — 밑줄과 섞여 돌아가는 자리라 종류를 색으로도 가른다. */}
-              <Text style={{ color: colors.accent }}>독후감</Text>
-              {` · ${post.authorNickname} · ${post.bookTitle ?? '책 없음'}`}
-            </>
-          ) : variant === 'profile' ? (
-            `${post.bookTitle ?? '책 없음'} · ${visibility} · 조회 ${post.viewCount}`
-          ) : (
-            `${post.authorNickname} · 좋아요 ${post.likeCount} · 댓글 ${post.commentCount}`
-          )}
-        </Text>
-
-        {/* 홈에서는 밑줄 조각의 핫 줄과 같은 자리에 반응 수를 세운다 — 표시 전용(누를 수 없다). */}
-        {home ? (
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
-            좋아요 {post.likeCount} · 댓글 {post.commentCount}
-          </Text>
-        ) : null}
-      </MemoScrap>
+      {memo}
     </Pressable>
   );
 }

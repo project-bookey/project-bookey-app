@@ -206,6 +206,23 @@ export function HomeScraps() {
   /** 헤더 '광장 →' — 목적지가 특정 글이 아니라 구역 자체라 navigate 로 연다. */
   const openPlaza = () => router.navigate('/plaza');
 
+  /** 지금 서 있는 조각의 상세로. 종류만 갈리고 누를 자리는 행 하나로 같다. */
+  const openScrap = () => {
+    if (scrap.kind === 'post') {
+      router.push(`/post/${scrap.item.id}`);
+      return;
+    }
+    // 문장 id 가 없는 항목(있어서는 안 되지만 응답이 비었을 때)은 갈 곳이 없으므로
+    // 광장으로 보낸다 — 구역 사이라 navigate.
+    if (scrap.item.quoteId == null) router.navigate('/plaza');
+    else router.push(`/quote/${scrap.item.quoteId}`);
+  };
+
+  const scrapLabel =
+    scrap.kind === 'post'
+      ? `${scrap.item.authorNickname}의 독후감 ${scrap.item.title} · 독후감 상세로`
+      : `${scrap.item.authorNickname}가 오려둔 ${scrap.item.bookTitle}의 문장 · 밑줄 상세로`;
+
   const row = (
     <Animated.View style={[styles.row, groupStyle]}>
       <Animated.View style={[styles.cardSlot, cardStyle]}>
@@ -226,19 +243,15 @@ export function HomeScraps() {
             ) : null}
           </MemoScrap>
         ) : (
-          <PostScrap
-            post={scrap.item}
-            rotate={0}
-            variant="home"
-            onPress={() => router.push(`/post/${scrap.item.id}`)}
-          />
+          /* onPress 를 주지 않는다 — 누를 자리는 바깥 행 버튼 하나뿐이다(rowWrap 주석 참고). */
+          <PostScrap post={scrap.item} rotate={0} variant="home" />
         )}
       </Animated.View>
 
       {/*
         표지에는 onPress 를 달지 않는다 — 웹에서 accessibilityRole="button" 은 진짜
         <button> 으로 나가므로 조각 버튼과 겹치면 중첩 버튼(잘못된 HTML)이 된다.
-        밑줄에서는 표지 탭을 바깥 행 버튼이 그대로 받아 밑줄 상세로 보낸다.
+        표지를 겨냥한 탭은 바깥 행 버튼이 그대로 받아 그 글의 상세로 보낸다.
 
         pointerEvents 는 터치만 막고 접근성 트리는 그대로 둔다 — 네이티브 스크린리더가
         표지에서 한 번 더 멈춰 책 제목을 되풀이한다. 세 플랫폼이 각각 다른 속성을 보므로
@@ -280,25 +293,20 @@ export function HomeScraps() {
 
       {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
           라벨만 현재 항목으로 바뀐다.
-          밑줄은 카드와 표지를 한 버튼으로 묶어 누를 자리를 넓게 주고, 독후감은 조각 자신이
-          버튼이라(PostScrap) 행을 또 감싸지 않는다 — 웹에서 버튼 안에 버튼이 들어가면 안 된다. */}
-      {scrap.kind === 'quote' ? (
-        <Pressable
-          onPress={() => {
-            // 문장 id 가 없는 항목(있어서는 안 되지만 응답이 비었을 때)은 갈 곳이 없으므로
-            // 광장으로 보낸다 — 구역 사이라 navigate.
-            if (scrap.item.quoteId == null) router.navigate('/plaza');
-            else router.push(`/quote/${scrap.item.quoteId}`);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`${scrap.item.authorNickname}가 오려둔 ${scrap.item.bookTitle}의 문장 · 밑줄 상세로`}
-          style={styles.rowWrap}
-        >
-          {row}
-        </Pressable>
-      ) : (
-        <View style={styles.rowWrap}>{row}</View>
-      )}
+
+          누를 자리는 종류와 무관하게 **행 전체 하나**다. 6초마다 같은 자리에 밑줄과 독후감이
+          번갈아 서므로, 한쪽만 카드에 버튼을 달면 표지·카드와 표지 사이 여백·좌우 패딩이
+          차례에 따라 눌리기도 하고 안 눌리기도 한다 — 표지를 겨냥한 탭이 무반응이면
+          사용자에겐 앱이 먹통으로 읽힌다. 그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음)
+          목적지와 라벨만 kind 로 가른다. 독후감 조각은 onPress 없이 그림으로만 그려진다. */}
+      <Pressable
+        onPress={openScrap}
+        accessibilityRole="button"
+        accessibilityLabel={scrapLabel}
+        style={styles.rowWrap}
+      >
+        {row}
+      </Pressable>
     </View>
   );
 }
