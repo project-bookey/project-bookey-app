@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, reviewApi } from '@/api/endpoints';
@@ -10,7 +10,7 @@ import { CommentThread } from '@/components/comments';
 import { ReviewCard } from '@/components/review/ReviewCard';
 import { useReviewCommentAdapter } from '@/components/review/useReviewCommentAdapter';
 import { EmptyState } from '@/components/ui';
-import { radius, useTheme } from '@/theme';
+import { radius, typeScale, useTheme } from '@/theme';
 
 /** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 얌전하게(밑줄 상세와 같은 값). */
 const CARD_TILT = -0.6;
@@ -34,8 +34,9 @@ export default function ReviewDetailScreen() {
 
   // 리뷰 응답에는 책 제목이 없다 — 도서 상세와 같은 키로 받아 캐시를 나눠 쓴다.
   const bookId = review.data?.bookId;
+  // 리뷰가 오기 전엔 자리 키만 — 실제 요청은 enabled 가 막는다.
   const book = useQuery({
-    queryKey: ['book', bookId],
+    queryKey: bookId != null ? ['book', bookId] : ['book', 'pending'],
     queryFn: () => bookApi.detail(bookId!),
     enabled: bookId != null,
   });
@@ -64,12 +65,22 @@ export default function ReviewDetailScreen() {
   ) : review.isLoading ? (
     <View style={[styles.skeleton, { backgroundColor: colors.surface }]} />
   ) : review.isError ? (
-    <EmptyState
-      title="리뷰를 불러오지 못했습니다"
-      description={review.error instanceof ApiError && review.error.status === 404
-        ? '지워졌거나 없는 리뷰입니다.'
-        : '잠시 후 다시 시도해 주세요.'}
-    />
+    review.error instanceof ApiError && review.error.status === 404 ? (
+      <EmptyState
+        title="리뷰를 불러오지 못했습니다"
+        description="지워졌거나 없는 리뷰입니다."
+      />
+    ) : (
+      <EmptyState
+        title="리뷰를 불러오지 못했습니다"
+        description="잠시 후 다시 시도해 주세요."
+        action={
+          <Pressable onPress={() => review.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+          </Pressable>
+        }
+      />
+    )
   ) : null;
 
   return (

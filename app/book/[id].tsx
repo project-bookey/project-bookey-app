@@ -944,5 +944,4 @@ const styles = StyleSheet.create({
   tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
   tabRule: { width: 22, height: 2 },
   reviewList: { gap: spacing.md },
-  // 인용 본문 — 시안 14/1.6 세리프.
 });

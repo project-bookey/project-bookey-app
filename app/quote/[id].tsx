@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { quoteApi } from '@/api/endpoints';
@@ -12,7 +12,7 @@ import { QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { useQuoteCommentAdapter } from '@/components/quote/useQuoteCommentAdapter';
 import { EmptyState } from '@/components/ui';
-import { radius, useTheme } from '@/theme';
+import { radius, typeScale, useTheme } from '@/theme';
 
 /** 삭제 재확인이 살아 있는 시간(ms). 광장과 같은 값. */
 const DELETE_CONFIRM_MS = 3000;
@@ -112,12 +112,22 @@ export default function QuoteDetailScreen() {
   ) : quote.isLoading ? (
     <View style={[styles.skeleton, { backgroundColor: colors.surface }]} />
   ) : quote.isError ? (
-    <EmptyState
-      title="밑줄을 불러오지 못했습니다"
-      description={quote.error instanceof ApiError && quote.error.status === 404
-        ? '지워졌거나 없는 밑줄입니다.'
-        : '잠시 후 다시 시도해 주세요.'}
-    />
+    quote.error instanceof ApiError && quote.error.status === 404 ? (
+      <EmptyState
+        title="밑줄을 불러오지 못했습니다"
+        description="지워졌거나 없는 밑줄입니다."
+      />
+    ) : (
+      <EmptyState
+        title="밑줄을 불러오지 못했습니다"
+        description="잠시 후 다시 시도해 주세요."
+        action={
+          <Pressable onPress={() => quote.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+          </Pressable>
+        }
+      />
+    )
   ) : null;
 
   return (
