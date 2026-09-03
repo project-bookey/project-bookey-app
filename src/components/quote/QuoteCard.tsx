@@ -1,14 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card } from '@/components/ui';
+import { Card, FootAction } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-
-/**
- * 푸터 액션 확장 터치 영역(네이티브 전용).
- * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키우고,
- * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
- */
-const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
 export type QuoteCardProps = {
   authorNickname: string;
@@ -101,45 +94,20 @@ export function QuoteCard({
       ) : body}
 
       <View style={styles.footRow}>
-        {/* 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓힌다. */}
-        <Pressable onPress={onAgree} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-          accessibilityRole="button"
-          accessibilityState={{ selected: agreedByMe }}
-          accessibilityLabel={`나도 그럼 ${agreeCount}`}>
-          <Text style={[typeScale.monoLabel, styles.footLabel, {
-            color: agreedByMe ? colors.accent : colors.textMuted,
-          }]}>
-            나도 그럼 {agreeCount}
-          </Text>
-        </Pressable>
-        {onOpen ? (
-          <Pressable onPress={onOpen} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-            accessibilityRole="button" accessibilityLabel={`댓글 ${commentCount}`}>
-            <Text style={[typeScale.monoLabel, styles.footLabel, { color: colors.textMuted }]}>
-              댓글 {commentCount}
-            </Text>
-          </Pressable>
-        ) : (
-          <Text style={[typeScale.monoLabel, styles.footLabel, styles.footAction, { color: colors.textMuted }]}>
-            댓글 {commentCount}
-          </Text>
-        )}
+        <FootAction label={`나도 그럼 ${agreeCount}`} onPress={onAgree} selected={agreedByMe} />
+        {/* 광장(onOpen)에서는 눌러 상세로, 상세에서는 글자만. */}
+        <FootAction label={`댓글 ${commentCount}`} onPress={onOpen} />
         <View style={styles.footRight}>
           {onOpenBook ? (
-            <Pressable onPress={onOpenBook} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-              accessibilityRole="button" accessibilityLabel={`${bookTitle} 상세`}>
-              <Text style={[typeScale.monoLabel, styles.footLabel, { color: colors.accent }]}>책 보기 →</Text>
-            </Pressable>
+            <FootAction label="책 보기 →" onPress={onOpenBook} tone="accent" accessibilityLabel={`${bookTitle} 상세`} />
           ) : null}
           {mine && onDelete ? (
-            <Pressable onPress={onDelete} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-              accessibilityRole="button" accessibilityLabel={confirming ? '삭제 확인' : '삭제'}>
-              <Text style={[typeScale.monoLabel, styles.footLabel, {
-                color: confirming ? colors.danger : colors.textFaint,
-              }]}>
-                {confirming ? '한 번 더' : '삭제'}
-              </Text>
-            </Pressable>
+            <FootAction
+              label={confirming ? '한 번 더' : '삭제'}
+              onPress={onDelete}
+              tone={confirming ? 'danger' : 'faint'}
+              accessibilityLabel={confirming ? '삭제 확인' : '삭제'}
+            />
           ) : null}
         </View>
       </View>
@@ -179,7 +147,4 @@ const styles = StyleSheet.create({
   quote: { ...typeScale.quote, fontSize: 15, lineHeight: 25, borderLeftWidth: 2, paddingLeft: 11 },
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  footLabel: { fontSize: 10, letterSpacing: 0.4 },
-  // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
-  footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
 });
