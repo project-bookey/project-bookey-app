@@ -249,6 +249,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/posts/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 독후감 사진 업로드 — 글에 붙이기 전 임시 저장, 24시간 안에 안 붙이면 삭제 */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}/open": {
         parameters: {
             query?: never;
@@ -4070,6 +4087,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PostCommentView"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostImageView"];
                 };
             };
         };

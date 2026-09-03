@@ -5,9 +5,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { ApiError } from '@/api/client';
 import { quoteApi } from '@/api/endpoints';
 import { bookQuotesKey, invalidateQuoteLists } from '@/api/quoteCache';
-import type { BookQuote } from '@/api/types';
-import { MemoScrap } from '@/components/collage';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
+import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { Button, Card } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
@@ -64,7 +63,8 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
       ) : (
         <View style={styles.list}>
           {items.map((quote, index) => (
-            <QuoteScrap key={quote.id} quote={quote} rotate={index % 2 === 0 ? -1 : 1}
+            // 이 책의 밑줄만 늘어놓으므로 조각 메타의 책 제목은 끈다.
+            <QuoteScrap key={quote.id} quote={quote} rotate={index % 2 === 0 ? -1 : 1} showBook={false}
               onPress={() => router.push(`/quote/${quote.id}`)} />
           ))}
           {quotes.isFetchingNextPage ? (
@@ -88,28 +88,6 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
         </View>
       )}
     </View>
-  );
-}
-
-/**
- * 밑줄 조각 — 문장과 쪽수만. 통째로 눌러 상세로 간다.
- * 작성자·좋아요·댓글 수는 조각에서 빼고 상세에서 본다 — 조각은 문장이 먼저 읽히게.
- */
-function QuoteScrap({ quote, rotate, onPress }: { quote: BookQuote; rotate: number; onPress: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="밑줄 상세">
-      <MemoScrap rotate={rotate}>
-        <Text style={[styles.scrapText, { color: colors.text, borderLeftColor: colors.accent }]}>
-          {quote.content}
-        </Text>
-        {quote.page != null ? (
-          <Text style={[typeScale.monoLabel, styles.scrapPage, { color: colors.textMuted }]}>
-            {quote.page}쪽
-          </Text>
-        ) : null}
-      </MemoScrap>
-    </Pressable>
   );
 }
 
@@ -154,9 +132,6 @@ const styles = StyleSheet.create({
   wrap: { gap: spacing.md },
   list: { gap: spacing.md },
   center: { paddingVertical: spacing.md, alignItems: 'center' },
-  // 인용 본문 — 밑줄 카드와 같은 만듦새로, quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
-  scrapText: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
-  scrapPage: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
 
   composer: { gap: spacing.md },
   composerActions: { flexDirection: 'row', gap: spacing.sm },

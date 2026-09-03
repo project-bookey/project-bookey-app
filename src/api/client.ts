@@ -78,8 +78,11 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     });
   }
 
+  // multipart 는 boundary 가 붙은 Content-Type 을 런타임이 직접 만들어야 하므로 헤더를 지정하지 않는다.
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+
   const send = async (): Promise<Response> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = isForm ? {} : { 'Content-Type': 'application/json' };
     if (auth) {
       const tokens = await getTokens();
       if (tokens?.accessToken) {
@@ -89,7 +92,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     return fetch(url.toString(), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: isForm ? (body as FormData) : body === undefined ? undefined : JSON.stringify(body),
     });
   };
 

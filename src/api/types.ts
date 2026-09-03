@@ -72,6 +72,16 @@ export type PlazaItemType = PlazaItem['type'];
 export type QuoteComment = Schemas['QuoteCommentView'];
 export type CreateQuoteComment = Schemas['CreateQuoteCommentRequest'];
 
+// ── 독후감 ───────────────────────────────────────────────
+export type Post = Schemas['PostView'];
+export type CreatePost = Schemas['CreatePostRequest'];
+export type UpdatePost = Schemas['UpdatePostRequest'];
+export type PostVisibility = Post['visibility'];
+export type PostImage = Schemas['PostImageView'];
+export type PostLike = Schemas['PostLikeView'];
+export type PostComment = Schemas['PostCommentView'];
+export type CreatePostComment = Schemas['CreatePostCommentRequest'];
+
 // ── 챌린지 ───────────────────────────────────────────────
 export type Challenge = Schemas['ChallengeView'];
 export type ChallengeStatus = Challenge['status'];

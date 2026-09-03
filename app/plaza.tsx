@@ -1,32 +1,26 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { bookApi, libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
+import { plazaApi, quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
+import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import { Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { sans } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
 /** 카드 교차 회전(도) — 붙여 둔 티를 내되 읽기를 방해하지 않을 만큼만. */
 const CARD_TILT = [-1.1, 0.8];
-/** 삭제 재확인이 살아 있는 시간(ms). 지나면 조용히 원래 라벨로 돌아간다. */
-const DELETE_CONFIRM_MS = 3000;
-/** 컴포저 책 검색 — 탐색 화면과 같은 디바운스·최소 글자 수. */
-const SEARCH_DEBOUNCE_MS = 400;
-const SEARCH_MIN_CHARS = 2;
 /** 찍고 온 카드를 어디에 세울지 — 0 은 화면 맨 위, 1 은 맨 아래. 위 여백을 조금 남긴다. */
 const FOCUS_VIEW_POSITION = 0.2;
 /**
@@ -56,19 +50,15 @@ export default function PlazaScreen() {
 
   const [type, setType] = useState<PlazaItemType>('QUOTE');
   const [composing, setComposing] = useState(false);
-  const [confirmId, setConfirmId] = useState<number | null>(null);
+  /** 삭제 재확인 — 확인 상태인 문장 id. 3초 타이머·언마운트 정리는 공용 훅이 맡는다(상세와 같은 규율). */
+  const { confirm: confirmId, arm, disarm } = useDeleteConfirm<number>();
   const [removeError, setRemoveError] = useState<{ id: number; message: string } | null>(null);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<FlatList<PlazaItem>>(null);
   /** 강조가 걸린 문장 — 페이드가 끝나면 스스로 지운다. 한 번에 한 장뿐이다. */
   const [focusedId, setFocusedId] = useState<number | null>(null);
   const clearFocus = useCallback(() => setFocusedId(null), []);
   /** '좋아요' 낙관 토글 — 인플라이트 가드까지 공용 훅이 맡는다(상세와 같은 규율). */
   const pressAgree = useAgreeQuote();
-
-  useEffect(() => () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-  }, []);
 
   const feed = useInfiniteQuery({
     queryKey: plazaFeedKey(type),
@@ -150,23 +140,17 @@ export default function PlazaScreen() {
 
   /** 삭제는 두 번 눌러야 나간다 — 첫 탭은 확인 라벨로 바뀌고 3초 뒤 저절로 접힌다. */
   const pressDelete = (quoteId: number) => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
     if (confirmId === quoteId) {
-      confirmTimer.current = null;
-      setConfirmId(null);
+      disarm();
       remove.mutate(quoteId);
       return;
     }
-    setConfirmId(quoteId);
-    confirmTimer.current = setTimeout(() => {
-      confirmTimer.current = null;
-      setConfirmId(null);
-    }, DELETE_CONFIRM_MS);
+    arm(quoteId);
   };
 
   const switchType = (next: PlazaItemType) => {
     if (next === type) return;
-    setConfirmId(null);
+    disarm();
     // 완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
     setComposing(false);
     setType(next);
@@ -357,49 +341,16 @@ function FeedCard({
 
 /**
  * 문장 오려두기 패널 — 모달 대신 칩 행 아래로 펼쳐지는 카드(도서 상세 밑줄 탭과 같은 방식).
- * 문장·쪽수 칸과 그 검증은 도서 상세와 같은 QuoteDraftFields 가 맡고, 책 고르기만 여기 몫이다.
+ * 책 고르기는 독후감 작성과 같은 BookPicker, 문장·쪽수 칸과 그 검증은 도서 상세와 같은 QuoteDraftFields 가 맡고,
+ * 여기는 둘을 한 카드에 놓고 오려두기 호출만 한다.
  */
-/** 컴포저가 고른 책 — 내 서재 기록에서 왔으면 recordId 도 함께 담는다. */
-type PickedBook = { bookId: number; title: string; coverUrl?: string; recordId?: number };
-
 function QuoteComposer({ onDone }: { onDone: () => void }) {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
 
-  // 읽는 중인 책은 바로 고를 수 있는 빠른 선택지 — 홈·나와 같은 캐시 키라 받아 둔 목록을 재사용한다.
-  const reading = useQuery({
-    queryKey: ['library', 'READING'],
-    queryFn: () => libraryApi.list('READING'),
-  });
-  const quickPicks: PickedBook[] = (reading.data?.content ?? [])
-    .filter((r) => r.book?.id != null)
-    .map((r) => ({ bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id }));
-
-  // 어떤 책이든 검색해서 고를 수 있다 — 읽는 중이 아니어도 된다(서버는 bookId 만으로 받는다).
-  const [keyword, setKeyword] = useState('');
-  const [debounced, setDebounced] = useState('');
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(keyword.trim()), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [keyword]);
-  const searching = debounced.length >= SEARCH_MIN_CHARS;
-  const search = useQuery({
-    queryKey: ['books', 'search', debounced],
-    queryFn: () => bookApi.search(debounced),
-    enabled: searching,
-  });
-  const results: PickedBook[] = (search.data ?? []).map((b) => ({
-    bookId: b.id,
-    title: b.title,
-    coverUrl: b.coverUrl,
-    // 검색으로 골라도 내 서재에 읽는 중 기록이 있으면 그 기록에 매단다.
-    recordId: quickPicks.find((q) => q.bookId === b.id)?.recordId,
-  }));
-
-  const [picked, setPicked] = useState<PickedBook | null>(null);
-  // 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 — 한 권만 읽는 사람은 바로 쓰기 시작한다.
-  const selected = picked ?? (searching ? null : quickPicks[0] ?? null);
-  const candidates = searching ? results : quickPicks;
+  // 읽는 중인 책 빠른 선택 + 검색 — 고른 책(기본값 포함)은 picker.selected 로 온다.
+  const picker = useBookPicker();
+  const { selected } = picker;
 
   // 문장·쪽수 칸과 그 검증은 도서 상세 밑줄 탭과 같은 것을 쓴다.
   const draft = useQuoteDraft();
@@ -426,66 +377,9 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
       : '오려두지 못했어요 · 다시 시도'
     : null;
 
-  // 후보 행 아래 한 줄 안내 — 상태마다 다른 말을 한다.
-  const hint = searching
-    ? search.isLoading ? '찾는 중…' : search.isError ? null : candidates.length === 0 ? '검색 결과가 없어요.' : null
-    : reading.isLoading ? '읽는 중인 책을 찾는 중입니다.'
-      : reading.isError ? null
-        : candidates.length === 0 ? '읽는 중인 책이 없어요 — 위에서 책을 검색해 고르세요.' : null;
-
   return (
     <Card style={styles.composer}>
-      <TextInput
-        value={keyword}
-        onChangeText={setKeyword}
-        placeholder="책 제목·저자로 찾기"
-        placeholderTextColor={colors.textFaint}
-        autoCapitalize="none"
-        autoCorrect={false}
-        accessibilityLabel="책 검색"
-        style={[styles.searchInput, {
-          backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-        }]}
-      />
-
-      {candidates.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
-          {candidates.map((candidate) => {
-            const isPicked = selected?.bookId === candidate.bookId;
-            return (
-              <Pressable
-                key={candidate.bookId}
-                onPress={() => setPicked(candidate)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isPicked }}
-                accessibilityLabel={candidate.title}
-                style={[styles.pick, { borderColor: isPicked ? colors.accent : 'transparent' }]}
-              >
-                <TiltCover uri={candidate.coverUrl} title={candidate.title} width={52} tilt={0} entering={false} />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      ) : null}
-
-      {hint ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{hint}</Text> : null}
-      {/* 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패는 실패라고 말하고 다시 시도를 준다. */}
-      {searching && search.isError ? (
-        <Pressable onPress={() => search.refetch()} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · 다시 시도 →</Text>
-        </Pressable>
-      ) : null}
-      {!searching && reading.isError ? (
-        <Pressable onPress={() => reading.refetch()} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>읽는 중인 책을 불러오지 못했어요 · 다시 시도 →</Text>
-        </Pressable>
-      ) : null}
-
-      {selected ? (
-        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.pickedLine, { color: colors.textMuted }]}>
-          {selected.title}{selected.recordId != null ? ' · 내 서재' : ''}
-        </Text>
-      ) : null}
+      <BookPicker picker={picker} />
 
       <QuoteDraftFields
         draft={draft}
@@ -541,18 +435,6 @@ const styles = StyleSheet.create({
   finishText: { flex: 1, gap: spacing.xs },
 
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },
-  pickRow: { gap: spacing.sm, paddingVertical: 2 },
-  pick: { borderWidth: 2, borderRadius: radius.sm, padding: 2 },
-  // 책 검색 입력 — 쪽수 입력과 같은 재질, pill.
-  searchInput: {
-    borderWidth: hairline,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontFamily: sans.regular,
-    fontSize: 14,
-  },
-  pickedLine: { marginTop: -spacing.xs },
   submit: {
     marginLeft: 'auto',
     borderRadius: radius.pill,

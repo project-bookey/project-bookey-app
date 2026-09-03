@@ -1,17 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, quoteKey } from '@/api/quoteCache';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { CommentThread, DELETE_CONFIRM_MS } from '@/components/comments';
+import { CommentThread } from '@/components/comments';
 import { QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { useQuoteCommentAdapter } from '@/components/quote/useQuoteCommentAdapter';
 import { EmptyState } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { radius, typeScale, useTheme } from '@/theme';
 
 /** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 광장보다 얌전하게. */
@@ -39,19 +40,11 @@ export default function QuoteDetailScreen() {
     enabled: Number.isFinite(quoteId),
   });
 
-  // 밑줄 삭제 재확인 — 밑줄 전용 타이머다.
+  // 밑줄 삭제 재확인 — 밑줄 전용 타이머다(3초·언마운트 정리는 공용 훅).
   // (의도된 변경: 댓글 삭제는 스레드가 자기 타이머로 따로 확인한다. 예전처럼 하나를 나눠 쓰지 않아
   //  밑줄을 확인 상태로 둔 채 댓글 삭제를 눌러도 서로 풀리지 않는다.)
-  const [confirming, setConfirming] = useState(false);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-  }, []);
-  const disarm = () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    confirmTimer.current = null;
-    setConfirming(false);
-  };
+  const { confirm, arm, disarm } = useDeleteConfirm<'quote'>();
+  const confirming = confirm === 'quote';
 
   const [removeError, setRemoveError] = useState<string | null>(null);
   const removeQuote = useMutation({
@@ -73,12 +66,7 @@ export default function QuoteDetailScreen() {
       removeQuote.mutate();
       return;
     }
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    setConfirming(true);
-    confirmTimer.current = setTimeout(() => {
-      confirmTimer.current = null;
-      setConfirming(false);
-    }, DELETE_CONFIRM_MS);
+    arm('quote');
   };
 
   const header = quote.data ? (
