@@ -126,6 +126,15 @@ const styles = StyleSheet.create({
   },
   photoMore: { fontSize: 9, letterSpacing: 0.4 },
 
-  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  // 밑줄 카드보다 액션이 많다(좋아요·댓글·조회·밑줄·책 보기) — 숫자가 커지면 한 줄에 못 담는다.
+  // Card 가 overflow:hidden 이라 넘치면 소리 없이 잘리므로, 넘칠 때만 다음 줄로 내린다.
+  // 줄 사이(rowGap)는 액션의 음수 세로 마진(-6·-6)만큼 먹히므로 한 단계 크게 잡는다.
+  footRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: spacing.lg,
+    rowGap: spacing.xl,
+  },
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
 });
