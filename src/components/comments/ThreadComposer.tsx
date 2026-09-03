@@ -13,20 +13,23 @@ import type { ReplyTarget } from './types';
  * 보내는 일은 스레드(onSubmit)가 하고, 여기서는 쓰던 글·전송 중·실패 문구만 가진다.
  * 성공했을 때만 입력을 비우므로 실패해도 쓰던 글이 남아 다시 누를 수 있다.
  * 답글 대상이 있으면 입력 위에 칩이 붙어 키보드와 함께 올라온다.
+ * 길이 상한은 스레드가 정해 내려준다 — 답글의 답글은 본문 앞에 '@닉네임' 이 붙는 만큼 상한이 줄어든다.
  */
 export const ThreadComposer = forwardRef<TextInput, {
   placeholder: string;
   replyTo: ReplyTarget | null;
+  /** 입력 길이 상한 — 기본은 서버 계약과 같은 300자. */
+  maxLength?: number;
   onCancelReply: () => void;
   onSubmit: (body: string) => Promise<unknown>;
-}>(function ThreadComposer({ placeholder, replyTo, onCancelReply, onSubmit }, ref) {
+}>(function ThreadComposer({ placeholder, replyTo, maxLength = BODY_MAX, onCancelReply, onSubmit }, ref) {
   const { colors } = useTheme();
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const trimmed = body.trim();
-  const canSubmit = trimmed.length > 0 && trimmed.length <= BODY_MAX;
+  const canSubmit = trimmed.length > 0 && trimmed.length <= maxLength;
   const disabled = !canSubmit || sending;
 
   const submit = async () => {
@@ -64,7 +67,7 @@ export const ThreadComposer = forwardRef<TextInput, {
           placeholder={placeholder}
           placeholderTextColor={colors.textFaint}
           multiline
-          maxLength={BODY_MAX}
+          maxLength={maxLength}
           accessibilityLabel="댓글"
           style={[styles.input, {
             backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,

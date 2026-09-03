@@ -30,7 +30,17 @@ export type ThreadComment = {
 };
 
 /** 답글을 달 대상 — 입력 바 위 칩에 이름을 띄우고, 작성 시 parentId 로 쓴다. */
-export type ReplyTarget = { id: number; nickname: string };
+export type ReplyTarget = {
+  /** 서버에 넘길 부모(최상위 댓글) id */
+  parentId: number;
+  /** 칩에 찍을 상대 닉네임 */
+  nickname: string;
+  /** 답글에 답글을 달 때만 — 본문 앞에 붙일 '@닉네임' */
+  mention?: string;
+};
+
+/** 본문 앞 '@닉네임' — 답글의 답글에서 상대를 가리킨다. */
+export const MENTION_RE = /^@(\S+)\s?/;
 
 /** 스레드가 서버·캐시를 만나는 유일한 창구 — 밑줄·리뷰가 각자 하나씩 만든다. */
 export type CommentThreadAdapter = {

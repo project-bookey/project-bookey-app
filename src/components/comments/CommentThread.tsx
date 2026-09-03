@@ -15,14 +15,15 @@ import { layout, spacing, typeScale, useTheme } from '@/theme';
 import { CommentRow } from './CommentRow';
 import { ReplyList } from './ReplyList';
 import { ThreadComposer } from './ThreadComposer';
-import { DELETE_CONFIRM_MS, PAGE_SIZE } from './types';
+import { BODY_MAX, DELETE_CONFIRM_MS, PAGE_SIZE } from './types';
 import type { CommentThreadAdapter, ReplyTarget, ThreadComment } from './types';
 
 /**
  * 댓글 스레드 — 밑줄 상세와 리뷰 상세가 같이 쓰는 목록 + 입력 바.
  *
  * 화면은 위에 올릴 카드(header)와 어댑터만 넘기고, 상태·뮤테이션·캐시 손질은 전부 여기서 한다.
- * 답글은 두 단계까지 — 최상위 줄만 '답글 달기'와 접기 컨트롤을 가진다.
+ * 답글은 서버 계약대로 한 단계까지다 — 접기 컨트롤은 최상위 줄만 가진다. '답글 달기'는 답글 줄에도
+ * 붙지만, 답글의 답글도 같은 최상위 부모에 평평하게 달리고 본문 앞에 '@닉네임' 이 붙는다(인스타그램식).
  */
 export function CommentThread({
   adapter, header, title = '댓글', placeholder, showComposer = true, composerPlaceholder, emptyText,
@@ -87,15 +88,27 @@ export function CommentThread({
   const toggleReplies = (commentId: number) =>
     (expanded.has(commentId) ? collapse : expand)(commentId);
 
-  /** 답글 달기 — 대상 부모를 미리 펼쳐 두고 입력에 커서를 준다(읽던 자리를 뺏지 않으려 스크롤은 하지 않는다). */
-  const startReply = (comment: ThreadComment) => {
-    setReplyTo({ id: comment.id, nickname: comment.authorNickname });
-    expand(comment.id);
+  /**
+   * 답글 달기 — 대상 부모를 미리 펼쳐 두고 입력에 커서를 준다(읽던 자리를 뺏지 않으려 스크롤은 하지 않는다).
+   *
+   * parent 가 있으면 target 은 답글이다 — 서버가 한 단계만 받으므로 부모는 그대로 두고(같은 묶음에 평평하게)
+   * 본문 앞에 '@닉네임' 만 붙여 누구에게 하는 말인지 남긴다.
+   */
+  const startReply = (target: ThreadComment, parent?: ThreadComment) => {
+    const parentId = parent?.id ?? target.id;
+    setReplyTo({
+      parentId,
+      nickname: target.authorNickname,
+      mention: parent ? `@${target.authorNickname}` : undefined,
+    });
+    expand(parentId);
     composerRef.current?.focus();
   };
 
-  const submit = async (body: string) => {
-    const parentId = replyTo?.id;
+  const submit = async (text: string) => {
+    const parentId = replyTo?.parentId;
+    // 답글의 답글이면 본문 앞에 '@닉네임' 을 붙여 보낸다 — 서버에는 그냥 같은 부모의 답글이다.
+    const body = replyTo?.mention ? `${replyTo.mention} ${text}`.trim() : text;
     const created = await adapter.create(body, parentId);
     if (parentId == null) {
       // 최상위 — 캐시가 없으면(에러·미조회) 붙일 자리가 없어 목록을 다시 받게 한다.
@@ -118,6 +131,9 @@ export function CommentThread({
     return created;
   };
 
+  // '@닉네임 ' 까지 합쳐 300자를 넘지 않게 — 멘션이 붙는 만큼 입력 상한을 미리 깎는다.
+  const composerMax = replyTo?.mention ? BODY_MAX - (replyTo.mention.length + 1) : BODY_MAX;
+
   const remove = useMutation({
     mutationFn: ({ commentId }: { commentId: number; parentId?: number }) => adapter.remove(commentId),
     onMutate: () => setRowError(null),
@@ -128,7 +144,7 @@ export function CommentThread({
         removeComment(queryClient, adapter.listKey, commentId);
         queryClient.removeQueries({ queryKey: repliesKey(adapter.listKey, commentId) });
         collapse(commentId);
-        setReplyTo((prev) => (prev?.id === commentId ? null : prev));
+        setReplyTo((prev) => (prev?.parentId === commentId ? null : prev));
         adapter.onCountChange(-(1 + replyCount));
         return;
       }
@@ -220,6 +236,7 @@ export function CommentThread({
                 confirmId={confirmId}
                 errorFor={(replyId) => (rowError?.id === replyId ? rowError.message : null)}
                 onPressDelete={(replyId) => pressDelete(replyId, item.id)}
+                onPressReply={showComposer ? (reply) => startReply(reply, item) : undefined}
               />
             ) : null}
           </CommentRow>
@@ -242,6 +259,7 @@ export function CommentThread({
           ref={composerRef}
           placeholder={composerPlaceholder}
           replyTo={replyTo}
+          maxLength={composerMax}
           onCancelReply={() => setReplyTo(null)}
           onSubmit={submit}
         />
