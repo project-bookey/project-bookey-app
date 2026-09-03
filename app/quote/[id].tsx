@@ -22,7 +22,7 @@ const CARD_TILT = -0.6;
  * 입력 바는 화면 아래 고정. 광장 카드·도서 상세 밑줄 조각에서 들어온다.
  *
  * 목록·입력·답글은 공용 스레드(CommentThread)가 통째로 맡는다. 이 화면에 남는 일은
- * 밑줄 한 건을 받아 카드로 세우고, 나도 그럼·삭제를 처리하는 것뿐이다.
+ * 밑줄 한 건을 받아 카드로 세우고, 좋아요·삭제를 처리하는 것뿐이다.
  */
 export default function QuoteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

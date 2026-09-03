@@ -48,6 +48,7 @@ export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelet
         <CommentRow
           key={reply.id}
           comment={reply}
+          variant="reply"
           confirming={confirmId === reply.id}
           error={errorFor(reply.id)}
           onDelete={() => onPressDelete(reply.id)}
