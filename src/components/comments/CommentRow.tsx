@@ -5,13 +5,15 @@ import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { formatRelative } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
+import { MENTION_RE } from './types';
 import type { ThreadComment } from './types';
 
 /**
  * 스레드 한 줄 — 아바타 · 닉네임 · 본문 · 상대 시각 · 답글 달기 · (본인) 삭제.
  *
- * 최상위 댓글과 답글이 같은 줄을 쓴다. 답글은 `onToggleReplies`·`onPressReply` 없이 그려서
- * 답글의 답글이 생기지 않게 한다(스레드는 두 단계까지).
+ * 최상위 댓글과 답글이 같은 줄을 쓴다. 두 줄 다 '답글 달기'를 가지지만 `onToggleReplies`(접기)는
+ * 최상위 줄에만 넘어온다 — 답글의 답글도 같은 묶음에 평평하게 달리기 때문이다.
+ * 본문이 '@닉네임' 으로 시작하면 그 앞머리만 악센트로 띄워 누구에게 한 말인지 읽힌다.
  *
  * variant — 'card'(최상위, 기본)는 줄 전체(와 펼친 답글)를 카드 박스로 감싼다.
  * 'reply'(답글)는 박스 없이 부모 카드 안에서 얕게 들여쓴 줄로만 그린다(아바타도 20px로 줄인다).
@@ -27,13 +29,15 @@ export function CommentRow({
   onDelete: () => void;
   /** 접기 컨트롤 — 최상위 줄에만 넘어온다. */
   onToggleReplies?: () => void;
-  /** 답글 달기 — 최상위 줄에만 넘어온다. */
+  /** 답글 달기 — 최상위 줄과 답글 줄 모두에 넘어온다. */
   onPressReply?: () => void;
   /** 펼친 답글 목록. */
   children?: ReactNode;
 }) {
   const { colors } = useTheme();
   const isReply = variant === 'reply';
+  // 답글의 답글이면 본문이 '@닉네임 ' 으로 시작한다 — 그 앞머리만 잘라 악센트로 그린다.
+  const mention = MENTION_RE.exec(comment.body);
   // 텍스트가 곧 상태다 — 접힘/펼침을 따로 표시하지 않고 다음 동작을 그대로 읽힌다.
   const foldLabel = expanded ? '답글 접기' : `답글 ${comment.replyCount}개 보기`;
 
@@ -49,7 +53,14 @@ export function CommentRow({
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {comment.authorNickname}
           </Text>
-          <Text style={[styles.body, { color: colors.textMuted }]}>{comment.body}</Text>
+          <Text style={[styles.body, { color: colors.textMuted }]}>
+            {mention ? (
+              <>
+                <Text style={{ color: colors.accent }}>{mention[0]}</Text>
+                {comment.body.slice(mention[0].length)}
+              </>
+            ) : comment.body}
+          </Text>
           <View style={styles.metaRow}>
             <Text style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
               {formatRelative(comment.createdAt)}

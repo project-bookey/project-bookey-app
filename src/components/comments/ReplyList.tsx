@@ -6,7 +6,7 @@ import { spacing, typeScale, useTheme } from '@/theme';
 
 import { CommentRow } from './CommentRow';
 import { REPLY_PAGE_SIZE } from './types';
-import type { CommentThreadAdapter } from './types';
+import type { CommentThreadAdapter, ThreadComment } from './types';
 
 /**
  * 한 댓글의 답글 목록 — 부모 줄이 펼쳐졌을 때만 그린다.
@@ -15,13 +15,15 @@ import type { CommentThreadAdapter } from './types';
  * 답글은 한 댓글에 몇 줄 수준이라 그래도 무겁지 않고, staleTime: 30초로 받는다 — 같은 세션에서
  * 접었다 펴는 동안은 재요청하지 않지만, 30초가 지나면 남이 그 사이 단 답글을 새로 받아온다.
  */
-export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelete }: {
+export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelete, onPressReply }: {
   adapter: CommentThreadAdapter;
   parentId: number;
   /** 삭제 재확인 중인 줄 — 댓글·답글이 한 타이머를 나눠 쓴다. */
   confirmId: number | null;
   errorFor: (commentId: number) => string | null;
   onPressDelete: (commentId: number) => void;
+  /** 답글에 답글 — 부모는 그대로 두고 본문 앞에 '@닉네임' 만 붙인다(스레드가 처리). */
+  onPressReply?: (reply: ThreadComment) => void;
 }) {
   const { colors } = useTheme();
 
@@ -52,6 +54,7 @@ export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelet
           confirming={confirmId === reply.id}
           error={errorFor(reply.id)}
           onDelete={() => onPressDelete(reply.id)}
+          onPressReply={onPressReply ? () => onPressReply(reply) : undefined}
         />
       ))}
       {replies.isError ? (
