@@ -106,8 +106,11 @@ export function CommentThread({
       adapter.onCountChange(1);
       return created;
     }
-    // 답글 — 답글 캐시가 없으면 아무 것도 안 한다(펼칠 때 ReplyList 가 새로 받는다).
-    appendComment(queryClient, repliesKey(adapter.listKey, parentId), created);
+    // 답글 — 답글 캐시가 없으면(첫 /replies 조회 전) 붙일 자리가 없으니 무효화해 둔다.
+    // exact: true — repliesKey 아래로 더 매달린 키는 없지만 최상위 분기와 같은 규율을 지킨다.
+    if (!appendComment(queryClient, repliesKey(adapter.listKey, parentId), created)) {
+      queryClient.invalidateQueries({ queryKey: repliesKey(adapter.listKey, parentId), exact: true });
+    }
     bumpReplyCount(queryClient, adapter.listKey, parentId, 1);
     expand(parentId);
     adapter.onCountChange(1);
@@ -155,37 +158,37 @@ export function CommentThread({
     arm(commentId);
   };
 
-  // 대상을 아직 못 받은 화면은 placeholder 하나로 자리를 대신한다 — 그때는 제목줄도 내리고 안내만 남긴다.
-  const showHead = header != null || placeholder == null;
-  const listHeader = showHead ? (
+  // 대상을 아직 못 받은 화면은 placeholder 를 목록 헤더에 바로 얹는다 — ListEmptyComponent 로만 두면
+  // 댓글 목록 자체는 이미 받아 온(항목이 있는) 경우 아예 그려지지 않아 안내가 사라지기 때문이다.
+  // placeholder 가 있을 땐 제목줄(과 댓글 자체 에러 안내)도 내린다 — 대상이 없으면 댓글 얘기를 할 자리가 아니다.
+  const listHeader = (
     <View style={styles.headerWrap}>
       {header}
-      <View style={styles.commentsHead}>
-        <Text style={[styles.commentsTitle, { color: colors.text }]}>{title}</Text>
-        {comments.isError ? (
-          <Pressable onPress={() => comments.refetch()} hitSlop={8} accessibilityRole="button"
-            accessibilityLabel="댓글 다시 불러오기">
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
-          </Pressable>
-        ) : null}
-      </View>
-    </View>
-  ) : null;
-
-  // FlatList 는 ListEmptyComponent 를 cloneElement 로 다시 만들며 onLayout 을 끼워 넣는다 —
-  // Fragment 로 감싸면 React 가 경고하므로 ReactNode 인 placeholder 는 View 로 받는다.
-  const empty = (
-    <View>
       {placeholder ?? (
-        comments.isLoading ? (
-          <View style={styles.footer}>
-            <ActivityIndicator size="small" color={colors.accent} />
-          </View>
-        ) : comments.isError ? null : (
-          <Text style={[typeScale.caption, styles.emptyComments, { color: colors.textFaint }]}>
-            {emptyText}
-          </Text>
-        )
+        <View style={styles.commentsHead}>
+          <Text style={[styles.commentsTitle, { color: colors.text }]}>{title}</Text>
+          {comments.isError ? (
+            <Pressable onPress={() => comments.refetch()} hitSlop={8} accessibilityRole="button"
+              accessibilityLabel="댓글 다시 불러오기">
+              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
+    </View>
+  );
+
+  // placeholder 가 떠 있는 동안은 목록 자체의 로딩·에러·빈 문구를 겹쳐 보여줄 필요가 없다.
+  const empty = placeholder ? null : (
+    <View>
+      {comments.isLoading ? (
+        <View style={styles.footer}>
+          <ActivityIndicator size="small" color={colors.accent} />
+        </View>
+      ) : comments.isError ? null : (
+        <Text style={[typeScale.caption, styles.emptyComments, { color: colors.textFaint }]}>
+          {emptyText}
+        </Text>
       )}
     </View>
   );

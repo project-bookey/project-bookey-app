@@ -12,9 +12,8 @@ import type { CommentThreadAdapter } from './types';
  * 한 댓글의 답글 목록 — 부모 줄이 펼쳐졌을 때만 그린다.
  *
  * 목록이 FlatList 안이라 여기서는 일반 View + map 으로 쌓는다(중첩 목록은 바깥 가상화를 깨뜨린다).
- * 답글은 한 댓글에 몇 줄 수준이라 그래도 무겁지 않고, staleTime: Infinity 로 받는다 — 캐시는
- * appendComment·removeComment·bumpReplyCount 로만 갱신되고 절로 stale 해지지 않으니 접었다 펴도
- * 다시 받지 않는다(단, 캐시가 GC 로 사라진 뒤 새로 마운트되면 그때는 다시 받는다).
+ * 답글은 한 댓글에 몇 줄 수준이라 그래도 무겁지 않고, staleTime: 30초로 받는다 — 같은 세션에서
+ * 접었다 펴는 동안은 재요청하지 않지만, 30초가 지나면 남이 그 사이 단 답글을 새로 받아온다.
  */
 export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelete }: {
   adapter: CommentThreadAdapter;
@@ -31,7 +30,7 @@ export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelet
     queryFn: ({ pageParam }) => adapter.replies(parentId, pageParam, REPLY_PAGE_SIZE),
     initialPageParam: 0,
     getNextPageParam: nextPageParam,
-    staleTime: Infinity,
+    staleTime: 30_000,
   });
   const items = dedupeComments(replies.data?.pages);
 

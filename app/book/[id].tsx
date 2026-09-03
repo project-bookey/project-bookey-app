@@ -9,7 +9,7 @@ import {
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
-import { bookReviewsKey } from '@/api/reviewCache';
+import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookQuotesTab } from '@/components/book/BookQuotesTab';
@@ -746,7 +746,8 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
     mutationFn: () =>
       reviewApi.create({ readingRecordId: rid!, rating: rating || undefined, body: body.trim() }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bookReviewsKey(bookId) });
+      // 리뷰 목록 캐시는 도서 상세·리뷰 상세 두 곳에 흩어져 있어 공용 무효화 함수로 한 번에 정리한다.
+      invalidateReviewLists(queryClient);
       queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
       setOpen(false);
       setDone(true);

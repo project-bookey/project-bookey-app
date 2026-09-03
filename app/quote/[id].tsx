@@ -7,15 +7,13 @@ import { ApiError } from '@/api/client';
 import { quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, quoteKey } from '@/api/quoteCache';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { CommentThread } from '@/components/comments';
+import { CommentThread, DELETE_CONFIRM_MS } from '@/components/comments';
 import { QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { useQuoteCommentAdapter } from '@/components/quote/useQuoteCommentAdapter';
 import { EmptyState } from '@/components/ui';
 import { radius, typeScale, useTheme } from '@/theme';
 
-/** 삭제 재확인이 살아 있는 시간(ms). 광장과 같은 값. */
-const DELETE_CONFIRM_MS = 3000;
 /** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 광장보다 얌전하게. */
 const CARD_TILT = -0.6;
 
