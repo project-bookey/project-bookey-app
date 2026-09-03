@@ -43,7 +43,7 @@ export function FocusRing({ onDone, borderRadius = radius.lg }: {
       }),
     );
     // 페이드 도중에 카드가 사라지면 완료 콜백의 runOnJS 가 주인 없이 발화한다 —
-    // 애니메이션을 먼저 끊어 콜백 자체를 없앤다(QuoteScraps 와 같은 규율).
+    // 애니메이션을 먼저 끊어 콜백 자체를 없앤다(HomeScraps 와 같은 규율).
     return () => cancelAnimation(glow);
   }, [glow, onDone]);
 
