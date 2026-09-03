@@ -9,6 +9,7 @@ import {
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
+import { bookReviewsKey } from '@/api/reviewCache';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookQuotesTab } from '@/components/book/BookQuotesTab';
@@ -725,7 +726,7 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
 function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | null; colors: ColorTokens }) {
   const queryClient = useQueryClient();
   const reviews = useQuery({
-    queryKey: ['book', bookId, 'reviews'],
+    queryKey: bookReviewsKey(bookId),
     queryFn: () => bookApi.reviews(bookId),
     enabled: Number.isFinite(bookId),
   });
@@ -749,7 +750,7 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
     mutationFn: () =>
       reviewApi.create({ readingRecordId: rid!, rating: rating || undefined, body: body.trim() }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['book', bookId, 'reviews'] });
+      queryClient.invalidateQueries({ queryKey: bookReviewsKey(bookId) });
       queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
       setOpen(false);
       setDone(true);
