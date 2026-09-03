@@ -46,7 +46,7 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
       <Card>
         <Text style={[typeScale.body, { color: colors.textMuted }]}>독후감을 불러오지 못했습니다.</Text>
         <Pressable onPress={() => posts.refetch()} hitSlop={8} accessibilityRole="button"
-          accessibilityLabel="독후감 다시 불러오기">
+          accessibilityLabel="독후감 다시 불러오기" style={styles.action}>
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
         </Pressable>
       </Card>
@@ -79,12 +79,12 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
         <Pressable
           onPress={() => (posts.hasNextPage ? posts.fetchNextPage() : posts.refetch())}
           accessibilityRole="button" accessibilityLabel="독후감 다시 불러오기" hitSlop={8}
-          style={styles.center}>
+          style={[styles.center, styles.action]}>
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
         </Pressable>
       ) : posts.hasNextPage ? (
         <Pressable onPress={() => posts.fetchNextPage()} accessibilityRole="button" hitSlop={8}
-          style={styles.center}>
+          style={[styles.center, styles.action]}>
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>독후감 더 보기 →</Text>
         </Pressable>
       ) : null}
@@ -95,4 +95,6 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
 const styles = StyleSheet.create({
   list: { gap: spacing.md },
   center: { paddingVertical: spacing.md, alignItems: 'center' },
+  // 웹은 hitSlop 을 무시한다 — 목록 액션은 여백으로 36px 상자를 만든다(책 상세 탭 액션과 같은 값).
+  action: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm },
 });

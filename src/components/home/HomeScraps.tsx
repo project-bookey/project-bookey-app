@@ -16,6 +16,7 @@ import { POST_HOME_KEY } from '@/api/postCache';
 import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { PlazaItem, Post } from '@/api/types';
 import { MemoScrap, TiltCover } from '@/components/collage';
+import { HomeSection } from '@/components/home/HomeSection';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
 
@@ -95,7 +96,9 @@ type Scrap = { kind: 'quote'; item: PlazaItem } | { kind: 'post'; item: Post };
  *
  * 밑줄 셋·독후감 둘을 번갈아 세워 광장에 두 종류의 글이 있다는 것을 홈에서부터 알린다.
  * 한쪽이 모자라면 다른 쪽이 그 자리를 메우고, 둘 다 0건이면 섹션을 통째로 감춘다 —
- * 홈에 빈 상자를 남기지 않는다.
+ * 홈에 빈 상자를 남기지 않는다. 그래서 섹션 틀(HomeSection: 괘선 + 위 여백)도 홈이 아니라
+ * 여기서 두른다. 홈이 감싸면 조각이 없을 때 괘선과 여백만 덩그러니 남는다 —
+ * HomeSection 은 자식이 null 을 그리는지 알 수 없다(자식은 늘 '있는' 엘리먼트다).
  *
  * 광장 화면의 무한 쿼리와 캐시를 나눠 쓴다(밑줄 `plazaFeedKey('QUOTE')` vs `PLAZA_HOME_KEY`,
  * 독후감 `postFeedKey` vs `POST_HOME_KEY`). 서로 다른 항목을 담지만 같은 글이 겹칠 수 있어,
@@ -151,6 +154,18 @@ export function HomeScraps() {
     return picked;
   }, [quotes.data, posts.data]);
 
+  /**
+   * 회전 목록의 신원 — 밑줄·독후감 두 쿼리가 시차를 두고 도착하므로, 같은 turn 에 서 있던
+   * 조각이 목록이 바뀌면서 다른 글로 갈린다. 그 교체도 연출을 타야 해서 신원을 정착 애니메이션의
+   * 의존성으로 쓴다(quoteId 가 빈 항목은 발생 시각으로 가른다).
+   */
+  const spotlightId = useMemo(
+    () => spotlight
+      .map((s) => (s.kind === 'post' ? `post:${s.item.id}` : `quote:${s.item.quoteId ?? s.item.occurredAt}`))
+      .join('|'),
+    [spotlight],
+  );
+
   // 계속 증가하는 카운터를 목록 길이로 나눠 쓴다 — 목록이 줄어도 범위를 벗어나지 않는다.
   const [turn, setTurn] = useState(0);
   const advance = useCallback(() => setTurn((t) => t + 1), []);
@@ -182,10 +197,12 @@ export function HomeScraps() {
   }, [rotating, advance, settle]);
 
   // 새 조각이 책상에 놓이는 연출 — 살짝 아래에서 올라오며 기울기가 정착한다.
+  // 회전(turn)뿐 아니라 목록이 갈릴 때(spotlightId)도 다시 돈다 — 늦게 도착한 쿼리가
+  // 화면의 조각을 바꿔 치우는데 연출만 없으면 글자가 툭 튄다. turn 은 그대로 둔다(순서 유지).
   useEffect(() => {
     settle.value = 0;
     settle.value = withTiming(1, { duration: motion.base, easing: EASE_OUT });
-  }, [turn, settle]);
+  }, [turn, spotlightId, settle]);
 
   const index = count > 0 ? turn % count : 0;
   const tilt = CARD_TILT[index % CARD_TILT.length];
@@ -235,12 +252,12 @@ export function HomeScraps() {
             <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
               {scrap.item.authorNickname} · {scrap.item.bookTitle}
             </Text>
-            {/* 표시 전용 — 홈에서는 누를 수 없다. 토글은 광장에서만. */}
-            {(scrap.item.agreeCount ?? 0) > 0 ? (
-              <Text style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
-                좋아요 {scrap.item.agreeCount}
-              </Text>
-            ) : null}
+            {/* 표시 전용 — 홈에서는 누를 수 없다. 토글은 광장에서만.
+                0 이어도 그린다: 독후감 조각도 핫 줄을 늘 세우므로, 여기서만 줄을 빼면
+                6초마다 조각의 줄 수가 달라져 같은 자리에 선 글의 y 가 흔들린다. */}
+            <Text style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
+              좋아요 {scrap.item.agreeCount ?? 0}
+            </Text>
           </MemoScrap>
         ) : (
           /* onPress 를 주지 않는다 — 누를 자리는 바깥 행 버튼 하나뿐이다(rowWrap 주석 참고). */
@@ -278,36 +295,38 @@ export function HomeScraps() {
   );
 
   return (
-    <View style={styles.section}>
-      <View style={styles.header}>
-        <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오려둔 글</Text>
+    <HomeSection>
+      <View style={styles.section}>
+        <View style={styles.header}>
+          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오려둔 글</Text>
+          <Pressable
+            onPress={openPlaza}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="광장으로"
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>광장 →</Text>
+          </Pressable>
+        </View>
+
+        {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
+            라벨만 현재 항목으로 바뀐다.
+
+            누를 자리는 종류와 무관하게 **행 전체 하나**다. 6초마다 같은 자리에 밑줄과 독후감이
+            번갈아 서므로, 한쪽만 카드에 버튼을 달면 표지·카드와 표지 사이 여백·좌우 패딩이
+            차례에 따라 눌리기도 하고 안 눌리기도 한다 — 표지를 겨냥한 탭이 무반응이면
+            사용자에겐 앱이 먹통으로 읽힌다. 그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음)
+            목적지와 라벨만 kind 로 가른다. 독후감 조각은 onPress 없이 그림으로만 그려진다. */}
         <Pressable
-          onPress={openPlaza}
-          hitSlop={8}
+          onPress={openScrap}
           accessibilityRole="button"
-          accessibilityLabel="광장으로"
+          accessibilityLabel={scrapLabel}
+          style={styles.rowWrap}
         >
-          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>광장 →</Text>
+          {row}
         </Pressable>
       </View>
-
-      {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
-          라벨만 현재 항목으로 바뀐다.
-
-          누를 자리는 종류와 무관하게 **행 전체 하나**다. 6초마다 같은 자리에 밑줄과 독후감이
-          번갈아 서므로, 한쪽만 카드에 버튼을 달면 표지·카드와 표지 사이 여백·좌우 패딩이
-          차례에 따라 눌리기도 하고 안 눌리기도 한다 — 표지를 겨냥한 탭이 무반응이면
-          사용자에겐 앱이 먹통으로 읽힌다. 그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음)
-          목적지와 라벨만 kind 로 가른다. 독후감 조각은 onPress 없이 그림으로만 그려진다. */}
-      <Pressable
-        onPress={openScrap}
-        accessibilityRole="button"
-        accessibilityLabel={scrapLabel}
-        style={styles.rowWrap}
-      >
-        {row}
-      </Pressable>
-    </View>
+    </HomeSection>
   );
 }
 

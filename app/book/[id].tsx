@@ -771,18 +771,18 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
     ? (
         <Pressable
           onPress={() => router.push({ pathname: '/post/new', params: { bookId: String(bookId) } })}
-          accessibilityRole="button" accessibilityLabel="독후감 쓰기" hitSlop={8}>
+          accessibilityRole="button" accessibilityLabel="독후감 쓰기" hitSlop={8} style={styles.tabAction}>
           <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>쓰기 →</Text>
         </Pressable>
       )
     : tab === 'REVIEW'
     ? (rid != null && !done && !open ? (
-        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8}>
+        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
           <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>쓰기 →</Text>
         </Pressable>
       ) : null)
     : (rid != null && !quoteOpen ? (
-        <Pressable onPress={() => setQuoteOpen(true)} accessibilityRole="button" hitSlop={8}>
+        <Pressable onPress={() => setQuoteOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
           <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>오려두기 →</Text>
         </Pressable>
       ) : null);
@@ -953,6 +953,8 @@ const styles = StyleSheet.create({
   formButton: { flex: 1 },
   // 리뷰|밑줄 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
   tabHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  // 탭 헤더 우측 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다(세 탭 모두 같은 자리).
+  tabAction: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm },
   tabRow: { flexDirection: 'row', gap: 18 },
   tab: { gap: 6 },
   tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },

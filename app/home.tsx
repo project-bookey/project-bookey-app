@@ -129,9 +129,9 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        <HomeSection>
-          <HomeScraps />
-        </HomeSection>
+        {/* '오려둔 글'만 섹션 틀을 제 안에서 두른다 — 밑줄·독후감이 둘 다 0건이면 통째로
+            사라져야 하는데, 여기서 감싸면 괘선과 여백만 남는다(HomeScraps 주석 참고). */}
+        <HomeScraps />
 
         <HomeSection>
           <BookRow

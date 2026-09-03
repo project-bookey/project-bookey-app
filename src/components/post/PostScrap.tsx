@@ -5,14 +5,19 @@ import { MemoScrap } from '@/components/collage';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
 import { spacing, typeScale, useTheme } from '@/theme';
 
-/** 발췌 줄 수 — 홈은 한 줄만 흘리고, 책·프로필은 더 읽힌다. */
-const EXCERPT_LINES = { home: 1, book: 2, profile: 3 } as const;
+/** 발췌 줄 수 — 홈은 제목 두 줄 아래로 두 줄, 책·프로필은 더 읽힌다. */
+const EXCERPT_LINES = { home: 2, book: 2, profile: 3 } as const;
+/** 홈 제목 줄 수 — 상자 높이 계산에 쓴다(numberOfLines 와 같은 값이어야 한다). */
+const HOME_TITLE_LINES = 2;
 
 /** 메타(모노) 조판 — 밑줄 조각·홈 스포트라이트와 같은 값. */
 const META_SIZE = 10;
 const META_LH = 14;
 /** 핫 줄과 메타 사이 간격(px). */
 const HOT_GAP = 3;
+/** 제목·발췌 줄높이(px) — 스타일과 상자 상한이 같은 값을 봐야 해서 상수로 둔다. */
+const TITLE_LH = 22;
+const EXCERPT_LH = 20;
 
 /**
  * 홈 조각의 글 상자(제목+발췌) 높이 상한(px).
@@ -21,6 +26,9 @@ const HOT_GAP = 3;
  * 써야 행이 출렁이지 않는다. 밑줄 쪽은 인용 3줄(HomeScraps 의 QUOTE_MAX_H)이라 여기서도
  * 숫자를 베끼지 않고 같은 토큰에서 셈한다 — 인용 토큰이 바뀌면 둘이 함께 움직인다.
  * (HomeScraps 에서 import 하면 서로를 가져오는 순환이 된다.)
+ *
+ * 안쪽 두 줄(제목 2줄 44 + 발췌 2줄 40)도 각자 제 상한을 갖는다 — 합이 이 상자와 같아
+ * 바깥 상자는 마지막 방어선으로만 남는다(인용 조각의 quote 상한과 짝을 이루는 셈).
  */
 const HOME_TEXT_MAX_H = 3 * typeScale.quote.lineHeight;
 
@@ -57,12 +65,15 @@ export function PostScrap({ post, rotate, variant, onPress }: {
   const memo = (
     <MemoScrap rotate={rotate} style={home ? styles.homeCard : undefined}>
       <View style={home ? styles.homeText : undefined}>
-        <Text numberOfLines={2} style={[styles.title, { color: colors.text }]}>
+        <Text
+          numberOfLines={HOME_TITLE_LINES}
+          style={[styles.title, home && styles.homeTitle, { color: colors.text }]}
+        >
           {post.title}
         </Text>
         <Text
           numberOfLines={EXCERPT_LINES[variant]}
-          style={[styles.excerpt, { color: colors.textMuted }]}
+          style={[styles.excerpt, home && styles.homeExcerpt, { color: colors.textMuted }]}
         >
           {post.excerpt}
         </Text>
@@ -85,7 +96,8 @@ export function PostScrap({ post, rotate, variant, onPress }: {
         )}
       </Text>
 
-      {/* 홈에서는 밑줄 조각의 핫 줄과 같은 자리에 반응 수를 세운다 — 표시 전용(누를 수 없다). */}
+      {/* 홈에서는 밑줄 조각의 핫 줄과 같은 자리에 반응 수를 세운다 — 표시 전용(누를 수 없다).
+          0 이어도 그린다: 밑줄 조각도 같은 규칙이라 회전 중에 줄 수가 달라지지 않는다. */}
       {home ? (
         <Text numberOfLines={1} style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
           좋아요 {post.likeCount} · 댓글 {post.commentCount}
@@ -98,11 +110,17 @@ export function PostScrap({ post, rotate, variant, onPress }: {
   // 행을 그대로 꽉 채우므로 크기는 달라지지 않는다.
   if (!onPress) return memo;
 
+  // 내 목록에서 '{내 닉네임}의 독후감'은 남의 글처럼 들린다 — 프로필에서는 '내 독후감'으로 읽는다.
+  // 끝에 갈 곳을 붙이는 건 홈 조각(HomeScraps)의 라벨과 같은 규칙이다.
+  const label = variant === 'profile'
+    ? `내 독후감 ${post.title} · 독후감 상세로`
+    : `${post.authorNickname}의 독후감 ${post.title} · 독후감 상세로`;
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${post.authorNickname}의 독후감 ${post.title}`}
+      accessibilityLabel={label}
       style={home ? styles.fill : undefined}
     >
       {memo}
@@ -116,8 +134,12 @@ const styles = StyleSheet.create({
   homeCard: { flex: 1, overflow: 'hidden' },
   // 제목이 두 줄, 발췌가 길어져도 이 상자 밖으로는 한 픽셀도 안 나간다(HOME_TEXT_MAX_H 주석 참고).
   homeText: { maxHeight: HOME_TEXT_MAX_H, overflow: 'hidden' },
-  title: { ...typeScale.titleSerif, fontSize: 15, lineHeight: 22 },
-  excerpt: { ...typeScale.quote, fontSize: 13, lineHeight: 20 },
+  title: { ...typeScale.titleSerif, fontSize: 15, lineHeight: TITLE_LH },
+  excerpt: { ...typeScale.quote, fontSize: 13, lineHeight: EXCERPT_LH },
+  // numberOfLines 는 줄 수만 자를 뿐 글자 상자는 못 자른다 — 웹에서 line-clamp 가 블록으로
+  // 풀리면 잘린 줄이 상자 높이만큼 그대로 그려져 아랫줄을 밀어낸다(HomeScraps 의 quote 와 같은 방어).
+  homeTitle: { maxHeight: HOME_TITLE_LINES * TITLE_LH, overflow: 'hidden' },
+  homeExcerpt: { maxHeight: EXCERPT_LINES.home * EXCERPT_LH, overflow: 'hidden' },
   meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: spacing.sm },
   // 남는 자리를 글 위로 몰아 메타·핫 줄을 조각 바닥에 붙인다 — 글 길이와 무관하게 두 줄의 y 가 같다.
   metaBottom: { marginTop: 'auto' },
