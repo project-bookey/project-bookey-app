@@ -13,8 +13,8 @@ export const PAGE_SIZE = 30;
 export const REPLY_PAGE_SIZE = 20;
 /** 댓글 길이 상한 — 서버 계약과 같은 값. */
 export const BODY_MAX = 300;
-/** 삭제 재확인이 살아 있는 시간(ms). 광장·밑줄과 같은 값. */
-export const DELETE_CONFIRM_MS = 3000;
+/** 삭제 재확인 시간(ms) — 값은 useDeleteConfirm 한 곳에 있다. 배럴이 계속 내보내도록 여기서 다시 내보낸다. */
+export { DELETE_CONFIRM_MS } from '@/hooks/useDeleteConfirm';
 
 /** 스레드 한 줄 — QuoteCommentView·ReviewCommentView 가 구조적으로 만족한다(두 DTO 의 교집합). */
 export type ThreadComment = {

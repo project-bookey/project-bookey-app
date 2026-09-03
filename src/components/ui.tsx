@@ -305,7 +305,7 @@ const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel }: {
   label: string;
   onPress?: () => void;
-  /** 켜짐(예: 나도 그럼) — 라벨이 악센트로, accessibilityState.selected 를 낸다. */
+  /** 켜짐(예: 좋아요) — 라벨이 악센트로, accessibilityState.selected 를 낸다. */
   selected?: boolean;
   tone?: 'accent' | 'muted' | 'faint' | 'danger';
   /** 라벨과 다르게 읽혀야 할 때(예: '책 보기 →' 는 '{제목} 상세'). 없으면 라벨 그대로. */

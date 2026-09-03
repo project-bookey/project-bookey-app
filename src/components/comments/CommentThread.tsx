@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text,
   TextInput, View,
@@ -10,12 +10,13 @@ import { ApiError } from '@/api/client';
 import {
   appendComment, bumpReplyCount, dedupeComments, findComment, nextPageParam, removeComment, repliesKey,
 } from '@/api/commentCache';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 
 import { CommentRow } from './CommentRow';
 import { ReplyList } from './ReplyList';
 import { ThreadComposer } from './ThreadComposer';
-import { BODY_MAX, DELETE_CONFIRM_MS, PAGE_SIZE } from './types';
+import { BODY_MAX, PAGE_SIZE } from './types';
 import type { CommentThreadAdapter, ReplyTarget, ThreadComment } from './types';
 
 /**
@@ -56,25 +57,8 @@ export function CommentThread({
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const [rowError, setRowError] = useState<{ id: number; message: string } | null>(null);
 
-  // 삭제 재확인 — 댓글과 답글이 한 타이머를 나눠 쓴다(한 번에 하나만 확인 상태).
-  const [confirmId, setConfirmId] = useState<number | null>(null);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-  }, []);
-  const arm = (commentId: number) => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    setConfirmId(commentId);
-    confirmTimer.current = setTimeout(() => {
-      confirmTimer.current = null;
-      setConfirmId(null);
-    }, DELETE_CONFIRM_MS);
-  };
-  const disarm = () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    confirmTimer.current = null;
-    setConfirmId(null);
-  };
+  // 삭제 재확인 — 댓글과 답글이 한 타이머를 나눠 쓴다(한 번에 하나만 확인 상태). 3초·언마운트 정리는 공용 훅.
+  const { confirm: confirmId, arm, disarm } = useDeleteConfirm<number>();
 
   const expand = (commentId: number) =>
     setExpanded((prev) => (prev.has(commentId) ? prev : new Set(prev).add(commentId)));

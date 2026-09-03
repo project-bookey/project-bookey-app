@@ -6,8 +6,10 @@ import { MemoScrap } from '@/components/collage';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /**
- * 밑줄 조각 — 점선 메모 안 문장 + 모노 메타(책 제목 · 작성자 · 쪽 · 나도 그럼 · 댓글).
- * 도서 상세 밑줄 탭(책이 하나라 제목은 끈다)과 독후감의 밑줄 고르기·붙이기(여러 책이 섞인다)가 같이 쓴다.
+ * 밑줄 조각 — 점선 메모 안 문장 + 모노 한 줄(책 제목 · N쪽).
+ * 작성자·좋아요·댓글 수는 조각에 두지 않는다 — 조각은 문장이 먼저 읽히게, 나머지는 상세에서 본다
+ * (docs/superpowers/specs/2026-09-03-review-comments-design.md 의 결정).
+ * 도서 상세 밑줄 탭(책이 하나라 제목은 끈다)과 독후감의 밑줄 고르기·붙이기(여러 책이 섞여 제목을 켠다)가 같이 쓴다.
  * `onPress` 가 있으면 조각을 눌러 상세로 가고, `selected` 면 테두리를 악센트로 세워 고른 상태를 보인다.
  */
 export function QuoteScrap({ quote, rotate, onPress, trailing, selected, showBook = true }: {
@@ -22,31 +24,25 @@ export function QuoteScrap({ quote, rotate, onPress, trailing, selected, showBoo
   trailing?: ReactNode;
   /** 고른 상태 — 테두리 악센트 + accessibilityState.selected. */
   selected?: boolean;
-  /** 메타 맨 앞의 책 제목 — 한 책만 보는 도서 상세에서는 끈다. */
+  /** 메타 줄 맨 앞의 책 제목 — 한 책만 보는 도서 상세에서는 끈다. */
   showBook?: boolean;
 }) {
   const { colors } = useTheme();
+  // 메타 한 줄 — 책 제목과 쪽수 중 있는 것만 ' · ' 로 잇는다. 둘 다 없으면 줄 자체를 두지 않는다.
+  const meta = [showBook ? quote.bookTitle : null, quote.page != null ? `${quote.page}쪽` : null]
+    .filter(Boolean)
+    .join(' · ');
 
   const scrap = (
     <MemoScrap rotate={rotate} style={selected ? { borderColor: colors.accent } : undefined}>
       <Text style={[styles.text, { color: colors.text, borderLeftColor: colors.accent }]}>
         {quote.content}
       </Text>
-      <View style={styles.meta}>
-        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.metaText, styles.who, { color: colors.textMuted }]}>
-          {showBook ? `${quote.bookTitle} · ` : ''}
-          {quote.authorNickname}
-          {quote.page != null ? ` · ${quote.page}쪽` : ''}
+      {meta ? (
+        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textMuted }]}>
+          {meta}
         </Text>
-        <Text style={[typeScale.monoLabel, styles.metaText, {
-          color: quote.agreedByMe ? colors.accent : colors.textFaint,
-        }]}>
-          나도 그럼 {quote.agreeCount}
-        </Text>
-        <Text style={[typeScale.monoLabel, styles.metaText, { color: colors.accent }]}>
-          댓글 {quote.commentCount}
-        </Text>
-      </View>
+      ) : null}
     </MemoScrap>
   );
 
@@ -71,7 +67,6 @@ const styles = StyleSheet.create({
   scrap: { flex: 1 },
   // 인용 본문 — 밑줄 카드와 같은 만듦새로, quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
   text: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
-  metaText: { fontSize: 9, letterSpacing: 0.4 },
-  who: { flex: 1 },
+  // 메타 줄 — 도서 상세가 쓰던 쪽수 줄과 같은 값(9px 모노, 위 여백 sm).
+  meta: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
 });
