@@ -63,7 +63,7 @@ export default function PlazaScreen() {
   /** 강조가 걸린 문장 — 페이드가 끝나면 스스로 지운다. 한 번에 한 장뿐이다. */
   const [focusedId, setFocusedId] = useState<number | null>(null);
   const clearFocus = useCallback(() => setFocusedId(null), []);
-  /** '나도 그럼' 낙관 토글 — 인플라이트 가드까지 공용 훅이 맡는다(상세와 같은 규율). */
+  /** '좋아요' 낙관 토글 — 인플라이트 가드까지 공용 훅이 맡는다(상세와 같은 규율). */
   const pressAgree = useAgreeQuote();
 
   useEffect(() => () => {

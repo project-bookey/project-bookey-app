@@ -80,11 +80,11 @@ const EASE_OUT = Easing.out(Easing.quad);
  * 스포트라이트로 세우고 6초마다 돌린다 (시안 2a: 인용 카드 + 표지 스크랩 한 쌍).
  *
  * 광장 화면의 무한 쿼리와 캐시를 나눠 쓴다(['plaza','QUOTE'] vs 여기 ['plaza','QUOTE','home']).
- * 서로 다른 항목을 담지만 같은 문장이 겹칠 수 있어, '나도 그럼' 낙관 업데이트는
+ * 서로 다른 항목을 담지만 같은 문장이 겹칠 수 있어, '좋아요' 낙관 업데이트는
  * src/api/quoteCache.ts 의 patchQuoteEverywhere 가 두 캐시를 함께 손본다 —
  * **이 키를 바꾸면 그쪽 PLAZA_HOME_KEY 도 같이 바꿔야 한다**.
  *
- * '나도 그럼' 수는 여기선 표시 전용이다. 홈에서는 누를 수 없고, 무엇이 붐비는지만 알린다.
+ * '좋아요' 수는 여기선 표시 전용이다. 홈에서는 누를 수 없고, 무엇이 붐비는지만 알린다.
  *
  * 0건이면 섹션을 통째로 감춘다 — 홈에 빈 상자를 남기지 않는다.
  *
@@ -103,7 +103,7 @@ export function QuoteScraps() {
     queryFn: () => plazaApi.feed('QUOTE', 0, FEED_SIZE),
   });
 
-  /** 핫한 순(나도 그럼 내림차순, 동률이면 최신순) 상위 몇 건이 회전 목록이 된다. */
+  /** 핫한 순(좋아요 내림차순, 동률이면 최신순) 상위 몇 건이 회전 목록이 된다. */
   const spotlight = useMemo(() => {
     const list = quotes.data?.content ?? [];
     return [...list]
@@ -222,7 +222,7 @@ export function QuoteScraps() {
               {/* 표시 전용 — 홈에서는 누를 수 없다. 토글은 광장에서만. */}
               {agreeCount > 0 ? (
                 <Text style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
-                  나도 그럼 {agreeCount}
+                  좋아요 {agreeCount}
                 </Text>
               ) : null}
             </MemoScrap>

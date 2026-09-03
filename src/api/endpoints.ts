@@ -142,7 +142,7 @@ export const quoteApi = {
   byBook: (bookId: number, page = 0, size = 5) =>
     api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size } }),
   remove: (quoteId: number) => api<void>(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' }),
-  /** '나도 그럼' 토글 — 서버가 토글 후 상태를 돌려준다. */
+  /** '좋아요' 토글 — 서버가 토글 후 상태를 돌려준다. */
   agree: (quoteId: number) => api<QuoteAgree>(`/api/v1/quotes/${quoteId}/agree`, { method: 'POST' }),
   /** 댓글 — 오래된 순. */
   comments: (quoteId: number, page = 0, size = 30) =>

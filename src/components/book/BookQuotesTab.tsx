@@ -93,7 +93,7 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
 
 /**
  * 밑줄 조각 — 문장과 쪽수만. 통째로 눌러 상세로 간다.
- * 작성자·나도 그럼·댓글 수는 조각에서 빼고 상세에서 본다 — 조각은 문장이 먼저 읽히게.
+ * 작성자·좋아요·댓글 수는 조각에서 빼고 상세에서 본다 — 조각은 문장이 먼저 읽히게.
  */
 function QuoteScrap({ quote, rotate, onPress }: { quote: BookQuote; rotate: number; onPress: () => void }) {
   const { colors } = useTheme();

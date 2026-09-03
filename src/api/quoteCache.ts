@@ -5,7 +5,7 @@ import type { BookQuote, Page, PlazaItem, PlazaItemType } from '@/api/types';
 /**
  * 밑줄 캐시 — 같은 문장이 네 곳에 산다.
  *
- * 광장 무한 피드 · 홈 스포트라이트 · 책별 목록 · 상세. 나도 그럼·댓글 수가 바뀌면
+ * 광장 무한 피드 · 홈 스포트라이트 · 책별 목록 · 상세. 좋아요·댓글 수가 바뀌면
  * 네 곳을 한 번에 손봐야 화면끼리 어긋나지 않는다. 키와 패치를 여기 한 곳에 둔다.
  */
 export const plazaFeedKey = (type: PlazaItemType) => ['plaza', type] as const;
