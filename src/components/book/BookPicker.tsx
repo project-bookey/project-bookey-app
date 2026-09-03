@@ -18,6 +18,7 @@ export type PickedBook = { bookId: number; title: string; coverUrl?: string; rec
  * 책 고르기 상태 — 읽는 중인 책 빠른 선택 + 검색 후보 + 선택.
  * 광장 오려두기와 독후감 작성이 같이 쓴다. 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 —
  * 한 권만 읽는 사람은 바로 쓰기 시작한다. `initial` 이 있으면(수정 화면) 그 책이 기본값보다 앞선다.
+ * `initial` 은 마운트 시 1회만 읽는다 — 비동기로 늦게 도착하는 책은 `pick()` 으로 넣는다.
  * `pick(null)` 로 해제하면 다시 기본값으로 돌아간다.
  */
 export function useBookPicker(opts?: { initial?: PickedBook | null }): {

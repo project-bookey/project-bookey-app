@@ -1,6 +1,7 @@
 import type { Ref } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Chip } from '@/components/collage';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 댓글 길이 상한 — 서버 계약과 같은 값(밑줄 댓글·독후감 댓글 공통). */
@@ -21,7 +22,7 @@ export function CommentBar({
   /** 남기기 실패 안내 — 바 아래 한 줄. */
   error: string | null;
   onSubmit: () => void;
-  /** 답글 대상 — 있으면 `↳ {nickname}에게 답글 · 취소` 줄. */
+  /** 답글 대상 — 있으면 입력 위에 `↳ {nickname}에게 답글 · 취소` 칩이 선다(눌러서 취소). */
   replyTo?: { nickname: string };
   onCancelReply?: () => void;
   /** 답글을 누르면 화면이 입력 칸에 포커스를 주기 위해. */
@@ -32,14 +33,14 @@ export function CommentBar({
 
   return (
     <View style={[styles.bar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
+      {/* 답글 대상은 칩 하나로 — 칩째 누르면 취소되므로 웹에서 버튼이 겹치지 않고 터치 상자도 넉넉하다. */}
       {replyTo ? (
         <View style={styles.replyRow}>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.replyText, { color: colors.textMuted }]}>
-            ↳ {replyTo.nickname}에게 답글 ·
-          </Text>
-          <Pressable onPress={onCancelReply} hitSlop={8} accessibilityRole="button" accessibilityLabel="답글 취소">
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>취소</Text>
-          </Pressable>
+          <Chip
+            label={`↳ ${replyTo.nickname}에게 답글 · 취소`}
+            onPress={onCancelReply}
+            accessibilityLabel="답글 취소"
+          />
         </View>
       ) : null}
       <View style={styles.barRow}>
@@ -78,8 +79,7 @@ export function CommentBar({
 
 const styles = StyleSheet.create({
   bar: { ...layout.content, borderTopWidth: hairline, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg },
-  replyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
-  replyText: { flexShrink: 1 },
+  replyRow: { marginBottom: spacing.sm },
   barRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   input: {
     flex: 1,

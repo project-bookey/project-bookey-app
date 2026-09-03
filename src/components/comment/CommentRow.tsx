@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { formatRelative } from '@/components/ui';
+import { FootAction, formatRelative } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /** 답글 들여쓰기 — 아바타 24 + 간격 10. 본문이 부모 댓글의 본문 선에서 시작한다. */
@@ -43,11 +43,9 @@ export function CommentRow({
           <Text style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
             {formatRelative(createdAt)}
           </Text>
+          {/* 웹은 hitSlop 을 무시하므로 여백으로 상자를 키우는 FootAction 으로 누른다. */}
           {onReply ? (
-            <Pressable onPress={onReply} hitSlop={10} accessibilityRole="button"
-              accessibilityLabel={`${nickname}에게 답글`}>
-              <Text style={[typeScale.monoLabel, styles.meta, { color: colors.textMuted }]}>답글</Text>
-            </Pressable>
+            <FootAction label="답글" onPress={onReply} tone="muted" accessibilityLabel={`${nickname}에게 답글`} />
           ) : null}
           {mine ? (
             <Pressable onPress={onDelete} hitSlop={10} accessibilityRole="button"
