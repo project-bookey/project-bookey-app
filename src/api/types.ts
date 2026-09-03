@@ -60,6 +60,8 @@ export type Notification = Schemas['NotificationView'];
 export type Review = Schemas['ReviewView'];
 export type VerificationPreview = Schemas['VerificationPreview'];
 export type VerificationLevel = NonNullable<Review['verificationLevel']>;
+export type ReviewComment = Schemas['ReviewCommentView'];
+export type CreateReviewComment = Schemas['CreateReviewCommentRequest'];
 
 // ── 밑줄 · 광장 ──────────────────────────────────────────
 export type BookQuote = Schemas['BookQuoteView'];

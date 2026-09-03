@@ -87,6 +87,7 @@ export default function RootLayout() {
             <Stack.Screen name="club/[id]/result" options={{ title: '결산' }} />
             <Stack.Screen name="book/[id]" options={{ title: '도서' }} />
             <Stack.Screen name="quote/[id]" options={{ title: '밑줄' }} />
+            <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
           </Stack>
         </SafeAreaProvider>
       </QueryClientProvider>

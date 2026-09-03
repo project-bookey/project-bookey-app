@@ -1,9 +1,9 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  CreatePost, CreatePostComment, CreateQuote, CreateQuoteComment, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
+  CreatePost, CreatePostComment, CreateQuote, CreateQuoteComment, CreateReviewComment, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
   PopularBook, Post, PostComment, PostImage, PostLike, QuoteAgree, QuoteComment, ReadingRecord, ReadingStatus,
-  Review, Session, SessionEndResult, StatsSummary, TokenResponse, UpdatePost, VerificationPreview,
+  Review, ReviewComment, Session, SessionEndResult, StatsSummary, TokenResponse, UpdatePost, VerificationPreview,
 } from './types';
 
 export const authApi = {
@@ -118,6 +118,18 @@ export const reviewApi = {
   create: (body: { readingRecordId: number; rating?: number; body: string; tags?: string[] }) =>
     api<Review>('/api/v1/reviews', { method: 'POST', body }),
   mine: () => api<Page<Review>>('/api/v1/reviews/me'),
+  /** 리뷰 한 건 — 상세 진입·새로고침·딥링크. */
+  get: (reviewId: number) => api<Review>(`/api/v1/reviews/${reviewId}`),
+  /** 댓글 — 오래된 순, 최상위만. */
+  comments: (reviewId: number, page = 0, size = 30) =>
+    api<Page<ReviewComment>>(`/api/v1/reviews/${reviewId}/comments`, { query: { page, size } }),
+  /** 한 댓글의 답글 — 오래된 순. */
+  replies: (reviewId: number, commentId: number, page = 0, size = 20) =>
+    api<Page<ReviewComment>>(`/api/v1/reviews/${reviewId}/comments/${commentId}/replies`, { query: { page, size } }),
+  addComment: (reviewId: number, body: CreateReviewComment) =>
+    api<ReviewComment>(`/api/v1/reviews/${reviewId}/comments`, { method: 'POST', body }),
+  removeComment: (reviewId: number, commentId: number) =>
+    api<void>(`/api/v1/reviews/${reviewId}/comments/${commentId}`, { method: 'DELETE' }),
 };
 
 export const quoteApi = {
@@ -131,11 +143,14 @@ export const quoteApi = {
   byBook: (bookId: number, page = 0, size = 5) =>
     api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size } }),
   remove: (quoteId: number) => api<void>(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' }),
-  /** '나도 그럼' 토글 — 서버가 토글 후 상태를 돌려준다. */
+  /** '좋아요' 토글 — 서버가 토글 후 상태를 돌려준다. */
   agree: (quoteId: number) => api<QuoteAgree>(`/api/v1/quotes/${quoteId}/agree`, { method: 'POST' }),
   /** 댓글 — 오래된 순. */
   comments: (quoteId: number, page = 0, size = 30) =>
     api<Page<QuoteComment>>(`/api/v1/quotes/${quoteId}/comments`, { query: { page, size } }),
+  /** 한 댓글의 답글 — 오래된 순. */
+  replies: (quoteId: number, commentId: number, page = 0, size = 20) =>
+    api<Page<QuoteComment>>(`/api/v1/quotes/${quoteId}/comments/${commentId}/replies`, { query: { page, size } }),
   addComment: (quoteId: number, body: CreateQuoteComment) =>
     api<QuoteComment>(`/api/v1/quotes/${quoteId}/comments`, { method: 'POST', body }),
   removeComment: (quoteId: number, commentId: number) =>

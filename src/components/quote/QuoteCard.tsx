@@ -33,11 +33,18 @@ export type QuoteCardProps = {
   onOpenBook?: () => void;
 };
 
-/** 24px 아바타 — 사진이 없으면 닉네임 첫 글자. 밑줄 카드·완독 카드·댓글 행이 같이 쓴다. */
-export function QuoteAvatar({ uri, nickname }: { uri?: string | null; nickname: string }) {
+/** 24px 아바타(기본, size로 축소 가능 — 댓글 답글은 20px) — 사진이 없으면 닉네임 첫 글자. 밑줄 카드·완독 카드·댓글 행이 같이 쓴다. */
+export function QuoteAvatar({ uri, nickname, size = 24 }: {
+  uri?: string | null;
+  nickname: string;
+  size?: number;
+}) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
+    <View style={[
+      styles.avatar,
+      { width: size, height: size, backgroundColor: colors.surfaceRaised, borderColor: colors.line },
+    ]}>
       {uri ? (
         <Image source={{ uri }} style={styles.avatarImage} resizeMode="cover" />
       ) : (
@@ -94,7 +101,7 @@ export function QuoteCard({
       ) : body}
 
       <View style={styles.footRow}>
-        <FootAction label={`나도 그럼 ${agreeCount}`} onPress={onAgree} selected={agreedByMe} />
+        <FootAction label={`좋아요 ${agreeCount}`} onPress={onAgree} selected={agreedByMe} />
         {/* 광장(onOpen)에서는 눌러 상세로, 상세에서는 글자만. */}
         <FootAction label={`댓글 ${commentCount}`} onPress={onOpen} />
         <View style={styles.footRight}>
@@ -120,8 +127,6 @@ const styles = StyleSheet.create({
   card: { gap: spacing.md },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   avatar: {
-    width: 24,
-    height: 24,
     borderRadius: radius.pill,
     borderWidth: hairline,
     overflow: 'hidden',
