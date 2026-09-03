@@ -5,9 +5,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { ApiError } from '@/api/client';
 import { quoteApi } from '@/api/endpoints';
 import { bookQuotesKey, invalidateQuoteLists } from '@/api/quoteCache';
-import type { BookQuote } from '@/api/types';
-import { MemoScrap } from '@/components/collage';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
+import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { Button, Card } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
@@ -64,7 +63,8 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
       ) : (
         <View style={styles.list}>
           {items.map((quote, index) => (
-            <QuoteScrap key={quote.id} quote={quote} rotate={index % 2 === 0 ? -1 : 1}
+            // 이 책의 밑줄만 늘어놓으므로 조각 메타의 책 제목은 끈다.
+            <QuoteScrap key={quote.id} quote={quote} rotate={index % 2 === 0 ? -1 : 1} showBook={false}
               onPress={() => router.push(`/quote/${quote.id}`)} />
           ))}
           {quotes.isFetchingNextPage ? (
@@ -88,34 +88,6 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
         </View>
       )}
     </View>
-  );
-}
-
-/** 밑줄 조각 — 문장 + 모노 메타(작성자 · 쪽 · 나도 그럼 · 댓글). 통째로 눌러 상세로. */
-function QuoteScrap({ quote, rotate, onPress }: { quote: BookQuote; rotate: number; onPress: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="밑줄 상세">
-      <MemoScrap rotate={rotate}>
-        <Text style={[styles.scrapText, { color: colors.text, borderLeftColor: colors.accent }]}>
-          {quote.content}
-        </Text>
-        <View style={styles.scrapMeta}>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.scrapMetaText, styles.scrapWho, { color: colors.textMuted }]}>
-            {quote.authorNickname}
-            {quote.page != null ? ` · ${quote.page}쪽` : ''}
-          </Text>
-          <Text style={[typeScale.monoLabel, styles.scrapMetaText, {
-            color: quote.agreedByMe ? colors.accent : colors.textFaint,
-          }]}>
-            나도 그럼 {quote.agreeCount}
-          </Text>
-          <Text style={[typeScale.monoLabel, styles.scrapMetaText, { color: colors.accent }]}>
-            댓글 {quote.commentCount}
-          </Text>
-        </View>
-      </MemoScrap>
-    </Pressable>
   );
 }
 
@@ -160,11 +132,6 @@ const styles = StyleSheet.create({
   wrap: { gap: spacing.md },
   list: { gap: spacing.md },
   center: { paddingVertical: spacing.md, alignItems: 'center' },
-  // 인용 본문 — 밑줄 카드와 같은 만듦새로, quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
-  scrapText: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
-  scrapMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
-  scrapMetaText: { fontSize: 9, letterSpacing: 0.4 },
-  scrapWho: { flex: 1 },
 
   composer: { gap: spacing.md },
   composerActions: { flexDirection: 'row', gap: spacing.sm },

@@ -1,10 +1,9 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text,
-  TextInput, View,
+  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -14,19 +13,21 @@ import {
 } from '@/api/quoteCache';
 import type { Page, QuoteComment } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
+import { COMMENT_BODY_MAX, CommentBar } from '@/components/comment/CommentBar';
+import { CommentRow } from '@/components/comment/CommentRow';
+import { QuoteCard } from '@/components/quote/QuoteCard';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
-import { EmptyState, formatRelative } from '@/components/ui';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { EmptyState } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
+import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 댓글 한 페이지 — 오래된 순이라 다음 페이지가 더 새 댓글이다. */
 const PAGE_SIZE = 30;
-/** 댓글 길이 상한 — 서버 계약과 같은 값. */
-const BODY_MAX = 300;
-/** 삭제 재확인이 살아 있는 시간(ms). 광장과 같은 값. */
-const DELETE_CONFIRM_MS = 3000;
 /** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 광장보다 얌전하게. */
 const CARD_TILT = -0.6;
+
+/** 삭제 재확인 대상 — 밑줄 자체이거나 댓글 하나. */
+type DeleteTarget = { kind: 'quote' } | { kind: 'comment'; id: number };
 
 /** 로컬에 덧붙인 댓글이 다음 페이지에 다시 올 수 있어 id 로 걸러낸다. */
 function dedupeComments(pages: Page<QuoteComment>[] | undefined): QuoteComment[] {
@@ -69,25 +70,8 @@ export default function QuoteDetailScreen() {
   });
   const items = dedupeComments(comments.data?.pages);
 
-  // 삭제 재확인 — 밑줄과 댓글이 같은 타이머를 나눠 쓴다(한 번에 하나만 확인 상태).
-  const [confirm, setConfirm] = useState<{ kind: 'quote' } | { kind: 'comment'; id: number } | null>(null);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-  }, []);
-  const arm = (next: NonNullable<typeof confirm>) => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    setConfirm(next);
-    confirmTimer.current = setTimeout(() => {
-      confirmTimer.current = null;
-      setConfirm(null);
-    }, DELETE_CONFIRM_MS);
-  };
-  const disarm = () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    confirmTimer.current = null;
-    setConfirm(null);
-  };
+  // 삭제 재확인 — 밑줄과 댓글이 같은 타이머를 나눠 쓴다(한 번에 하나만 확인 상태). 3초·언마운트 정리는 공용 훅.
+  const { confirm, arm, disarm } = useDeleteConfirm<DeleteTarget>();
 
   const [removeError, setRemoveError] = useState<string | null>(null);
   const removeQuote = useMutation({
@@ -210,7 +194,11 @@ export default function QuoteDetailScreen() {
           ListEmptyComponent={empty}
           renderItem={({ item }) => (
             <CommentRow
-              comment={item}
+              nickname={item.authorNickname}
+              avatarUrl={item.authorAvatarUrl}
+              body={item.body}
+              createdAt={item.createdAt}
+              mine={item.mine}
               confirming={confirm?.kind === 'comment' && confirm.id === item.id}
               error={commentError?.id === item.id ? commentError.message : null}
               onDelete={() => pressDeleteComment(item.id)}
@@ -235,50 +223,12 @@ export default function QuoteDetailScreen() {
   );
 }
 
-/** 댓글 한 줄 — 아바타 이니셜 · 닉네임 · 본문 · 상대 시각 · (본인) 삭제. */
-function CommentRow({ comment, confirming, error, onDelete }: {
-  comment: QuoteComment;
-  confirming: boolean;
-  error: string | null;
-  onDelete: () => void;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.row}>
-      <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
-      <View style={styles.rowBody}>
-        <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-          {comment.authorNickname}
-        </Text>
-        <Text style={[styles.body, { color: colors.textMuted }]}>{comment.body}</Text>
-        <View style={styles.metaRow}>
-          <Text style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-            {formatRelative(comment.createdAt)}
-          </Text>
-          {comment.mine ? (
-            <Pressable onPress={onDelete} hitSlop={10} accessibilityRole="button"
-              accessibilityLabel={confirming ? '삭제 확인' : '삭제'}>
-              <Text style={[typeScale.monoLabel, styles.meta, {
-                color: confirming ? colors.danger : colors.textFaint,
-              }]}>
-                {confirming ? '한 번 더' : '삭제'}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-        {error ? <Text style={[typeScale.caption, { color: colors.warn }]}>{error}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
-/** 하단 고정 입력 바 — 비어 있거나 전송 중이면 '남기기'가 죽는다. */
+/** 하단 입력 바의 상태 — 본문·뮤테이션·캐시 패치는 여기, 그리기는 공용 CommentBar(제어형). */
 function CommentComposer({ quoteId }: { quoteId: number }) {
   const queryClient = useQueryClient();
-  const { colors } = useTheme();
   const [body, setBody] = useState('');
   const trimmed = body.trim();
-  const canSubmit = trimmed.length > 0 && trimmed.length <= BODY_MAX;
+  const canSubmit = trimmed.length > 0 && trimmed.length <= COMMENT_BODY_MAX;
 
   const create = useMutation({
     mutationFn: () => quoteApi.addComment(quoteId, { body: trimmed }),
@@ -305,40 +255,15 @@ function CommentComposer({ quoteId }: { quoteId: number }) {
     : null;
 
   return (
-    <View style={[styles.bar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
-      <View style={styles.barRow}>
-        <TextInput
-          value={body}
-          onChangeText={setBody}
-          placeholder="이 문장에 덧붙이기…"
-          placeholderTextColor={colors.textFaint}
-          multiline
-          maxLength={BODY_MAX}
-          accessibilityLabel="댓글"
-          style={[styles.input, {
-            backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-          }]}
-        />
-        <Pressable
-          onPress={() => create.mutate()}
-          disabled={!canSubmit || create.isPending}
-          accessibilityRole="button"
-          accessibilityLabel={create.isPending ? '남기는 중' : '댓글 남기기'}
-          accessibilityState={{ disabled: !canSubmit || create.isPending }}
-          style={[styles.send, {
-            backgroundColor: colors.accent,
-            opacity: !canSubmit || create.isPending ? 0.35 : 1,
-          }]}
-        >
-          <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
-            {create.isPending ? '남기는 중…' : '남기기'}
-          </Text>
-        </Pressable>
-      </View>
-      {errorMessage ? (
-        <Text style={[typeScale.caption, styles.barError, { color: colors.warn }]}>{errorMessage}</Text>
-      ) : null}
-    </View>
+    <CommentBar
+      value={body}
+      onChange={setBody}
+      placeholder="이 문장에 덧붙이기…"
+      canSubmit={canSubmit}
+      pending={create.isPending}
+      error={errorMessage}
+      onSubmit={() => create.mutate()}
+    />
   );
 }
 
@@ -352,29 +277,4 @@ const styles = StyleSheet.create({
   emptyComments: { paddingVertical: spacing.md },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
   more: { paddingVertical: spacing.md, alignItems: 'center' },
-
-  row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  rowBody: { flex: 1, gap: 2 },
-  nickname: { fontSize: 12 },
-  body: { ...typeScale.body, fontSize: 13, lineHeight: 20 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 2 },
-  meta: { fontSize: 9, letterSpacing: 0.4 },
-
-  bar: { ...layout.content, borderTopWidth: hairline, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg },
-  barRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
-  input: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 120,
-    borderWidth: hairline,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    ...typeScale.body,
-    fontSize: 14,
-    lineHeight: 20,
-    textAlignVertical: 'top',
-  },
-  send: { borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 3 },
-  barError: { marginTop: spacing.xs },
 });
