@@ -13,11 +13,16 @@ export const plazaFeedKey = (type: PlazaItemType) => ['plaza', type] as const;
 export const PLAZA_HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
 /** 책별 밑줄(도서 상세 밑줄 탭). `['quotes']` 뿌리라 내 밑줄과 같이 무효화된다. */
 export const bookQuotesKey = (bookId: number) => ['quotes', 'book', bookId] as const;
+/** 내 밑줄 전체(독후감 밑줄 고르기 시트) — 최신순 무한 목록. 프로필의 ['quotes', 'mine'](최신 한 건)과는 다른 키다. */
+export const MY_QUOTES_KEY = ['quotes', 'mine', 'all'] as const;
+/** 내 밑줄 중 한 책 것만(시트의 '이 책만'). */
+export const myBookQuotesKey = (bookId: number) => ['quotes', 'mine', 'book', bookId] as const;
 export const quoteKey = (quoteId: number) => ['quote', quoteId] as const;
 export const quoteCommentsKey = (quoteId: number) => ['quote', quoteId, 'comments'] as const;
 
 export type PlazaFeedCache = InfiniteData<Page<PlazaItem>>;
 export type BookQuotesCache = InfiniteData<Page<BookQuote>>;
+export type MyQuotesCache = InfiniteData<Page<BookQuote>>;
 
 /** 다섯 캐시가 공통으로 가진 반응 필드 — 패치는 이것만 건드린다. */
 export type QuoteReaction = { agreedByMe?: boolean; agreeCount?: number; commentCount?: number };
@@ -76,6 +81,16 @@ export function patchQuoteEverywhere(queryClient: QueryClient, quoteId: number, 
         ? { ...old, quotes: old.quotes.map(patchQuote) }
         : old,
   );
+}
+
+/** 방금 오린 문장을 내 밑줄 목록 첫 페이지 맨 앞에 끼운다 — 다시 받아오기 전에도 바로 보이게. */
+export function prependMyQuote(queryClient: QueryClient, quote: BookQuote) {
+  const prepend = (old: MyQuotesCache | undefined): MyQuotesCache | undefined =>
+    old
+      ? { ...old, pages: old.pages.map((p, i) => (i === 0 ? { ...p, content: [quote, ...(p.content ?? [])] } : p)) }
+      : old;
+  queryClient.setQueryData<MyQuotesCache>(MY_QUOTES_KEY, prepend);
+  queryClient.setQueryData<MyQuotesCache>(myBookQuotesKey(quote.bookId), prepend);
 }
 
 /** 밑줄이 생기거나 지워졌을 때 — 목록 캐시를 전부 다시 받게 한다. */

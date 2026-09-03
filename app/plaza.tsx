@@ -9,6 +9,7 @@ import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import { Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
@@ -32,9 +33,16 @@ const FOCUS_VIEW_POSITION = 0.2;
 const SCROLL_RETRY_MS = 320;
 
 /**
- * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 완독 자랑이 모이는 곳 (시안 2d).
+ * 광장 탭 — '밑줄'·'완독 자랑'은 광장 피드의 type 이고, '독후감'만 다른 API·다른 캐시다.
+ * 그래서 탭 상태(tab)와 광장 피드 type 을 갈라 둔다.
+ */
+type PlazaTab = PlazaItemType | 'POST';
+
+/**
+ * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 독후감, 완독 자랑이 모이는 곳 (시안 2d).
  *
- * 필터 칩 '밑줄'·'완독 자랑'은 같은 피드의 type 이다. 모임은 상단 구역 탭으로 올라가 여기엔 없다.
+ * 필터 칩 '밑줄'·'완독 자랑'은 같은 피드의 type 이고 '독후감'은 별도 피드(PostFeed)다.
+ * 모임은 상단 구역 탭으로 올라가 여기엔 없다.
  *
  * 밑줄 카드는 밑줄 상세(app/quote/[id].tsx)와 같은 QuoteCard 를 쓰고, 캐시 키·패치는
  * src/api/quoteCache.ts 한 곳에서 가져다 쓴다 — 같은 문장이 네 캐시에 살기 때문이다.
@@ -48,7 +56,9 @@ export default function PlazaScreen() {
   const { colors } = useTheme();
   const myId = useAuth((s) => s.user?.id);
 
-  const [type, setType] = useState<PlazaItemType>('QUOTE');
+  const [tab, setTab] = useState<PlazaTab>('QUOTE');
+  /** 독후감 탭에서는 광장 피드를 멈춰 두지만 키·파라미터는 마지막으로 보던 밑줄 쪽에 그대로 둔다. */
+  const type: PlazaItemType = tab === 'POST' ? 'QUOTE' : tab;
   const [composing, setComposing] = useState(false);
   /** 삭제 재확인 — 확인 상태인 문장 id. 3초 타이머·언마운트 정리는 공용 훅이 맡는다(상세와 같은 규율). */
   const { confirm: confirmId, arm, disarm } = useDeleteConfirm<number>();
@@ -64,6 +74,8 @@ export default function PlazaScreen() {
     queryKey: plazaFeedKey(type),
     queryFn: ({ pageParam }) => plazaApi.feed(type, pageParam, PAGE_SIZE),
     initialPageParam: 0,
+    // 독후감 탭은 PostFeed 가 제 피드를 받는다 — 여기서 광장 피드를 또 부르지 않는다.
+    enabled: tab !== 'POST',
     // 서버가 page 를 생략해도 이미 받은 페이지 수로 다음 번호를 셀 수 있다.
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
   });
@@ -95,9 +107,9 @@ export default function PlazaScreen() {
       return;
     }
     if (focusHandled.current === raw) return;
-    // 완독 자랑을 보던 중에 들어왔으면 밑줄로 되돌린다 — 전환 뒤 이 effect 가 다시 온다.
-    if (type !== 'QUOTE') {
-      setType('QUOTE');
+    // 독후감·완독 자랑을 보던 중에 들어왔으면 밑줄로 되돌린다 — 전환 뒤 이 effect 가 다시 온다.
+    if (tab !== 'QUOTE') {
+      setTab('QUOTE');
       return;
     }
     // 첫 페이지가 아직이면 기다린다. 도착하면 feed.isSuccess 가 바뀌어 다시 온다.
@@ -114,7 +126,7 @@ export default function PlazaScreen() {
 
     setFocusedId(target);
     listRef.current?.scrollToIndex({ index: at, viewPosition: FOCUS_VIEW_POSITION, animated: true });
-  }, [focusQuoteId, type, feed.isSuccess, items, router]);
+  }, [focusQuoteId, tab, feed.isSuccess, items, router]);
 
   /** scrollToIndex 재시도 타이머 — 화면을 떠날 때 남겨 두지 않는다. */
   const scrollRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -148,21 +160,22 @@ export default function PlazaScreen() {
     arm(quoteId);
   };
 
-  const switchType = (next: PlazaItemType) => {
-    if (next === type) return;
+  const switchTab = (next: PlazaTab) => {
+    if (next === tab) return;
     disarm();
-    // 완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
+    // 독후감·완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
     setComposing(false);
-    setType(next);
+    setTab(next);
   };
 
   const header = (
     <View style={styles.header}>
       <View style={styles.chipRow}>
-        <Chip label="밑줄" active={type === 'QUOTE'} onPress={() => switchType('QUOTE')} />
-        <Chip label="완독 자랑" active={type === 'FINISH'} onPress={() => switchType('FINISH')} />
-        {/* 오려두기는 밑줄 탭에서만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
-        {type === 'QUOTE' ? (
+        <Chip label="밑줄" active={tab === 'QUOTE'} onPress={() => switchTab('QUOTE')} />
+        <Chip label="독후감" active={tab === 'POST'} onPress={() => switchTab('POST')} />
+        <Chip label="완독 자랑" active={tab === 'FINISH'} onPress={() => switchTab('FINISH')} />
+        {/* 쓰기는 밑줄·독후감 탭에만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
+        {tab === 'QUOTE' ? (
           <Pressable
             onPress={() => setComposing((open) => !open)}
             accessibilityRole="button"
@@ -175,6 +188,17 @@ export default function PlazaScreen() {
             </Text>
           </Pressable>
         ) : null}
+        {/* 독후감은 길게 쓰는 글이라 접히는 패널이 아니라 제 화면으로 보낸다. */}
+        {tab === 'POST' ? (
+          <Pressable
+            onPress={() => router.push('/post/new')}
+            accessibilityRole="button"
+            accessibilityLabel="독후감 쓰기"
+            style={[styles.composePill, { borderColor: colors.accent }]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 독후감</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {composing ? <QuoteComposer onDone={() => setComposing(false)} /> : null}
@@ -184,74 +208,78 @@ export default function PlazaScreen() {
   return (
     <PaperScreen>
       <SectionNav active="plaza" />
-      <FlatList
-        ref={listRef}
-        data={items}
-        keyExtractor={itemKey}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={header}
-        onEndReachedThreshold={0.4}
-        onEndReached={() => {
-          if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
-        }}
-        // 카드 높이가 제각각이라 getItemLayout 을 줄 수 없다 — 아직 측정 안 된 카드로 뛰면 실패한다.
-        // 평균 높이로 근사 위치까지 먼저 옮겨 그 구간을 렌더시킨 뒤 다시 정확히 맞춘다.
-        onScrollToIndexFailed={({ index, averageItemLength }) => {
-          listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
-          if (scrollRetry.current) clearTimeout(scrollRetry.current);
-          scrollRetry.current = setTimeout(() => {
-            scrollRetry.current = null;
-            listRef.current?.scrollToIndex({
-              index,
-              viewPosition: FOCUS_VIEW_POSITION,
-              animated: true,
-            });
-          }, SCROLL_RETRY_MS);
-        }}
-        renderItem={({ item, index }) => (
-          <FeedCard
-            item={item}
-            index={index}
-            mine={myId != null && item.authorId === myId}
-            confirming={item.quoteId != null && confirmId === item.quoteId}
-            focused={item.quoteId != null && focusedId === item.quoteId}
-            onFocusDone={clearFocus}
-            error={item.quoteId != null && removeError?.id === item.quoteId ? removeError.message : null}
-            onAgree={() => {
-              if (item.quoteId != null) pressAgree(item.quoteId);
-            }}
-            onDelete={() => {
-              if (item.quoteId != null) pressDelete(item.quoteId);
-            }}
-            onOpen={() => {
-              if (item.quoteId != null) router.push(`/quote/${item.quoteId}`);
-            }}
-            onOpenBook={() => router.push(`/book/${item.bookId}`)}
-          />
-        )}
-        ListEmptyComponent={
-          feed.isLoading ? (
-            <View style={styles.skeletonList}>
-              {[0, 1, 2].map((i) => (
-                <View key={i} style={[styles.skeleton, { backgroundColor: colors.surface }]} />
-              ))}
-            </View>
-          ) : feed.isError ? (
-            <EmptyState title="광장을 불러오지 못했습니다" description="잠시 후 다시 시도해 주세요." />
-          ) : type === 'QUOTE' ? (
-            <EmptyState title="아직 밑줄이 없습니다" description="첫 문장을 오려 붙여보세요." />
-          ) : (
-            <EmptyState title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
-          )
-        }
-        ListFooterComponent={
-          feed.isFetchingNextPage ? (
-            <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.accent} />
-            </View>
-          ) : null
-        }
-      />
+      {tab === 'POST' ? (
+        <PostFeed ListHeaderComponent={header} />
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={items}
+          keyExtractor={itemKey}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={header}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
+          }}
+          // 카드 높이가 제각각이라 getItemLayout 을 줄 수 없다 — 아직 측정 안 된 카드로 뛰면 실패한다.
+          // 평균 높이로 근사 위치까지 먼저 옮겨 그 구간을 렌더시킨 뒤 다시 정확히 맞춘다.
+          onScrollToIndexFailed={({ index, averageItemLength }) => {
+            listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
+            if (scrollRetry.current) clearTimeout(scrollRetry.current);
+            scrollRetry.current = setTimeout(() => {
+              scrollRetry.current = null;
+              listRef.current?.scrollToIndex({
+                index,
+                viewPosition: FOCUS_VIEW_POSITION,
+                animated: true,
+              });
+            }, SCROLL_RETRY_MS);
+          }}
+          renderItem={({ item, index }) => (
+            <FeedCard
+              item={item}
+              index={index}
+              mine={myId != null && item.authorId === myId}
+              confirming={item.quoteId != null && confirmId === item.quoteId}
+              focused={item.quoteId != null && focusedId === item.quoteId}
+              onFocusDone={clearFocus}
+              error={item.quoteId != null && removeError?.id === item.quoteId ? removeError.message : null}
+              onAgree={() => {
+                if (item.quoteId != null) pressAgree(item.quoteId);
+              }}
+              onDelete={() => {
+                if (item.quoteId != null) pressDelete(item.quoteId);
+              }}
+              onOpen={() => {
+                if (item.quoteId != null) router.push(`/quote/${item.quoteId}`);
+              }}
+              onOpenBook={() => router.push(`/book/${item.bookId}`)}
+            />
+          )}
+          ListEmptyComponent={
+            feed.isLoading ? (
+              <View style={styles.skeletonList}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={[styles.skeleton, { backgroundColor: colors.surface }]} />
+                ))}
+              </View>
+            ) : feed.isError ? (
+              <EmptyState title="광장을 불러오지 못했습니다" description="잠시 후 다시 시도해 주세요." />
+            ) : tab === 'QUOTE' ? (
+              <EmptyState title="아직 밑줄이 없습니다" description="첫 문장을 오려 붙여보세요." />
+            ) : (
+              <EmptyState title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
+            )
+          }
+          ListFooterComponent={
+            feed.isFetchingNextPage ? (
+              <View style={styles.footer}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null
+          }
+        />
+      )}
     </PaperScreen>
   );
 }
