@@ -16,6 +16,10 @@ export type CommentsCache = InfiniteData<Page<ThreadComment>>;
 export const repliesKey = (listKey: readonly unknown[], commentId: number) =>
   [...listKey, commentId, 'replies'] as const;
 
+/** 다음 페이지 파라미터 — 댓글·답글 목록이 함께 쓴다(오래된 순 무한 목록의 공통 규칙). */
+export const nextPageParam = (last: Page<ThreadComment>, all: Page<ThreadComment>[]) =>
+  (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined);
+
 /** 로컬에 덧붙인 댓글이 다음 페이지에 다시 올 수 있어 id 로 걸러낸다. */
 export function dedupeComments(pages: Page<ThreadComment>[] | undefined): ThreadComment[] {
   const seen = new Set<number>();

@@ -8,7 +8,7 @@ import {
 
 import { ApiError } from '@/api/client';
 import {
-  appendComment, bumpReplyCount, dedupeComments, findComment, removeComment, repliesKey,
+  appendComment, bumpReplyCount, dedupeComments, findComment, nextPageParam, removeComment, repliesKey,
 } from '@/api/commentCache';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 
@@ -45,7 +45,7 @@ export function CommentThread({
     queryKey: adapter.listKey,
     queryFn: ({ pageParam }) => adapter.list(pageParam, PAGE_SIZE),
     initialPageParam: 0,
-    getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
+    getNextPageParam: nextPageParam,
     enabled: adapter.enabled,
   });
   const items = dedupeComments(comments.data?.pages);
@@ -132,6 +132,10 @@ export function CommentThread({
       removeComment(queryClient, repliesKey(adapter.listKey, parentId), commentId);
       bumpReplyCount(queryClient, adapter.listKey, parentId, -1);
       adapter.onCountChange(-1);
+      // 마지막 답글이 지워졌으면 접는다 — 펼친 채로 두면 빈 답글 영역만 남는다.
+      if ((findComment(queryClient, adapter.listKey, parentId)?.replyCount ?? 0) === 0) {
+        collapse(parentId);
+      }
     },
     onError: (error, { commentId }) => {
       setRowError({
@@ -202,7 +206,7 @@ export function CommentThread({
             error={rowError?.id === item.id ? rowError.message : null}
             expanded={expanded.has(item.id)}
             onToggleReplies={() => toggleReplies(item.id)}
-            onPressReply={() => startReply(item)}
+            onPressReply={showComposer ? () => startReply(item) : undefined}
             onDelete={() => pressDelete(item.id)}
           >
             {expanded.has(item.id) ? (
