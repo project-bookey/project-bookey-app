@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
 import type { PostImage } from '@/api/types';
 import { IMAGE_PICKER_OPTIONS, prepareImage } from '@/api/upload';
@@ -22,6 +23,13 @@ type PickedAsset = { uri: string; width?: number; height?: number };
 
 /** 네이티브에서 사진첩 권한을 거부했을 때 띠 아래에 다는 한 줄 — 웹은 권한이 없어 뜨지 않는다. */
 const PERMISSION_NOTICE = '사진첩 접근을 허용해 주세요';
+/** 서버가 이유를 주지 않았을 때의 한 줄 — 이유가 있으면 서버 문장을 그대로 보여 준다. */
+const UPLOAD_NOTICE = '사진을 올리지 못했어요 · 다시 시도';
+/**
+ * 서버 사진 저장소가 꺼져 있을 때의 오류 코드(503). 앱 문제가 아니라 서버 설정이라 다시 올려도 결과가 같다 —
+ * 이때만 '다시'와 고르기를 잠근다. 서버 설정만 바꾸면 다시 켜지므로 앱에 기능 플래그를 박아 두지 않는다.
+ */
+const STORAGE_DISABLED = 'STORAGE_DISABLED';
 
 /**
  * 독후감 사진 업로드 — 고르기·병렬 업로드·다시 올리기·떼기.
@@ -39,8 +47,10 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   busy: boolean;
   /** 고르기 창이 떠 있는 동안 참 — 고스트 타일을 잠그는 데 쓴다. */
   picking: boolean;
-  /** 띠 아래에 보일 한 줄 안내(권한 거부 등) — 없으면 null. */
+  /** 띠 아래에 보일 한 줄 안내(권한 거부·업로드 실패 이유) — 없으면 null. */
   notice: string | null;
+  /** 다시 올려 볼 만하면 참 — 서버 저장소가 꺼져 있으면 거짓이라 '다시'와 고르기를 잠근다. */
+  retryable: boolean;
   /** 올라간 사진의 id — 타일 순서 그대로. */
   imageIds: number[];
 } {
@@ -72,6 +82,7 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   const [picking, setPicking] = useState(false);
   const pickingRef = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [retryable, setRetryable] = useState(true);
 
   const patch = useCallback((key: string, next: Partial<PhotoUpload>) => {
     // 이미 뗀 타일(키 없음)이면 아무 일도 없다 — 늦게 온 결과가 되살아나지 않는다.
@@ -82,9 +93,17 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
     try {
       const form = await prepareImage(asset);
       const image = await postApi.uploadImage(form);
-      if (alive.current) patch(key, { status: 'done', image });
-    } catch {
-      if (alive.current) patch(key, { status: 'failed' });
+      if (!alive.current) return;
+      patch(key, { status: 'done', image });
+      // 한 장이라도 올라갔으면 앞선 실패 이야기는 지운다 — 서버 저장소가 다시 켜진 경우다.
+      setNotice(null);
+      setRetryable(true);
+    } catch (error) {
+      if (!alive.current) return;
+      patch(key, { status: 'failed' });
+      // 실패한 이유를 그대로 보여 준다 — 안 그러면 '다시'만 보고 뜻 없이 계속 누르게 된다.
+      setNotice(error instanceof ApiError ? error.message : UPLOAD_NOTICE);
+      if (error instanceof ApiError && error.code === STORAGE_DISABLED) setRetryable(false);
     }
   }, [patch]);
 
@@ -152,6 +171,7 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
     busy: photos.some((p) => p.status === 'uploading'),
     picking,
     notice,
+    retryable,
     imageIds: photos.flatMap((p) => (p.status === 'done' && p.image ? [p.image.id] : [])),
   };
 }

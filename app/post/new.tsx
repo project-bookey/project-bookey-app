@@ -164,8 +164,9 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   };
   const detach = (quoteId: number) => setQuotes((prev) => prev.filter((quote) => quote.id !== quoteId));
 
-  const canSubmit =
-    title.trim().length > 0 && bodyMd.trim().length > 0 && !uploads.photos.some((p) => p.status !== 'done');
+  // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
+  // 실패한 사진은 imageIds 에 안 들어가므로 그대로 올리면 사진 없이 실린다.
+  const canSubmit = title.trim().length > 0 && bodyMd.trim().length > 0 && !uploads.busy;
 
   const submit = useMutation({
     mutationFn: () => {
@@ -306,7 +307,8 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
               onRetry={uploads.retry}
               onRemove={uploads.remove}
               max={POST_IMAGE_MAX}
-              disabled={uploads.picking}
+              disabled={uploads.picking || !uploads.retryable}
+              retryable={uploads.retryable}
               notice={uploads.notice}
             />
           </View>
