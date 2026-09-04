@@ -14,19 +14,19 @@ import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import type { PickedBook } from '@/components/book/BookPicker';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
-import { PostMarkdown } from '@/components/post/PostMarkdown';
+import { PostBody } from '@/components/post/PostBody';
 import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
+import {
+  insertQuoteMarkers, parseQuoteIds, removeQuoteMarker, shiftCaretAfterRemove,
+} from '@/components/post/quoteMarkers';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { QuoteScrap } from '@/components/quote/QuoteScrap';
-import { Card, EmptyState, Eyebrow, Field, FootAction, Segmented } from '@/components/ui';
+import { Card, EmptyState, Eyebrow, Field, Segmented } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 글 하나에 엮을 수 있는 밑줄 수 — 서버 상한과 같은 값. */
 const POST_QUOTE_MAX = 10;
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 const TITLE_MAX = 300;
-/** '떼기' 접근성 라벨에 싣는 문장 길이 — 조각이 여럿일 때 어느 것을 떼는지 소리로 갈리게. */
-const DETACH_LABEL_CHARS = 40;
 
 const VISIBILITY_CAPTION: Record<PostVisibility, string> = {
   PUBLIC: '광장·책 상세에 실립니다',
@@ -147,26 +147,64 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   const bookLocked = editing && post.bookId != null;
 
   const [title, setTitle] = useState(post?.title ?? '');
-  const [bodyMd, setBodyMd] = useState(post?.bodyMd ?? '');
+  // 표시 없이 엮여만 있던 밑줄은 본문 끝으로 옮겨 둔다 — 초안을 만들 때 한 번만(마운트 시드).
+  const [seed] = useState(() => seedBody(post?.bodyMd ?? '', post?.quotes ?? []));
+  const [bodyMd, setBodyMd] = useState(seed.text);
   const [mode, setMode] = useState<'WRITE' | 'PREVIEW'>('WRITE');
   const [visibility, setVisibility] = useState<PostVisibility>(post?.visibility ?? 'PUBLIC');
-  // 엮은 밑줄 — id 만이 아니라 객체를 들고 있어야 시트 밖에서 조각을 그린다. 책과 무관하다(책을 바꿔도 남는다).
+  // 아는 밑줄 보관함 — 본문 표시가 가리키는 조각을 미리보기에서 그리려면 id 말고 객체가 있어야 한다.
+  // 첨부 자체는 본문 표시에서 파생하므로 여기서 빼지 않는다. 책과 무관하다(책을 바꿔도 남는다).
   const [quotes, setQuotes] = useState<BookQuote[]>(post?.quotes ?? []);
   const [picking, setPicking] = useState(false);
+  // 표시를 넣을 자리 — 본문 칸에서 마지막으로 커서가 있던 곳. 기본은 글 끝이다.
+  const [caret, setCaret] = useState<number | null>(null);
+  // 표시를 넣은 직후 한 번만 실제 캐럿을 옮기려고 잡아 두는 자리. 평소에는 null(비제어)이다.
+  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(null);
   const uploads = usePhotoUploads(post?.images ?? [], POST_IMAGE_MAX);
 
-  const attach = (nextIds: number[], known: BookQuote[]) => {
+  // 첨부는 본문 표시에서 뽑는다 — 표시를 지우면 첨부도 풀린다.
+  const bodyQuoteIds = parseQuoteIds(bodyMd);
+  // 그중 화면이 실체를 아는 밑줄만 보낸다 — 서버는 '내가 오려둔 밑줄'만 받으므로, 지워졌거나 남의 밑줄을
+  // 가리키는 표시를 그대로 보내면 저장이 400(내가 오려둔 밑줄만 붙일 수 있습니다)으로 막힌다. 손으로 써 넣은
+  // 표시만이 아니라, 글에 붙인 밑줄을 밑줄 화면에서 지운 뒤 고치기로 여는 정상 경로에서도 그렇게 된다.
+  // 걸러진 표시는 사용자가 쓴 글이라 본문에 그대로 둔다 — 상세·미리보기에서 그 자리만 빈다.
+  const knownQuoteIds = new Set(quotes.map((quote) => quote.id));
+  const attachQuoteIds = bodyQuoteIds.filter((id) => knownQuoteIds.has(id));
+  // 상한 판정·표기도 실제로 보낼 수와 같은 기준으로 센다 — 화면 숫자와 저장 결과가 어긋나지 않게.
+  const overQuoteMax = attachQuoteIds.length > POST_QUOTE_MAX;
+
+  // 시트에서 고른 목록과 본문 표시를 양쪽으로 맞춘다 — 새로 고른 것은 커서 자리에 넣고, 체크를 푼 것은 지운다.
+  const syncQuotes = (nextIds: number[], known: BookQuote[]) => {
     setQuotes((prev) => {
-      // 시트가 모르는 밑줄(고치기로 들어온 것)은 이미 갖고 있던 객체로 채운다.
-      const byId = new Map([...prev, ...known].map((quote) => [quote.id, quote] as const));
-      return nextIds.flatMap((id) => { const q = byId.get(id); return q ? [q] : []; });
+      // 시트가 모르는 밑줄(고치기로 들어온 것)은 이미 갖고 있던 객체가 지킨다 — 덮어쓰기만 하고 지우지 않는다.
+      const byId = new Map(prev.map((quote) => [quote.id, quote] as const));
+      for (const quote of known) byId.set(quote.id, quote);
+      return [...byId.values()];
     });
+    const already = parseQuoteIds(bodyMd);
+    const wanted = new Set(nextIds);
+    // 지우기를 먼저 한다 — 넣을 자리는 '지운 뒤의 본문' 좌표여야 한다. 넣고 지우면 지운 길이만큼
+    // 좌표가 밀려, 다음에 넣을 자리가 남은 표시 한가운데로 떨어진다.
+    // 첨부는 본문 표시에서 파생하므로, 여기서 표시를 지우면 첨부도 함께 풀린다.
+    // 실체를 모르는 표시(지워졌거나 남의 밑줄)는 애초에 시트의 선택 밖이라 여기서도 건드리지 않는다 — 사용자 글은 그대로 둔다.
+    const pruned = already.reduce(
+      (md, id) => (wanted.has(id) || !knownQuoteIds.has(id) ? md : removeQuoteMarker(md, id)),
+      bodyMd,
+    );
+    // 커서도 지운 만큼 앞으로 당겨 지금 본문과 짝을 맞춘다.
+    const at = shiftCaretAfterRemove(bodyMd, pruned, caret ?? bodyMd.length);
+    const fresh = nextIds.filter((id) => !already.includes(id));
+    const { text: next, cursor } = insertQuoteMarkers(pruned, at, fresh);
+    if (next === bodyMd) return;
+    setBodyMd(next);
+    setCaret(cursor);
+    // 본문을 갈아 끼우면 실제 캐럿은 글 끝으로 튄다 — 넣은 자리로 되돌려 다음에 넣을 자리를 화면과 맞춘다.
+    setPendingSelection({ start: cursor, end: cursor });
   };
-  const detach = (quoteId: number) => setQuotes((prev) => prev.filter((quote) => quote.id !== quoteId));
 
   // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
   // 실패한 사진은 imageIds 에 안 들어가므로 그대로 올리면 사진 없이 실린다.
-  const canSubmit = title.trim().length > 0 && bodyMd.trim().length > 0 && !uploads.busy;
+  const canSubmit = title.trim().length > 0 && bodyMd.trim().length > 0 && !uploads.busy && !overQuoteMax;
 
   const submit = useMutation({
     mutationFn: () => {
@@ -178,7 +216,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
         visibility,
         tags: [],
         imageIds: uploads.imageIds,
-        quoteIds: quotes.map((quote) => quote.id),
+        quoteIds: attachQuoteIds,
       };
       return editing
         ? postApi.update(post.id, base)
@@ -230,6 +268,11 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
       {errorMessage ? (
         <Text style={[typeScale.caption, styles.error, { color: colors.warn }]}>{errorMessage}</Text>
       ) : null}
+      {overQuoteMax ? (
+        <Text style={[typeScale.caption, styles.error, { color: colors.warn }]}>
+          오려둔 문장은 {POST_QUOTE_MAX}개까지 넣을 수 있어요 · 지금 {attachQuoteIds.length}개
+        </Text>
+      ) : null}
 
       {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(모임 토론과 같은 이유). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -272,9 +315,23 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
             />
             {mode === 'WRITE' ? (
               <>
+                {/*
+                  selection 은 표시를 넣은 직후에만 준다 — 늘 물고 있으면 한글 조합(IME)이
+                  글자마다 확정돼 끊기고, 되돌리기 자리도 어긋난다. 캐럿이 한 번 옮겨 가면
+                  (onSelectionChange) 곧바로 놓아 비제어로 돌아간다. 사용자가 바로 타이핑해
+                  그 알림이 오지 않는 경우를 대비해 onChangeText 에서도 놓아 준다.
+                */}
                 <TextInput
                   value={bodyMd}
-                  onChangeText={setBodyMd}
+                  selection={pendingSelection ?? undefined}
+                  onChangeText={(text) => {
+                    setBodyMd(text);
+                    setPendingSelection(null);
+                  }}
+                  onSelectionChange={(e) => {
+                    setCaret(e.nativeEvent.selection.start);
+                    setPendingSelection(null);
+                  }}
                   multiline
                   placeholder="이 책을 읽고 남은 생각을 적어 보세요. 마크다운을 쓸 수 있어요."
                   placeholderTextColor={colors.textFaint}
@@ -283,14 +340,34 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
                     backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
                   }]}
                 />
+                {/* 옛 글을 열었을 때만 — 아래에 모아 두던 밑줄을 본문 끝으로 옮겼다고 알린다. */}
+                {seed.moved > 0 ? (
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+                    아래 모아 두었던 문장 {seed.moved}개를 본문 끝으로 옮겼어요 · 원하는 자리로 옮겨 보세요
+                  </Text>
+                ) : null}
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                   **굵게** · _기울임_ · # 제목 · - 목록 · {'>'} 인용
                 </Text>
+                {/* 커서 자리에 밑줄을 끼워 넣는다 — 뗄 때는 본문에서 그 줄을 지운다. */}
+                <View style={styles.sectionHead}>
+                  <Pressable
+                    onPress={() => setPicking(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="오려둔 문장 넣기"
+                    style={styles.insertQuote}
+                  >
+                    <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 오려둔 문장</Text>
+                  </Pressable>
+                  <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+                    {attachQuoteIds.length}/{POST_QUOTE_MAX}
+                  </Text>
+                </View>
               </>
             ) : (
               <Card>
                 {bodyMd.trim() ? (
-                  <PostMarkdown md={bodyMd} />
+                  <PostBody md={bodyMd} quotes={quotes} />
                 ) : (
                   <Text style={[typeScale.caption, { color: colors.textFaint }]}>미리볼 내용이 없어요</Text>
                 )}
@@ -313,36 +390,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
             />
           </View>
 
-          {/* ⑤ 오려둔 문장 — 조각은 누르지 않고(상세로 가지 않는다) 옆의 '떼기'만 있다 */}
-          <View style={styles.section}>
-            <View style={styles.sectionHead}>
-              <Eyebrow>오려둔 문장 {quotes.length}/{POST_QUOTE_MAX}</Eyebrow>
-              <Pressable
-                onPress={() => setPicking(true)}
-                accessibilityRole="button"
-                accessibilityLabel="밑줄 고르기"
-                style={styles.pickQuotes}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>고르기 →</Text>
-              </Pressable>
-            </View>
-            {quotes.map((quote, i) => (
-              <QuoteScrap
-                key={quote.id}
-                quote={quote}
-                rotate={i % 2 === 0 ? -1 : 1}
-                trailing={(
-                  <FootAction
-                    label="떼기"
-                    onPress={() => detach(quote.id)}
-                    accessibilityLabel={`밑줄 떼기: ${quote.content.slice(0, DETACH_LABEL_CHARS)}`}
-                  />
-                )}
-              />
-            ))}
-          </View>
-
-          {/* ⑥ 공개 범위 */}
+          {/* ⑤ 공개 범위 */}
           <View style={styles.section}>
             <Eyebrow>공개 범위</Eyebrow>
             <Segmented options={visibilityOptions} value={visibility} onChange={setVisibility} />
@@ -354,14 +402,27 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
       {picking ? (
         <QuoteAttachSheet
           book={book}
-          selectedIds={quotes.map((quote) => quote.id)}
-          onChange={attach}
+          selectedIds={attachQuoteIds}
+          onChange={syncQuotes}
           onClose={() => setPicking(false)}
           max={POST_QUOTE_MAX}
         />
       ) : null}
     </PaperScreen>
   );
+}
+
+/**
+ * 고치기 시드 — 본문에 표시가 없는 첨부를 본문 끝에 표시로 옮긴다(원래 순서 그대로).
+ *
+ * 표시가 곧 첨부라, 표시 없이 `quoteIds` 로만 엮여 있던 옛 글은 그대로 저장하면 첨부가 통째로 풀린다.
+ * 옮긴 수를 함께 돌려줘 화면이 한 줄로 알린다. 새 글은 첨부가 없어 늘 그대로 지나간다.
+ */
+function seedBody(bodyMd: string, quotes: BookQuote[]): { text: string; moved: number } {
+  const inBody = new Set(parseQuoteIds(bodyMd));
+  const missing = quotes.filter((quote) => !inBody.has(quote.id)).map((quote) => quote.id);
+  if (missing.length === 0) return { text: bodyMd, moved: 0 };
+  return { text: insertQuoteMarkers(bodyMd, bodyMd.length, missing).text, moved: missing.length };
 }
 
 const styles = StyleSheet.create({
@@ -384,7 +445,8 @@ const styles = StyleSheet.create({
   },
   // 모노 한 줄 — 여백으로 터치 상자를 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
   unpick: { alignSelf: 'flex-start', paddingVertical: spacing.sm, marginVertical: -spacing.xs },
-  pickQuotes: { minHeight: 36, justifyContent: 'center', paddingLeft: spacing.md },
+  // 10px 모노 라벨이라 글자 상자만으로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 여백으로 키운다.
+  insertQuote: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
   // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다.
   retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
   skeleton: { ...layout.content, padding: spacing.lg },
