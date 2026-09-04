@@ -30,6 +30,13 @@ export default function HomeScreen() {
 
   const records = reading.data?.content ?? [];
   const hero = pickHero(records);
+  // 히어로 뒤 메모장에 적을 줄거리 — 요약에는 없어 상세를 따로 읽는다(책 상세 화면과 캐시 키 공유).
+  const heroBookId = hero?.book?.id;
+  const heroBook = useQuery({
+    queryKey: ['book', heroBookId],
+    queryFn: () => bookApi.detail(heroBookId as number),
+    enabled: heroBookId != null,
+  });
   const streakLine = stats.data
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
@@ -83,6 +90,7 @@ export default function HomeScreen() {
 
         <HeroCollage
           record={hero}
+          synopsis={heroBook.data?.description}
           streakLine={streakLine}
           loading={reading.isLoading}
           scrollY={scrollY}

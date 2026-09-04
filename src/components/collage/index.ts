@@ -2,8 +2,8 @@
  * 콜라주 공용 컴포넌트 배럴.
  * 화면은 개별 파일 대신 '@/components/collage' 에서 가져다 쓴다.
  */
-export { BookBody, BoundFace } from './BoundBook';
-export type { BookBand } from './BoundBook';
+export { BackNote, BookBody, BoundFace } from './BoundBook';
+export type { BookBand, BookNote } from './BoundBook';
 export { Chip } from './Chip';
 export { DotGridBackground } from './DotGridBackground';
 export { MemoScrap } from './MemoScrap';

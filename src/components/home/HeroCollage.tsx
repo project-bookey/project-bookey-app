@@ -37,21 +37,26 @@ const G = {
   memoRightRatio: 14 / BASE_W,
   memoTop: 202,
   memoWRatio: 136 / BASE_W,
-  /** 콜라주 판 기본 높이 — 시안 336 에서 다음 섹션 gap(24) 몫을 덜어낸 값 */
-  height: 316,
+  /**
+   * 콜라주 판 기본 높이. 시안(336)대로 두면 메모 조각 아래가 비어 첫 섹션 괘선까지 너무 멀다는
+   * 피드백 — 메모 조각 바닥(≈268) 바로 밑에서 끊는다. 긴 노트일 때는 아래 ctaTop+58 하한이 지킨다.
+   */
+  height: 278,
 } as const;
 
-/** 패럴랙스 계수 — 레이어 3개로 제한한다(스크롤 성능). */
-const P = { cover: 0.25, note: 0.45, paper: 0.12 } as const;
+/**
+ * 패럴랙스 계수 — 이제 움직이는 레이어는 종이(표제·CTA·메모) 하나뿐이다.
+ * 스티키 노트(0.45)와 표지 스택(0.25)은 스크롤을 내릴 때 따라 내려오는 것처럼 보여
+ * (사용자 피드백) 차례로 판에 고정했다.
+ */
+const P = { paper: 0.12 } as const;
 
 /**
  * 패럴랙스 입력 상한(px).
  *
- * 계수를 스크롤 전 구간에 곱하면 레이어가 히어로 판을 벗어나 무한히 밀린다 —
- * 가장 많이 밀리는 노트(0.45)가 스크롤 222px 부근에서 아래 '지금 붐비는 책'
- * 헤더와 표지를 덮었다. 입력을 여기서 끊으면 노트 드리프트가 160×0.45=72px 에서
- * 멈춘다 — 390px 기준 실측으로 인기 행 헤더와 약 21px, 행 표지와 약 71px 간격을
- * 유지하며 스크롤을 아무리 더 내려도 그대로다. 캡 지점이면 히어로가 이미 화면
+ * 계수를 스크롤 전 구간에 곱하면 레이어가 히어로 판을 벗어나 무한히 밀린다.
+ * 입력을 여기서 끊으면 종이 레이어(0.12)의 드리프트가 160×0.12≈19px 에서 멈춰
+ * 아래 '지금 붐비는 책' 행을 넘보지 않는다. 캡 지점이면 히어로가 이미 화면
  * 상단으로 밀려난 뒤라 눈에 보이는 차등 손실은 없다.
  */
 const HERO_PARALLAX_RANGE = 160;
@@ -59,7 +64,7 @@ const HERO_PARALLAX_RANGE = 160;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /**
- * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 서가`.
+ * 읽기 시작한 달 표제 — 아이브로우 `SINCE 08.12` + 두 줄 표제 `8월의 / 나의 책`.
  * 해가 다르면 아이브로우에만 연도를 붙인다(`SINCE 2025.12.03`). 시작일이 없으면 null.
  */
 function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebrow: string; title: string } | null {
@@ -69,8 +74,7 @@ function shelfCaption(startedAt: string | undefined, now = new Date()): { eyebro
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const year = d.getFullYear() === now.getFullYear() ? '' : `${d.getFullYear()}.`;
-  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의
-서가` };
+  return { eyebrow: `SINCE ${year}${mm}.${dd}`, title: `${d.getMonth() + 1}월의\n나의 책` };
 }
 
 /** 스크롤 오프셋을 패럴랙스 유효 구간으로 가둔다 — iOS 바운스의 음수도 막는다. */
@@ -82,11 +86,13 @@ function parallaxOffset(y: number) {
 /**
  * 서가 히어로 콜라주 — 도트 종이 위에 표지 스택·스티키 노트·CTA·메모 조각·시작한 달 캡션을 흩어 놓는다.
  *
- * 레이어마다 스크롤 오프셋에 다른 계수를 곱해(패럴랙스) 종이들이 각각 다른
- * 속도로 밀린다. 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
+ * 표지 스택과 스티키 노트는 판에 고정이고, 종이(표제·CTA·메모) 레이어만 스크롤 오프셋에 계수를 곱해
+ * 살짝 밀린다(패럴랙스). 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
  */
-export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, onDetail }: {
+export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, onContinue, onDetail }: {
   record: ReadingRecord | null;
+  /** 책 소개(줄거리) — 뒤에 끼운 메모장에 적힌다. 없으면 빈 괘선 메모장. */
+  synopsis?: string;
   /** `N일 연속 · 오늘 M분` — CTA 옆 모노 캡션 */
   streakLine?: string;
   loading?: boolean;
@@ -102,12 +108,6 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   // 스티키 노트 실제 높이 — 긴 제목으로 노트가 커져도 CTA를 밀어낸다.
   const [noteH, setNoteH] = useState(0);
 
-  const coverStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: parallaxOffset(scrollY.value) * P.cover }],
-  }));
-  const noteStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: parallaxOffset(scrollY.value) * P.note }],
-  }));
   const paperStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: parallaxOffset(scrollY.value) * P.paper }],
   }));
@@ -120,7 +120,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
   const noteTop = Math.round(G.noteTop * k);
   // 노트 높이를 재기 전에는 시안 좌표를 쓴다(첫 프레임 점프 방지).
   const ctaTop = Math.round(Math.max(G.ctaTop * k, noteH > 0 ? noteTop + noteH + 8 : 0));
-  const boardH = Math.max(Math.round(G.height * k), ctaTop + 64);
+  const boardH = Math.max(Math.round(G.height * k), ctaTop + 58);
 
   const memoRight = Math.round(W * G.memoRightRatio);
   const memoW = Math.round(clamp(W * G.memoWRatio, 126, 164));
@@ -159,10 +159,8 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
 
   return (
     <View style={[styles.board, { height: boardH }]} onLayout={onBoardLayout}>
-      {/* ① 표지 스택 — 가장 느리게 밀린다 */}
-      <Animated.View
-        style={[styles.layer, { left: Math.round(W * G.coverLeftRatio), top: Math.round(G.coverTop * k) }, coverStyle]}
-      >
+      {/* ① 표지 스택 — 판에 고정(패럴랙스 없음) */}
+      <View style={[styles.layer, { left: Math.round(W * G.coverLeftRatio), top: Math.round(G.coverTop * k) }]}>
         <TiltCover
           uri={record.book?.coverUrl}
           title={record.book?.title}
@@ -170,29 +168,27 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
           tilt={-4}
           stacked
           stackOffset={G.stack}
-          // 장정본 — 띠지에 상태와 진행을 적는다(노트와 겹치지만 표지 자체가 말하게).
+          // 장정본 — 띠지에 상태와 진행을 적고(노트와 겹치지만 표지 자체가 말하게), 뒤장은 줄거리 메모장.
           bound={{
-            // 리본은 메모 조각(우측 14·폭 136)에 안 가리는 자리 — 표지 오른쪽 끝에서 44px 안쪽.
-            ribbonRight: 44,
             band: {
               title: statusLabel[record.status] ?? '읽는 중',
               meta: hasPages
                 ? `${record.progress.currentPage} / ${record.progress.totalPages} · ${percent}%`
                 : `${percent}%`,
             },
+            backNote: synopsis ? { title: '줄거리', body: synopsis } : {},
           }}
           entranceKey={`hero:${record.book?.id ?? record.id}`}
           onPress={() => onDetail(record)}
           accessibilityLabel={`${record.book?.title ?? '책'} 상세`}
         />
-      </Animated.View>
+      </View>
 
-      {/* ② 스티키 노트 — 표지 위에 겹쳐 가장 빠르게 밀린다 */}
-      <Animated.View
+      {/* ② 스티키 노트 — 표지 위에 겹쳐 붙어 있고 판에 고정(패럴랙스 없음) */}
+      <View
         style={[
           styles.layer,
           { left: Math.round(W * G.noteLeftRatio), top: noteTop, width: clamp(W * G.noteWRatio, 196, 280) },
-          noteStyle,
         ]}
         onLayout={(e) => {
           const next = Math.round(e.nativeEvent.layout.height);
@@ -210,7 +206,7 @@ export function HeroCollage({ record, streakLine, loading, scrollY, onContinue, 
             {pageLine}
           </Text>
         </StickyNote>
-      </Animated.View>
+      </View>
 
       {/* ③ 시작한 달 표제 + CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, paperStyle]}>

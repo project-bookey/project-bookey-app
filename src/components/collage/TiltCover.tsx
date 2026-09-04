@@ -9,8 +9,8 @@ import Animated, {
 
 import { useTheme } from '@/theme';
 import { coverShadow } from '@/theme/palette';
-import { BookBody, BoundFace } from './BoundBook';
-import type { BookBand } from './BoundBook';
+import { BackNote, BookBody, BoundFace } from './BoundBook';
+import type { BookBand, BookNote } from './BoundBook';
 import { hairline, radius, serif, spacing, stagger, tiltFor } from '@/theme/tokens';
 
 /** 입장 정착 스프링 — 은은하게 내려앉는 느낌. */
@@ -149,10 +149,10 @@ export function TiltCover({
    */
   stackOffset?: Partial<StackOffset>;
   /**
-   * 장정된 책으로 그린다 — 판 위 사진판·책등·띠지(BoundFace) + 책장 단면·꽂힌 리본(BookBody).
-   * 미지정이면 종전처럼 이미지 한 장을 표지 전체에 채운다.
+   * 장정된 책으로 그린다 — 판 위 사진판·책등·띠지(BoundFace) + 책장 단면·꽂힌 책갈피(BookBody).
+   * backNote 를 주면 뒤장(stacked)이 괘선 메모장이 된다. 미지정이면 종전처럼 이미지 한 장을 표지 전체에 채운다.
    */
-  bound?: { band?: BookBand; ribbonRight?: number };
+  bound?: { band?: BookBand; backNote?: BookNote };
   /** 지정하면 프레스 리프트가 켜진다. */
   onPress?: () => void;
   /** 표지 위에 얹을 오버레이 슬롯 — 랭크 배지·진행 바 등. */
@@ -190,14 +190,15 @@ export function TiltCover({
       {stacked ? (
         // 뒤에 겹친 빈 표지 — 기본은 살짝 어긋난 겹침, stackOffset 으로 부채꼴까지 펼친다.
         // 그림자는 본 표지와 같은 rest — 펼쳐졌을 때 뒤장도 종이처럼 떠 보이게.
+        // bound.backNote 가 있으면 빈 표지 대신 괘선 메모장(줄거리)을 끼운다.
         <View
           style={[
             styles.stack,
             {
               width,
               height,
-              backgroundColor: colors.surfaceDeep,
-              borderColor: colors.lineStrong,
+              backgroundColor: bound?.backNote ? colors.memoPad : colors.surfaceDeep,
+              borderColor: bound?.backNote ? colors.bookPage : colors.lineStrong,
               transform: [
                 { translateX: stack.x },
                 { translateY: stack.y },
@@ -207,11 +208,13 @@ export function TiltCover({
             },
             coverShadow[mode].rest,
           ]}
-        />
+        >
+          {bound?.backNote ? <BackNote width={width} height={height} note={bound.backNote} /> : null}
+        </View>
       ) : null}
 
-      {/* 장정본 몸통 — 프레임 뒤에서 책장 단면·리본이 비친다 */}
-      {bound ? <BookBody width={width} height={height} ribbonRight={bound.ribbonRight} /> : null}
+      {/* 장정본 몸통 — 프레임 뒤에서 책장 단면·책갈피가 비친다 */}
+      {bound ? <BookBody width={width} height={height} /> : null}
 
       <View
         style={[
@@ -305,7 +308,7 @@ export function TiltCover({
 
 const styles = StyleSheet.create({
   frame: { borderRadius: radius.sm },
-  stack: { position: 'absolute', borderRadius: radius.sm, borderWidth: hairline },
+  stack: { position: 'absolute', borderRadius: radius.sm, borderWidth: hairline, overflow: 'hidden' },
   shadowProxy: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: radius.sm },
   surface: {
     position: 'absolute',
