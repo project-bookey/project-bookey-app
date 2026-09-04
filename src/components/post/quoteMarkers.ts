@@ -49,8 +49,10 @@ export function splitByQuoteMarkers(md: string): BodySegment[] {
 /**
  * 본문에서 그 밑줄의 표시를 지운다. 표시가 홀로 있던 문단이면 남은 빈 줄도 함께 정리한다.
  *
- * 지운 자리에 줄바꿈이 셋 이상 맞붙으면 빈 줄 하나(`\n\n`)로 접는다 — 그 자리만 손대고
- * 글 전체를 `trim` 하지는 않는다(사용자가 쓰던 앞뒤 여백을 건드리지 않게).
+ * 글 사이에서는 지운 자리에 줄바꿈이 셋 이상 맞붙으면 빈 줄 하나(`\n\n`)로 접는다 — 그 자리만
+ * 손대고 글 전체를 `trim` 하지는 않는다(사용자가 쓰던 여백을 건드리지 않게).
+ * 다만 글의 맨 앞·맨 뒤에서는 이을 글이 한쪽뿐이라 문단 사이 빈 줄 자체가 필요 없다.
+ * 거기서는 줄바꿈이 둘만 맞붙어도 통째로 접는다 — 안 그러면 맨 앞 표시를 뗀 자리에 빈 줄이 남는다.
  * 같은 밑줄이 여러 번 있으면 전부 지운다.
  */
 export function removeQuoteMarker(md: string, quoteId: number): string {
@@ -66,17 +68,57 @@ export function removeQuoteMarker(md: string, quoteId: number): string {
     // 표시가 제 문단으로 홀로 있었다면 앞뒤 빈 줄이 맞붙는다 — 그 자리만 빈 줄 하나로 접는다.
     const before = /\n+$/.exec(head)?.[0].length ?? 0;
     const after = /^\n+/.exec(rest)?.[0].length ?? 0;
-    if (before + after >= 3) {
-      head = `${head.slice(0, head.length - before)}\n\n`;
-      rest = rest.slice(after);
+    const left = head.slice(0, head.length - before);
+    const right = rest.slice(after);
+    // 한쪽이 비면 글의 경계다 — 이을 글이 없으니 빈 줄을 남기지 않고, 접는 문턱도 한 칸 낮다.
+    const edge = left.length === 0 || right.length === 0;
+    if (before + after >= (edge ? 2 : 3)) {
+      head = edge ? left : `${left}\n\n`;
+      rest = right;
     }
   }
   return head + rest;
 }
 
 /**
+ * 표시 한가운데는 자를 수 없다 — 그 자리에 끼우면 표시가 글자로 부서진다. 표시 끝으로 민다.
+ *
+ * 커서가 표시 안에 놓이는 건 사용자가 그리로 옮겼을 때만이 아니다. 본문이 바뀌는 사이
+ * 예전 좌표가 남아 있으면 그 좌표가 표시 한가운데를 가리킬 수 있다.
+ */
+function safeInsertPos(md: string, at: number): number {
+  const pos = Math.max(0, Math.min(at, md.length));
+  for (const match of md.matchAll(MARKER())) {
+    const start = match.index ?? 0;
+    const end = start + match[0].length;
+    if (pos > start && pos < end) return end;
+  }
+  return pos;
+}
+
+/**
+ * 표시를 지운 본문에서 커서가 갈 자리를 찾는다.
+ *
+ * 지우기는 순수한 삭제라 앞뒤로 그대로 남은 글이 있다 — 앞에서 같은 만큼, 뒤에서 같은 만큼을 재서
+ * 커서가 어느 쪽에 속하는지 보고 옮긴다. 지워진 토막 안에 있었다면 그 토막이 시작하던 자리로 간다.
+ */
+export function shiftCaretAfterRemove(before: string, after: string, caret: number): number {
+  const pos = Math.max(0, Math.min(caret, before.length));
+  let head = 0;
+  while (head < after.length && before[head] === after[head]) head += 1;
+  if (pos <= head) return pos;
+  // 뒤에서 같은 글 — 앞에서 이미 센 만큼과 겹치지 않게 막는다.
+  let tail = 0;
+  while (tail < after.length - head && before[before.length - 1 - tail] === after[after.length - 1 - tail]) {
+    tail += 1;
+  }
+  if (pos >= before.length - tail) return after.length - (before.length - pos);
+  return head;
+}
+
+/**
  * `at` 자리에 표시를 넣는다. 앞뒤로 빈 줄을 보장해 표시가 제 문단이 되게 하고,
- * 새 커서 자리(표시 뒤)를 함께 돌려준다.
+ * 새 커서 자리(표시 뒤)를 함께 돌려준다. `at` 이 다른 표시 한가운데면 그 표시 뒤로 민다.
  */
 export function insertQuoteMarkers(
   md: string,
@@ -84,7 +126,7 @@ export function insertQuoteMarkers(
   quoteIds: number[],
 ): { text: string; cursor: number } {
   if (quoteIds.length === 0) return { text: md, cursor: at };
-  const pos = Math.max(0, Math.min(at, md.length));
+  const pos = safeInsertPos(md, at);
   const before = md.slice(0, pos);
   const after = md.slice(pos);
   const lead = before.length === 0 || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';

@@ -16,7 +16,9 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
 import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
-import { insertQuoteMarkers, parseQuoteIds, removeQuoteMarker } from '@/components/post/quoteMarkers';
+import {
+  insertQuoteMarkers, parseQuoteIds, removeQuoteMarker, shiftCaretAfterRemove,
+} from '@/components/post/quoteMarkers';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
 import { Card, EmptyState, Eyebrow, Field, Segmented } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -156,6 +158,8 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   const [picking, setPicking] = useState(false);
   // 표시를 넣을 자리 — 본문 칸에서 마지막으로 커서가 있던 곳. 기본은 글 끝이다.
   const [caret, setCaret] = useState<number | null>(null);
+  // 표시를 넣은 직후 한 번만 실제 캐럿을 옮기려고 잡아 두는 자리. 평소에는 null(비제어)이다.
+  const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(null);
   const uploads = usePhotoUploads(post?.images ?? [], POST_IMAGE_MAX);
 
   // 첨부는 본문 표시에서 뽑는다 — 표시를 지우면 첨부도 풀린다.
@@ -177,20 +181,25 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
       for (const quote of known) byId.set(quote.id, quote);
       return [...byId.values()];
     });
-    // 넣기를 먼저 한다 — 커서 자리는 지금 본문 기준이라, 지우고 나면 자리가 어긋난다.
     const already = parseQuoteIds(bodyMd);
-    const fresh = nextIds.filter((id) => !already.includes(id));
-    const { text, cursor } = insertQuoteMarkers(bodyMd, caret ?? bodyMd.length, fresh);
     const wanted = new Set(nextIds);
+    // 지우기를 먼저 한다 — 넣을 자리는 '지운 뒤의 본문' 좌표여야 한다. 넣고 지우면 지운 길이만큼
+    // 좌표가 밀려, 다음에 넣을 자리가 남은 표시 한가운데로 떨어진다.
     // 첨부는 본문 표시에서 파생하므로, 여기서 표시를 지우면 첨부도 함께 풀린다.
     // 실체를 모르는 표시(지워졌거나 남의 밑줄)는 애초에 시트의 선택 밖이라 여기서도 건드리지 않는다 — 사용자 글은 그대로 둔다.
-    const next = already.reduce(
+    const pruned = already.reduce(
       (md, id) => (wanted.has(id) || !knownQuoteIds.has(id) ? md : removeQuoteMarker(md, id)),
-      text,
+      bodyMd,
     );
+    // 커서도 지운 만큼 앞으로 당겨 지금 본문과 짝을 맞춘다.
+    const at = shiftCaretAfterRemove(bodyMd, pruned, caret ?? bodyMd.length);
+    const fresh = nextIds.filter((id) => !already.includes(id));
+    const { text: next, cursor } = insertQuoteMarkers(pruned, at, fresh);
     if (next === bodyMd) return;
     setBodyMd(next);
-    setCaret(Math.min(cursor, next.length));
+    setCaret(cursor);
+    // 본문을 갈아 끼우면 실제 캐럿은 글 끝으로 튄다 — 넣은 자리로 되돌려 다음에 넣을 자리를 화면과 맞춘다.
+    setPendingSelection({ start: cursor, end: cursor });
   };
 
   // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
@@ -306,10 +315,23 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
             />
             {mode === 'WRITE' ? (
               <>
+                {/*
+                  selection 은 표시를 넣은 직후에만 준다 — 늘 물고 있으면 한글 조합(IME)이
+                  글자마다 확정돼 끊기고, 되돌리기 자리도 어긋난다. 캐럿이 한 번 옮겨 가면
+                  (onSelectionChange) 곧바로 놓아 비제어로 돌아간다. 사용자가 바로 타이핑해
+                  그 알림이 오지 않는 경우를 대비해 onChangeText 에서도 놓아 준다.
+                */}
                 <TextInput
                   value={bodyMd}
-                  onChangeText={setBodyMd}
-                  onSelectionChange={(e) => setCaret(e.nativeEvent.selection.start)}
+                  selection={pendingSelection ?? undefined}
+                  onChangeText={(text) => {
+                    setBodyMd(text);
+                    setPendingSelection(null);
+                  }}
+                  onSelectionChange={(e) => {
+                    setCaret(e.nativeEvent.selection.start);
+                    setPendingSelection(null);
+                  }}
                   multiline
                   placeholder="이 책을 읽고 남은 생각을 적어 보세요. 마크다운을 쓸 수 있어요."
                   placeholderTextColor={colors.textFaint}
