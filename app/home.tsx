@@ -12,6 +12,7 @@ import { BookRow, RowBook } from '@/components/home/BookRow';
 import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
 import { HeroCollage } from '@/components/home/HeroCollage';
+import { HomeSection } from '@/components/home/HomeSection';
 import { QuoteScraps } from '@/components/home/QuoteScraps';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -98,69 +99,84 @@ export default function HomeScreen() {
           onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         />
 
-        <BookRow
-          title="지금 붐비는 책"
-          label="LIVE"
-          staggered
-          loading={popular.isLoading}
-          books={(popular.data ?? []).map((p, i): RowBook => ({
-            key: `popular-${p.book.id}`,
-            bookId: p.book.id,
-            title: p.book.title,
-            author: p.book.author,
-            coverUrl: p.book.coverUrl,
-            rank: i + 1,
-          }))}
-          onPressBook={openBook}
-        />
+        {/* 섹션은 HomeSection 으로 감싸 괘선으로 나눈다 */}
+        <HomeSection>
+          <BookRow
+            title="지금 붐비는 책"
+            label="LIVE"
+            staggered
+            loading={popular.isLoading}
+            books={(popular.data ?? []).map((p, i): RowBook => ({
+              key: `popular-${p.book.id}`,
+              bookId: p.book.id,
+              title: p.book.title,
+              author: p.book.author,
+              coverUrl: p.book.coverUrl,
+              rank: i + 1,
+            }))}
+            onPressBook={openBook}
+          />
+        </HomeSection>
 
-        <QuoteScraps />
+        <HomeSection>
+          <QuoteScraps />
+        </HomeSection>
 
-        <BookRow
-          title="추천"
-          loading={recommended.isLoading}
-          books={(recommended.data ?? []).map((b): RowBook => ({
-            key: `pick-${b.id}`,
-            bookId: b.id,
-            title: b.title,
-            author: b.author,
-            coverUrl: b.coverUrl,
-          }))}
-          onPressBook={openBook}
-        />
+        <HomeSection>
+          <BookRow
+            title="추천"
+            loading={recommended.isLoading}
+            books={(recommended.data ?? []).map((b): RowBook => ({
+              key: `pick-${b.id}`,
+              bookId: b.id,
+              title: b.title,
+              author: b.author,
+              coverUrl: b.coverUrl,
+            }))}
+            onPressBook={openBook}
+          />
+        </HomeSection>
 
-        <BookRow
-          title="읽고 싶은"
-          loading={want.isLoading}
-          books={(want.data?.content ?? []).map((r): RowBook => ({
-            key: `want-${r.id}`,
-            bookId: r.book?.id,
-            title: r.book?.title ?? '',
-            coverUrl: r.book?.coverUrl,
-          }))}
-          onPressBook={openBook}
-          onPressAll={() => router.push('/library')}
-          onPressEmpty={() => router.navigate('/search')}
-        />
+        <HomeSection>
+          <BookRow
+            title="읽고 싶은"
+            loading={want.isLoading}
+            books={(want.data?.content ?? []).map((r): RowBook => ({
+              key: `want-${r.id}`,
+              bookId: r.book?.id,
+              title: r.book?.title ?? '',
+              coverUrl: r.book?.coverUrl,
+            }))}
+            onPressBook={openBook}
+            onPressAll={() => router.push('/library')}
+            onPressEmpty={() => router.navigate('/search')}
+          />
+        </HomeSection>
 
-        <BookRow
-          title="읽는 중"
-          loading={reading.isLoading}
-          books={records.map((r): RowBook => ({
-            key: `reading-${r.id}`,
-            bookId: r.book?.id,
-            title: r.book?.title ?? '',
-            coverUrl: r.book?.coverUrl,
-            progress: r.progress.completionRate ?? 0,
-          }))}
-          onPressBook={openBook}
-          onPressAll={() => router.push('/library')}
-          onPressEmpty={() => router.navigate('/search')}
-        />
+        <HomeSection>
+          <BookRow
+            title="읽는 중"
+            loading={reading.isLoading}
+            books={records.map((r): RowBook => ({
+              key: `reading-${r.id}`,
+              bookId: r.book?.id,
+              title: r.book?.title ?? '',
+              coverUrl: r.book?.coverUrl,
+              progress: r.progress.completionRate ?? 0,
+            }))}
+            onPressBook={openBook}
+            onPressAll={() => router.push('/library')}
+            onPressEmpty={() => router.navigate('/search')}
+          />
+        </HomeSection>
 
-        <ChallengeRow />
+        <HomeSection>
+          <ChallengeRow />
+        </HomeSection>
 
-        <ClubRow />
+        <HomeSection>
+          <ClubRow />
+        </HomeSection>
       </Animated.ScrollView>
     </PaperScreen>
   );
