@@ -158,6 +158,17 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   const [caret, setCaret] = useState<number | null>(null);
   const uploads = usePhotoUploads(post?.images ?? [], POST_IMAGE_MAX);
 
+  // 첨부는 본문 표시에서 뽑는다 — 표시를 지우면 첨부도 풀린다.
+  const bodyQuoteIds = parseQuoteIds(bodyMd);
+  // 그중 화면이 실체를 아는 밑줄만 보낸다 — 서버는 '내가 오려둔 밑줄'만 받으므로, 지워졌거나 남의 밑줄을
+  // 가리키는 표시를 그대로 보내면 저장이 400(내가 오려둔 밑줄만 붙일 수 있습니다)으로 막힌다. 손으로 써 넣은
+  // 표시만이 아니라, 글에 붙인 밑줄을 밑줄 화면에서 지운 뒤 고치기로 여는 정상 경로에서도 그렇게 된다.
+  // 걸러진 표시는 사용자가 쓴 글이라 본문에 그대로 둔다 — 상세·미리보기에서 그 자리만 빈다.
+  const knownQuoteIds = new Set(quotes.map((quote) => quote.id));
+  const attachQuoteIds = bodyQuoteIds.filter((id) => knownQuoteIds.has(id));
+  // 상한 판정·표기도 실제로 보낼 수와 같은 기준으로 센다 — 화면 숫자와 저장 결과가 어긋나지 않게.
+  const overQuoteMax = attachQuoteIds.length > POST_QUOTE_MAX;
+
   // 시트에서 고른 목록과 본문 표시를 양쪽으로 맞춘다 — 새로 고른 것은 커서 자리에 넣고, 체크를 푼 것은 지운다.
   const syncQuotes = (nextIds: number[], known: BookQuote[]) => {
     setQuotes((prev) => {
@@ -172,15 +183,16 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
     const { text, cursor } = insertQuoteMarkers(bodyMd, caret ?? bodyMd.length, fresh);
     const wanted = new Set(nextIds);
     // 첨부는 본문 표시에서 파생하므로, 여기서 표시를 지우면 첨부도 함께 풀린다.
-    const next = already.reduce((md, id) => (wanted.has(id) ? md : removeQuoteMarker(md, id)), text);
+    // 실체를 모르는 표시(지워졌거나 남의 밑줄)는 애초에 시트의 선택 밖이라 여기서도 건드리지 않는다 — 사용자 글은 그대로 둔다.
+    const next = already.reduce(
+      (md, id) => (wanted.has(id) || !knownQuoteIds.has(id) ? md : removeQuoteMarker(md, id)),
+      text,
+    );
     if (next === bodyMd) return;
     setBodyMd(next);
     setCaret(Math.min(cursor, next.length));
   };
 
-  // 첨부는 본문 표시에서 뽑는다 — 표시를 지우면 첨부도 풀린다.
-  const bodyQuoteIds = parseQuoteIds(bodyMd);
-  const overQuoteMax = bodyQuoteIds.length > POST_QUOTE_MAX;
   // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
   // 실패한 사진은 imageIds 에 안 들어가므로 그대로 올리면 사진 없이 실린다.
   const canSubmit = title.trim().length > 0 && bodyMd.trim().length > 0 && !uploads.busy && !overQuoteMax;
@@ -195,7 +207,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
         visibility,
         tags: [],
         imageIds: uploads.imageIds,
-        quoteIds: bodyQuoteIds,
+        quoteIds: attachQuoteIds,
       };
       return editing
         ? postApi.update(post.id, base)
@@ -249,7 +261,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
       ) : null}
       {overQuoteMax ? (
         <Text style={[typeScale.caption, styles.error, { color: colors.warn }]}>
-          오려둔 문장은 {POST_QUOTE_MAX}개까지 넣을 수 있어요 · 지금 {bodyQuoteIds.length}개
+          오려둔 문장은 {POST_QUOTE_MAX}개까지 넣을 수 있어요 · 지금 {attachQuoteIds.length}개
         </Text>
       ) : null}
 
@@ -326,7 +338,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
                     <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 오려둔 문장</Text>
                   </Pressable>
                   <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                    {bodyQuoteIds.length}/{POST_QUOTE_MAX}
+                    {attachQuoteIds.length}/{POST_QUOTE_MAX}
                   </Text>
                 </View>
               </>
@@ -368,7 +380,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
       {picking ? (
         <QuoteAttachSheet
           book={book}
-          selectedIds={bodyQuoteIds}
+          selectedIds={attachQuoteIds}
           onChange={syncQuotes}
           onClose={() => setPicking(false)}
           max={POST_QUOTE_MAX}
