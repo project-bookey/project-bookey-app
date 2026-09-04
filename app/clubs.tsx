@@ -4,13 +4,13 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubSummary } from '@/api/types';
-import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import {
   Button, EmptyState, Loading, Numeral, ProgressBar, Tag, percent,
 } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 탭 3. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12) */
+/** 구역 4. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12). 광장 칩이 아니라 상단 구역 탭으로 들어온다. */
 export default function ClubsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -19,7 +19,7 @@ export default function ClubsScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="토론 모임" />
+      <SectionNav active="clubs" />
 
       <View style={styles.actions}>
         <Button
