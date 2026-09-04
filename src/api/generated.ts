@@ -2698,6 +2698,7 @@ export interface components {
             /** Format: int64 */
             agreeCount?: number;
             agreedByMe?: boolean;
+            authorFinished?: boolean;
         };
         NotificationView: {
             /** Format: int64 */
