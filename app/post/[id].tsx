@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -9,8 +9,8 @@ import { invalidatePostLists, postCommentsKey, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { CommentThread } from '@/components/comments';
+import { PostBody, usedQuoteIds } from '@/components/post/PostBody';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
-import { PostMarkdown } from '@/components/post/PostMarkdown';
 import { useLikePost } from '@/components/post/useLikePost';
 import { usePostCommentAdapter } from '@/components/post/usePostCommentAdapter';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
@@ -158,6 +158,12 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
   const hasBook = post.bookId != null;
   const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
 
+  // 본문 표시가 소비하지 않은 밑줄만 아래에 모은다 — 표시로 넣은 것을 두 번 보여주지 않는다.
+  const leftoverQuotes = useMemo(() => {
+    const used = usedQuoteIds(post.bodyMd, post.quotes);
+    return post.quotes.filter((quote) => !used.has(quote.id));
+  }, [post.bodyMd, post.quotes]);
+
   return (
     <View style={styles.article}>
       {/* ① 히어로 — 책에 매인 글은 표지를 세우고 제목 아래 책으로 가는 길을 둔다 */}
@@ -216,14 +222,18 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
         </ScrollView>
       ) : null}
 
-      {/* ④ 본문 */}
-      <PostMarkdown md={post.bodyMd} />
+      {/* ④ 본문 — 표시가 있는 자리에 오려둔 문장이 들어간다 */}
+      <PostBody
+        md={post.bodyMd}
+        quotes={post.quotes}
+        onPressQuote={(quoteId) => router.push(`/quote/${quoteId}`)}
+      />
 
-      {/* ⑤ 엮은 밑줄 — 글의 책과 다른 책일 수 있어 조각마다 책 제목을 남긴다 */}
-      {post.quotes.length > 0 ? (
+      {/* ⑤ 본문에 넣지 않은 밑줄 — 표시 없이 엮기만 하던 옛 글을 위해 남긴다 */}
+      {leftoverQuotes.length > 0 ? (
         <View style={styles.quotes}>
-          <Eyebrow plain>오려둔 문장 {post.quotes.length}</Eyebrow>
-          {post.quotes.map((quote, i) => (
+          <Eyebrow plain>오려둔 문장 {leftoverQuotes.length}</Eyebrow>
+          {leftoverQuotes.map((quote, i) => (
             <QuoteScrap
               key={quote.id}
               quote={quote}
