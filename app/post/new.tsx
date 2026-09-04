@@ -16,7 +16,7 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
 import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
-import { insertQuoteMarkers, parseQuoteIds } from '@/components/post/quoteMarkers';
+import { insertQuoteMarkers, parseQuoteIds, removeQuoteMarker } from '@/components/post/quoteMarkers';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
 import { Card, EmptyState, Eyebrow, Field, Segmented } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -145,7 +145,9 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   const bookLocked = editing && post.bookId != null;
 
   const [title, setTitle] = useState(post?.title ?? '');
-  const [bodyMd, setBodyMd] = useState(post?.bodyMd ?? '');
+  // 표시 없이 엮여만 있던 밑줄은 본문 끝으로 옮겨 둔다 — 초안을 만들 때 한 번만(마운트 시드).
+  const [seed] = useState(() => seedBody(post?.bodyMd ?? '', post?.quotes ?? []));
+  const [bodyMd, setBodyMd] = useState(seed.text);
   const [mode, setMode] = useState<'WRITE' | 'PREVIEW'>('WRITE');
   const [visibility, setVisibility] = useState<PostVisibility>(post?.visibility ?? 'PUBLIC');
   // 아는 밑줄 보관함 — 본문 표시가 가리키는 조각을 미리보기에서 그리려면 id 말고 객체가 있어야 한다.
@@ -156,20 +158,24 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   const [caret, setCaret] = useState<number | null>(null);
   const uploads = usePhotoUploads(post?.images ?? [], POST_IMAGE_MAX);
 
-  // 시트에서 고른 문장을 커서 자리에 표시로 넣는다. 이미 본문에 있는 것은 건너뛴다.
-  const insertQuotes = (nextIds: number[], known: BookQuote[]) => {
+  // 시트에서 고른 목록과 본문 표시를 양쪽으로 맞춘다 — 새로 고른 것은 커서 자리에 넣고, 체크를 푼 것은 지운다.
+  const syncQuotes = (nextIds: number[], known: BookQuote[]) => {
     setQuotes((prev) => {
       // 시트가 모르는 밑줄(고치기로 들어온 것)은 이미 갖고 있던 객체가 지킨다 — 덮어쓰기만 하고 지우지 않는다.
       const byId = new Map(prev.map((quote) => [quote.id, quote] as const));
       for (const quote of known) byId.set(quote.id, quote);
       return [...byId.values()];
     });
-    const already = new Set(parseQuoteIds(bodyMd));
-    const fresh = nextIds.filter((id) => !already.has(id));
-    if (fresh.length === 0) return;
+    // 넣기를 먼저 한다 — 커서 자리는 지금 본문 기준이라, 지우고 나면 자리가 어긋난다.
+    const already = parseQuoteIds(bodyMd);
+    const fresh = nextIds.filter((id) => !already.includes(id));
     const { text, cursor } = insertQuoteMarkers(bodyMd, caret ?? bodyMd.length, fresh);
-    setBodyMd(text);
-    setCaret(cursor);
+    const wanted = new Set(nextIds);
+    // 첨부는 본문 표시에서 파생하므로, 여기서 표시를 지우면 첨부도 함께 풀린다.
+    const next = already.reduce((md, id) => (wanted.has(id) ? md : removeQuoteMarker(md, id)), text);
+    if (next === bodyMd) return;
+    setBodyMd(next);
+    setCaret(Math.min(cursor, next.length));
   };
 
   // 첨부는 본문 표시에서 뽑는다 — 표시를 지우면 첨부도 풀린다.
@@ -300,6 +306,12 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
                     backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
                   }]}
                 />
+                {/* 옛 글을 열었을 때만 — 아래에 모아 두던 밑줄을 본문 끝으로 옮겼다고 알린다. */}
+                {seed.moved > 0 ? (
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+                    아래 모아 두었던 문장 {seed.moved}개를 본문 끝으로 옮겼어요 · 원하는 자리로 옮겨 보세요
+                  </Text>
+                ) : null}
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                   **굵게** · _기울임_ · # 제목 · - 목록 · {'>'} 인용
                 </Text>
@@ -357,13 +369,26 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
         <QuoteAttachSheet
           book={book}
           selectedIds={bodyQuoteIds}
-          onChange={insertQuotes}
+          onChange={syncQuotes}
           onClose={() => setPicking(false)}
           max={POST_QUOTE_MAX}
         />
       ) : null}
     </PaperScreen>
   );
+}
+
+/**
+ * 고치기 시드 — 본문에 표시가 없는 첨부를 본문 끝에 표시로 옮긴다(원래 순서 그대로).
+ *
+ * 표시가 곧 첨부라, 표시 없이 `quoteIds` 로만 엮여 있던 옛 글은 그대로 저장하면 첨부가 통째로 풀린다.
+ * 옮긴 수를 함께 돌려줘 화면이 한 줄로 알린다. 새 글은 첨부가 없어 늘 그대로 지나간다.
+ */
+function seedBody(bodyMd: string, quotes: BookQuote[]): { text: string; moved: number } {
+  const inBody = new Set(parseQuoteIds(bodyMd));
+  const missing = quotes.filter((quote) => !inBody.has(quote.id)).map((quote) => quote.id);
+  if (missing.length === 0) return { text: bodyMd, moved: 0 };
+  return { text: insertQuoteMarkers(bodyMd, bodyMd.length, missing).text, moved: missing.length };
 }
 
 const styles = StyleSheet.create({

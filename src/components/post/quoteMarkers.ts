@@ -47,6 +47,34 @@ export function splitByQuoteMarkers(md: string): BodySegment[] {
 }
 
 /**
+ * 본문에서 그 밑줄의 표시를 지운다. 표시가 홀로 있던 문단이면 남은 빈 줄도 함께 정리한다.
+ *
+ * 지운 자리에 줄바꿈이 셋 이상 맞붙으면 빈 줄 하나(`\n\n`)로 접는다 — 그 자리만 손대고
+ * 글 전체를 `trim` 하지는 않는다(사용자가 쓰던 앞뒤 여백을 건드리지 않게).
+ * 같은 밑줄이 여러 번 있으면 전부 지운다.
+ */
+export function removeQuoteMarker(md: string, quoteId: number): string {
+  // 닫는 괄호까지 붙여 찾으므로 12 를 지우다 123 을 건드릴 일은 없다.
+  const marker = quoteMarker(quoteId);
+  let head = '';
+  let rest = md;
+  for (;;) {
+    const at = rest.indexOf(marker);
+    if (at < 0) break;
+    head += rest.slice(0, at);
+    rest = rest.slice(at + marker.length);
+    // 표시가 제 문단으로 홀로 있었다면 앞뒤 빈 줄이 맞붙는다 — 그 자리만 빈 줄 하나로 접는다.
+    const before = /\n+$/.exec(head)?.[0].length ?? 0;
+    const after = /^\n+/.exec(rest)?.[0].length ?? 0;
+    if (before + after >= 3) {
+      head = `${head.slice(0, head.length - before)}\n\n`;
+      rest = rest.slice(after);
+    }
+  }
+  return head + rest;
+}
+
+/**
  * `at` 자리에 표시를 넣는다. 앞뒤로 빈 줄을 보장해 표시가 제 문단이 되게 하고,
  * 새 커서 자리(표시 뒤)를 함께 돌려준다.
  */
