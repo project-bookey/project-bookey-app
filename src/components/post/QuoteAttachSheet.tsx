@@ -1,6 +1,9 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  type TextStyle,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -14,11 +17,21 @@ import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFi
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { Card, Eyebrow } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { sans } from '@/theme/tokens';
 
 /** 한 번에 받아오는 내 밑줄 수. */
 const PAGE_SIZE = 20;
 /** 접근성 라벨에 싣는 문장 길이 — 체크박스 이름이 문장 자체가 되게 하되 너무 길지 않게. */
 const LABEL_CHARS = 60;
+
+// 웹 전용: 브라우저 기본 포커스 링 제거 — 포커스는 pill 테두리로 그린다(탐색 화면과 같은 관례).
+// RN 타입에 'none' 이 없어 캐스팅하지만 RNW 는 CSS outline-style 로 그대로 전달한다.
+const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
+
+/** 검색 비교용으로 다듬는다 — 잇단 공백을 하나로 줄이고 앞뒤를 떼고 소문자로. 줄바꿈도 공백이 된다. */
+function normalize(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().toLowerCase();
+}
 
 /**
  * 밑줄 고르기 시트 — 독후감에 엮을 내 밑줄을 고르고, 없으면 그 자리에서 새로 오려 둔다.
@@ -49,6 +62,18 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
   });
   const items = useMemo(() => list.data?.pages.flatMap((p) => p.content ?? []) ?? [], [list.data]);
+
+  // ── 문장 찾기 — 서버에 다시 묻지 않고 이미 받아온 목록만 거른다(문장·책 제목) ──
+  const [keyword, setKeyword] = useState('');
+  // 포커스 표시는 웹 기본 outline 대신 pill 테두리로 그린다.
+  const [focused, setFocused] = useState(false);
+  const needle = normalize(keyword);
+  const shown = useMemo(() => (
+    needle === ''
+      ? items
+      : items.filter((quote) =>
+        normalize(quote.content).includes(needle) || normalize(quote.bookTitle).includes(needle))
+  ), [items, needle]);
 
   // 방금 오린 문장 — 목록이 다시 오기 전에도 onChange 에 객체를 실어 보내려고 들고 있는다.
   const [created, setCreated] = useState<BookQuote[]>([]);
@@ -147,6 +172,23 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               {notice ? <Text style={[typeScale.caption, { color: colors.warn }]}>{notice}</Text> : null}
             </Card>
 
+            <TextInput
+              value={keyword}
+              onChangeText={setKeyword}
+              placeholder="문장·책 제목으로 찾기"
+              placeholderTextColor={colors.textFaint}
+              autoCapitalize="none"
+              autoCorrect={false}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              accessibilityLabel="밑줄 검색"
+              style={[styles.search, webNoOutline, {
+                backgroundColor: colors.surfaceRaised,
+                borderColor: focused ? colors.accent : 'transparent',
+                color: colors.text,
+              }]}
+            />
+
             {bookId != null ? (
               <View style={styles.chips}>
                 <Chip label="이 책만" active={onlyThisBook} onPress={() => setOnlyThisBook((on) => !on)} />
@@ -165,8 +207,13 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               <Text style={[typeScale.caption, styles.centerText, { color: colors.textFaint }]}>
                 아직 오려둔 문장이 없어요. 위에서 바로 오려 두세요.
               </Text>
+            ) : shown.length === 0 ? (
+              // 밑줄은 있는데 검색어에 걸리는 게 없을 때 — '아직 없다'와는 다른 이야기다.
+              <Text style={[typeScale.caption, styles.centerText, { color: colors.textFaint }]}>
+                찾는 문장이 없어요 · 다른 말로 찾아보세요
+              </Text>
             ) : (
-              items.map((quote, i) => {
+              shown.map((quote, i) => {
                 const selected = selectedIds.includes(quote.id);
                 // 다 골랐으면 안 고른 조각은 흐리게 두고 누르지 못하게 한다.
                 const disabled = !selected && full;
@@ -215,6 +262,13 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
                 <Text style={[typeScale.monoLabel, { color: colors.accent }]}>더 보기 →</Text>
               </Pressable>
             ) : null}
+
+            {/* 찾기는 이미 받아온 만큼만 훑는다 — 안 보이면 '더 보기'로 더 받아 오면 된다고 짚어 준다. */}
+            {needle !== '' ? (
+              <Text style={[typeScale.monoLabel, styles.centerText, { color: colors.textFaint }]}>
+                받아온 목록에서 찾아요 · 없으면 더 보기
+              </Text>
+            ) : null}
           </ScrollView>
         </PaperScreen>
       </SafeAreaProvider>
@@ -232,6 +286,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
+  },
+  // 문장 찾기 입력 — 탐색 화면 검색바와 같은 pill(포커스는 테두리로).
+  search: {
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontFamily: sans.regular,
+    fontSize: 14,
   },
   chips: { flexDirection: 'row', paddingTop: spacing.xs },
   // 상자(View·Pressable)용과 글자용을 가른다 — textAlign 은 Text 에만 뜻이 있다.

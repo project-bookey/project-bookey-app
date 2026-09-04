@@ -27,6 +27,8 @@ import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme'
 const POST_QUOTE_MAX = 10;
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 const TITLE_MAX = 300;
+/** 하단 '오려둔 문장' 띠의 대략 높이(36px 터치 상자 + 위아래 여백) — 본문 아래 여백을 이만큼 더 준다. */
+const QUOTE_BAR_HEIGHT = 60;
 
 const VISIBILITY_CAPTION: Record<PostVisibility, string> = {
   PUBLIC: '광장·책 상세에 실립니다',
@@ -349,20 +351,6 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                   **굵게** · _기울임_ · # 제목 · - 목록 · {'>'} 인용
                 </Text>
-                {/* 커서 자리에 밑줄을 끼워 넣는다 — 뗄 때는 본문에서 그 줄을 지운다. */}
-                <View style={styles.sectionHead}>
-                  <Pressable
-                    onPress={() => setPicking(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel="오려둔 문장 넣기"
-                    style={styles.insertQuote}
-                  >
-                    <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 오려둔 문장</Text>
-                  </Pressable>
-                  <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                    {attachQuoteIds.length}/{POST_QUOTE_MAX}
-                  </Text>
-                </View>
               </>
             ) : (
               <Card>
@@ -397,6 +385,27 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
             <Text style={[typeScale.caption, { color: colors.textFaint }]}>{VISIBILITY_CAPTION[visibility]}</Text>
           </View>
         </ScrollView>
+
+        {/*
+          커서 자리에 밑줄을 끼워 넣는 띠 — 댓글 입력 바와 같은 자리(ScrollView 의 형제)라
+          키보드가 뜨면 그 위에 붙고, 글이 길어져도 늘 손에 닿는다. 뗄 때는 본문에서 그 줄을 지운다.
+          미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
+        */}
+        {mode === 'WRITE' ? (
+          <View style={[styles.quoteBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
+            <Pressable
+              onPress={() => setPicking(true)}
+              accessibilityRole="button"
+              accessibilityLabel="오려둔 문장 넣기"
+              style={styles.insertQuote}
+            >
+              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 오려둔 문장</Text>
+            </Pressable>
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+              {attachQuoteIds.length}/{POST_QUOTE_MAX}
+            </Text>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
 
       {picking ? (
@@ -426,9 +435,20 @@ function seedBody(bodyMd: string, quotes: BookQuote[]): { text: string; moved: n
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
+  // 아래 여백은 띠 높이만큼 더 둔다 — 키보드가 올라와 보이는 자리가 줄어도 마지막 칸을 띠 위로 밀어 올릴 수 있게.
+  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl + QUOTE_BAR_HEIGHT },
   section: { gap: spacing.md },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  // 하단 고정 띠 — 댓글 입력 바와 같은 만듦새(머리카락 선 · 본문 폭 · 종이 배경).
+  quoteBar: {
+    ...layout.content,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: hairline,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+  },
   // 헤더 우측 제출 알약 — 광장 컴포저의 오려두기 알약과 같은 만듦새.
   submit: { borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   error: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
