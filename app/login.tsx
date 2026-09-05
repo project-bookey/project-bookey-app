@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
+import { authApi } from '@/api/endpoints';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, radius, sans, spacing, typeScale } from '@/theme';
@@ -30,7 +31,8 @@ const BUTTON_HEIGHT = 48;
 
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
- * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 소셜은 로그인=최초 가입.
+ * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조.
+ * 가입은 이메일 인증 코드를 거쳐야 하고, 소셜 버튼은 연동된 계정의 로그인 전용이다(신규 가입 불가).
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -40,6 +42,9 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeLoading, setCodeLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
@@ -89,12 +94,37 @@ export default function LoginScreen() {
       .finally(() => setSocialLoading(null));
   }, [googleResponse, router, socialLogin]);
 
+  const requestCode = async () => {
+    if (!email.trim()) {
+      setError('이메일을 먼저 입력해 주세요.');
+      return;
+    }
+    setCodeLoading(true);
+    setError(null);
+    try {
+      const result = await authApi.requestEmailCode(email.trim());
+      setCodeSent(true);
+      // 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
+      if (result.devCode) {
+        setCode(result.devCode);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '인증 코드를 요청하지 못했습니다.');
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
   const submitEmail = async () => {
+    if (isSignup && !code.trim()) {
+      setError('이메일로 받은 인증 코드를 입력해 주세요.');
+      return;
+    }
     setEmailLoading(true);
     setError(null);
     try {
       if (isSignup) {
-        await emailSignup(email.trim(), password, nickname.trim());
+        await emailSignup(email.trim(), password, nickname.trim(), code.trim());
       } else {
         await emailLogin(email.trim(), password);
       }
@@ -121,10 +151,7 @@ export default function LoginScreen() {
       if (!credential.identityToken) {
         throw new Error('Apple 인증 토큰을 받지 못했습니다.');
       }
-      // 이름은 최초 로그인 1회만 온다 — 서버는 id_token에서 이름을 얻지 못하므로 여기서 전달.
-      const fullName = [credential.fullName?.familyName, credential.fullName?.givenName]
-        .filter(Boolean).join('');
-      await socialLogin('APPLE', credential.identityToken, fullName || undefined);
+      await socialLogin('APPLE', credential.identityToken);
       router.replace('/home');
     } catch (e) {
       if ((e as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') {
@@ -233,6 +260,41 @@ export default function LoginScreen() {
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
               />
             </View>
+            {isSignup ? (
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
+                <View style={styles.codeRow}>
+                  <TextInput
+                    style={[styles.input, styles.codeInput]}
+                    value={code}
+                    onChangeText={setCode}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    placeholder="6자리"
+                    placeholderTextColor={darkColors.textFaint}
+                    accessibilityLabel="이메일 인증 코드"
+                    textContentType="oneTimeCode"
+                    autoComplete="one-time-code"
+                  />
+                  <Pressable
+                    onPress={requestCode}
+                    disabled={busy || codeLoading}
+                    style={({ pressed }) => [
+                      styles.codeButton,
+                      (pressed || busy || codeLoading) && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                  >
+                    {codeLoading
+                      ? <ActivityIndicator color={darkColors.text} />
+                      : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
+                  </Pressable>
+                </View>
+                {codeSent ? (
+                  <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 입력해 주세요. (10분 유효)</Text>
+                ) : null}
+              </View>
+            ) : null}
             <Pressable
               onPress={submitEmail}
               disabled={busy}
@@ -244,7 +306,7 @@ export default function LoginScreen() {
                 : <Text style={styles.ctaLabel}>{isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</Text>}
             </Pressable>
             <Pressable
-              onPress={() => { setIsSignup(!isSignup); setError(null); }}
+              onPress={() => { setIsSignup(!isSignup); setError(null); setCode(''); setCodeSent(false); }}
               disabled={busy}
               accessibilityRole="button"
               style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
@@ -363,6 +425,19 @@ const styles = StyleSheet.create({
   },
   ghostLabel: { ...typeScale.label, color: darkColors.textMuted },
   error: { ...typeScale.caption, color: darkColors.danger },
+  codeRow: { flexDirection: 'row', gap: spacing.sm },
+  codeInput: { flex: 1 },
+  codeButton: {
+    minHeight: BUTTON_HEIGHT,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: darkColors.lineStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  codeButtonLabel: { ...typeScale.label, color: darkColors.text },
+  codeHint: { ...typeScale.caption, color: darkColors.textFaint },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dividerRule: { flex: 1, height: hairline, backgroundColor: darkColors.lineStrong },
   dividerLabel: { ...typeScale.caption, color: darkColors.textFaint },

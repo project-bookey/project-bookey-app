@@ -9,8 +9,8 @@ type AuthState = {
   status: 'loading' | 'authenticated' | 'anonymous';
   restore: () => Promise<void>;
   emailLogin: (email: string, password: string) => Promise<void>;
-  emailSignup: (email: string, password: string, nickname: string) => Promise<void>;
-  socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO', token: string, nickname?: string) => Promise<void>;
+  emailSignup: (email: string, password: string, nickname: string, code: string) => Promise<void>;
+  socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO', token: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: Me) => void;
 };
@@ -40,14 +40,14 @@ export const useAuth = create<AuthState>((set) => ({
     set({ user: result.user, status: "authenticated" });
   },
 
-  emailSignup: async (email, password, nickname) => {
-    const result = await authApi.emailSignup(email, password, nickname);
+  emailSignup: async (email, password, nickname, code) => {
+    const result = await authApi.emailSignup(email, password, nickname, code);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     set({ user: result.user, status: "authenticated" });
   },
 
-  socialLogin: async (provider, token, nickname) => {
-    const result = await authApi.socialLogin(provider, token, nickname);
+  socialLogin: async (provider, token) => {
+    const result = await authApi.socialLogin(provider, token);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     set({ user: result.user, status: 'authenticated' });
   },

@@ -1,18 +1,24 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  CreateQuote, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
+  CreateQuote, EmailCodeResponse, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
   PopularBook, QuoteAgree, ReadingRecord, ReadingStatus,
   Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
 } from './types';
 
 export const authApi = {
-  socialLogin: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string, nickname?: string) =>
-    api<TokenResponse>("/api/v1/auth/social", { method: "POST", auth: false, body: { provider, token, nickname } }),
+  /** 소셜 로그인 — 이미 연동된 계정만 통과한다. 신규 가입은 이메일 가입(인증 코드) 후 연동으로만 가능. */
+  socialLogin: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string) =>
+    api<TokenResponse>("/api/v1/auth/social", { method: "POST", auth: false, body: { provider, token } }),
+  linkSocial: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string) =>
+    api<Me>("/api/v1/auth/social/link", { method: "POST", body: { provider, token } }),
   emailLogin: (email: string, password: string) =>
     api<TokenResponse>("/api/v1/auth/login", { method: "POST", auth: false, body: { email, password } }),
-  emailSignup: (email: string, password: string, nickname: string) =>
-    api<TokenResponse>("/api/v1/auth/signup", { method: "POST", auth: false, body: { email, password, nickname } }),
+  /** 가입 인증 코드 발급 — 로컬 서버는 devCode 를 응답에 동봉한다. */
+  requestEmailCode: (email: string) =>
+    api<EmailCodeResponse>("/api/v1/auth/email/code", { method: "POST", auth: false, body: { email } }),
+  emailSignup: (email: string, password: string, nickname: string, code: string) =>
+    api<TokenResponse>("/api/v1/auth/signup", { method: "POST", auth: false, body: { email, password, nickname, code } }),
   logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
   me: () => api<Me>("/api/v1/me"),
   updateProfile: (body: { nickname?: string; avatarUrl?: string }) =>
