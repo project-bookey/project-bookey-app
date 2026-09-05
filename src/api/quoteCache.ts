@@ -14,14 +14,22 @@ export const PLAZA_HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
 /** 책별 밑줄(도서 상세 밑줄 탭). `['quotes']` 뿌리라 내 밑줄과 같이 무효화된다. */
 export const bookQuotesKey = (bookId: number) => ['quotes', 'book', bookId] as const;
 /**
- * 밑줄 고르기 시트의 '이 책' 범위 — 도서 상세 밑줄 탭과 쪽 크기가 달라(5 vs 20) 캐시를 나눠 쓴다.
+ * 밑줄 고르기 시트의 세 범위 — 검색어(q)가 키 끝에 붙는다.
+ *
+ * 문장 찾기는 서버가 맡는다(내용·책 제목 부분 일치). 검색어마다 목록이 아예 다른 데다 쪽 번호도 따로 매겨지므로
+ * 캐시를 그만큼 갈라 둔다 — 한 캐시에 검색어가 다른 쪽이 섞이면 '더 보기'가 엉뚱한 문장을 이어 붙인다.
+ * 검색어 없음은 빈 문자열이고, 그게 곧 전체 목록이다.
+ */
+/**
+ * '이 책' 범위 — 도서 상세 밑줄 탭과 쪽 크기가 달라(5 vs 20) 캐시를 나눠 쓴다.
  * 한 캐시에 크기가 다른 쪽이 섞이면 '더 보기'가 그 사이 문장을 건너뛴다.
  */
-export const bookQuotesPickerKey = (bookId: number) => ['quotes', 'book', bookId, 'picker'] as const;
+export const bookQuotesPickerKey = (bookId: number, q = '') =>
+  ['quotes', 'book', bookId, 'picker', q] as const;
 /** 내 밑줄 전체(독후감 밑줄 고르기 시트) — 최신순 무한 목록. 프로필의 ['quotes', 'mine'](최신 한 건)과는 다른 키다. */
-export const MY_QUOTES_KEY = ['quotes', 'mine', 'all'] as const;
-/** 밑줄 고르기 시트의 '광장' 범위 — 광장 화면의 무한 피드와 캐시를 나눠 쓴다. */
-export const PLAZA_QUOTES_KEY = ['plaza', 'QUOTE', 'picker'] as const;
+export const myQuotesKey = (q = '') => ['quotes', 'mine', 'all', q] as const;
+/** '광장' 범위 — 광장 화면의 무한 피드와 캐시를 나눠 쓴다. */
+export const plazaQuotesKey = (q = '') => ['plaza', 'QUOTE', 'picker', q] as const;
 export const quoteKey = (quoteId: number) => ['quote', quoteId] as const;
 export const quoteCommentsKey = (quoteId: number) => ['quote', quoteId, 'comments'] as const;
 
@@ -90,10 +98,11 @@ export function patchQuoteEverywhere(queryClient: QueryClient, quoteId: number, 
 
 /**
  * 방금 오린 문장을 내 밑줄 목록 첫 페이지 맨 앞에 끼운다 — 다시 받아오기 전에도 바로 보이게.
- * 다른 범위('이 책'·'광장')는 invalidateQuoteLists 가 다시 받아오게 한다.
+ * 검색 중인 목록에는 끼우지 않는다(검색어에 걸리는 문장인지 판단은 서버 몫이다) — 검색 없는 전체 목록만 손보고,
+ * 나머지는 invalidateQuoteLists 가 다시 받아오게 한다.
  */
 export function prependMyQuote(queryClient: QueryClient, quote: BookQuote) {
-  queryClient.setQueryData<MyQuotesCache>(MY_QUOTES_KEY, (old) =>
+  queryClient.setQueryData<MyQuotesCache>(myQuotesKey(), (old) =>
     old
       ? { ...old, pages: old.pages.map((p, i) => (i === 0 ? { ...p, content: [quote, ...(p.content ?? [])] } : p)) }
       : old,
