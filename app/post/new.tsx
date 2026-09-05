@@ -166,9 +166,9 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
 
   // 첨부는 본문 표시에서 뽑는다 — 표시를 지우면 첨부도 풀린다.
   const bodyQuoteIds = parseQuoteIds(bodyMd);
-  // 그중 화면이 실체를 아는 밑줄만 보낸다 — 서버는 '내가 오려둔 밑줄'만 받으므로, 지워졌거나 남의 밑줄을
-  // 가리키는 표시를 그대로 보내면 저장이 400(내가 오려둔 밑줄만 붙일 수 있습니다)으로 막힌다. 손으로 써 넣은
-  // 표시만이 아니라, 글에 붙인 밑줄을 밑줄 화면에서 지운 뒤 고치기로 여는 정상 경로에서도 그렇게 된다.
+  // 그중 화면이 실체를 아는 밑줄만 보낸다 — 서버는 남의 밑줄도 받지만 없는 밑줄은 거부하므로, 이미 지워진
+  // 밑줄을 가리키는 표시를 그대로 보내면 저장이 400 으로 막힌다. 손으로 써 넣은 표시만이 아니라,
+  // 글에 붙인 밑줄을 밑줄 화면에서 지운 뒤 고치기로 여는 정상 경로에서도 그렇게 된다.
   // 걸러진 표시는 사용자가 쓴 글이라 본문에 그대로 둔다 — 상세·미리보기에서 그 자리만 빈다.
   const knownQuoteIds = new Set(quotes.map((quote) => quote.id));
   const attachQuoteIds = bodyQuoteIds.filter((id) => knownQuoteIds.has(id));
@@ -188,7 +188,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
     // 지우기를 먼저 한다 — 넣을 자리는 '지운 뒤의 본문' 좌표여야 한다. 넣고 지우면 지운 길이만큼
     // 좌표가 밀려, 다음에 넣을 자리가 남은 표시 한가운데로 떨어진다.
     // 첨부는 본문 표시에서 파생하므로, 여기서 표시를 지우면 첨부도 함께 풀린다.
-    // 실체를 모르는 표시(지워졌거나 남의 밑줄)는 애초에 시트의 선택 밖이라 여기서도 건드리지 않는다 — 사용자 글은 그대로 둔다.
+    // 실체를 모르는 표시(지워진 밑줄이거나 손으로 써 넣은 id)는 애초에 시트의 선택 밖이라 여기서도 건드리지 않는다 — 사용자 글은 그대로 둔다.
     const pruned = already.reduce(
       (md, id) => (wanted.has(id) || !knownQuoteIds.has(id) ? md : removeQuoteMarker(md, id)),
       bodyMd,

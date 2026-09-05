@@ -13,10 +13,15 @@ export const plazaFeedKey = (type: PlazaItemType) => ['plaza', type] as const;
 export const PLAZA_HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
 /** 책별 밑줄(도서 상세 밑줄 탭). `['quotes']` 뿌리라 내 밑줄과 같이 무효화된다. */
 export const bookQuotesKey = (bookId: number) => ['quotes', 'book', bookId] as const;
+/**
+ * 밑줄 고르기 시트의 '이 책' 범위 — 도서 상세 밑줄 탭과 쪽 크기가 달라(5 vs 20) 캐시를 나눠 쓴다.
+ * 한 캐시에 크기가 다른 쪽이 섞이면 '더 보기'가 그 사이 문장을 건너뛴다.
+ */
+export const bookQuotesPickerKey = (bookId: number) => ['quotes', 'book', bookId, 'picker'] as const;
 /** 내 밑줄 전체(독후감 밑줄 고르기 시트) — 최신순 무한 목록. 프로필의 ['quotes', 'mine'](최신 한 건)과는 다른 키다. */
 export const MY_QUOTES_KEY = ['quotes', 'mine', 'all'] as const;
-/** 내 밑줄 중 한 책 것만(시트의 '이 책만'). */
-export const myBookQuotesKey = (bookId: number) => ['quotes', 'mine', 'book', bookId] as const;
+/** 밑줄 고르기 시트의 '광장' 범위 — 광장 화면의 무한 피드와 캐시를 나눠 쓴다. */
+export const PLAZA_QUOTES_KEY = ['plaza', 'QUOTE', 'picker'] as const;
 export const quoteKey = (quoteId: number) => ['quote', quoteId] as const;
 export const quoteCommentsKey = (quoteId: number) => ['quote', quoteId, 'comments'] as const;
 
@@ -83,14 +88,16 @@ export function patchQuoteEverywhere(queryClient: QueryClient, quoteId: number, 
   );
 }
 
-/** 방금 오린 문장을 내 밑줄 목록 첫 페이지 맨 앞에 끼운다 — 다시 받아오기 전에도 바로 보이게. */
+/**
+ * 방금 오린 문장을 내 밑줄 목록 첫 페이지 맨 앞에 끼운다 — 다시 받아오기 전에도 바로 보이게.
+ * 다른 범위('이 책'·'광장')는 invalidateQuoteLists 가 다시 받아오게 한다.
+ */
 export function prependMyQuote(queryClient: QueryClient, quote: BookQuote) {
-  const prepend = (old: MyQuotesCache | undefined): MyQuotesCache | undefined =>
+  queryClient.setQueryData<MyQuotesCache>(MY_QUOTES_KEY, (old) =>
     old
       ? { ...old, pages: old.pages.map((p, i) => (i === 0 ? { ...p, content: [quote, ...(p.content ?? [])] } : p)) }
-      : old;
-  queryClient.setQueryData<MyQuotesCache>(MY_QUOTES_KEY, prepend);
-  queryClient.setQueryData<MyQuotesCache>(myBookQuotesKey(quote.bookId), prepend);
+      : old,
+  );
 }
 
 /** 밑줄이 생기거나 지워졌을 때 — 목록 캐시를 전부 다시 받게 한다. */

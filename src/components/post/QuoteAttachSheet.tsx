@@ -7,19 +7,24 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
-import { quoteApi } from '@/api/endpoints';
-import { MY_QUOTES_KEY, invalidateQuoteLists, myBookQuotesKey, prependMyQuote } from '@/api/quoteCache';
-import type { BookQuote } from '@/api/types';
+import { plazaApi, quoteApi } from '@/api/endpoints';
+import {
+  MY_QUOTES_KEY, PLAZA_QUOTES_KEY, bookQuotesPickerKey, invalidateQuoteLists, prependMyQuote,
+} from '@/api/quoteCache';
+import type { BookQuote, Page } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import type { PickedBook } from '@/components/book/BookPicker';
 import { Chip, PaperScreen, SubHeader } from '@/components/collage';
+import { plazaItemToQuote } from '@/components/post/quoteScope';
+import type { QuoteScope } from '@/components/post/quoteScope';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { Card, Eyebrow } from '@/components/ui';
+import { useAuth } from '@/store/auth';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { sans } from '@/theme/tokens';
 
-/** 한 번에 받아오는 내 밑줄 수. */
+/** 한 번에 받아오는 밑줄 수 — 세 범위가 같다. */
 const PAGE_SIZE = 20;
 /** 접근성 라벨에 싣는 문장 길이 — 체크박스 이름이 문장 자체가 되게 하되 너무 길지 않게. */
 const LABEL_CHARS = 60;
@@ -33,15 +38,22 @@ function normalize(text: string): string {
   return text.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
+/** 다음 쪽 번호 — 서버가 hasNext 를 주고, page 가 비면 지금까지 받은 쪽 수로 센다. 세 범위가 같다. */
+function nextPage<T>(last: Page<T>, all: Page<T>[]): number | undefined {
+  return last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined;
+}
+
 /**
- * 밑줄 고르기 시트 — 독후감에 엮을 내 밑줄을 고르고, 없으면 그 자리에서 새로 오려 둔다.
+ * 밑줄 고르기 시트 — 독후감에 엮을 밑줄을 고르고, 없으면 그 자리에서 새로 오려 둔다.
  *
+ * 범위 칩으로 어디서 찾을지 고른다 — 내 밑줄(기본) · 이 책(글에 책을 골랐을 때만) · 광장(모두의 문장).
+ * 남의 문장도 고를 수 있고, 조각에는 `showAuthor` 로 작성자를 밝힌다.
  * 열림은 부모가 정한다(이 컴포넌트는 열린 상태만 그린다) — 닫을 때 부모가 언마운트하면 검색어·초안도 함께 사라진다.
  * 고른 밑줄의 id 만이 아니라 BookQuote 객체도 `onChange` 에 실어 보낸다 — 부모가 시트 밖에서 조각을 그리기 위해서다.
  * 조각의 누르기는 QuoteScrap 자체 Pressable 에 준다(밖에서 또 감싸면 웹에서 버튼이 겹친다).
  */
 export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: {
-  /** 글에 고른 책 — 있으면 '이 책만' 칩이 생기고 새로 오려두기의 기본 책이 된다. */
+  /** 글에 고른 책 — 있으면 '이 책' 범위 칩이 생기고 새로 오려두기의 기본 책이 된다. */
   book?: PickedBook | null;
   selectedIds: number[];
   onChange: (next: number[], quotes: BookQuote[]) => void;
@@ -52,16 +64,48 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
   const { colors } = useTheme();
   const bookId = book?.bookId;
 
-  // ── 내 밑줄 목록 — 전체 최신순, 책이 있으면 '이 책만'으로 좁힐 수 있다 ──
-  const [onlyThisBook, setOnlyThisBook] = useState(false);
-  const scoped = onlyThisBook && bookId != null;
-  const list = useInfiniteQuery({
-    queryKey: scoped ? myBookQuotesKey(bookId) : MY_QUOTES_KEY,
-    queryFn: ({ pageParam }) => quoteApi.mine(pageParam, PAGE_SIZE, scoped ? bookId : undefined),
+  // ── 어디서 찾을지 — 내 밑줄이 기본, 글에 책을 골랐으면 '이 책', 그리고 광장 전체 ──
+  const [scope, setScope] = useState<QuoteScope>('MINE');
+  const myId = useAuth((s) => s.user?.id);
+  // 책을 뺐는데 '이 책'을 보고 있었다면 내 밑줄로 되돌린다.
+  const activeScope: QuoteScope = scope === 'BOOK' && bookId == null ? 'MINE' : scope;
+
+  // ── 범위별 목록 — 응답 모양이 갈려(광장은 PlazaItem) 질의를 셋으로 나누고 보고 있는 범위만 켠다 ──
+  const mineList = useInfiniteQuery({
+    queryKey: MY_QUOTES_KEY,
+    queryFn: ({ pageParam }) => quoteApi.mine(pageParam, PAGE_SIZE),
     initialPageParam: 0,
-    getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
+    getNextPageParam: nextPage,
+    enabled: activeScope === 'MINE',
   });
-  const items = useMemo(() => list.data?.pages.flatMap((p) => p.content ?? []) ?? [], [list.data]);
+  const bookList = useInfiniteQuery({
+    // bookId 가 없으면 질의가 꺼져 있어 이 키로는 아무것도 받지 않는다.
+    queryKey: bookQuotesPickerKey(bookId ?? 0),
+    queryFn: ({ pageParam }) => quoteApi.byBook(bookId ?? 0, pageParam, PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: nextPage,
+    enabled: activeScope === 'BOOK' && bookId != null,
+  });
+  const plazaList = useInfiniteQuery({
+    queryKey: PLAZA_QUOTES_KEY,
+    queryFn: ({ pageParam }) => plazaApi.feed('QUOTE', pageParam, PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: nextPage,
+    enabled: activeScope === 'PLAZA',
+  });
+  // 로딩·오류·'더 보기'는 지금 보고 있는 범위의 질의를 따른다.
+  const list = activeScope === 'PLAZA' ? plazaList : activeScope === 'BOOK' ? bookList : mineList;
+
+  // 광장은 완독 자랑이 섞여 오므로 밑줄만 골라 같은 모양으로 옮긴다 — 아래 코드는 범위를 가리지 않는다.
+  const items = useMemo<BookQuote[]>(() => {
+    if (activeScope === 'PLAZA') {
+      return (plazaList.data?.pages ?? [])
+        .flatMap((p) => p.content ?? [])
+        .flatMap((item) => { const quote = plazaItemToQuote(item, myId); return quote ? [quote] : []; });
+    }
+    const pages = (activeScope === 'BOOK' ? bookList.data : mineList.data)?.pages ?? [];
+    return pages.flatMap((p) => p.content ?? []);
+  }, [activeScope, plazaList.data, bookList.data, mineList.data, myId]);
 
   // ── 문장 찾기 — 서버에 다시 묻지 않고 이미 받아온 목록만 거른다(문장·책 제목) ──
   const [keyword, setKeyword] = useState('');
@@ -189,13 +233,17 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               }]}
             />
 
-            {bookId != null ? (
-              <View style={styles.chips}>
-                <Chip label="이 책만" active={onlyThisBook} onPress={() => setOnlyThisBook((on) => !on)} />
-              </View>
-            ) : null}
+            <View style={styles.chips}>
+              <Chip label="내 밑줄" active={activeScope === 'MINE'} onPress={() => setScope('MINE')} />
+              {bookId != null ? (
+                <Chip label="이 책" active={activeScope === 'BOOK'} onPress={() => setScope('BOOK')} />
+              ) : null}
+              <Chip label="광장" active={activeScope === 'PLAZA'} onPress={() => setScope('PLAZA')} />
+            </View>
 
-            {list.isLoading ? (
+            {/* isLoading 이 아니라 isPending 을 본다 — 범위를 막 바꾼 한 프레임은 아직 받아오기 전(idle)이라
+                isLoading 이 false 여서 '아직 없어요'가 깜빡인다. 보고 있는 범위의 질의는 항상 켜져 있다. */}
+            {list.isPending ? (
               <View style={styles.center}>
                 <ActivityIndicator size="small" color={colors.accent} />
               </View>
@@ -205,7 +253,11 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               </Pressable>
             ) : items.length === 0 ? (
               <Text style={[typeScale.caption, styles.centerText, { color: colors.textFaint }]}>
-                아직 오려둔 문장이 없어요. 위에서 바로 오려 두세요.
+                {activeScope === 'MINE'
+                  ? '아직 오려둔 문장이 없어요. 위에서 바로 오려 두세요.'
+                  : activeScope === 'BOOK'
+                    ? '이 책에 오려진 문장이 아직 없어요.'
+                    : '광장에 올라온 문장이 아직 없어요.'}
               </Text>
             ) : shown.length === 0 ? (
               // 밑줄은 있는데 검색어에 걸리는 게 없을 때 — '아직 없다'와는 다른 이야기다.
@@ -224,6 +276,7 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
                       rotate={i % 2 === 0 ? -1 : 1}
                       selected={selected}
                       disabled={disabled}
+                      showAuthor
                       onPress={() => toggle(quote)}
                       accessibilityRole="checkbox"
                       accessibilityLabel={quote.content.slice(0, LABEL_CHARS)}
@@ -296,7 +349,7 @@ const styles = StyleSheet.create({
     fontFamily: sans.regular,
     fontSize: 14,
   },
-  chips: { flexDirection: 'row', paddingTop: spacing.xs },
+  chips: { flexDirection: 'row', gap: spacing.sm, paddingTop: spacing.xs },
   // 상자(View·Pressable)용과 글자용을 가른다 — textAlign 은 Text 에만 뜻이 있다.
   center: { paddingVertical: spacing.md, alignItems: 'center' },
   centerText: { paddingVertical: spacing.md, textAlign: 'center' },
