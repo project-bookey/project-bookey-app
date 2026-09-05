@@ -26,7 +26,7 @@ import { sans } from '@/theme/tokens';
 
 /** 한 번에 받아오는 밑줄 수 — 세 범위가 같다. */
 const PAGE_SIZE = 20;
-/** 접근성 라벨에 싣는 문장 길이 — 체크박스 이름이 문장 자체가 되게 하되 너무 길지 않게. */
+/** 접근성 라벨에 싣는 문장 길이 — 버튼 이름이 문장 자체가 되게 하되 너무 길지 않게. */
 const LABEL_CHARS = 60;
 
 // 웹 전용: 브라우저 기본 포커스 링 제거 — 포커스는 pill 테두리로 그린다(탐색 화면과 같은 관례).
@@ -44,19 +44,24 @@ function nextPage<T>(last: Page<T>, all: Page<T>[]): number | undefined {
 }
 
 /**
- * 밑줄 고르기 시트 — 독후감에 엮을 밑줄을 고르고, 없으면 그 자리에서 새로 오려 둔다.
+ * 밑줄 고르기 시트 — 독후감에 넣을 밑줄을 하나 고르고, 없으면 그 자리에서 새로 오려 둔다.
  *
+ * 고르기는 한 번에 하나다 — 조각을 누르면 곧바로 `onPick` 으로 넘기고, 부모가 커서 자리에 넣은 뒤 시트를 닫는다.
+ * 닫기를 부모가 맡는 까닭은 열림 상태를 부모가 쥐고 있기 때문이다 — 넣기와 닫기가 한 흐름이라 한자리에서 끝내는 게 읽기 쉽고,
+ * 시트는 '무엇을 골랐는지'만 알리는 순수한 고르개로 남는다.
  * 범위 칩으로 어디서 찾을지 고른다 — 내 밑줄(기본) · 이 책(글에 책을 골랐을 때만) · 광장(모두의 문장).
  * 남의 문장도 고를 수 있고, 조각에는 `showAuthor` 로 작성자를 밝힌다.
  * 열림은 부모가 정한다(이 컴포넌트는 열린 상태만 그린다) — 닫을 때 부모가 언마운트하면 검색어·초안도 함께 사라진다.
- * 고른 밑줄의 id 만이 아니라 BookQuote 객체도 `onChange` 에 실어 보낸다 — 부모가 시트 밖에서 조각을 그리기 위해서다.
+ * id 가 아니라 BookQuote 객체를 넘긴다 — 부모가 시트 밖에서 조각을 그리려면 실체가 있어야 한다.
  * 조각의 누르기는 QuoteScrap 자체 Pressable 에 준다(밖에서 또 감싸면 웹에서 버튼이 겹친다).
  */
-export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: {
+export function QuoteAttachSheet({ book, selectedIds, onPick, onClose, max }: {
   /** 글에 고른 책 — 있으면 '이 책' 범위 칩이 생기고 새로 오려두기의 기본 책이 된다. */
   book?: PickedBook | null;
+  /** 이미 본문에 들어 있는 밑줄 — 흐리게 두고 다시 넣지 못하게 한다. */
   selectedIds: number[];
-  onChange: (next: number[], quotes: BookQuote[]) => void;
+  /** 고른 밑줄 하나 — 부모가 본문에 넣고 시트를 닫는다. */
+  onPick: (quote: BookQuote) => void;
   onClose: () => void;
   max: number;
 }) {
@@ -119,23 +124,10 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
         normalize(quote.content).includes(needle) || normalize(quote.bookTitle).includes(needle))
   ), [items, needle]);
 
-  // 방금 오린 문장 — 목록이 다시 오기 전에도 onChange 에 객체를 실어 보내려고 들고 있는다.
-  const [created, setCreated] = useState<BookQuote[]>([]);
-  const byId = useMemo(
-    () => new Map([...created, ...items].map((quote) => [quote.id, quote] as const)),
-    [created, items],
-  );
-  const quotesFor = (ids: number[]) => ids.flatMap((id) => { const q = byId.get(id); return q ? [q] : []; });
-
+  // 상한을 다 채웠으면 더 넣을 수 없다 — 목록도 새로 오려두기도 여기서 막힌다.
   const full = selectedIds.length >= max;
-  const toggle = (quote: BookQuote) => {
-    const has = selectedIds.includes(quote.id);
-    if (!has && full) return;
-    const next = has ? selectedIds.filter((id) => id !== quote.id) : [...selectedIds, quote.id];
-    onChange(next, quotesFor(next));
-  };
 
-  // ── 새로 오려두기 — 어느 책이든(독서 기록 없어도) 고를 수 있고, 오리면 바로 고른 상태가 된다 ──
+  // ── 새로 오려두기 — 어느 책이든(독서 기록 없어도) 고를 수 있고, 오리면 곧바로 본문에 들어간다 ──
   const picker = useBookPicker({ initial: book ?? undefined });
   const draft = useQuoteDraft();
   const target = picker.selected;
@@ -152,24 +144,26 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
     onSuccess: (quote) => {
       prependMyQuote(queryClient, quote);
       invalidateQuoteLists(queryClient);
-      setCreated((prev) => [quote, ...prev]);
       draft.setContent('');
       draft.setPageText('');
-      if (selectedIds.length < max) {
-        setNotice(null);
-        onChange([...selectedIds, quote.id], [...quotesFor(selectedIds), quote]);
-      } else {
+      if (full) {
+        // 상한이 차 있으면 오려두기만 하고 넣지는 않는다 — 내 밑줄 목록에는 남으니 자리를 비우고 다시 고르면 된다.
         setNotice(`${max}개가 꽉 차 붙이지 않았어요`);
+        return;
       }
+      setNotice(null);
+      // 목록에서 고른 것과 같게 — 오리자마자 본문에 넣고 시트가 닫힌다(부모가 닫는다).
+      onPick(quote);
     },
   });
   const createError = create.isError && !create.isPending
     ? create.error instanceof ApiError ? create.error.message : '오려두지 못했어요 · 다시 시도'
     : null;
 
-  const done = (
-    <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="밑줄 고르기 완료" style={styles.done}>
-      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>완료</Text>
+  // 고르면 그 자리에서 닫히므로 여기서 확정할 것이 없다 — 아무것도 고르지 않고 나가는 길일 뿐이다.
+  const close = (
+    <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="밑줄 고르기 닫기" style={styles.close}>
+      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>닫기</Text>
     </Pressable>
   );
 
@@ -183,7 +177,7 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
       {/* 모달은 제 창을 가진다 — 바깥 provider 의 인셋을 그대로 쓰면 iOS 시트 위에 상태바 높이가 또 들어간다. */}
       <SafeAreaProvider>
         <PaperScreen>
-          <SubHeader category="밑줄 고르기" onBack={onClose} right={done} />
+          <SubHeader category="밑줄 고르기" onBack={onClose} right={close} />
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
             <Text style={[typeScale.caption, { color: colors.textFaint }]}>
               {selectedIds.length}/{max} · 최대 {max}개까지 붙일 수 있어요
@@ -266,25 +260,22 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
               </Text>
             ) : (
               shown.map((quote, i) => {
-                const selected = selectedIds.includes(quote.id);
-                // 다 골랐으면 안 고른 조각은 흐리게 두고 누르지 못하게 한다.
-                const disabled = !selected && full;
+                const inBody = selectedIds.includes(quote.id);
+                // 이미 넣은 것은 다시 넣을 수 없다(빼기는 본문에서 그 줄을 지운다). 다 채웠으면 나머지도 막힌다.
+                const disabled = inBody || full;
                 return (
                   <View key={quote.id} style={disabled ? styles.dim : undefined}>
                     <QuoteScrap
                       quote={quote}
                       rotate={i % 2 === 0 ? -1 : 1}
-                      selected={selected}
                       disabled={disabled}
                       showAuthor
-                      onPress={() => toggle(quote)}
-                      accessibilityRole="checkbox"
+                      onPress={() => onPick(quote)}
+                      accessibilityRole="button"
                       accessibilityLabel={quote.content.slice(0, LABEL_CHARS)}
-                      trailing={(
-                        <Text style={[typeScale.monoLabel, styles.mark, { color: selected ? colors.accent : colors.textFaint }]}>
-                          {selected ? '✓' : '○'}
-                        </Text>
-                      )}
+                      trailing={inBody ? (
+                        <Text style={[typeScale.monoLabel, styles.mark, { color: colors.textFaint }]}>넣음</Text>
+                      ) : null}
                     />
                   </View>
                 );
@@ -332,7 +323,7 @@ export function QuoteAttachSheet({ book, selectedIds, onChange, onClose, max }: 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
   // 헤더 우측 슬롯 — 웹은 hitSlop 을 무시하므로 여백으로 44px 상자를 만든다.
-  done: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
+  close: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
   composer: { gap: spacing.md },
   submit: {
     marginLeft: 'auto',
@@ -354,6 +345,6 @@ const styles = StyleSheet.create({
   center: { paddingVertical: spacing.md, alignItems: 'center' },
   centerText: { paddingVertical: spacing.md, textAlign: 'center' },
   dim: { opacity: 0.35 },
-  // 체크 표식 — 조각 오른쪽에 한 글자. 여백으로 조각과 떨어뜨린다.
-  mark: { fontSize: 14, paddingHorizontal: spacing.xs },
+  // 이미 넣었다는 표식 — 조각 오른쪽에 모노 한 마디. 여백으로 조각과 떨어뜨린다.
+  mark: { paddingHorizontal: spacing.xs },
 });
