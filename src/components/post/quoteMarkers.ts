@@ -97,26 +97,6 @@ function safeInsertPos(md: string, at: number): number {
 }
 
 /**
- * 표시를 지운 본문에서 커서가 갈 자리를 찾는다.
- *
- * 지우기는 순수한 삭제라 앞뒤로 그대로 남은 글이 있다 — 앞에서 같은 만큼, 뒤에서 같은 만큼을 재서
- * 커서가 어느 쪽에 속하는지 보고 옮긴다. 지워진 토막 안에 있었다면 그 토막이 시작하던 자리로 간다.
- */
-export function shiftCaretAfterRemove(before: string, after: string, caret: number): number {
-  const pos = Math.max(0, Math.min(caret, before.length));
-  let head = 0;
-  while (head < after.length && before[head] === after[head]) head += 1;
-  if (pos <= head) return pos;
-  // 뒤에서 같은 글 — 앞에서 이미 센 만큼과 겹치지 않게 막는다.
-  let tail = 0;
-  while (tail < after.length - head && before[before.length - 1 - tail] === after[after.length - 1 - tail]) {
-    tail += 1;
-  }
-  if (pos >= before.length - tail) return after.length - (before.length - pos);
-  return head;
-}
-
-/**
  * `at` 자리에 표시를 넣는다. 앞뒤로 빈 줄을 보장해 표시가 제 문단이 되게 하고,
  * 새 커서 자리(표시 뒤)를 함께 돌려준다. `at` 이 다른 표시 한가운데면 그 표시 뒤로 민다.
  */

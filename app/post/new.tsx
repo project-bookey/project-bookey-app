@@ -16,9 +16,7 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
 import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
-import {
-  insertQuoteMarkers, parseQuoteIds, removeQuoteMarker, shiftCaretAfterRemove,
-} from '@/components/post/quoteMarkers';
+import { insertQuoteMarkers, parseQuoteIds } from '@/components/post/quoteMarkers';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
 import { Card, EmptyState, Eyebrow, Field, Segmented } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -175,33 +173,25 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   // 상한 판정·표기도 실제로 보낼 수와 같은 기준으로 센다 — 화면 숫자와 저장 결과가 어긋나지 않게.
   const overQuoteMax = attachQuoteIds.length > POST_QUOTE_MAX;
 
-  // 시트에서 고른 목록과 본문 표시를 양쪽으로 맞춘다 — 새로 고른 것은 커서 자리에 넣고, 체크를 푼 것은 지운다.
-  const syncQuotes = (nextIds: number[], known: BookQuote[]) => {
-    setQuotes((prev) => {
-      // 시트가 모르는 밑줄(고치기로 들어온 것)은 이미 갖고 있던 객체가 지킨다 — 덮어쓰기만 하고 지우지 않는다.
-      const byId = new Map(prev.map((quote) => [quote.id, quote] as const));
-      for (const quote of known) byId.set(quote.id, quote);
-      return [...byId.values()];
-    });
-    const already = parseQuoteIds(bodyMd);
-    const wanted = new Set(nextIds);
-    // 지우기를 먼저 한다 — 넣을 자리는 '지운 뒤의 본문' 좌표여야 한다. 넣고 지우면 지운 길이만큼
-    // 좌표가 밀려, 다음에 넣을 자리가 남은 표시 한가운데로 떨어진다.
-    // 첨부는 본문 표시에서 파생하므로, 여기서 표시를 지우면 첨부도 함께 풀린다.
-    // 실체를 모르는 표시(지워진 밑줄이거나 손으로 써 넣은 id)는 애초에 시트의 선택 밖이라 여기서도 건드리지 않는다 — 사용자 글은 그대로 둔다.
-    const pruned = already.reduce(
-      (md, id) => (wanted.has(id) || !knownQuoteIds.has(id) ? md : removeQuoteMarker(md, id)),
-      bodyMd,
-    );
-    // 커서도 지운 만큼 앞으로 당겨 지금 본문과 짝을 맞춘다.
-    const at = shiftCaretAfterRemove(bodyMd, pruned, caret ?? bodyMd.length);
-    const fresh = nextIds.filter((id) => !already.includes(id));
-    const { text: next, cursor } = insertQuoteMarkers(pruned, at, fresh);
-    if (next === bodyMd) return;
-    setBodyMd(next);
-    setCaret(cursor);
-    // 본문을 갈아 끼우면 실제 캐럿은 글 끝으로 튄다 — 넣은 자리로 되돌려 다음에 넣을 자리를 화면과 맞춘다.
-    setPendingSelection({ start: cursor, end: cursor });
+  // 시트에서 고른 밑줄 하나를 커서 자리에 넣는다 — 넣기만 있다. 빼기는 본문에서 그 표시 줄을 지우는 것뿐이다.
+  const insertQuote = (quote: BookQuote) => {
+    setQuotes((prev) => (
+      // 아는 밑줄이면 새로 받은 객체로 갈아 끼우고(순서는 그대로), 모르는 밑줄만 뒤에 더한다.
+      // 시트가 모르는 밑줄(고치기로 들어온 것)은 그대로 남는다 — 보관함에서는 아무것도 빼지 않는다.
+      prev.some((known) => known.id === quote.id)
+        ? prev.map((known) => (known.id === quote.id ? quote : known))
+        : [...prev, quote]
+    ));
+    // 이미 본문에 있으면 두 번 넣지 않는다 — 시트가 막지만, 보관함만 갱신하고 조용히 지나간다.
+    if (!bodyQuoteIds.includes(quote.id)) {
+      const { text, cursor } = insertQuoteMarkers(bodyMd, caret ?? bodyMd.length, [quote.id]);
+      setBodyMd(text);
+      setCaret(cursor);
+      // 본문을 갈아 끼우면 실제 캐럿은 글 끝으로 튄다 — 넣은 자리로 되돌려 다음에 넣을 자리를 화면과 맞춘다.
+      setPendingSelection({ start: cursor, end: cursor });
+    }
+    // 닫기는 여기서 한다 — 열림 상태를 이 화면이 쥐고 있고, 넣기와 닫기가 한 흐름이라 한자리에서 끝낸다.
+    setPicking(false);
   };
 
   // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
@@ -348,6 +338,12 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
                     아래 모아 두었던 문장 {seed.moved}개를 본문 끝으로 옮겼어요 · 원하는 자리로 옮겨 보세요
                   </Text>
                 ) : null}
+                {/* 첨부는 본문 표시에서 파생한다 — 시트에 '떼기'가 없으니 빼는 길을 짚어 준다. 넣은 게 있을 때만. */}
+                {bodyQuoteIds.length > 0 ? (
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+                    문장을 빼려면 본문에서 그 줄을 지우세요
+                  </Text>
+                ) : null}
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                   **굵게** · _기울임_ · # 제목 · - 목록 · {'>'} 인용
                 </Text>
@@ -412,7 +408,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
         <QuoteAttachSheet
           book={book}
           selectedIds={attachQuoteIds}
-          onChange={syncQuotes}
+          onPick={insertQuote}
           onClose={() => setPicking(false)}
           max={POST_QUOTE_MAX}
         />
