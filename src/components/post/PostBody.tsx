@@ -7,7 +7,7 @@ import { parseQuoteIds, splitByQuoteMarkers } from '@/components/post/quoteMarke
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { spacing } from '@/theme';
 
-/** 표시가 가리키는 밑줄 중 실제로 그릴 수 있는 것 — 지워졌거나 남의 밑줄이면 빠진다. */
+/** 표시가 가리키는 밑줄 중 실제로 그릴 수 있는 것 — 지워졌거나 화면이 실체를 모르는 밑줄이면 빠진다. */
 export function usedQuoteIds(md: string, quotes: BookQuote[]): Set<number> {
   const have = new Set(quotes.map((quote) => quote.id));
   return new Set(parseQuoteIds(md).filter((id) => have.has(id)));
@@ -41,6 +41,8 @@ export function PostBody({ md, quotes, onPressQuote }: {
             key={`q${i}`}
             quote={quote}
             rotate={rotate}
+            // 남의 문장도 인용할 수 있어 글쓴이 것이 아니면 누가 오려뒀는지 밝힌다.
+            showAuthor
             onPress={onPressQuote ? () => onPressQuote(quote.id) : undefined}
           />
         );

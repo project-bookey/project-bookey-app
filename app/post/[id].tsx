@@ -238,6 +238,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
               key={quote.id}
               quote={quote}
               rotate={i % 2 === 0 ? -1 : 1}
+              // 본문 안 조각과 같은 규칙 — 글쓴이 것이 아니면 누가 오려뒀는지 밝힌다.
+              showAuthor
               onPress={() => router.push(`/quote/${quote.id}`)}
             />
           ))}

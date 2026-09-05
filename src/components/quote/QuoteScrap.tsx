@@ -7,8 +7,9 @@ import { spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 밑줄 조각 — 점선 메모 안 문장 + 모노 한 줄(책 제목 · N쪽).
- * 작성자·좋아요·댓글 수는 조각에 두지 않는다 — 조각은 문장이 먼저 읽히게, 나머지는 상세에서 본다
+ * 좋아요·댓글 수는 조각에 두지 않는다 — 조각은 문장이 먼저 읽히게, 나머지는 상세에서 본다
  * (docs/superpowers/specs/2026-09-03-review-comments-design.md 의 결정).
+ * 작성자도 기본으로는 숨기고, 여러 사람의 문장이 섞이는 자리에서만 `showAuthor` 로 켠다.
  * 도서 상세 밑줄 탭(책이 하나라 제목은 끈다)과 독후감의 밑줄 고르기·붙이기(여러 책이 섞여 제목을 켠다)가 같이 쓴다.
  * `onPress` 가 있으면 조각을 눌러 상세로 가고, `selected` 면 테두리를 악센트로 세워 고른 상태를 보인다.
  */
@@ -19,6 +20,7 @@ export function QuoteScrap({
   trailing,
   selected,
   showBook = true,
+  showAuthor = false,
   accessibilityRole = 'button',
   accessibilityLabel = '밑줄 상세',
   disabled,
@@ -36,6 +38,8 @@ export function QuoteScrap({
   selected?: boolean;
   /** 메타 줄 맨 앞의 책 제목 — 한 책만 보는 도서 상세에서는 끈다. */
   showBook?: boolean;
+  /** 남의 문장이면 메타 맨 앞에 작성자를 밝힌다 — 독후감처럼 여러 사람의 문장이 섞이는 자리에서 켠다. */
+  showAuthor?: boolean;
   /** 누를 때의 역할 — 상세로 가면 'button', 골랐다 풀었다 하는 목록에서는 'checkbox'. */
   accessibilityRole?: 'button' | 'checkbox';
   /** 누를 때의 라벨. */
@@ -44,8 +48,13 @@ export function QuoteScrap({
   disabled?: boolean;
 }) {
   const { colors } = useTheme();
-  // 메타 한 줄 — 책 제목과 쪽수 중 있는 것만 ' · ' 로 잇는다. 둘 다 없으면 줄 자체를 두지 않는다.
-  const meta = [showBook ? quote.bookTitle : null, quote.page != null ? `${quote.page}쪽` : null]
+  // 메타 한 줄 — 작성자(남의 것일 때만)·책 제목·쪽수 중 있는 것만 ' · ' 로 잇는다.
+  // 하나도 없으면 줄 자체를 두지 않는다.
+  const meta = [
+    showAuthor && !quote.mine ? `${quote.authorNickname}님` : null,
+    showBook ? quote.bookTitle : null,
+    quote.page != null ? `${quote.page}쪽` : null,
+  ]
     .filter(Boolean)
     .join(' · ');
 
