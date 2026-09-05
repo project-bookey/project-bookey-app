@@ -125,6 +125,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviews/{reviewId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 댓글 목록 — 최상위만, 오래된 순 */
+        get: operations["list"];
+        put?: never;
+        /** 댓글 작성 — parentId 를 주면 답글(1단계) */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quotes": {
         parameters: {
             query?: never;
@@ -132,11 +150,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 내가 오려둔 문장 목록 — 최신순 */
+        /** 내가 오려둔 문장 목록 — 최신순, bookId 로 책 하나만 추릴 수 있다 */
         get: operations["myQuotes"];
         put?: never;
         /** 문장 오려두기 */
-        post: operations["create_1"];
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quoteId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 댓글 목록 — 최상위만, 오래된 순 */
+        get: operations["list_1"];
+        put?: never;
+        /** 댓글 작성 — parentId 를 주면 답글(1단계) */
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -170,8 +206,60 @@ export interface paths {
         /** 내 독후감 목록 */
         get: operations["listMine"];
         put?: never;
-        /** 독후감 작성 — 기본 비공개 */
-        post: operations["create_2"];
+        /** 독후감 작성 */
+        post: operations["create_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/posts/{postId}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 좋아요 토글 */
+        post: operations["like"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/posts/{postId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 댓글 목록 — 오래된 순, 루트 댓글에 답글을 묶어 내린다 */
+        get: operations["list_2"];
+        put?: never;
+        /** 댓글 작성 — parentId 를 주면 답글 */
+        post: operations["create_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/posts/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 독후감 사진 업로드 — 글에 붙이기 전 임시 저장, 24시간 안에 안 붙이면 삭제 */
+        post: operations["upload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -220,7 +308,7 @@ export interface paths {
             cookie?: never;
         };
         /** 서재 목록 — 상태별 필터 */
-        get: operations["list"];
+        get: operations["list_3"];
         put?: never;
         /** 서재에 책 추가 */
         post: operations["add"];
@@ -309,7 +397,7 @@ export interface paths {
         get: operations["myClubs"];
         put?: never;
         /** 모임 만들기 — 초대 코드 자동 발급 */
-        post: operations["create_3"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -361,7 +449,7 @@ export interface paths {
         get: operations["feed"];
         put?: never;
         /** 글 · 댓글 작성 */
-        post: operations["create_4"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -514,7 +602,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 챌린지 생성 — 즉시 시작 */
-        post: operations["create_5"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -600,7 +688,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 좋아요 토글 */
-        post: operations["like"];
+        post: operations["like_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -616,7 +704,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 소셜 로그인 (Apple/Google/Kakao) */
+        /** 소셜 로그인 (Apple/Google/Kakao) — 연동된 계정만, 신규 가입 불가 */
         post: operations["socialLogin"];
         delete?: never;
         options?: never;
@@ -650,7 +738,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 이메일 회원가입 */
+        /** 이메일 회원가입 — 인증 코드 필요 */
         post: operations["signup"];
         delete?: never;
         options?: never;
@@ -703,6 +791,23 @@ export interface paths {
         put?: never;
         /** 이메일 로그인 */
         post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/email/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 가입 이메일 인증 코드 발급 */
+        post: operations["requestEmailCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -785,10 +890,10 @@ export interface paths {
             cookie?: never;
         };
         /** 에디터 픽 목록 */
-        get: operations["list_1"];
+        get: operations["list_4"];
         put?: never;
         /** 에디터 픽 추가 */
-        post: operations["create_6"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -853,11 +958,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 배너 전체 목록 — 비활성·기간 외 포함 */
-        get: operations["list_2"];
+        /** 배너/공지 전체 목록 — 비활성·기간 외 포함 */
+        get: operations["list_5"];
         put?: never;
         /** 배너 생성 */
-        post: operations["create_7"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -908,7 +1013,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 관리자 계정 생성 (SUPER_ADMIN) */
-        post: operations["create_8"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -922,7 +1027,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 리뷰 단건 조회 */
+        get: operations["detail"];
         put?: never;
         post?: never;
         /** 리뷰 삭제 */
@@ -940,7 +1046,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 독후감 한 건 — 비공개는 작성자만, 남의 글은 조회수를 올린다 */
+        get: operations["get"];
         put?: never;
         post?: never;
         /** 독후감 삭제 */
@@ -1166,7 +1273,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서별 세션 목록 */
-        get: operations["list_3"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1184,6 +1291,23 @@ export interface paths {
         };
         /** 진행 중인 세션 조회 — 앱 재시작 시 복원 */
         get: operations["current"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{reviewId}/comments/{commentId}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 답글 목록 — 오래된 순 */
+        get: operations["replies"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1218,6 +1342,41 @@ export interface paths {
         };
         /** 내가 쓴 리뷰 */
         get: operations["listMine_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quoteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 문장 한 건 — 상세 진입용 */
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        /** 문장 삭제 — 본인만 */
+        delete: operations["delete_4"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quoteId}/comments/{commentId}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 답글 목록 — 오래된 순 */
+        get: operations["replies_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1311,6 +1470,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/posts/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 광장 독후감 피드 — 공개 독후감 최신순 */
+        get: operations["feed_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plaza/feed": {
         parameters: {
             query?: never;
@@ -1319,7 +1495,7 @@ export interface paths {
             cookie?: never;
         };
         /** 광장 피드 — 밑줄(QUOTE) · 완독 자랑(FINISH) */
-        get: operations["feed_1"];
+        get: operations["feed_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1336,7 +1512,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 알림 목록 */
-        get: operations["list_4"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1353,11 +1529,11 @@ export interface paths {
             cookie?: never;
         };
         /** 독서 기록 상세 — 진척도 포함 */
-        get: operations["detail"];
+        get: operations["detail_1"];
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1405,11 +1581,11 @@ export interface paths {
             cookie?: never;
         };
         /** 토론 상세 — 댓글 포함 */
-        get: operations["detail_1"];
+        get: operations["detail_2"];
         put?: never;
         post?: never;
         /** 삭제 (작성자 또는 운영자) */
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1457,7 +1633,7 @@ export interface paths {
             cookie?: never;
         };
         /** 챌린지 단건 */
-        get: operations["get"];
+        get: operations["get_2"];
         put?: never;
         post?: never;
         /** 챌린지 포기 */
@@ -1492,7 +1668,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서 상세 — 검증 평점과 전체 평점을 분리해 제공 */
-        get: operations["detail_2"];
+        get: operations["detail_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1527,6 +1703,23 @@ export interface paths {
         };
         /** 책별 오려둔 문장 목록 — 최신순 */
         get: operations["quotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/books/{bookId}/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 책별 공개 독후감 목록 — 최신순 */
+        get: operations["posts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1593,8 +1786,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 활성 배너 목록 — 기간 내, 정렬 순 */
-        get: operations["list_5"];
+        /** 활성 배너/공지 목록 — 기간 내, 정렬 순 */
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1801,13 +1994,13 @@ export interface paths {
         put?: never;
         post?: never;
         /** 세션 삭제 */
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/quotes/{quoteId}": {
+    "/api/v1/reviews/{reviewId}/comments/{commentId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1817,8 +2010,42 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** 문장 삭제 — 본인만 */
-        delete: operations["delete_7"];
+        /** 댓글 삭제 — 본인만 */
+        delete: operations["delete_8"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quotes/{quoteId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 댓글 삭제 — 본인만 */
+        delete: operations["delete_9"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/posts/{postId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 댓글 삭제 — 본인만, 답글도 함께 지워진다 */
+        delete: operations["delete_10"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1863,6 +2090,8 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         BannerUpsertRequest: {
+            /** @enum {string} */
+            kind: "AD" | "NOTICE";
             title: string;
             subtitle?: string;
             imageUrl?: string;
@@ -1879,6 +2108,8 @@ export interface components {
         BannerAdminView: {
             /** Format: int64 */
             id: number;
+            /** @enum {string} */
+            kind: "AD" | "NOTICE";
             title: string;
             subtitle?: string;
             imageUrl?: string;
@@ -2001,12 +2232,37 @@ export interface components {
             };
             /** Format: int32 */
             helpfulCount: number;
+            /** Format: int64 */
+            commentCount: number;
             /** Format: date-time */
             createdAt: string;
         };
         ReportRequest: {
             reason: string;
             detail?: string;
+        };
+        CreateReviewCommentRequest: {
+            body: string;
+            /** Format: int64 */
+            parentId?: number;
+        };
+        ReviewCommentView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            reviewId: number;
+            /** Format: int64 */
+            parentId?: number;
+            /** Format: int64 */
+            authorId: number;
+            authorNickname: string;
+            authorAvatarUrl?: string;
+            body: string;
+            mine: boolean;
+            /** Format: int64 */
+            replyCount: number;
+            /** Format: date-time */
+            createdAt: string;
         };
         CreateBookQuoteRequest: {
             /** Format: int64 */
@@ -2035,6 +2291,31 @@ export interface components {
             agreeCount: number;
             agreedByMe: boolean;
             mine: boolean;
+            /** Format: int64 */
+            commentCount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CreateQuoteCommentRequest: {
+            body: string;
+            /** Format: int64 */
+            parentId?: number;
+        };
+        QuoteCommentView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            quoteId: number;
+            /** Format: int64 */
+            parentId?: number;
+            /** Format: int64 */
+            authorId: number;
+            authorNickname: string;
+            authorAvatarUrl?: string;
+            body: string;
+            mine: boolean;
+            /** Format: int64 */
+            replyCount: number;
             /** Format: date-time */
             createdAt: string;
         };
@@ -2051,28 +2332,80 @@ export interface components {
             title: string;
             bodyMd: string;
             /** @enum {string} */
-            visibility?: "PUBLIC" | "LINK" | "PRIVATE";
+            visibility: "PUBLIC" | "LINK" | "PRIVATE";
             tags: string[];
+            imageIds: number[];
+            quoteIds: number[];
+        };
+        PostImageView: {
+            /** Format: int64 */
+            id: number;
+            url: string;
+            /** Format: int32 */
+            width?: number;
+            /** Format: int32 */
+            height?: number;
         };
         PostView: {
             /** Format: int64 */
-            id?: number;
-            slug?: string;
-            title?: string;
-            bodyMd?: string;
+            id: number;
+            slug: string;
+            title: string;
+            bodyMd: string;
             /** @enum {string} */
-            visibility?: "PUBLIC" | "LINK" | "PRIVATE";
+            visibility: "PUBLIC" | "LINK" | "PRIVATE";
             tags: string[];
             /** Format: int64 */
             bookId?: number;
             bookTitle?: string;
             bookCoverUrl?: string;
             authorHandle?: string;
-            authorNickname?: string;
+            authorNickname: string;
             /** Format: date-time */
             publishedAt?: string;
             /** Format: int32 */
             viewCount: number;
+            /** Format: int64 */
+            authorId: number;
+            authorAvatarUrl?: string;
+            excerpt: string;
+            images: components["schemas"]["PostImageView"][];
+            quotes: components["schemas"]["BookQuoteView"][];
+            /** Format: int64 */
+            likeCount: number;
+            likedByMe: boolean;
+            /** Format: int64 */
+            commentCount: number;
+            mine: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PostLikeView: {
+            liked: boolean;
+            /** Format: int64 */
+            likeCount: number;
+        };
+        CreatePostCommentRequest: {
+            body: string;
+            /** Format: int64 */
+            parentId?: number;
+        };
+        PostCommentView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            postId: number;
+            /** Format: int64 */
+            parentId?: number;
+            /** Format: int64 */
+            authorId: number;
+            authorNickname: string;
+            authorAvatarUrl?: string;
+            body: string;
+            mine: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            replies: components["schemas"]["PostCommentView"][];
         };
         DeviceRegisterRequest: {
             /** @enum {string} */
@@ -2383,7 +2716,6 @@ export interface components {
             /** @enum {string} */
             provider: "APPLE" | "GOOGLE" | "KAKAO";
             token: string;
-            nickname?: string;
         };
         MeResponse: {
             /** Format: int64 */
@@ -2418,6 +2750,7 @@ export interface components {
             email: string;
             password: string;
             nickname: string;
+            code: string;
         };
         RefreshRequest: {
             refreshToken: string;
@@ -2426,6 +2759,15 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        EmailCodeRequest: {
+            /** Format: email */
+            email: string;
+        };
+        EmailCodeResponse: {
+            /** Format: int64 */
+            expiresInSec: number;
+            devCode?: string;
         };
         SanctionRequest: {
             /** @enum {string} */
@@ -2503,11 +2845,18 @@ export interface components {
             hasSpoiler?: boolean;
         };
         UpdatePostRequest: {
+            /** Format: int64 */
+            bookId?: number;
             title?: string;
             bodyMd?: string;
-            tags: string[];
+            /** @description 생략하면 유지, 빈 목록이면 비움 */
+            tags?: string[];
             /** @enum {string} */
             visibility?: "PUBLIC" | "LINK" | "PRIVATE";
+            /** @description 생략하면 유지, 빈 목록이면 사진을 전부 뗌 */
+            imageIds?: number[];
+            /** @description 생략하면 유지, 빈 목록이면 밑줄 연결을 전부 지움 */
+            quoteIds?: number[];
         };
         NotificationSettingsRequest: {
             /** @enum {string} */
@@ -2596,6 +2945,18 @@ export interface components {
             longestStreakDays: number;
             daily: components["schemas"]["DailyStat"][];
         };
+        PageResponseReviewCommentView: {
+            content?: components["schemas"]["ReviewCommentView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         VerificationPreview: {
             /** @enum {string} */
             expectedLevel: "VERIFIED_FULL" | "VERIFIED_PARTIAL" | "UNVERIFIED" | "FLAGGED";
@@ -2634,6 +2995,18 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PageResponseQuoteCommentView: {
+            content?: components["schemas"]["QuoteCommentView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         BookDetail: {
             book: components["schemas"]["BookSummary"];
             description?: string;
@@ -2655,6 +3028,18 @@ export interface components {
         };
         PageResponsePostView: {
             content?: components["schemas"]["PostView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        PageResponsePostCommentView: {
+            content?: components["schemas"]["PostCommentView"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -2699,6 +3084,8 @@ export interface components {
             agreeCount?: number;
             agreedByMe?: boolean;
             authorFinished?: boolean;
+            /** Format: int64 */
+            commentCount?: number;
         };
         NotificationView: {
             /** Format: int64 */
@@ -2860,6 +3247,8 @@ export interface components {
         BannerView: {
             /** Format: int64 */
             id: number;
+            /** @enum {string} */
+            kind: "AD" | "NOTICE";
             title: string;
             subtitle?: string;
             imageUrl?: string;
@@ -3142,11 +3531,19 @@ export type SchemaManualRequest = components['schemas']['ManualRequest'];
 export type SchemaCreateReviewRequest = components['schemas']['CreateReviewRequest'];
 export type SchemaReviewView = components['schemas']['ReviewView'];
 export type SchemaReportRequest = components['schemas']['ReportRequest'];
+export type SchemaCreateReviewCommentRequest = components['schemas']['CreateReviewCommentRequest'];
+export type SchemaReviewCommentView = components['schemas']['ReviewCommentView'];
 export type SchemaCreateBookQuoteRequest = components['schemas']['CreateBookQuoteRequest'];
 export type SchemaBookQuoteView = components['schemas']['BookQuoteView'];
+export type SchemaCreateQuoteCommentRequest = components['schemas']['CreateQuoteCommentRequest'];
+export type SchemaQuoteCommentView = components['schemas']['QuoteCommentView'];
 export type SchemaQuoteAgreeView = components['schemas']['QuoteAgreeView'];
 export type SchemaCreatePostRequest = components['schemas']['CreatePostRequest'];
+export type SchemaPostImageView = components['schemas']['PostImageView'];
 export type SchemaPostView = components['schemas']['PostView'];
+export type SchemaPostLikeView = components['schemas']['PostLikeView'];
+export type SchemaCreatePostCommentRequest = components['schemas']['CreatePostCommentRequest'];
+export type SchemaPostCommentView = components['schemas']['PostCommentView'];
 export type SchemaDeviceRegisterRequest = components['schemas']['DeviceRegisterRequest'];
 export type SchemaAddBookRequest = components['schemas']['AddBookRequest'];
 export type SchemaBookSummary = components['schemas']['BookSummary'];
@@ -3178,6 +3575,8 @@ export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaEmailSignupRequest = components['schemas']['EmailSignupRequest'];
 export type SchemaRefreshRequest = components['schemas']['RefreshRequest'];
 export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
+export type SchemaEmailCodeRequest = components['schemas']['EmailCodeRequest'];
+export type SchemaEmailCodeResponse = components['schemas']['EmailCodeResponse'];
 export type SchemaSanctionRequest = components['schemas']['SanctionRequest'];
 export type SchemaOverrideVerificationRequest = components['schemas']['OverrideVerificationRequest'];
 export type SchemaResolveRequest = components['schemas']['ResolveRequest'];
@@ -3202,12 +3601,15 @@ export type SchemaEditorPickUpdateRequest = components['schemas']['EditorPickUpd
 export type SchemaUpdateBookRequest = components['schemas']['UpdateBookRequest'];
 export type SchemaDailyStat = components['schemas']['DailyStat'];
 export type SchemaStatsSummary = components['schemas']['StatsSummary'];
+export type SchemaPageResponseReviewCommentView = components['schemas']['PageResponseReviewCommentView'];
 export type SchemaVerificationPreview = components['schemas']['VerificationPreview'];
 export type SchemaPageResponseReviewView = components['schemas']['PageResponseReviewView'];
 export type SchemaPageResponseBookQuoteView = components['schemas']['PageResponseBookQuoteView'];
+export type SchemaPageResponseQuoteCommentView = components['schemas']['PageResponseQuoteCommentView'];
 export type SchemaBookDetail = components['schemas']['BookDetail'];
 export type SchemaRatingSummary = components['schemas']['RatingSummary'];
 export type SchemaPageResponsePostView = components['schemas']['PageResponsePostView'];
+export type SchemaPageResponsePostCommentView = components['schemas']['PageResponsePostCommentView'];
 export type SchemaPageResponsePlazaItemView = components['schemas']['PageResponsePlazaItemView'];
 export type SchemaPlazaItemView = components['schemas']['PlazaItemView'];
 export type SchemaNotificationView = components['schemas']['NotificationView'];
@@ -3431,9 +3833,61 @@ export interface operations {
             };
         };
     };
+    list: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseReviewCommentView"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewCommentView"];
+                };
+            };
+        };
+    };
     myQuotes: {
         parameters: {
             query?: {
+                bookId?: number;
                 page?: number;
                 size?: number;
             };
@@ -3454,7 +3908,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3474,6 +3928,57 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BookQuoteView"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseQuoteCommentView"];
+                };
+            };
+        };
+    };
+    create_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuoteCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteCommentView"];
                 };
             };
         };
@@ -3523,7 +4028,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3543,6 +4048,106 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PostView"];
+                };
+            };
+        };
+    };
+    like: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostLikeView"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostCommentView"];
+                };
+            };
+        };
+    };
+    create_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePostCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostCommentView"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostImageView"];
                 };
             };
         };
@@ -3589,7 +4194,7 @@ export interface operations {
             };
         };
     };
-    list: {
+    list_3: {
         parameters: {
             query?: {
                 status?: "WANT_TO_READ" | "READING" | "PAUSED" | "FINISHED" | "ABANDONED";
@@ -3756,7 +4361,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3854,7 +4459,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4072,7 +4677,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -4213,7 +4818,7 @@ export interface operations {
             };
         };
     };
-    like: {
+    like_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4373,6 +4978,30 @@ export interface operations {
             };
         };
     };
+    requestEmailCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailCodeResponse"];
+                };
+            };
+        };
+    };
     sanction: {
         parameters: {
             query?: never;
@@ -4465,7 +5094,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4485,7 +5114,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -4587,9 +5216,11 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_5: {
         parameters: {
-            query?: never;
+            query?: {
+                kind?: "AD" | "NOTICE";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4607,7 +5238,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -4677,7 +5308,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -4697,6 +5328,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AdminProfile"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewView"];
                 };
             };
         };
@@ -4743,6 +5396,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReviewView"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostView"];
                 };
             };
         };
@@ -5147,7 +5822,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_6: {
         parameters: {
             query?: {
                 readingRecordId?: number;
@@ -5187,6 +5862,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    replies: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                reviewId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseReviewCommentView"];
                 };
             };
         };
@@ -5232,6 +5933,74 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseReviewView"];
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookQuoteView"];
+                };
+            };
+        };
+    };
+    delete_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quoteId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    replies_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                quoteId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseQuoteCommentView"];
                 };
             };
         };
@@ -5360,6 +6129,29 @@ export interface operations {
     feed_1: {
         parameters: {
             query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
+    feed_2: {
+        parameters: {
+            query?: {
                 type?: "QUOTE" | "FINISH";
                 page?: number;
                 size?: number;
@@ -5381,7 +6173,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_7: {
         parameters: {
             query?: {
                 page?: number;
@@ -5404,7 +6196,7 @@ export interface operations {
             };
         };
     };
-    detail: {
+    detail_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5426,7 +6218,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5488,7 +6280,7 @@ export interface operations {
             };
         };
     };
-    detail_1: {
+    detail_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5511,7 +6303,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -5577,7 +6369,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5639,7 +6431,7 @@ export interface operations {
             };
         };
     };
-    detail_2: {
+    detail_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5712,6 +6504,31 @@ export interface operations {
             };
         };
     };
+    posts: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
     recommended: {
         parameters: {
             query?: {
@@ -5778,9 +6595,11 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_8: {
         parameters: {
-            query?: never;
+            query?: {
+                kind?: "AD" | "NOTICE";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6050,7 +6869,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6070,12 +6889,55 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_8: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_9: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 quoteId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_10: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: number;
+                commentId: number;
             };
             cookie?: never;
         };

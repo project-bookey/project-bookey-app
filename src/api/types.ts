@@ -17,6 +17,7 @@ export type Page<T> = Omit<Schemas['PageResponseReadingRecordView'], 'content'> 
 // ── 사용자 ───────────────────────────────────────────────
 export type Me = Schemas['MeResponse'];
 export type TokenResponse = Schemas['TokenResponse'];
+export type EmailCodeResponse = Schemas['EmailCodeResponse'];
 
 /** 서버는 문자열로 내려주므로 앱에서 좁혀 쓴다. */
 export type NotifyTone = 'GENTLE' | 'FACT' | 'SPARTA' | 'TSUNDERE' | 'SILENT';
