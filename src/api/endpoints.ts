@@ -134,14 +134,17 @@ export const reviewApi = {
 
 export const quoteApi = {
   create: (body: CreateQuote) => api<BookQuote>('/api/v1/quotes', { method: 'POST', body }),
-  /** 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만 — 독후감 작성 시 밑줄 고르기에 쓴다. */
-  mine: (page = 0, size = 20, bookId?: number) =>
-    api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size, bookId } }),
+  /**
+   * 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만 — 독후감 작성 시 밑줄 고르기에 쓴다.
+   * q 는 문장 내용·책 제목을 대소문자 무시 부분 일치로 훑는다(빈 값이면 전체).
+   */
+  mine: (page = 0, size = 20, bookId?: number, q?: string) =>
+    api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size, bookId, q } }),
   /** 밑줄 한 건 — 상세 진입·새로고침·딥링크. */
   get: (quoteId: number) => api<BookQuote>(`/api/v1/quotes/${quoteId}`),
-  /** 책별 밑줄 — 최신순. 도서 상세 밑줄 탭은 5건씩 받는다. */
-  byBook: (bookId: number, page = 0, size = 5) =>
-    api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size } }),
+  /** 책별 밑줄 — 최신순. 도서 상세 밑줄 탭은 5건씩 받는다. q 는 문장 내용·책 제목 검색. */
+  byBook: (bookId: number, page = 0, size = 5, q?: string) =>
+    api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size, q } }),
   remove: (quoteId: number) => api<void>(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' }),
   /** '좋아요' 토글 — 서버가 토글 후 상태를 돌려준다. */
   agree: (quoteId: number) => api<QuoteAgree>(`/api/v1/quotes/${quoteId}/agree`, { method: 'POST' }),
@@ -158,8 +161,9 @@ export const quoteApi = {
 };
 
 export const plazaApi = {
-  feed: (type: PlazaItemType, page = 0, size = 20) =>
-    api<Page<PlazaItem>>('/api/v1/plaza/feed', { query: { type, page, size } }),
+  /** 광장 피드. q 는 문장 내용·책 제목 검색 — 완독 자랑(FINISH)에는 뜻이 없어 서버가 무시한다. */
+  feed: (type: PlazaItemType, page = 0, size = 20, q?: string) =>
+    api<Page<PlazaItem>>('/api/v1/plaza/feed', { query: { type, page, size, q } }),
 };
 
 /** 독후감 — 광장 피드·도서별 목록·내 글, 좋아요·댓글, 붙일 사진 업로드. */
