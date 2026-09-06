@@ -90,7 +90,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
         ) : variant === 'profile' ? (
           `${post.bookTitle ?? '책 없음'} · ${visibility} · 조회 ${post.viewCount}`
         ) : (
-          `${post.authorNickname} · 좋아요 ${post.likeCount} · 댓글 ${post.commentCount}`
+          `${post.authorNickname} · 좋아요 ${post.likeCount}`
         )}
       </Text>
 
@@ -98,7 +98,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
           0 이어도 그린다: 밑줄 조각도 같은 규칙이라 회전 중에 줄 수가 달라지지 않는다. */}
       {home ? (
         <Text numberOfLines={1} style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
-          좋아요 {post.likeCount} · 댓글 {post.commentCount}
+          좋아요 {post.likeCount}
         </Text>
       ) : null}
     </MemoScrap>

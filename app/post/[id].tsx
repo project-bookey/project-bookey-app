@@ -5,14 +5,12 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
-import { invalidatePostLists, postCommentsKey, postKey } from '@/api/postCache';
+import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
-import { CommentThread } from '@/components/comments';
 import { PostBody, usedQuoteIds } from '@/components/post/PostBody';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
-import { usePostCommentAdapter } from '@/components/post/usePostCommentAdapter';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { EmptyState, Eyebrow, FootAction, Tag, formatRelative } from '@/components/ui';
@@ -21,10 +19,8 @@ import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 독후감 상세 — 광장 독후감 카드·책 상세·내 독후감에서 들어온다.
- * 위에 글 한 편(표지·제목·바이라인·사진·본문·엮은 밑줄·액션 행)이 오고 아래로 댓글이 붙는다.
- *
- * 목록·입력·답글은 공용 스레드(CommentThread)가 통째로 맡는다. 이 화면에 남는 일은
- * 글 한 건을 받아 펼치고, 좋아요·삭제·고치기 진입을 처리하는 것뿐이다(밑줄 상세와 같은 골격).
+ * 글 한 편(표지·제목·바이라인·사진·본문·엮은 밑줄·액션 행)만 펼친다.
+ * 댓글은 없다 — 독후감의 상호작용은 좋아요와 엽서뿐이다(§14.1, v1.2 확정).
  */
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,7 +29,6 @@ export default function PostDetailScreen() {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
   const pressLike = useLikePost();
-  const adapter = usePostCommentAdapter(postId);
 
   const post = useQuery({
     queryKey: postKey(postId),
@@ -51,9 +46,7 @@ export default function PostDetailScreen() {
     onMutate: () => setRemoveError(null),
     onSuccess: () => {
       invalidatePostLists(queryClient);
-      // exact — 댓글 키가 글 키를 접두사로 쓰므로 하나씩 이름을 불러 걷어낸다(답글 키는 댓글 키 아래).
       queryClient.removeQueries({ queryKey: postKey(postId), exact: true });
-      queryClient.removeQueries({ queryKey: postCommentsKey(postId) });
       if (router.canGoBack()) router.back();
       else router.replace('/plaza');
     },
@@ -123,15 +116,9 @@ export default function PostDetailScreen() {
   return (
     <PaperScreen>
       <SubHeader category="독후감" right={editAction} />
-      <CommentThread
-        adapter={adapter}
-        header={header}
-        title="댓글"
-        placeholder={placeholder}
-        showComposer={!!post.data}
-        composerPlaceholder="이 독후감에 덧붙이기…"
-        emptyText="아직 덧붙인 말이 없어요. 첫 마디를 남겨보세요."
-      />
+      <ScrollView contentContainerStyle={styles.screenBody}>
+        {placeholder ?? header}
+      </ScrollView>
     </PaperScreen>
   );
 }
@@ -246,10 +233,9 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
         </View>
       ) : null}
 
-      {/* ⑥ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글 수는 글자만(목록이 바로 아래다) */}
+      {/* ⑥ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글은 없다(§14.1) */}
       <View style={styles.footRow}>
         <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
-        <FootAction label={`댓글 ${post.commentCount}`} />
         <FootAction label={`조회 ${post.viewCount}`} />
         {onDelete ? (
           <View style={styles.footRight}>
@@ -268,6 +254,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
 }
 
 const styles = StyleSheet.create({
+  screenBody: { padding: spacing.lg, paddingBottom: spacing.xxl },
   skeleton: { height: 240, borderRadius: radius.md },
   // 헤더 우측 슬롯 — 웹은 hitSlop 을 무시하므로 여백으로 44px 상자를 만든다.
   edit: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },

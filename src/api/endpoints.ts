@@ -2,10 +2,10 @@ import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
   Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  CreatePost, CreatePostComment, CreateQuote, CreateQuoteComment, CreateReviewComment,
+  CreatePost, CreateQuote, CreateQuoteComment, CreateReviewComment,
   EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
-  PopularBook, Post, PostComment, PostImage, PostLike, PostcardView, QuoteAgree, QuoteComment,
+  PopularBook, Post, PostImage, PostLike, PostcardView, QuoteAgree, QuoteComment,
   ReadingRecord, ReadingStatus,
   Review, ReviewComment, Session, SessionEndResult, SignupConfig, StatsSummary, TokenResponse,
   UpdatePost, UserProfileView, VerificationPreview,
@@ -269,12 +269,6 @@ export const postApi = {
     api<Post>(`/api/v1/posts/${postId}`, { method: 'PATCH', body }),
   remove: (postId: number) => api<void>(`/api/v1/posts/${postId}`, { method: 'DELETE' }),
   like: (postId: number) => api<PostLike>(`/api/v1/posts/${postId}/like`, { method: 'POST' }),
-  comments: (postId: number, page = 0, size = 30) =>
-    api<Page<PostComment>>(`/api/v1/posts/${postId}/comments`, { query: { page, size } }),
-  addComment: (postId: number, body: CreatePostComment) =>
-    api<PostComment>(`/api/v1/posts/${postId}/comments`, { method: 'POST', body }),
-  removeComment: (postId: number, commentId: number) =>
-    api<void>(`/api/v1/posts/${postId}/comments/${commentId}`, { method: 'DELETE' }),
   /** 사진 업로드 — multipart. Content-Type 은 런타임이 boundary 와 함께 붙인다. */
   uploadImage: (form: FormData) => api<PostImage>('/api/v1/posts/images', { method: 'POST', body: form }),
 };

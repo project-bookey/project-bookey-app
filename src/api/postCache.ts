@@ -19,7 +19,6 @@ export const myPostsKey = ['posts', 'mine'] as const;
 /** 내 최신 독후감 한 건(프로필) — Page 하나. */
 export const MY_POSTS_LATEST_KEY = ['posts', 'mine', 'latest'] as const;
 export const postKey = (postId: number) => ['post', postId] as const;
-export const postCommentsKey = (postId: number) => ['post', postId, 'comments'] as const;
 
 export type PostListCache = InfiniteData<Page<Post>>;
 

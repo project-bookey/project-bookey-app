@@ -91,7 +91,6 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
 
       <View style={styles.footRow}>
         <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
-        <FootAction label={`댓글 ${post.commentCount}`} onPress={onOpen} />
         <FootAction label={`조회 ${post.viewCount}`} />
         {/* 엮은 밑줄은 세기만 한다 — 펼쳐 보는 것은 상세의 몫이다. */}
         {post.quotes.length > 0 ? <FootAction label={`밑줄 ${post.quotes.length}`} /> : null}
@@ -134,7 +133,7 @@ const styles = StyleSheet.create({
   },
   photoMore: { fontSize: 9, letterSpacing: 0.4 },
 
-  // 밑줄 카드보다 액션이 많다(좋아요·댓글·조회·밑줄·책 보기) — 숫자가 커지면 한 줄에 못 담는다.
+  // 좋아요·조회·밑줄·책 보기 — 댓글은 없다(§14.1). 숫자가 커지면 한 줄에 못 담는다.
   // Card 가 overflow:hidden 이라 넘치면 소리 없이 잘리므로, 넘칠 때만 다음 줄로 내린다.
   // 줄 사이(rowGap)는 액션의 음수 세로 마진(-6·-6)만큼 먹히므로 한 단계 크게 잡는다.
   footRow: {
