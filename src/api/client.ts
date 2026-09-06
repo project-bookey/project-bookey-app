@@ -79,7 +79,9 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   }
 
   const send = async (): Promise<Response> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    // FormData(파일 업로드)는 런타임이 boundary 포함 Content-Type 을 직접 붙여야 한다.
+    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+    const headers: Record<string, string> = isForm ? {} : { 'Content-Type': 'application/json' };
     if (auth) {
       const tokens = await getTokens();
       if (tokens?.accessToken) {
@@ -89,7 +91,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     return fetch(url.toString(), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });
   };
 

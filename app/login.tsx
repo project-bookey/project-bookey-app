@@ -1,5 +1,5 @@
 import * as Google from 'expo-auth-session/providers/google';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -7,8 +7,11 @@ import {
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
+import { useQuery } from '@tanstack/react-query';
+
 import { API_BASE_URL } from '@/api/client';
-import { authApi } from '@/api/endpoints';
+import { authApi, libraryApi } from '@/api/endpoints';
+import { useOnboarding } from '@/store/onboarding';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, radius, sans, spacing, typeScale } from '@/theme';
@@ -31,8 +34,9 @@ const BUTTON_HEIGHT = 48;
 
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
- * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조.
- * 가입은 이메일 인증 코드를 거쳐야 하고, 소셜 버튼은 연동된 계정의 로그인 전용이다(신규 가입 불가).
+ * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 소셜 버튼은 연동된 계정의 로그인 전용(신규 가입 불가).
+ * 가입 인증은 서버 설정(signup-config)을 따른다 — IDENTITY(휴대폰 본인인증, 기본) 또는 EMAIL_CODE.
+ * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 프로필 사진 등록(필수)으로 넘어간다.
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -45,7 +49,17 @@ export default function LoginScreen() {
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
+  /** 온보딩의 "가입하고 시작하기"는 signup=1 로 들어와 곧장 가입 폼을 연다. */
+  const { signup: signupParam } = useLocalSearchParams<{ signup?: string }>();
+  const [isSignup, setIsSignup] = useState(signupParam === '1');
+  /** 휴대폰 본인인증 완료 id — IDENTITY 모드에서 가입 요청에 실어 보낸다. */
+  const [identityId, setIdentityId] = useState<string | null>(null);
+  const signupConfig = useQuery({
+    queryKey: ['signupConfig'],
+    queryFn: authApi.signupConfig,
+    staleTime: 60_000,
+  });
+  const onboardingPicks = useOnboarding();
   const [emailLoading, setEmailLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,20 +129,61 @@ export default function LoginScreen() {
     }
   };
 
+  /** 온보딩(카테고리·책 5권) 선택을 가입 직후 서버에 반영한다 — 일부 실패해도 가입 흐름은 계속. */
+  const applyOnboardingPicks = async () => {
+    const jobs: Promise<unknown>[] = [];
+    if (onboardingPicks.categories.length > 0) {
+      jobs.push(authApi.updateProfile({ preferredCategories: onboardingPicks.categories }));
+    }
+    onboardingPicks.bookIds.forEach((bookId) => {
+      jobs.push(libraryApi.add({ bookId, status: 'WANT_TO_READ' }));
+    });
+    if (jobs.length > 0) {
+      await Promise.allSettled(jobs);
+    }
+    onboardingPicks.clear();
+  };
+
+  /** 본인인증 시작 — 개발 스텁이면 즉시 통과, 실서비스는 포트원 SDK 연동 지점. */
+  const startIdentityVerification = () => {
+    const config = signupConfig.data;
+    if (!config) return;
+    setError(null);
+    if (config.identityDevStub) {
+      setIdentityId(`dev-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`);
+      return;
+    }
+    if (!config.portoneStoreId || !config.portoneChannelKey) {
+      setError('본인인증 채널이 아직 설정되지 않았습니다. (포트원 계약·키 필요)');
+      return;
+    }
+    // TODO: @portone/react-native-sdk 본인인증 — 계약 후 키가 나오면 붙인다.
+    setError('포트원 SDK 연동이 아직 준비되지 않았습니다.');
+  };
+
   const submitEmail = async () => {
-    if (isSignup && !code.trim()) {
+    const method = signupConfig.data?.verification;
+    if (isSignup && method === 'EMAIL_CODE' && !code.trim()) {
       setError('이메일로 받은 인증 코드를 입력해 주세요.');
+      return;
+    }
+    if (isSignup && method === 'IDENTITY' && !identityId) {
+      setError('휴대폰 본인인증을 먼저 완료해 주세요.');
       return;
     }
     setEmailLoading(true);
     setError(null);
     try {
       if (isSignup) {
-        await emailSignup(email.trim(), password, nickname.trim(), code.trim());
+        await emailSignup(email.trim(), password, nickname.trim(),
+          method === 'EMAIL_CODE' ? { code: code.trim() } : { identityVerificationId: identityId ?? undefined });
+        await applyOnboardingPicks();
+        // 프로필 사진 등록은 필수 — 홈 대신 사진 등록으로 보낸다.
+        router.replace('/profile-photo');
       } else {
         await emailLogin(email.trim(), password);
+        router.replace('/home');
       }
-      router.replace('/home');
     } catch (e) {
       setError(e instanceof Error ? e.message : '인증에 실패했습니다.');
     } finally {
@@ -260,7 +315,29 @@ export default function LoginScreen() {
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
               />
             </View>
-            {isSignup ? (
+            {isSignup && signupConfig.data?.verification === 'IDENTITY' ? (
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>휴대폰 본인인증</Text>
+                {identityId ? (
+                  <View style={[styles.identityDone, { borderColor: darkColors.accent }]}>
+                    <Text style={[typeScale.label, { color: darkColors.accent }]}>✓ 본인인증 완료</Text>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={startIdentityVerification}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [styles.identityButton, pressed && styles.pressed]}
+                  >
+                    <Text style={[typeScale.label, { color: darkColors.text }]}>
+                      {signupConfig.data.identityDevStub
+                        ? '휴대폰 본인인증 (개발용 즉시 통과)'
+                        : '휴대폰 본인인증 하기'}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
+            {isSignup && signupConfig.data?.verification === 'EMAIL_CODE' ? (
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
                 <View style={styles.codeRow}>
@@ -306,7 +383,7 @@ export default function LoginScreen() {
                 : <Text style={styles.ctaLabel}>{isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</Text>}
             </Pressable>
             <Pressable
-              onPress={() => { setIsSignup(!isSignup); setError(null); setCode(''); setCodeSent(false); }}
+              onPress={() => { setIsSignup(!isSignup); setError(null); setCode(''); setCodeSent(false); setIdentityId(null); }}
               disabled={busy}
               accessibilityRole="button"
               style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
@@ -438,6 +515,22 @@ const styles = StyleSheet.create({
   },
   codeButtonLabel: { ...typeScale.label, color: darkColors.text },
   codeHint: { ...typeScale.caption, color: darkColors.textFaint },
+  identityButton: {
+    minHeight: BUTTON_HEIGHT,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    borderColor: darkColors.lineStrong,
+    backgroundColor: darkColors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  identityDone: {
+    minHeight: BUTTON_HEIGHT,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dividerRule: { flex: 1, height: hairline, backgroundColor: darkColors.lineStrong },
   dividerLabel: { ...typeScale.caption, color: darkColors.textFaint },
