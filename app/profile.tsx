@@ -9,6 +9,7 @@ import type { DailyStat, NotifyTone, ReadingRecord } from '@/api/types';
 import {
   MemoScrap, PaperScreen, SectionNav, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
+import { SocialCard } from '@/components/social/SocialCard';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle, formatDuration,
 } from '@/components/ui';
@@ -229,6 +230,10 @@ export default function ProfileScreen() {
         )}
 
         <MyQuotes />
+
+        <View style={styles.block}>
+          <SocialCard />
+        </View>
 
         <View style={[styles.block, styles.settings]}>
           <Rule />
