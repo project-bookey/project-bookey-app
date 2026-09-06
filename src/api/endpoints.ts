@@ -5,7 +5,7 @@ import type {
   CreateQuote, EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
   PopularBook, PostLikeResult, PostView, PostcardView, QuoteAgree, ReadingRecord, ReadingStatus,
-  Review, Session, SessionEndResult, StatsSummary, TokenResponse, UserProfileView, VerificationPreview,
+  Review, Session, SessionEndResult, SignupConfig, StatsSummary, TokenResponse, UserProfileView, VerificationPreview,
   VisitorView, WalletView,
 } from './types';
 
@@ -17,15 +17,30 @@ export const authApi = {
     api<Me>("/api/v1/auth/social/link", { method: "POST", body: { provider, token } }),
   emailLogin: (email: string, password: string) =>
     api<TokenResponse>("/api/v1/auth/login", { method: "POST", auth: false, body: { email, password } }),
-  /** 가입 인증 코드 발급 — 로컬 서버는 devCode 를 응답에 동봉한다. */
+  /** 가입 화면 구성 — 요구 인증 수단(EMAIL_CODE|IDENTITY)과 포트원 키. */
+  signupConfig: () => api<SignupConfig>("/api/v1/auth/signup-config", { auth: false }),
+  /** 가입 인증 코드 발급 (EMAIL_CODE 모드) — 로컬 서버는 devCode 를 응답에 동봉한다. */
   requestEmailCode: (email: string) =>
     api<EmailCodeResponse>("/api/v1/auth/email/code", { method: "POST", auth: false, body: { email } }),
-  emailSignup: (email: string, password: string, nickname: string, code: string) =>
-    api<TokenResponse>("/api/v1/auth/signup", { method: "POST", auth: false, body: { email, password, nickname, code } }),
+  /** 가입 — 서버 설정에 따라 code(이메일 인증) 또는 identityVerificationId(휴대폰 본인인증)를 요구한다. */
+  emailSignup: (email: string, password: string, nickname: string,
+                verification: { code?: string; identityVerificationId?: string }) =>
+    api<TokenResponse>("/api/v1/auth/signup", {
+      method: "POST", auth: false, body: { email, password, nickname, ...verification },
+    }),
+  /** 프로필 사진 업로드 — 온보딩 필수 단계. */
+  uploadAvatar: (form: FormData) =>
+    api<Me>("/api/v1/me/avatar", { method: "POST", body: form }),
   logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
   me: () => api<Me>("/api/v1/me"),
-  updateProfile: (body: { nickname?: string; avatarUrl?: string }) =>
+  updateProfile: (body: { nickname?: string; avatarUrl?: string; preferredCategories?: string[] }) =>
     api<Me>("/api/v1/me", { method: "PATCH", body }),
+};
+
+export const onboardingApi = {
+  /** 온보딩 책 고르기 (비회원) — 카테고리 부분 일치, 표지 있는 책 우선. */
+  books: (category?: string, size = 30) =>
+    api<BookSummary[]>('/api/v1/public/onboarding/books', { auth: false, query: { category, size } }),
 };
 
 export const bookApi = {

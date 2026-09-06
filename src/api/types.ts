@@ -18,6 +18,7 @@ export type Page<T> = Omit<Schemas['PageResponseReadingRecordView'], 'content'> 
 export type Me = Schemas['MeResponse'];
 export type TokenResponse = Schemas['TokenResponse'];
 export type EmailCodeResponse = Schemas['EmailCodeResponse'];
+export type SignupConfig = Schemas['SignupConfigResponse'];
 
 // ── 소셜 (§14) — 피드 · 엽서 · 지갑 · 팔로우 · 프로필 ────
 export type PostView = Schemas['PostView'];

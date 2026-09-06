@@ -351,6 +351,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 프로필 사진 업로드 — 온보딩 필수 단계 */
+        post: operations["uploadAvatar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/library": {
         parameters: {
             query?: never;
@@ -859,7 +876,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 이메일 회원가입 — 인증 코드 필요 */
+        /** 이메일 회원가입 — 설정에 따라 이메일 코드 또는 휴대폰 본인인증 필요 */
         post: operations["signup"];
         delete?: never;
         options?: never;
@@ -927,7 +944,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 가입 이메일 인증 코드 발급 */
+        /** 가입 이메일 인증 코드 발급 (EMAIL_CODE 모드) */
         post: operations["requestEmailCode"];
         delete?: never;
         options?: never;
@@ -1592,6 +1609,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/onboarding/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 온보딩 책 고르기 — 표지 있는 책, 카테고리 부분 일치 (비회원) */
+        get: operations["onboardingBooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/books/{bookId}": {
         parameters: {
             query?: never;
@@ -2114,6 +2148,23 @@ export interface paths {
         };
         /** 활성 배너/공지 목록 — 기간 내, 정렬 순 */
         get: operations["list_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/signup-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 가입 화면 구성 — 요구 인증 수단(EMAIL_CODE|IDENTITY)과 포트원 SDK 키 */
+        get: operations["signupConfig"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2815,6 +2866,27 @@ export interface components {
             pushToken: string;
             pushEnabled?: boolean;
         };
+        MeResponse: {
+            /** Format: int64 */
+            id: number;
+            handle: string;
+            nickname: string;
+            email?: string;
+            avatarUrl?: string;
+            timezone: string;
+            notifyTone: string;
+            /** Format: int32 */
+            quietHoursStart: number;
+            /** Format: int32 */
+            quietHoursEnd: number;
+            /** Format: int32 */
+            dailyNotifyCap: number;
+            /** Format: int32 */
+            clubNotifyCap: number;
+            allowNudge: boolean;
+            status: string;
+            preferredCategories: string[];
+        };
         AddBookRequest: {
             /** Format: int64 */
             bookId: number;
@@ -3169,26 +3241,6 @@ export interface components {
             provider: "APPLE" | "GOOGLE" | "KAKAO";
             token: string;
         };
-        MeResponse: {
-            /** Format: int64 */
-            id: number;
-            handle: string;
-            nickname: string;
-            email?: string;
-            avatarUrl?: string;
-            timezone: string;
-            notifyTone: string;
-            /** Format: int32 */
-            quietHoursStart: number;
-            /** Format: int32 */
-            quietHoursEnd: number;
-            /** Format: int32 */
-            dailyNotifyCap: number;
-            /** Format: int32 */
-            clubNotifyCap: number;
-            allowNudge: boolean;
-            status: string;
-        };
         TokenResponse: {
             accessToken: string;
             refreshToken: string;
@@ -3202,7 +3254,8 @@ export interface components {
             email: string;
             password: string;
             nickname: string;
-            code: string;
+            code?: string;
+            identityVerificationId?: string;
         };
         RefreshRequest: {
             refreshToken: string;
@@ -3340,6 +3393,7 @@ export interface components {
         UpdateProfileRequest: {
             nickname?: string;
             avatarUrl?: string;
+            preferredCategories: string[];
         };
         UpdateProgressRequest: {
             /** Format: int32 */
@@ -3823,6 +3877,12 @@ export interface components {
             /** Format: int32 */
             sortOrder: number;
         };
+        SignupConfigResponse: {
+            verification: string;
+            portoneStoreId?: string;
+            portoneChannelKey?: string;
+            identityDevStub: boolean;
+        };
         PageResponseUserRow: {
             content?: components["schemas"]["UserRow"][];
             /** Format: int32 */
@@ -4116,6 +4176,7 @@ export type SchemaSendPostcardRequest = components['schemas']['SendPostcardReque
 export type SchemaPostcardView = components['schemas']['PostcardView'];
 export type SchemaReplyPostcardRequest = components['schemas']['ReplyPostcardRequest'];
 export type SchemaDeviceRegisterRequest = components['schemas']['DeviceRegisterRequest'];
+export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaAddBookRequest = components['schemas']['AddBookRequest'];
 export type SchemaBookSummary = components['schemas']['BookSummary'];
 export type SchemaProgressView = components['schemas']['ProgressView'];
@@ -4148,7 +4209,6 @@ export type SchemaPageSuggestionRequest = components['schemas']['PageSuggestionR
 export type SchemaPageSuggestionResponse = components['schemas']['PageSuggestionResponse'];
 export type SchemaBookLikeView = components['schemas']['BookLikeView'];
 export type SchemaSocialLoginRequest = components['schemas']['SocialLoginRequest'];
-export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaEmailSignupRequest = components['schemas']['EmailSignupRequest'];
 export type SchemaRefreshRequest = components['schemas']['RefreshRequest'];
@@ -4213,6 +4273,7 @@ export type SchemaPageResponseChatSummaryView = components['schemas']['PageRespo
 export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
 export type SchemaPopularBookView = components['schemas']['PopularBookView'];
 export type SchemaBannerView = components['schemas']['BannerView'];
+export type SchemaSignupConfigResponse = components['schemas']['SignupConfigResponse'];
 export type SchemaPageResponseUserRow = components['schemas']['PageResponseUserRow'];
 export type SchemaUserRow = components['schemas']['UserRow'];
 export type SchemaSanctionRow = components['schemas']['SanctionRow'];
@@ -4854,6 +4915,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    uploadAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeResponse"];
+                };
             };
         };
     };
@@ -6946,6 +7034,29 @@ export interface operations {
             };
         };
     };
+    onboardingBooks: {
+        parameters: {
+            query?: {
+                category?: string;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookSummary"][];
+                };
+            };
+        };
+    };
     book: {
         parameters: {
             query?: never;
@@ -7715,6 +7826,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BannerView"][];
+                };
+            };
+        };
+    };
+    signupConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SignupConfigResponse"];
                 };
             };
         };
