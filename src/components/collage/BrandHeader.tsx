@@ -1,8 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { walletApi } from '@/api/endpoints';
 import { NotificationBell } from '@/components/home/NotificationBell';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -31,8 +33,39 @@ export function BrandHeader() {
         BOOKEY
       </Text>
       <View style={[styles.side, styles.right]}>
+        <BookmarkBalance />
         <NotificationBell />
       </View>
+    </View>
+  );
+}
+
+function BookmarkBalance() {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const { data } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
+  const balance = data?.bookmarkBalance ?? 0;
+
+  return (
+    <View style={[styles.bookmarkPill, { borderColor: colors.line, backgroundColor: colors.surface }]}>
+      <Text style={styles.bookmarkMark}>🔖</Text>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+        style={[styles.bookmarkCount, { color: colors.text }]}
+      >
+        {balance}
+      </Text>
+      <Pressable
+        onPress={() => router.push('/bookmarks')}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={`책갈피 ${balance}개, 구매하기`}
+        style={({ pressed }) => [styles.plusButton, pressed && styles.pressed]}
+      >
+        <Text style={[styles.plusText, { color: colors.accent }]}>+</Text>
+      </Pressable>
     </View>
   );
 }
@@ -109,8 +142,26 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     zIndex: 2,
   },
-  side: { width: 88, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  right: { alignItems: 'flex-end' },
+  side: { width: 118, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  right: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.sm },
+  bookmarkPill: {
+    height: 32,
+    minWidth: 74,
+    maxWidth: 92,
+    borderRadius: radius.pill,
+    borderWidth: hairline,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingLeft: spacing.sm,
+    paddingRight: 4,
+    gap: 4,
+  },
+  bookmarkMark: { fontSize: 14, lineHeight: 16 },
+  bookmarkCount: { ...typeScale.monoLabel, flex: 1, textAlign: 'right', fontSize: 11, lineHeight: 14 },
+  plusButton: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  plusText: { fontSize: 24, lineHeight: 24, fontWeight: '800' },
+  pressed: { opacity: 0.7 },
   iconButton: {
     width: 36,
     height: 36,

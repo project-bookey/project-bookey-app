@@ -36,7 +36,13 @@ export const authApi = {
     api<Me>("/api/v1/me/avatar", { method: "POST", body: form }),
   logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
   me: () => api<Me>("/api/v1/me"),
-  updateProfile: (body: { nickname?: string; avatarUrl?: string; preferredCategories?: string[] }) =>
+  updateProfile: (body: {
+    nickname?: string;
+    avatarUrl?: string;
+    gender?: string;
+    birthDate?: string;
+    preferredCategories?: string[];
+  }) =>
     api<Me>("/api/v1/me", { method: "PATCH", body }),
 };
 

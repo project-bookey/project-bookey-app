@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 
-import { libraryApi, postApi, quoteApi, statsApi } from '@/api/endpoints';
+import { libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { DailyStat, ReadingRecord } from '@/api/types';
 import {
@@ -37,8 +38,16 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const user = useAuth((s) => s.user);
+  const myId = user?.id;
 
   const summary = useQuery({ queryKey: ['library', 'summary'], queryFn: libraryApi.summary });
+  const myProfile = useQuery({
+    queryKey: ['userProfile', myId],
+    queryFn: () => profileApi.user(myId as number),
+    enabled: myId != null,
+  });
+  const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
+  const subscribed = wallet.data?.subscriptionActive ?? false;
   // 홈과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
   const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
   const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
@@ -66,22 +75,67 @@ export default function ProfileScreen() {
       <BrandHeader />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.profileRow}>
-          <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-            {user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-            ) : (
-              <Text style={[styles.avatarInitial, { color: colors.textMuted }]}>
-                {user?.nickname?.slice(0, 1) ?? '?'}
-              </Text>
-            )}
-          </View>
+          <Pressable
+            onPress={() => router.push({ pathname: '/profile-photo', params: { returnTo: 'profile' } })}
+            accessibilityRole="button"
+            accessibilityLabel="프로필 사진 변경"
+            style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
+          >
+            <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
+              ) : (
+                <Text style={[styles.avatarInitial, { color: colors.textMuted }]}>
+                  {user?.nickname?.slice(0, 1) ?? '?'}
+                </Text>
+              )}
+            </View>
+            <View style={styles.avatarEdit}>
+              <Text style={[styles.avatarEditText, { color: colors.accent }]}>+</Text>
+            </View>
+          </Pressable>
           <View style={styles.profileText}>
-            <Text numberOfLines={1} style={[styles.nickname, { color: colors.text }]}>
-              {user?.nickname ?? '독자'}
-            </Text>
+            <View style={styles.nicknameRow}>
+              <Text numberOfLines={1} style={[styles.nickname, { color: colors.text }]}>
+                {user?.nickname ?? '독자'}
+              </Text>
+              <Pressable
+                onPress={() => router.push('/profile-edit')}
+                accessibilityRole="button"
+                accessibilityLabel="프로필 편집"
+                hitSlop={8}
+                style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
+              >
+                <PencilLine color={colors.accent} />
+              </Pressable>
+            </View>
             {/* 서버 MeResponse 에 가입일이 없어 핸들로 대신한다 — 필드가 생기면 '{연도} 가입'으로 바꾼다. */}
             <Text style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
               @{user?.handle ?? '—'} · 완독 {counts?.finished ?? 0}권
+            </Text>
+            <Text style={[typeScale.caption, styles.profileSocial, { color: colors.textMuted }]}>
+              팔로워 {myProfile.data?.followerCount ?? 0} · 팔로잉 {myProfile.data?.followingCount ?? 0}
+            </Text>
+            <View style={styles.visitRow}>
+              <Text style={[typeScale.caption, styles.visitText, { color: colors.textFaint }]}>
+                {myProfile.data?.visitCount ?? 0}명이 내 페이지를 방문했어요!
+              </Text>
+              <Pressable
+                onPress={subscribed
+                  ? () => router.push('/visitors')
+                  : () => router.push({ pathname: '/subscription', params: { feature: 'visitors' } })}
+                accessibilityRole="button"
+                accessibilityLabel="방문자 확인하기"
+                hitSlop={8}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <Text style={[typeScale.monoLabel, styles.visitAction, { color: colors.accent }]}>
+                  확인하기 →
+                </Text>
+              </Pressable>
+            </View>
+            <Text style={[typeScale.caption, styles.profileWallet, { color: colors.textMuted }]}>
+              엽서 {wallet.data?.postcardBalance ?? 0} · 무료엽서 {wallet.data?.freePostcardsLeftToday ?? 0} · 우표 {wallet.data?.stampBalance ?? 0}
             </Text>
           </View>
         </View>
@@ -204,6 +258,26 @@ export default function ProfileScreen() {
 
       </ScrollView>
     </PaperScreen>
+  );
+}
+
+function PencilLine({ color }: { color: string }) {
+  return (
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+      <Path
+        d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z"
+        stroke={color}
+        strokeWidth={2.1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="m14.5 5.8 3.7 3.7"
+        stroke={color}
+        strokeWidth={2.1}
+        strokeLinecap="round"
+      />
+    </Svg>
   );
 }
 
@@ -579,9 +653,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
   },
+  avatarButton: { width: 64, height: 64, borderRadius: radius.pill, transform: [{ translateY: -12 }] },
   avatar: {
-    width: 52,
-    height: 52,
+    width: 64,
+    height: 64,
     borderRadius: radius.pill,
     borderWidth: hairline,
     overflow: 'hidden',
@@ -589,11 +664,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarImage: { width: '100%', height: '100%' },
-  avatarInitial: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 28 },
+  avatarEdit: {
+    position: 'absolute',
+    right: -2,
+    bottom: -4,
+    width: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEditText: { fontSize: 24, lineHeight: 24, fontWeight: '800' },
+  avatarInitial: { ...typeScale.titleSerif, fontSize: 26, lineHeight: 32 },
   profileText: { flex: 1, gap: 4 },
+  nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 21로 줄여 쓴다.
-  nickname: { ...typeScale.displaySerif, fontSize: 21, lineHeight: 28 },
+  nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 21, lineHeight: 28 },
+  editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   profileMeta: { letterSpacing: 0.4 },
+  profileSocial: { marginTop: spacing.xs },
+  visitRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  visitText: { flexShrink: 1 },
+  visitAction: { fontSize: 10, letterSpacing: 0.4 },
+  profileWallet: { marginTop: spacing.xs },
+  pressed: { opacity: 0.72 },
 
   shelfSection: { gap: spacing.sm },
   shelfHeader: {

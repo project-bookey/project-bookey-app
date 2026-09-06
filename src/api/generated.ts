@@ -2890,6 +2890,9 @@ export interface components {
             nickname: string;
             email?: string;
             avatarUrl?: string;
+            gender?: string;
+            /** Format: date */
+            birthDate?: string;
             timezone: string;
             notifyTone: string;
             /** Format: int32 */
@@ -3410,6 +3413,9 @@ export interface components {
         UpdateProfileRequest: {
             nickname?: string;
             avatarUrl?: string;
+            gender?: string;
+            /** Format: date */
+            birthDate?: string;
             preferredCategories: string[];
         };
         UpdateProgressRequest: {
