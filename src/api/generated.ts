@@ -2139,6 +2139,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/books/curation/yes24": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** YES24 큐레이션 — 베스트셀러·스테디셀러·신상품 (1시간 캐시) */
+        get: operations["yes24Curation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banners": {
         parameters: {
             query?: never;
@@ -3570,6 +3587,9 @@ export interface components {
             likeCount: number;
             /** Format: int64 */
             myRecordId?: number;
+            purchaseLink?: string;
+            addonLink?: string;
+            tableOfContents?: string;
         };
         RatingSummary: {
             /** Format: double */
@@ -7804,6 +7824,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BookSummary"];
+                };
+            };
+        };
+    };
+    yes24Curation: {
+        parameters: {
+            query?: {
+                kind?: "BESTSELLER" | "STEADY" | "NEW";
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookSummary"][];
                 };
             };
         };

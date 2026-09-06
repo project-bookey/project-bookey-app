@@ -29,6 +29,8 @@ export default function HomeScreen() {
   const banners = useQuery({ queryKey: ['banners', 'AD'], queryFn: () => bannerApi.list('AD') });
   const notices = useQuery({ queryKey: ['banners', 'NOTICE'], queryFn: () => bannerApi.list('NOTICE') });
   const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
+  const bestsellers = useQuery({ queryKey: ['home', 'yes24', 'BESTSELLER'], queryFn: () => bookApi.yes24Curation('BESTSELLER') });
+  const newBooks = useQuery({ queryKey: ['home', 'yes24', 'NEW'], queryFn: () => bookApi.yes24Curation('NEW') });
   const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
 
   const records = reading.data?.content ?? [];
@@ -119,6 +121,43 @@ export default function HomeScreen() {
             onPressBook={openBook}
           />
         </HomeSection>
+
+        {(bestsellers.data?.length ?? 0) > 0 ? (
+          <HomeSection>
+            <BookRow
+              title="베스트셀러"
+              label="YES24"
+              loading={bestsellers.isLoading}
+              books={(bestsellers.data ?? []).map((b, i): RowBook => ({
+                key: `best-${b.id}`,
+                bookId: b.id,
+                title: b.title,
+                author: b.author,
+                coverUrl: b.coverUrl,
+                rank: i + 1,
+              }))}
+              onPressBook={openBook}
+            />
+          </HomeSection>
+        ) : null}
+
+        {(newBooks.data?.length ?? 0) > 0 ? (
+          <HomeSection>
+            <BookRow
+              title="새로 나온 책"
+              label="NEW"
+              loading={newBooks.isLoading}
+              books={(newBooks.data ?? []).map((b): RowBook => ({
+                key: `new-${b.id}`,
+                bookId: b.id,
+                title: b.title,
+                author: b.author,
+                coverUrl: b.coverUrl,
+              }))}
+              onPressBook={openBook}
+            />
+          </HomeSection>
+        ) : null}
 
         <HomeSection>
           <QuoteScraps />

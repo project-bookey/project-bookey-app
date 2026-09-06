@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  LayoutChangeEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  LayoutChangeEvent, Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
@@ -286,6 +286,23 @@ export default function BookDetailScreen() {
           ) : null}
 
           {description ? <Description text={description} colors={colors} /> : null}
+
+          {book.data?.tableOfContents ? (
+            <TableOfContents text={book.data.tableOfContents} colors={colors} />
+          ) : null}
+
+          {book.data?.addonLink || book.data?.purchaseLink ? (
+            <View style={styles.section}>
+              <Button
+                label="YES24에서 구매하기"
+                variant="outline"
+                onPress={() => {
+                  const url = book.data?.addonLink ?? book.data?.purchaseLink;
+                  if (url) Linking.openURL(url).catch(() => {});
+                }}
+              />
+            </View>
+          ) : null}
 
           {record.data && progress ? (
             <Card style={styles.cardGap}>
@@ -645,6 +662,28 @@ function Description({ text, colors }: { text: string; colors: ColorTokens }) {
       <SectionHeader title="책 소개" />
       <Text numberOfLines={expanded ? undefined : 4} style={[typeScale.quote, { color: colors.textMuted }]}>
         {text}
+      </Text>
+      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" hitSlop={8}>
+        <Text style={[typeScale.monoEyebrow, styles.moreLink, { color: colors.accent }]}>
+          {expanded ? '접기 ↑' : '더보기 ↓'}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** 목차 — YES24 제공. <b> 태그·연속 개행만 걷어내고 그대로 보여준다. */
+function TableOfContents({ text, colors }: { text: string; colors: ColorTokens }) {
+  const [expanded, setExpanded] = useState(false);
+  const cleaned = useMemo(
+    () => text.replace(/<[^>]+>/g, '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim(),
+    [text],
+  );
+  return (
+    <View style={styles.section}>
+      <SectionHeader title="목차" />
+      <Text numberOfLines={expanded ? undefined : 8} style={[typeScale.caption, { color: colors.textMuted, lineHeight: 20 }]}>
+        {cleaned}
       </Text>
       <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" hitSlop={8}>
         <Text style={[typeScale.monoEyebrow, styles.moreLink, { color: colors.accent }]}>
