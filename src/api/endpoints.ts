@@ -1,6 +1,7 @@
 import { api } from './client';
 import type {
-  Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
+  Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
+  Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
   CreateQuote, EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
   PopularBook, PostLikeResult, PostView, PostcardView, QuoteAgree, ReadingRecord, ReadingStatus,
@@ -156,6 +157,17 @@ export const followApi = {
   following: (page = 0, size = 20) =>
     api<Page<FollowUserView>>('/api/v1/follows/following', { query: { page, size } }),
   unfollow: (userId: number) => api<void>(`/api/v1/follows/${userId}`, { method: 'DELETE' }),
+};
+
+export const chatApi = {
+  /** 채팅방 열기 — 맞팔로우인 상대만. 이미 있으면 그 방을 돌려준다. */
+  open: (userId: number) => api<ChatSummary>('/api/v1/chats', { method: 'POST', body: { userId } }),
+  list: (page = 0, size = 20) => api<Page<ChatSummary>>('/api/v1/chats', { query: { page, size } }),
+  /** 메시지 커서 페이지(최신순) — 첫 페이지를 열면 서버가 읽음 처리한다. */
+  messages: (chatId: number, beforeId?: number) =>
+    api<ChatMessages>(`/api/v1/chats/${chatId}/messages`, { query: { beforeId } }),
+  send: (chatId: number, body: string) =>
+    api<ChatMessage>(`/api/v1/chats/${chatId}/messages`, { method: 'POST', body: { body } }),
 };
 
 export const profileApi = {

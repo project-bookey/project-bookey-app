@@ -677,6 +677,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 채팅 목록 — 마지막 메시지·안읽음 수 포함 */
+        get: operations["list_4"];
+        put?: never;
+        /** 채팅방 열기 — 맞팔로우인 상대만, 이미 있으면 그 방 */
+        post: operations["open_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{chatId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 메시지 커서 페이지(최신순) — 첫 페이지를 열면 읽음 처리된다 */
+        get: operations["messages"];
+        put?: never;
+        /** 메시지 보내기 — 언팔로우된 상대에게는 보낼 수 없다 */
+        post: operations["send_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/challenges": {
         parameters: {
             query?: never;
@@ -1010,7 +1046,7 @@ export interface paths {
             cookie?: never;
         };
         /** 에디터 픽 목록 */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /** 에디터 픽 추가 */
         post: operations["create_9"];
@@ -1079,7 +1115,7 @@ export interface paths {
             cookie?: never;
         };
         /** 배너/공지 전체 목록 — 비활성·기간 외 포함 */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         /** 배너 생성 */
         post: operations["create_10"];
@@ -1444,7 +1480,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서별 세션 목록 */
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1734,7 +1770,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 알림 목록 */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2077,7 +2113,7 @@ export interface paths {
             cookie?: never;
         };
         /** 활성 배너/공지 목록 — 기간 내, 정렬 순 */
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3036,6 +3072,40 @@ export interface components {
             adoptTargetDate?: boolean;
             shareProgress?: boolean;
         };
+        OpenChatRequest: {
+            /** Format: int64 */
+            userId: number;
+        };
+        ChatSummaryView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            otherUserId: number;
+            otherNickname: string;
+            otherAvatarUrl?: string;
+            lastMessageBody?: string;
+            /** Format: date-time */
+            lastMessageAt?: string;
+            /** Format: int64 */
+            unreadCount: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        SendMessageRequest: {
+            body: string;
+        };
+        ChatMessageView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            chatId: number;
+            /** Format: int64 */
+            senderId: number;
+            body: string;
+            mine: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
         CreateChallengeRequest: {
             /** Format: int64 */
             readingRecordId?: number;
@@ -3718,6 +3788,23 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PageResponseChatSummaryView: {
+            content?: components["schemas"]["ChatSummaryView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        ChatMessagesView: {
+            messages: components["schemas"]["ChatMessageView"][];
+            /** Format: int64 */
+            nextBeforeId?: number;
+        };
         PopularBookView: {
             book: components["schemas"]["BookSummary"];
             /** Format: int64 */
@@ -4050,6 +4137,10 @@ export type SchemaReactionRequest = components['schemas']['ReactionRequest'];
 export type SchemaNudgeRequest = components['schemas']['NudgeRequest'];
 export type SchemaKickRequest = components['schemas']['KickRequest'];
 export type SchemaJoinRequest = components['schemas']['JoinRequest'];
+export type SchemaOpenChatRequest = components['schemas']['OpenChatRequest'];
+export type SchemaChatSummaryView = components['schemas']['ChatSummaryView'];
+export type SchemaSendMessageRequest = components['schemas']['SendMessageRequest'];
+export type SchemaChatMessageView = components['schemas']['ChatMessageView'];
 export type SchemaCreateChallengeRequest = components['schemas']['CreateChallengeRequest'];
 export type SchemaChallengeView = components['schemas']['ChallengeView'];
 export type SchemaManualBookRequest = components['schemas']['ManualBookRequest'];
@@ -4118,6 +4209,8 @@ export type SchemaClubResultView = components['schemas']['ClubResultView'];
 export type SchemaPageResponseClubPostView = components['schemas']['PageResponseClubPostView'];
 export type SchemaClubPreview = components['schemas']['ClubPreview'];
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
+export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
+export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
 export type SchemaPopularBookView = components['schemas']['PopularBookView'];
 export type SchemaBannerView = components['schemas']['BannerView'];
 export type SchemaPageResponseUserRow = components['schemas']['PageResponseUserRow'];
@@ -5291,6 +5384,103 @@ export interface operations {
             };
         };
     };
+    list_4: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseChatSummaryView"];
+                };
+            };
+        };
+    };
+    open_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenChatRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatSummaryView"];
+                };
+            };
+        };
+    };
+    messages: {
+        parameters: {
+            query?: {
+                beforeId?: number;
+            };
+            header?: never;
+            path: {
+                chatId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatMessagesView"];
+                };
+            };
+        };
+    };
+    send_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatMessageView"];
+                };
+            };
+        };
+    };
     create_8: {
         parameters: {
             query?: never;
@@ -5778,7 +5968,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5900,7 +6090,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 kind?: "AD" | "NOTICE";
@@ -6573,7 +6763,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 readingRecordId?: number;
@@ -6996,7 +7186,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 page?: number;
@@ -7507,7 +7697,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 kind?: "AD" | "NOTICE";

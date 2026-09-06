@@ -3,7 +3,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { followApi, postApi, profileApi } from '@/api/endpoints';
+import { ApiError } from '@/api/client';
+import { chatApi, followApi, postApi, profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { Button, Card, EmptyState, Numeral, Tag, formatRelative } from '@/components/ui';
@@ -43,6 +44,17 @@ export default function UserProfileScreen() {
     },
   });
 
+  const [chatError, setChatError] = useState<string | null>(null);
+  /** 채팅 열기 (§14.3) — 맞팔로우일 때만 버튼이 보이지만, 서버 거절도 그대로 표시한다. */
+  const openChat = useMutation({
+    mutationFn: () => chatApi.open(userId),
+    onSuccess: (chat) => {
+      setChatError(null);
+      router.push({ pathname: '/chat/[id]', params: { id: String(chat.id), name: chat.otherNickname } });
+    },
+    onError: (e) => setChatError(e instanceof ApiError ? e.message : '채팅을 열지 못했어요.'),
+  });
+
   const p = profile.data;
   const me = p?.me ?? (myId != null && myId === userId);
   const items = posts.data?.content ?? [];
@@ -78,8 +90,21 @@ export default function UserProfileScreen() {
 
       {!me ? (
         <View style={styles.actions}>
+          {p.mutual ? (
+            <Button
+              label="💬 채팅"
+              onPress={() => openChat.mutate()}
+              loading={openChat.isPending}
+              style={{ flex: 1 }}
+            />
+          ) : null}
           {!composing ? (
-            <Button label="✉ 엽서 보내기" onPress={() => setComposing(true)} style={{ flex: 1 }} />
+            <Button
+              label="✉ 엽서 보내기"
+              variant={p.mutual ? 'outline' : 'primary'}
+              onPress={() => setComposing(true)}
+              style={{ flex: 1 }}
+            />
           ) : null}
           {p.iFollow ? (
             <Button
@@ -90,6 +115,11 @@ export default function UserProfileScreen() {
             />
           ) : null}
         </View>
+      ) : null}
+      {chatError ? (
+        <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
+          {chatError}
+        </Text>
       ) : null}
 
       {composing && !me ? (
