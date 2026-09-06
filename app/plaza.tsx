@@ -1,39 +1,27 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, QueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { bookApi, libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
-import type { Page, PlazaItem, PlazaItemType } from '@/api/types';
+import { plazaApi, quoteApi } from '@/api/endpoints';
+import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
+import type { PlazaItem, PlazaItemType } from '@/api/types';
+import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import { Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
-import { PostFeed } from '@/components/plaza/PostFeed';
+import { PostFeed } from '@/components/post/PostFeed';
+import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
+import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
+import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { sans, serif } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
 /** 카드 교차 회전(도) — 붙여 둔 티를 내되 읽기를 방해하지 않을 만큼만. */
 const CARD_TILT = [-1.1, 0.8];
-/** 삭제 재확인이 살아 있는 시간(ms). 지나면 조용히 원래 라벨로 돌아간다. */
-const DELETE_CONFIRM_MS = 3000;
-/** 문장 길이 상한 — 서버 계약과 같은 값. */
-const CONTENT_MAX = 500;
-/** 컴포저 책 검색 — 탐색 화면과 같은 디바운스·최소 글자 수. */
-const SEARCH_DEBOUNCE_MS = 400;
-const SEARCH_MIN_CHARS = 2;
-/**
- * 푸터 액션 확장 터치 영역(네이티브 전용).
- *
- * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키우고,
- * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
- */
-const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 /** 찍고 온 카드를 어디에 세울지 — 0 은 화면 맨 위, 1 은 맨 아래. 위 여백을 조금 남긴다. */
 const FOCUS_VIEW_POSITION = 0.2;
 /**
@@ -44,23 +32,23 @@ const FOCUS_VIEW_POSITION = 0.2;
  */
 const SCROLL_RETRY_MS = 320;
 
-/** 광장 피드 무한 쿼리 키. 홈 스포트라이트는 ['plaza','QUOTE','home'] 로 갈라 둔다(QuoteScraps). */
-const feedKey = (type: PlazaItemType) => ['plaza', type] as const;
 /**
- * 홈 '오려둔 문장' 캐시 — '나도 그럼'을 누르면 여기도 같이 손봐야 한다.
- * QuoteScraps 의 쿼리 키와 한 쌍이다 — 한쪽만 바꾸면 홈 캐시가 조용히 어긋난다.
+ * 광장 탭 — '밑줄'·'완독 자랑'은 광장 피드의 type 이고, '독후감'만 다른 API·다른 캐시다.
+ * 그래서 탭 상태(tab)와 광장 피드 type 을 갈라 둔다.
  */
-const HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
-
-type FeedCache = InfiniteData<Page<PlazaItem>>;
+type PlazaTab = PlazaItemType | 'POST';
 
 /**
- * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 완독 자랑이 모이는 곳 (시안 2d).
+ * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 독후감, 완독 자랑이 모이는 곳 (시안 2d).
  *
- * 필터 칩 '밑줄'·'완독 자랑'은 같은 피드의 type 이다. 모임은 상단 구역 탭으로 올라가 여기엔 없다.
+ * 필터 칩 '밑줄'·'완독 자랑'은 같은 피드의 type 이고 '독후감'은 별도 피드(PostFeed)다.
+ * 모임은 상단 구역 탭으로 올라가 여기엔 없다.
  *
- * 홈 '오려둔 문장'(QuoteScraps)에서 `focusQuoteId` 를 달고 들어오면 그 문장 카드로
- * 스크롤한 뒤 한 번만 강조한다 — 아래 '찍고 온 문장' 블록 참고.
+ * 밑줄 카드는 밑줄 상세(app/quote/[id].tsx)와 같은 QuoteCard 를 쓰고, 캐시 키·패치는
+ * src/api/quoteCache.ts 한 곳에서 가져다 쓴다 — 같은 문장이 네 캐시에 살기 때문이다.
+ *
+ * `focusQuoteId` 를 달고 들어오면 그 문장 카드로 스크롤한 뒤 한 번만 강조한다 —
+ * 아래 '찍고 온 문장' 블록 참고.
  */
 export default function PlazaScreen() {
   const router = useRouter();
@@ -68,34 +56,26 @@ export default function PlazaScreen() {
   const { colors } = useTheme();
   const myId = useAuth((s) => s.user?.id);
 
-  /** 독후감 피드(§14.1)가 광장의 기본 탭이다. 밑줄·완독 자랑은 기존 광장 피드로 남는다. */
-  const [postTab, setPostTab] = useState(true);
-  const [type, setType] = useState<PlazaItemType>('QUOTE');
+  const [tab, setTab] = useState<PlazaTab>('QUOTE');
+  /** 독후감 탭에서는 광장 피드를 멈춰 두지만 키·파라미터는 마지막으로 보던 밑줄 쪽에 그대로 둔다. */
+  const type: PlazaItemType = tab === 'POST' ? 'QUOTE' : tab;
   const [composing, setComposing] = useState(false);
-  const [confirmId, setConfirmId] = useState<number | null>(null);
+  /** 삭제 재확인 — 확인 상태인 문장 id. 3초 타이머·언마운트 정리는 공용 훅이 맡는다(상세와 같은 규율). */
+  const { confirm: confirmId, arm, disarm } = useDeleteConfirm<number>();
   const [removeError, setRemoveError] = useState<{ id: number; message: string } | null>(null);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<FlatList<PlazaItem>>(null);
   /** 강조가 걸린 문장 — 페이드가 끝나면 스스로 지운다. 한 번에 한 장뿐이다. */
   const [focusedId, setFocusedId] = useState<number | null>(null);
   const clearFocus = useCallback(() => setFocusedId(null), []);
-  /**
-   * 토글이 날아가 있는 문장 id.
-   *
-   * 응답을 기다리는 사이 같은 문장을 또 누르면 두 뮤테이션이 서로의 스냅샷을 엇갈리게
-   * 되돌려 서버와 다른 카운트가 화면에 눌러앉는다(staleTime 15초 + 포커스 재조회 꺼짐이라
-   * 저절로 낫지 않는다). 그래서 문장 단위로 한 번에 하나씩만 보낸다.
-   */
-  const agreeing = useRef(new Set<number>());
-
-  useEffect(() => () => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-  }, []);
+  /** '좋아요' 낙관 토글 — 인플라이트 가드까지 공용 훅이 맡는다(상세와 같은 규율). */
+  const pressAgree = useAgreeQuote();
 
   const feed = useInfiniteQuery({
-    queryKey: feedKey(type),
+    queryKey: plazaFeedKey(type),
     queryFn: ({ pageParam }) => plazaApi.feed(type, pageParam, PAGE_SIZE),
     initialPageParam: 0,
+    // 독후감 탭은 PostFeed 가 제 피드를 받는다 — 여기서 광장 피드를 또 부르지 않는다.
+    enabled: tab !== 'POST',
     // 서버가 page 를 생략해도 이미 받은 페이지 수로 다음 번호를 셀 수 있다.
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
   });
@@ -107,16 +87,16 @@ export default function PlazaScreen() {
   );
 
   /* ── 찍고 온 문장 ───────────────────────────────────────────────────────────
-     홈 스포트라이트가 넘긴 focusQuoteId 를 받아 그 카드로 스크롤하고 한 번 강조한다.
-     스포트라이트는 feed('QUOTE', 0, 10) 에서 뽑고 여기 첫 페이지도 같은 정렬의 10건이라
-     반드시 안에 있다 — 못 찾으면 그 사이 지워진 문장이므로 조용히 넘어간다.          */
+     focusQuoteId 를 달고 들어오면 그 카드로 스크롤하고 한 번 강조한다.
+     첫 페이지는 feed('QUOTE', 0, 10) 과 같은 정렬의 10건이라 대개 그 안에 있다 —
+     못 찾으면 그 사이 지워졌거나 더 뒤의 문장이므로 조용히 넘어간다.          */
   const { focusQuoteId } = useLocalSearchParams<{ focusQuoteId?: string }>();
   /**
    * 이미 처리한 focusQuoteId.
    *
    * setParams 로 비우는 게 다음 렌더에 반영되므로, 그 사이 effect 가 다시 돌아도
    * 두 번 스크롤하지 않게 막는다. 파라미터가 비면 가드도 함께 풀어 —
-   * 같은 문장을 홈에서 다시 눌렀을 때는 또 움직여야 한다.
+   * 같은 문장을 다시 찍고 들어왔을 때는 또 움직여야 한다.
    */
   const focusHandled = useRef<string | null>(null);
 
@@ -127,14 +107,9 @@ export default function PlazaScreen() {
       return;
     }
     if (focusHandled.current === raw) return;
-    // 독후감 탭에서 들어왔으면 광장(밑줄) 피드로 넘어간다 — 전환 뒤 이 effect 가 다시 온다.
-    if (postTab) {
-      setPostTab(false);
-      return;
-    }
-    // 완독 자랑을 보던 중에 들어왔으면 밑줄로 되돌린다 — 전환 뒤 이 effect 가 다시 온다.
-    if (type !== 'QUOTE') {
-      setType('QUOTE');
+    // 독후감·완독 자랑을 보던 중에 들어왔으면 밑줄로 되돌린다 — 전환 뒤 이 effect 가 다시 온다.
+    if (tab !== 'QUOTE') {
+      setTab('QUOTE');
       return;
     }
     // 첫 페이지가 아직이면 기다린다. 도착하면 feed.isSuccess 가 바뀌어 다시 온다.
@@ -151,7 +126,7 @@ export default function PlazaScreen() {
 
     setFocusedId(target);
     listRef.current?.scrollToIndex({ index: at, viewPosition: FOCUS_VIEW_POSITION, animated: true });
-  }, [focusQuoteId, postTab, type, feed.isSuccess, items, router]);
+  }, [focusQuoteId, tab, feed.isSuccess, items, router]);
 
   /** scrollToIndex 재시도 타이머 — 화면을 떠날 때 남겨 두지 않는다. */
   const scrollRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -159,56 +134,13 @@ export default function PlazaScreen() {
     if (scrollRetry.current) clearTimeout(scrollRetry.current);
   }, []);
 
-  /**
-   * '나도 그럼' 토글 — 무한 피드와 홈 스포트라이트 캐시를 함께 뒤집고, 실패하면 둘 다 되돌린다.
-   * 토글 결과는 서버가 알려주므로 성공 시 그 값으로 다시 맞춘다.
-   */
-  const agree = useMutation({
-    mutationFn: (quoteId: number) => quoteApi.agree(quoteId),
-    onMutate: async (quoteId) => {
-      await Promise.all([
-        queryClient.cancelQueries({ queryKey: feedKey('QUOTE') }),
-        queryClient.cancelQueries({ queryKey: HOME_KEY }),
-      ]);
-      const snapshot = {
-        feed: queryClient.getQueryData<FeedCache>(feedKey('QUOTE')),
-        home: queryClient.getQueryData<Page<PlazaItem>>(HOME_KEY),
-      };
-      patchQuote(queryClient, quoteId, toggleAgree);
-      return snapshot;
-    },
-    onError: (_error, _quoteId, snapshot) => {
-      if (!snapshot) return;
-      queryClient.setQueryData(feedKey('QUOTE'), snapshot.feed);
-      queryClient.setQueryData(HOME_KEY, snapshot.home);
-    },
-    onSuccess: (result, quoteId) => {
-      patchQuote(queryClient, quoteId, (item) => ({
-        ...item,
-        agreedByMe: result.agreed,
-        agreeCount: result.agreeCount,
-      }));
-    },
-    // 성공이든 실패든 잠금을 풀어 준다. 여기서 무효화하지 않는다 —
-    // 무한 피드 전 페이지를 다시 받아 오는 값이 토글 하나에 비해 너무 비싸다.
-    onSettled: (_result, _error, quoteId) => {
-      agreeing.current.delete(quoteId);
-    },
-  });
-
-  /** 응답을 기다리는 동안의 재탭은 삼킨다 — 낙관 갱신이 서로 어긋나지 않게. */
-  const pressAgree = (quoteId: number) => {
-    if (agreeing.current.has(quoteId)) return;
-    agreeing.current.add(quoteId);
-    agree.mutate(quoteId);
-  };
-
   const remove = useMutation({
     mutationFn: (quoteId: number) => quoteApi.remove(quoteId),
     onMutate: () => setRemoveError(null),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plaza'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    onSuccess: (_result, quoteId) => {
+      invalidateQuoteLists(queryClient);
+      // 상세 캐시가 남아 있으면 지운 문장이 잠깐 보일 수 있다.
+      queryClient.removeQueries({ queryKey: quoteKey(quoteId) });
     },
     onError: (error, quoteId) => {
       setRemoveError({
@@ -220,44 +152,30 @@ export default function PlazaScreen() {
 
   /** 삭제는 두 번 눌러야 나간다 — 첫 탭은 확인 라벨로 바뀌고 3초 뒤 저절로 접힌다. */
   const pressDelete = (quoteId: number) => {
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
     if (confirmId === quoteId) {
-      confirmTimer.current = null;
-      setConfirmId(null);
+      disarm();
       remove.mutate(quoteId);
       return;
     }
-    setConfirmId(quoteId);
-    confirmTimer.current = setTimeout(() => {
-      confirmTimer.current = null;
-      setConfirmId(null);
-    }, DELETE_CONFIRM_MS);
+    arm(quoteId);
   };
 
-  const switchType = (next: PlazaItemType) => {
-    // 독후감 탭에서 넘어오는 경우엔 같은 type 이라도 탭 전환은 해야 한다.
-    if (!postTab && next === type) return;
-    setPostTab(false);
-    setConfirmId(null);
-    // 완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
+  const switchTab = (next: PlazaTab) => {
+    if (next === tab) return;
+    disarm();
+    // 독후감·완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
     setComposing(false);
-    setType(next);
-  };
-
-  const openPostTab = () => {
-    setPostTab(true);
-    setComposing(false);
-    setConfirmId(null);
+    setTab(next);
   };
 
   const header = (
     <View style={styles.header}>
       <View style={styles.chipRow}>
-        <Chip label="독후감" active={false} onPress={openPostTab} />
-        <Chip label="밑줄" active={type === 'QUOTE'} onPress={() => switchType('QUOTE')} />
-        <Chip label="완독 자랑" active={type === 'FINISH'} onPress={() => switchType('FINISH')} />
-        {/* 오려두기는 밑줄 탭에서만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
-        {type === 'QUOTE' ? (
+        <Chip label="밑줄" active={tab === 'QUOTE'} onPress={() => switchTab('QUOTE')} />
+        <Chip label="독후감" active={tab === 'POST'} onPress={() => switchTab('POST')} />
+        <Chip label="완독 자랑" active={tab === 'FINISH'} onPress={() => switchTab('FINISH')} />
+        {/* 쓰기는 밑줄·독후감 탭에만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
+        {tab === 'QUOTE' ? (
           <Pressable
             onPress={() => setComposing((open) => !open)}
             accessibilityRole="button"
@@ -270,100 +188,98 @@ export default function PlazaScreen() {
             </Text>
           </Pressable>
         ) : null}
+        {/* 독후감은 길게 쓰는 글이라 접히는 패널이 아니라 제 화면으로 보낸다. */}
+        {tab === 'POST' ? (
+          <Pressable
+            onPress={() => router.push('/post/new')}
+            accessibilityRole="button"
+            accessibilityLabel="독후감 쓰기"
+            style={[styles.composePill, { borderColor: colors.accent }]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 독후감</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {composing ? <QuoteComposer onDone={() => setComposing(false)} /> : null}
     </View>
   );
 
-  // 독후감 탭 (§14.1) — 알고리즘 피드. 밑줄·완독 자랑과 카드 구조가 달라 별도 리스트로 그린다.
-  if (postTab) {
-    return (
-      <PaperScreen>
-        <SectionNav active="plaza" />
-        <PostFeed
-          header={
-            <View style={styles.header}>
-              <View style={styles.chipRow}>
-                <Chip label="독후감" active onPress={openPostTab} />
-                <Chip label="밑줄" active={false} onPress={() => switchType('QUOTE')} />
-                <Chip label="완독 자랑" active={false} onPress={() => switchType('FINISH')} />
-              </View>
-            </View>
-          }
-        />
-      </PaperScreen>
-    );
-  }
-
   return (
     <PaperScreen>
       <SectionNav active="plaza" />
-      <FlatList
-        ref={listRef}
-        data={items}
-        keyExtractor={itemKey}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={header}
-        onEndReachedThreshold={0.4}
-        onEndReached={() => {
-          if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
-        }}
-        // 카드 높이가 제각각이라 getItemLayout 을 줄 수 없다 — 아직 측정 안 된 카드로 뛰면 실패한다.
-        // 평균 높이로 근사 위치까지 먼저 옮겨 그 구간을 렌더시킨 뒤 다시 정확히 맞춘다.
-        onScrollToIndexFailed={({ index, averageItemLength }) => {
-          listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
-          if (scrollRetry.current) clearTimeout(scrollRetry.current);
-          scrollRetry.current = setTimeout(() => {
-            scrollRetry.current = null;
-            listRef.current?.scrollToIndex({
-              index,
-              viewPosition: FOCUS_VIEW_POSITION,
-              animated: true,
-            });
-          }, SCROLL_RETRY_MS);
-        }}
-        renderItem={({ item, index }) => (
-          <FeedCard
-            item={item}
-            index={index}
-            mine={myId != null && item.authorId === myId}
-            confirming={item.quoteId != null && confirmId === item.quoteId}
-            focused={item.quoteId != null && focusedId === item.quoteId}
-            onFocusDone={clearFocus}
-            error={item.quoteId != null && removeError?.id === item.quoteId ? removeError.message : null}
-            onAgree={() => {
-              if (item.quoteId != null) pressAgree(item.quoteId);
-            }}
-            onDelete={() => {
-              if (item.quoteId != null) pressDelete(item.quoteId);
-            }}
-            onOpenBook={() => router.push(`/book/${item.bookId}`)}
-          />
-        )}
-        ListEmptyComponent={
-          feed.isLoading ? (
-            <View style={styles.skeletonList}>
-              {[0, 1, 2].map((i) => (
-                <View key={i} style={[styles.skeleton, { backgroundColor: colors.surface }]} />
-              ))}
-            </View>
-          ) : feed.isError ? (
-            <EmptyState title="광장을 불러오지 못했습니다" description="잠시 후 다시 시도해 주세요." />
-          ) : type === 'QUOTE' ? (
-            <EmptyState title="아직 밑줄이 없습니다" description="첫 문장을 오려 붙여보세요." />
-          ) : (
-            <EmptyState title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
-          )
-        }
-        ListFooterComponent={
-          feed.isFetchingNextPage ? (
-            <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.accent} />
-            </View>
-          ) : null
-        }
-      />
+      {tab === 'POST' ? (
+        <PostFeed ListHeaderComponent={header} />
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={items}
+          keyExtractor={itemKey}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={header}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
+          }}
+          // 카드 높이가 제각각이라 getItemLayout 을 줄 수 없다 — 아직 측정 안 된 카드로 뛰면 실패한다.
+          // 평균 높이로 근사 위치까지 먼저 옮겨 그 구간을 렌더시킨 뒤 다시 정확히 맞춘다.
+          onScrollToIndexFailed={({ index, averageItemLength }) => {
+            listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
+            if (scrollRetry.current) clearTimeout(scrollRetry.current);
+            scrollRetry.current = setTimeout(() => {
+              scrollRetry.current = null;
+              listRef.current?.scrollToIndex({
+                index,
+                viewPosition: FOCUS_VIEW_POSITION,
+                animated: true,
+              });
+            }, SCROLL_RETRY_MS);
+          }}
+          renderItem={({ item, index }) => (
+            <FeedCard
+              item={item}
+              index={index}
+              mine={myId != null && item.authorId === myId}
+              confirming={item.quoteId != null && confirmId === item.quoteId}
+              focused={item.quoteId != null && focusedId === item.quoteId}
+              onFocusDone={clearFocus}
+              error={item.quoteId != null && removeError?.id === item.quoteId ? removeError.message : null}
+              onAgree={() => {
+                if (item.quoteId != null) pressAgree(item.quoteId);
+              }}
+              onDelete={() => {
+                if (item.quoteId != null) pressDelete(item.quoteId);
+              }}
+              onOpen={() => {
+                if (item.quoteId != null) router.push(`/quote/${item.quoteId}`);
+              }}
+              onOpenBook={() => router.push(`/book/${item.bookId}`)}
+            />
+          )}
+          ListEmptyComponent={
+            feed.isLoading ? (
+              <View style={styles.skeletonList}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={[styles.skeleton, { backgroundColor: colors.surface }]} />
+                ))}
+              </View>
+            ) : feed.isError ? (
+              <EmptyState title="광장을 불러오지 못했습니다" description="잠시 후 다시 시도해 주세요." />
+            ) : tab === 'QUOTE' ? (
+              <EmptyState title="아직 밑줄이 없습니다" description="첫 문장을 오려 붙여보세요." />
+            ) : (
+              <EmptyState title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
+            )
+          }
+          ListFooterComponent={
+            feed.isFetchingNextPage ? (
+              <View style={styles.footer}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null
+          }
+        />
+      )}
     </PaperScreen>
   );
 }
@@ -375,213 +291,110 @@ function itemKey(item: PlazaItem): string {
     : `f${item.authorId}-${item.bookId}-${item.occurredAt}`;
 }
 
-/** 항목 스스로의 현재 상태를 뒤집는다 — 캐시마다 값이 달라도 각자 일관되게 움직인다. */
-function toggleAgree(item: PlazaItem): PlazaItem {
-  const agreed = !(item.agreedByMe ?? false);
-  return {
-    ...item,
-    agreedByMe: agreed,
-    agreeCount: Math.max(0, (item.agreeCount ?? 0) + (agreed ? 1 : -1)),
-  };
-}
-
-/** 같은 문장이 무한 피드와 홈 스포트라이트 양쪽에 있으므로 두 캐시를 한 번에 손본다. */
-function patchQuote(
-  queryClient: QueryClient,
-  quoteId: number,
-  map: (item: PlazaItem) => PlazaItem,
-) {
-  const apply = (list: PlazaItem[]) =>
-    list.map((item) => (item.quoteId === quoteId ? map(item) : item));
-
-  queryClient.setQueryData<FeedCache>(feedKey('QUOTE'), (old) =>
-    old
-      ? { ...old, pages: old.pages.map((p) => ({ ...p, content: apply(p.content ?? []) })) }
-      : old,
-  );
-  queryClient.setQueryData<Page<PlazaItem>>(HOME_KEY, (old) =>
-    old ? { ...old, content: apply(old.content ?? []) } : old,
-  );
-}
-
-/** 피드 카드 한 장 — 밑줄과 완독 자랑이 같은 카드 가족을 쓴다. */
+/** 피드 카드 한 장 — 밑줄은 공용 QuoteCard, 완독 자랑은 표지 행. 같은 교차 회전을 쓴다. */
 function FeedCard({
-  item, index, mine, confirming, focused, error, onAgree, onDelete, onOpenBook, onFocusDone,
+  item, index, mine, confirming, focused, error, onAgree, onDelete, onOpen, onOpenBook, onFocusDone,
 }: {
   item: PlazaItem;
   index: number;
   mine: boolean;
   confirming: boolean;
-  /** 홈 스포트라이트에서 찍고 온 카드인지 — 강조 테두리가 한 번 지나간다. */
+  /** 찍고 온 카드인지 — 강조 테두리가 한 번 지나간다. */
   focused?: boolean;
   /** 삭제 실패 안내 — 이 카드에서 실패했을 때만 들어온다. */
   error?: string | null;
   onAgree: () => void;
   onDelete: () => void;
+  onOpen: () => void;
   onOpenBook: () => void;
   /** 강조가 다 지워졌다 — 부모가 focusedId 를 푼다. */
   onFocusDone: () => void;
 }) {
   const { colors } = useTheme();
   const tilt = CARD_TILT[index % CARD_TILT.length];
-  const quote = item.type === 'QUOTE';
+
+  if (item.type === 'QUOTE') {
+    // 기울기를 QuoteCard 가 아니라 이 감싸개에 준다 — 강조 링이 카드와 같은 각도로 겹쳐야 한다.
+    return (
+      <View style={[styles.cardWrap, { transform: [{ rotate: `${tilt}deg` }] }]}>
+        {focused ? <FocusRing onDone={onFocusDone} /> : null}
+        <QuoteCard
+          authorNickname={item.authorNickname}
+          authorAvatarUrl={item.authorAvatarUrl}
+          bookTitle={item.bookTitle}
+          page={item.page}
+          content={item.content ?? ''}
+          agreeCount={item.agreeCount ?? 0}
+          agreedByMe={item.agreedByMe ?? false}
+          commentCount={item.commentCount ?? 0}
+          authorFinished={item.authorFinished ?? false}
+          mine={mine}
+          confirming={confirming}
+          error={error}
+          onAgree={onAgree}
+          onDelete={mine ? onDelete : undefined}
+          onOpen={onOpen}
+        />
+      </View>
+    );
+  }
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
-      {focused ? <FocusRing onDone={onFocusDone} /> : null}
       <View style={styles.authorRow}>
-        <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-          {item.authorAvatarUrl ? (
-            <Image source={{ uri: item.authorAvatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-          ) : (
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-              {item.authorNickname.slice(0, 1)}
-            </Text>
-          )}
-        </View>
+        <QuoteAvatar uri={item.authorAvatarUrl} nickname={item.authorNickname} />
         <View style={styles.authorText}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {item.authorNickname}
           </Text>
-          <View style={styles.whereRow}>
-            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
-              {item.bookTitle}
-              {quote && item.page != null ? ` · ${item.page}쪽` : ''}
-            </Text>
-            {/* 작성자가 그 책을 완독했으면 인증 마크 — 서버가 기록으로 판정한다 */}
-            {quote && item.authorFinished ? (
-              <Text
-                accessibilityLabel="완독 인증"
-                style={[typeScale.monoLabel, styles.finishedMark, { color: colors.accent, borderColor: colors.accent }]}
-              >
-                완독 ✓
-              </Text>
-            ) : null}
-          </View>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
+            {item.bookTitle}
+          </Text>
         </View>
       </View>
-
-      {quote ? (
-        <Text style={[styles.quote, { color: colors.text, borderLeftColor: colors.accent }]}>
-          {item.content}
-        </Text>
-      ) : (
-        <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={`${item.bookTitle} 상세`} style={styles.finishRow}>
-          <TiltCover uri={item.bookCoverUrl} title={item.bookTitle} width={44} entering={false} />
-          <View style={styles.finishText}>
-            <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
-              {item.bookTitle}
-            </Text>
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-              완독 · {formatRelative(item.occurredAt)}
-            </Text>
-          </View>
-        </Pressable>
-      )}
-
-      {quote ? (
-        <>
-          <View style={styles.footRow}>
-            {/* 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓힌다. */}
-            <Pressable onPress={onAgree} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-              accessibilityRole="button"
-              accessibilityState={{ selected: item.agreedByMe ?? false }}
-              accessibilityLabel={`나도 그럼 ${item.agreeCount ?? 0}`}>
-              <Text style={[typeScale.monoLabel, styles.footLabel, {
-                color: item.agreedByMe ? colors.accent : colors.textMuted,
-              }]}>
-                나도 그럼 {item.agreeCount ?? 0}
-              </Text>
-            </Pressable>
-            {mine ? (
-              <Pressable onPress={onDelete} hitSlop={FOOT_HIT_SLOP} accessibilityRole="button"
-                accessibilityLabel={confirming ? '삭제 확인' : '삭제'}
-                style={[styles.footAction, styles.deleteButton]}>
-                <Text style={[typeScale.monoLabel, styles.footLabel, {
-                  color: confirming ? colors.danger : colors.textFaint,
-                }]}>
-                  {confirming ? '한 번 더' : '삭제'}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-          {error ? (
-            <Text style={[typeScale.caption, { color: colors.warn }]}>{error}</Text>
-          ) : null}
-        </>
-      ) : null}
+      <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={`${item.bookTitle} 상세`} style={styles.finishRow}>
+        <TiltCover uri={item.bookCoverUrl} title={item.bookTitle} width={44} entering={false} />
+        <View style={styles.finishText}>
+          <Text numberOfLines={2} style={[typeScale.bodyStrong, { color: colors.text }]}>
+            {item.bookTitle}
+          </Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
+            완독 · {formatRelative(item.occurredAt)}
+          </Text>
+        </View>
+      </Pressable>
     </Card>
   );
 }
 
 /**
- * 문장 오려두기 패널 — 모달 대신 칩 행 아래로 펼쳐지는 카드(도서 상세 리뷰 폼과 같은 방식).
- * 읽는 중인 책이 있어야 문장을 오릴 수 있으므로, 없으면 탐색으로 안내만 한다.
+ * 문장 오려두기 패널 — 모달 대신 칩 행 아래로 펼쳐지는 카드(도서 상세 밑줄 탭과 같은 방식).
+ * 책 고르기는 독후감 작성과 같은 BookPicker, 문장·쪽수 칸과 그 검증은 도서 상세와 같은 QuoteDraftFields 가 맡고,
+ * 여기는 둘을 한 카드에 놓고 오려두기 호출만 한다.
  */
-/** 컴포저가 고른 책 — 내 서재 기록에서 왔으면 recordId 도 함께 담는다. */
-type PickedBook = { bookId: number; title: string; coverUrl?: string; recordId?: number };
-
 function QuoteComposer({ onDone }: { onDone: () => void }) {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
 
-  // 읽는 중인 책은 바로 고를 수 있는 빠른 선택지 — 홈·나와 같은 캐시 키라 받아 둔 목록을 재사용한다.
-  const reading = useQuery({
-    queryKey: ['library', 'READING'],
-    queryFn: () => libraryApi.list('READING'),
-  });
-  const quickPicks: PickedBook[] = (reading.data?.content ?? [])
-    .filter((r) => r.book?.id != null)
-    .map((r) => ({ bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id }));
+  // 읽는 중인 책 빠른 선택 + 검색 — 고른 책(기본값 포함)은 picker.selected 로 온다.
+  const picker = useBookPicker();
+  const { selected } = picker;
 
-  // 어떤 책이든 검색해서 고를 수 있다 — 읽는 중이 아니어도 된다(서버는 bookId 만으로 받는다).
-  const [keyword, setKeyword] = useState('');
-  const [debounced, setDebounced] = useState('');
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(keyword.trim()), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [keyword]);
-  const searching = debounced.length >= SEARCH_MIN_CHARS;
-  const search = useQuery({
-    queryKey: ['books', 'search', debounced],
-    queryFn: () => bookApi.search(debounced),
-    enabled: searching,
-  });
-  const results: PickedBook[] = (search.data ?? []).map((b) => ({
-    bookId: b.id,
-    title: b.title,
-    coverUrl: b.coverUrl,
-    // 검색으로 골라도 내 서재에 읽는 중 기록이 있으면 그 기록에 매단다.
-    recordId: quickPicks.find((q) => q.bookId === b.id)?.recordId,
-  }));
-
-  const [picked, setPicked] = useState<PickedBook | null>(null);
-  // 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 — 한 권만 읽는 사람은 바로 쓰기 시작한다.
-  const selected = picked ?? (searching ? null : quickPicks[0] ?? null);
-  const candidates = searching ? results : quickPicks;
-
-  const [content, setContent] = useState('');
-  const [pageText, setPageText] = useState('');
-
-  const trimmedPage = pageText.trim();
-  const pageValue = trimmedPage === '' ? undefined : Number(trimmedPage);
-  const pageValid = pageValue === undefined
-    || (Number.isInteger(pageValue) && pageValue >= 1);
-
-  const body = content.trim();
-  const canSubmit = selected != null && body.length > 0 && body.length <= CONTENT_MAX && pageValid;
+  // 문장·쪽수 칸과 그 검증은 도서 상세 밑줄 탭과 같은 것을 쓴다.
+  const draft = useQuoteDraft();
+  // 광장은 책을 골라야 오릴 수 있다 — 공용 검증에 그 조건만 덧붙인다.
+  const canSubmit = selected != null && draft.canSubmit;
 
   const create = useMutation({
     mutationFn: () =>
       quoteApi.create({
         bookId: selected!.bookId,
         readingRecordId: selected!.recordId,
-        content: body,
-        page: pageValue,
+        content: draft.body,
+        page: draft.pageValue,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plaza'] });
-      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      invalidateQuoteLists(queryClient);
       onDone();
     },
   });
@@ -592,116 +405,30 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
       : '오려두지 못했어요 · 다시 시도'
     : null;
 
-  // 후보 행 아래 한 줄 안내 — 상태마다 다른 말을 한다.
-  const hint = searching
-    ? search.isLoading ? '찾는 중…' : search.isError ? null : candidates.length === 0 ? '검색 결과가 없어요.' : null
-    : reading.isLoading ? '읽는 중인 책을 찾는 중입니다.'
-      : reading.isError ? null
-        : candidates.length === 0 ? '읽는 중인 책이 없어요 — 위에서 책을 검색해 고르세요.' : null;
-
   return (
     <Card style={styles.composer}>
-      <TextInput
-        value={keyword}
-        onChangeText={setKeyword}
-        placeholder="책 제목·저자로 찾기"
-        placeholderTextColor={colors.textFaint}
-        autoCapitalize="none"
-        autoCorrect={false}
-        accessibilityLabel="책 검색"
-        style={[styles.searchInput, {
-          backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-        }]}
+      <BookPicker picker={picker} />
+
+      <QuoteDraftFields
+        draft={draft}
+        trailing={(
+          <Pressable
+            onPress={() => create.mutate()}
+            disabled={!canSubmit || create.isPending}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSubmit || create.isPending }}
+            style={[styles.submit, {
+              backgroundColor: colors.accent,
+              opacity: !canSubmit || create.isPending ? 0.35 : 1,
+            }]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
+              {create.isPending ? '오리는 중…' : '오려두기'}
+            </Text>
+          </Pressable>
+        )}
       />
 
-      {candidates.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
-          {candidates.map((candidate) => {
-            const isPicked = selected?.bookId === candidate.bookId;
-            return (
-              <Pressable
-                key={candidate.bookId}
-                onPress={() => setPicked(candidate)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isPicked }}
-                accessibilityLabel={candidate.title}
-                style={[styles.pick, { borderColor: isPicked ? colors.accent : 'transparent' }]}
-              >
-                <TiltCover uri={candidate.coverUrl} title={candidate.title} width={52} tilt={0} entering={false} />
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      ) : null}
-
-      {hint ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{hint}</Text> : null}
-      {/* 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패는 실패라고 말하고 다시 시도를 준다. */}
-      {searching && search.isError ? (
-        <Pressable onPress={() => search.refetch()} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · 다시 시도 →</Text>
-        </Pressable>
-      ) : null}
-      {!searching && reading.isError ? (
-        <Pressable onPress={() => reading.refetch()} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>읽는 중인 책을 불러오지 못했어요 · 다시 시도 →</Text>
-        </Pressable>
-      ) : null}
-
-      {selected ? (
-        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.pickedLine, { color: colors.textMuted }]}>
-          {selected.title}{selected.recordId != null ? ' · 내 서재' : ''}
-        </Text>
-      ) : null}
-
-      <TextInput
-        value={content}
-        onChangeText={setContent}
-        placeholder="마음에 걸린 문장을 옮겨 적어 보세요."
-        placeholderTextColor={colors.textFaint}
-        multiline
-        maxLength={CONTENT_MAX}
-        accessibilityLabel="문장"
-        style={[styles.contentInput, {
-          backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-        }]}
-      />
-
-      <View style={styles.composerMeta}>
-        <TextInput
-          value={pageText}
-          onChangeText={setPageText}
-          placeholder="쪽(선택)"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="number-pad"
-          accessibilityLabel="쪽수"
-          style={[styles.pageInput, {
-            backgroundColor: colors.surfaceDeep,
-            borderColor: pageValid ? colors.line : colors.danger,
-            color: colors.text,
-          }]}
-        />
-        <Text style={[typeScale.monoLabel, { color: content.length >= CONTENT_MAX ? colors.warn : colors.textFaint }]}>
-          {content.length}/{CONTENT_MAX}
-        </Text>
-        <Pressable
-          onPress={() => create.mutate()}
-          disabled={!canSubmit || create.isPending}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canSubmit || create.isPending }}
-          style={[styles.submit, {
-            backgroundColor: colors.accent,
-            opacity: !canSubmit || create.isPending ? 0.35 : 1,
-          }]}
-        >
-          <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
-            {create.isPending ? '오리는 중…' : '오려두기'}
-          </Text>
-        </Pressable>
-      </View>
-
-      {!pageValid ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>쪽수는 1 이상의 숫자로 적어 주세요.</Text>
-      ) : null}
       {errorMessage ? (
         <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
       ) : null}
@@ -727,73 +454,15 @@ const styles = StyleSheet.create({
   },
 
   card: { marginHorizontal: spacing.lg, gap: spacing.md },
+  cardWrap: { marginHorizontal: spacing.lg },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.pill,
-    borderWidth: hairline,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: { width: '100%', height: '100%' },
   authorText: { flex: 1 },
   nickname: { fontSize: 12 },
-  // 제목과 완독 마크 사이 — 4는 붙어 보인다는 피드백으로 8.
-  whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
-  where: { fontSize: 9, letterSpacing: 0.4, flexShrink: 1 },
-  // 완독 인증 마크 — 민트 테두리의 작은 pill.
-  finishedMark: {
-    fontSize: 8,
-    letterSpacing: 0.6,
-    borderWidth: hairline,
-    borderRadius: radius.pill,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  // 시안 2d 의 인용 본문 — quote 토큰을 15/1.65 로 줄이고 왼쪽에 악센트 선을 세운다.
-  quote: { ...typeScale.quote, fontSize: 15, lineHeight: 25, borderLeftWidth: 2, paddingLeft: 11 },
+  where: { fontSize: 9, letterSpacing: 0.4, marginTop: 2 },
   finishRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   finishText: { flex: 1, gap: spacing.xs },
-  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  footLabel: { fontSize: 10, letterSpacing: 0.4 },
-  // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
-  footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
-  deleteButton: { marginLeft: 'auto' },
 
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },
-  pickRow: { gap: spacing.sm, paddingVertical: 2 },
-  pick: { borderWidth: 2, borderRadius: radius.sm, padding: 2 },
-  // 책 검색 입력 — 쪽수 입력과 같은 재질, pill.
-  searchInput: {
-    borderWidth: hairline,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontFamily: sans.regular,
-    fontSize: 14,
-  },
-  pickedLine: { marginTop: -spacing.xs },
-  contentInput: {
-    minHeight: 92,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    fontFamily: serif.regular,
-    fontSize: 15,
-    lineHeight: 25,
-    textAlignVertical: 'top',
-  },
-  composerMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  pageInput: {
-    width: 84,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    ...typeScale.monoNumeral,
-  },
   submit: {
     marginLeft: 'auto',
     borderRadius: radius.pill,

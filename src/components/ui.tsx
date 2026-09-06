@@ -290,6 +290,51 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
   );
 }
 
+/**
+ * 푸터 액션 확장 터치 영역(네이티브 전용).
+ * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키우고,
+ * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
+ */
+const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
+
+/**
+ * 카드 푸터 액션 — 10px 모노 라벨 + 36px 터치 상자. 밑줄 카드·독후감 카드의 푸터가 같이 쓴다.
+ * 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓히되,
+ * 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다. `onPress` 가 없으면 글자만 같은 상자에 놓는다.
+ */
+export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel }: {
+  label: string;
+  onPress?: () => void;
+  /** 켜짐(예: 좋아요) — 라벨이 악센트로, accessibilityState.selected 를 낸다. */
+  selected?: boolean;
+  tone?: 'accent' | 'muted' | 'faint' | 'danger';
+  /** 라벨과 다르게 읽혀야 할 때(예: '책 보기 →' 는 '{제목} 상세'). 없으면 라벨 그대로. */
+  accessibilityLabel?: string;
+}) {
+  const { styles, colors } = useStyles();
+  const color = selected || tone === 'accent'
+    ? colors.accent
+    : tone === 'faint' ? colors.textFaint
+      : tone === 'danger' ? colors.danger
+        : colors.textMuted;
+
+  if (!onPress) {
+    return <Text style={[styles.footLabel, styles.footAction, { color }]}>{label}</Text>;
+  }
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={FOOT_HIT_SLOP}
+      style={styles.footAction}
+      accessibilityRole="button"
+      accessibilityState={selected === undefined ? undefined : { selected }}
+      accessibilityLabel={accessibilityLabel ?? label}
+    >
+      <Text style={[styles.footLabel, { color }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function formatDuration(seconds?: number | null): string {
   const total = Math.max(0, Math.floor(seconds ?? 0));
   const hours = Math.floor(total / 3600);
@@ -460,5 +505,8 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     keyValueLabel: { ...typeScale.caption, color: colors.textMuted },
     keyValueValue: { ...typeScale.monoNumeral, color: colors.text },
+    footLabel: { ...typeScale.monoLabel, fontSize: 10, letterSpacing: 0.4 },
+    // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
+    footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
   });
 }

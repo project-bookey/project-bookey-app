@@ -167,7 +167,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 내가 오려둔 문장 목록 — 최신순, bookId 로 책 하나만 추릴 수 있다 */
+        /** 내 오려둔 문장 목록 — 최신순, bookId 로 책 하나만 추리고 q 로 문장·책 제목 검색 */
         get: operations["myQuotes"];
         put?: never;
         /** 문장 오려두기 */
@@ -1786,7 +1786,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 광장 피드 — 밑줄(QUOTE) · 완독 자랑(FINISH) */
+        /** 광장 피드 — 밑줄(QUOTE) · 완독 자랑(FINISH), q 로 문장·책 제목 검색(QUOTE 만) */
         get: operations["feed_2"];
         put?: never;
         post?: never;
@@ -2061,7 +2061,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 책별 오려둔 문장 목록 — 최신순 */
+        /** 책별 오려둔 문장 목록 — 최신순, q 로 문장·책 제목 검색 */
         get: operations["quotes"];
         put?: never;
         post?: never;
@@ -4582,6 +4582,7 @@ export interface operations {
         parameters: {
             query?: {
                 bookId?: number;
+                q?: string;
                 page?: number;
                 size?: number;
             };
@@ -7297,6 +7298,7 @@ export interface operations {
         parameters: {
             query?: {
                 type?: "QUOTE" | "FINISH";
+                q?: string;
                 page?: number;
                 size?: number;
             };
@@ -7715,6 +7717,7 @@ export interface operations {
     quotes: {
         parameters: {
             query?: {
+                q?: string;
                 page?: number;
                 size?: number;
             };

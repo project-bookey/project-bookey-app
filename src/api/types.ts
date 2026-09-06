@@ -80,6 +80,8 @@ export type Notification = Schemas['NotificationView'];
 export type Review = Schemas['ReviewView'];
 export type VerificationPreview = Schemas['VerificationPreview'];
 export type VerificationLevel = NonNullable<Review['verificationLevel']>;
+export type ReviewComment = Schemas['ReviewCommentView'];
+export type CreateReviewComment = Schemas['CreateReviewCommentRequest'];
 
 // ── 밑줄 · 광장 ──────────────────────────────────────────
 export type BookQuote = Schemas['BookQuoteView'];
@@ -87,6 +89,18 @@ export type QuoteAgree = Schemas['QuoteAgreeView'];
 export type CreateQuote = Schemas['CreateBookQuoteRequest'];
 export type PlazaItem = Schemas['PlazaItemView'];
 export type PlazaItemType = PlazaItem['type'];
+export type QuoteComment = Schemas['QuoteCommentView'];
+export type CreateQuoteComment = Schemas['CreateQuoteCommentRequest'];
+
+// ── 독후감 ───────────────────────────────────────────────
+export type Post = Schemas['PostView'];
+export type CreatePost = Schemas['CreatePostRequest'];
+export type UpdatePost = Schemas['UpdatePostRequest'];
+export type PostVisibility = Post['visibility'];
+export type PostImage = Schemas['PostImageView'];
+export type PostLike = Schemas['PostLikeView'];
+export type PostComment = Schemas['PostCommentView'];
+export type CreatePostComment = Schemas['CreatePostCommentRequest'];
 
 // ── 챌린지 ───────────────────────────────────────────────
 export type Challenge = Schemas['ChallengeView'];

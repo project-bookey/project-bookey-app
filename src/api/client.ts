@@ -78,6 +78,9 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     });
   }
 
+  // multipart 는 boundary 가 붙은 Content-Type 을 런타임이 직접 만들어야 하므로 헤더를 지정하지 않는다.
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+
   const send = async (): Promise<Response> => {
     // FormData(파일 업로드)는 런타임이 boundary 포함 Content-Type 을 직접 붙여야 한다.
     const isForm = typeof FormData !== 'undefined' && body instanceof FormData;

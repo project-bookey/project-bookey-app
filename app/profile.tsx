@@ -4,11 +4,13 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { API_BASE_URL } from '@/api/client';
-import { libraryApi, notificationApi, quoteApi, statsApi } from '@/api/endpoints';
+import { libraryApi, notificationApi, postApi, quoteApi, statsApi } from '@/api/endpoints';
+import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { DailyStat, NotifyTone, ReadingRecord } from '@/api/types';
 import {
   MemoScrap, PaperScreen, SectionNav, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
+import { PostScrap } from '@/components/post/PostScrap';
 import { SocialCard } from '@/components/social/SocialCard';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle, formatDuration,
@@ -231,6 +233,8 @@ export default function ProfileScreen() {
 
         <MyQuotes />
 
+        <MyPosts />
+
         <View style={styles.block}>
           <SocialCard />
         </View>
@@ -352,13 +356,13 @@ function MyQuotes() {
   if (!latest) return null;
 
   return (
-    <View style={[styles.block, styles.quoteSection]}>
+    <View style={[styles.block, styles.scrapSection]}>
       <Rule />
       <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
         내가 오려둔 문장{total != null ? ` ${total}` : ''}
       </Text>
-      <View style={styles.quoteRow}>
-        <MemoScrap rotate={-1} style={styles.quoteScrap}>
+      <View style={styles.scrapRow}>
+        <MemoScrap rotate={-1} style={styles.scrapFill}>
           <Text numberOfLines={4} style={[styles.quoteText, { color: colors.text }]}>
             {latest.content}
           </Text>
@@ -372,8 +376,56 @@ function MyQuotes() {
           accessibilityRole="button"
           accessibilityLabel={total != null ? `오려둔 문장 전부 보기, 총 ${total}개` : '오려둔 문장 전부 보기'}
         >
-          <StickyNote rotate={1.5} style={styles.quoteAll}>
-            <Text style={[typeScale.label, styles.quoteAllLabel, { color: colors.onNote }]}>
+          <StickyNote rotate={1.5} style={styles.scrapAll}>
+            <Text style={[typeScale.label, styles.scrapAllLabel, { color: colors.onNote }]}>
+              전부{'\n'}보기
+            </Text>
+          </StickyNote>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * '내 독후감' — 총 편수와 가장 최근 한 편 (바로 위 MyQuotes 와 같은 꼴).
+ *
+ * 비공개 글도 여기 걸린다 — 내 화면이고, 조각의 메타가 공개 범위를 밝힌다.
+ * 목록은 /post/mine 의 몫이라 여기서는 size 1 이면 충분하다. 0편이면 섹션을 통째로 감춘다.
+ */
+function MyPosts() {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const mine = useQuery({ queryKey: MY_POSTS_LATEST_KEY, queryFn: () => postApi.mine(0, 1) });
+
+  // MyQuotes 와 같은 규칙 — 렌더 여부는 '최신 한 편이 있는가'로만 가른다.
+  const latest = mine.data?.content?.[0];
+  const total = mine.data?.totalElements;
+  if (!latest) return null;
+
+  return (
+    <View style={[styles.block, styles.scrapSection]}>
+      <Rule />
+      <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
+        내 독후감{total != null ? ` ${total}` : ''}
+      </Text>
+      <View style={styles.scrapRow}>
+        {/* 조각 스스로가 버튼이라 행을 또 감싸지 않는다 — 웹에서 버튼 안에 버튼이 들어가면 안 된다. */}
+        <View style={styles.scrapFill}>
+          <PostScrap
+            post={latest}
+            rotate={-1}
+            variant="profile"
+            onPress={() => router.push(`/post/${latest.id}`)}
+          />
+        </View>
+        <Pressable
+          onPress={() => router.push('/post/mine')}
+          accessibilityRole="button"
+          accessibilityLabel={total != null ? `내 독후감 전부 보기, 총 ${total}편` : '내 독후감 전부 보기'}
+        >
+          <StickyNote rotate={1.5} style={styles.scrapAll}>
+            <Text style={[typeScale.label, styles.scrapAllLabel, { color: colors.onNote }]}>
               전부{'\n'}보기
             </Text>
           </StickyNote>
@@ -739,13 +791,13 @@ const styles = StyleSheet.create({
   },
   legendCell: { width: 11, height: 11, borderRadius: radius.sm },
 
-  quoteSection: { gap: spacing.md },
-  quoteRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
-  quoteScrap: { flex: 1 },
+  scrapSection: { gap: spacing.md },
+  scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  scrapFill: { flex: 1 },
   quoteText: { fontFamily: serif.regular, fontSize: 13, lineHeight: 21 },
   quoteMeta: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
-  quoteAll: { width: 66, alignItems: 'center', justifyContent: 'center' },
-  quoteAllLabel: { fontSize: 11, lineHeight: 15, textAlign: 'center' },
+  scrapAll: { width: 66, alignItems: 'center', justifyContent: 'center' },
+  scrapAllLabel: { fontSize: 11, lineHeight: 15, textAlign: 'center' },
 
   settings: { gap: spacing.lg },
   toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: radius.md, overflow: 'hidden' },

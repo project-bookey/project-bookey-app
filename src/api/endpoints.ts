@@ -2,10 +2,13 @@ import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
   Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  CreateQuote, EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
+  CreatePost, CreatePostComment, CreateQuote, CreateQuoteComment, CreateReviewComment,
+  EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
-  PopularBook, PostLikeResult, PostView, PostcardView, QuoteAgree, ReadingRecord, ReadingStatus,
-  Review, Session, SessionEndResult, SignupConfig, StatsSummary, TokenResponse, UserProfileView, VerificationPreview,
+  PopularBook, Post, PostComment, PostImage, PostLike, PostcardView, QuoteAgree, QuoteComment,
+  ReadingRecord, ReadingStatus,
+  Review, ReviewComment, Session, SessionEndResult, SignupConfig, StatsSummary, TokenResponse,
+  UpdatePost, UserProfileView, VerificationPreview,
   VisitorView, WalletView,
 } from './types';
 
@@ -52,9 +55,6 @@ export const bookApi = {
     api<BookSummary>('/api/v1/books', { method: 'POST', body }),
   reviews: (bookId: number, verifiedOnly = false) =>
     api<Page<Review>>(`/api/v1/books/${bookId}/reviews`, { query: { verifiedOnly } }),
-  /** 이 책에서 오려둔 문장 — 최신순. totalElements 가 총 개수다. */
-  quotes: (bookId: number, page = 0, size = 20) =>
-    api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size } }),
   popular: (size = 20) => api<PopularBook[]>('/api/v1/books/popular', { query: { size } }),
   /** YES24 큐레이션 — 베스트셀러·스테디셀러·신상품 (서버 1시간 캐시, 키 없으면 빈 목록). */
   yes24Curation: (kind: 'BESTSELLER' | 'STEADY' | 'NEW' = 'BESTSELLER', size = 20) =>
@@ -131,19 +131,6 @@ export const clubApi = {
     api<void>(`/api/v1/clubs/${clubId}/posts/${postId}/reactions`, { method: 'POST', body: { kind } }),
 };
 
-export const postApi = {
-  /** 독후감 피드 (§14.1) — HOT: 좋아요·시간 감쇠, NEW: 최신순. */
-  feed: (sort: FeedSort = 'HOT', page = 0, size = 10) =>
-    api<Page<PostView>>('/api/v1/posts/feed', { query: { sort, page, size } }),
-  like: (postId: number) => api<PostLikeResult>(`/api/v1/posts/${postId}/like`, { method: 'POST' }),
-  /** 유저 마이페이지의 공개 독후감 — 피드에서 휘발된 글도 여기엔 축적된다. */
-  byUser: (userId: number, page = 0, size = 20) =>
-    api<Page<PostView>>(`/api/v1/users/${userId}/posts`, { query: { page, size } }),
-  /** 내 글에 좋아요 누른 사람 — 글 주인 + 구독 회원 전용. */
-  likers: (postId: number, page = 0, size = 20) =>
-    api<Page<LikerView>>(`/api/v1/posts/${postId}/likers`, { query: { page, size } }),
-};
-
 export const walletApi = {
   get: () => api<WalletView>('/api/v1/wallet'),
   /** 책갈피 → 엽서(1책갈피) · 우표(2책갈피) 교환. */
@@ -214,20 +201,82 @@ export const reviewApi = {
   create: (body: { readingRecordId: number; rating?: number; body: string; tags?: string[] }) =>
     api<Review>('/api/v1/reviews', { method: 'POST', body }),
   mine: () => api<Page<Review>>('/api/v1/reviews/me'),
+  /** 리뷰 한 건 — 상세 진입·새로고침·딥링크. */
+  get: (reviewId: number) => api<Review>(`/api/v1/reviews/${reviewId}`),
+  /** 댓글 — 오래된 순, 최상위만. */
+  comments: (reviewId: number, page = 0, size = 30) =>
+    api<Page<ReviewComment>>(`/api/v1/reviews/${reviewId}/comments`, { query: { page, size } }),
+  /** 한 댓글의 답글 — 오래된 순. */
+  replies: (reviewId: number, commentId: number, page = 0, size = 20) =>
+    api<Page<ReviewComment>>(`/api/v1/reviews/${reviewId}/comments/${commentId}/replies`, { query: { page, size } }),
+  addComment: (reviewId: number, body: CreateReviewComment) =>
+    api<ReviewComment>(`/api/v1/reviews/${reviewId}/comments`, { method: 'POST', body }),
+  removeComment: (reviewId: number, commentId: number) =>
+    api<void>(`/api/v1/reviews/${reviewId}/comments/${commentId}`, { method: 'DELETE' }),
 };
 
 export const quoteApi = {
   create: (body: CreateQuote) => api<BookQuote>('/api/v1/quotes', { method: 'POST', body }),
-  /** 내가 오려둔 문장. totalElements 가 총 개수다. */
-  mine: (page = 0, size = 20) => api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size } }),
+  /**
+   * 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만 — 독후감 작성 시 밑줄 고르기에 쓴다.
+   * q 는 문장 내용·책 제목을 대소문자 무시 부분 일치로 훑는다(빈 값이면 전체).
+   */
+  mine: (page = 0, size = 20, bookId?: number, q?: string) =>
+    api<Page<BookQuote>>('/api/v1/quotes', { query: { page, size, bookId, q } }),
+  /** 밑줄 한 건 — 상세 진입·새로고침·딥링크. */
+  get: (quoteId: number) => api<BookQuote>(`/api/v1/quotes/${quoteId}`),
+  /** 책별 밑줄 — 최신순. 도서 상세 밑줄 탭은 5건씩 받는다. q 는 문장 내용·책 제목 검색. */
+  byBook: (bookId: number, page = 0, size = 5, q?: string) =>
+    api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size, q } }),
   remove: (quoteId: number) => api<void>(`/api/v1/quotes/${quoteId}`, { method: 'DELETE' }),
-  /** '나도 그럼' 토글 — 서버가 토글 후 상태를 돌려준다. */
+  /** '좋아요' 토글 — 서버가 토글 후 상태를 돌려준다. */
   agree: (quoteId: number) => api<QuoteAgree>(`/api/v1/quotes/${quoteId}/agree`, { method: 'POST' }),
+  /** 댓글 — 오래된 순. */
+  comments: (quoteId: number, page = 0, size = 30) =>
+    api<Page<QuoteComment>>(`/api/v1/quotes/${quoteId}/comments`, { query: { page, size } }),
+  /** 한 댓글의 답글 — 오래된 순. */
+  replies: (quoteId: number, commentId: number, page = 0, size = 20) =>
+    api<Page<QuoteComment>>(`/api/v1/quotes/${quoteId}/comments/${commentId}/replies`, { query: { page, size } }),
+  addComment: (quoteId: number, body: CreateQuoteComment) =>
+    api<QuoteComment>(`/api/v1/quotes/${quoteId}/comments`, { method: 'POST', body }),
+  removeComment: (quoteId: number, commentId: number) =>
+    api<void>(`/api/v1/quotes/${quoteId}/comments/${commentId}`, { method: 'DELETE' }),
 };
 
 export const plazaApi = {
-  feed: (type: PlazaItemType, page = 0, size = 20) =>
-    api<Page<PlazaItem>>('/api/v1/plaza/feed', { query: { type, page, size } }),
+  /** 광장 피드. q 는 문장 내용·책 제목 검색 — 완독 자랑(FINISH)에는 뜻이 없어 서버가 무시한다. */
+  feed: (type: PlazaItemType, page = 0, size = 20, q?: string) =>
+    api<Page<PlazaItem>>('/api/v1/plaza/feed', { query: { type, page, size, q } }),
+};
+
+/** 독후감 — 광장 피드·도서별 목록·내 글, 좋아요·댓글, 붙일 사진 업로드. */
+export const postApi = {
+  /** 독후감 피드 (§14.1) — HOT: 좋아요·시간 감쇠 점수, NEW: 최신순. */
+  feed: (sort: FeedSort = 'HOT', page = 0, size = 10) =>
+    api<Page<Post>>('/api/v1/posts/feed', { query: { sort, page, size } }),
+  /** 유저 마이페이지의 공개 독후감 — 피드에서 휘발된 글도 여기엔 축적된다. */
+  byUser: (userId: number, page = 0, size = 20) =>
+    api<Page<Post>>(`/api/v1/users/${userId}/posts`, { query: { page, size } }),
+  /** 내 글에 좋아요 누른 사람 — 글 주인 + 구독 회원 전용. */
+  likers: (postId: number, page = 0, size = 20) =>
+    api<Page<LikerView>>(`/api/v1/posts/${postId}/likers`, { query: { page, size } }),
+  byBook: (bookId: number, page = 0, size = 5) =>
+    api<Page<Post>>(`/api/v1/books/${bookId}/posts`, { query: { page, size } }),
+  mine: (page = 0, size = 20) => api<Page<Post>>('/api/v1/posts', { query: { page, size } }),
+  get: (postId: number) => api<Post>(`/api/v1/posts/${postId}`),
+  create: (body: CreatePost) => api<Post>('/api/v1/posts', { method: 'POST', body }),
+  update: (postId: number, body: UpdatePost) =>
+    api<Post>(`/api/v1/posts/${postId}`, { method: 'PATCH', body }),
+  remove: (postId: number) => api<void>(`/api/v1/posts/${postId}`, { method: 'DELETE' }),
+  like: (postId: number) => api<PostLike>(`/api/v1/posts/${postId}/like`, { method: 'POST' }),
+  comments: (postId: number, page = 0, size = 30) =>
+    api<Page<PostComment>>(`/api/v1/posts/${postId}/comments`, { query: { page, size } }),
+  addComment: (postId: number, body: CreatePostComment) =>
+    api<PostComment>(`/api/v1/posts/${postId}/comments`, { method: 'POST', body }),
+  removeComment: (postId: number, commentId: number) =>
+    api<void>(`/api/v1/posts/${postId}/comments/${commentId}`, { method: 'DELETE' }),
+  /** 사진 업로드 — multipart. Content-Type 은 런타임이 boundary 와 함께 붙인다. */
+  uploadImage: (form: FormData) => api<PostImage>('/api/v1/posts/images', { method: 'POST', body: form }),
 };
 
 export const challengeApi = {
