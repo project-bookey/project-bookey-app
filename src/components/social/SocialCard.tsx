@@ -113,6 +113,15 @@ export function SocialCard() {
           <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>열기 ›</Text>
         </Pressable>
         <Rule />
+        <Pressable
+          onPress={() => router.push('/chats')}
+          accessibilityRole="button"
+          style={styles.linkRow}
+        >
+          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>💬 채팅</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>열기 ›</Text>
+        </Pressable>
+        <Rule />
         <KeyValue
           label="팔로워 · 팔로잉"
           value={`${p?.followerCount ?? 0} · ${p?.followingCount ?? 0}`}

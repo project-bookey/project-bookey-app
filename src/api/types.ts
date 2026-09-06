@@ -33,6 +33,9 @@ export type FollowUserView = Schemas['FollowUserView'];
 export type UserProfileView = Schemas['UserProfileView'];
 export type VisitorView = Schemas['VisitorView'];
 export type LikerView = Schemas['LikerView'];
+export type ChatSummary = Schemas['ChatSummaryView'];
+export type ChatMessage = Schemas['ChatMessageView'];
+export type ChatMessages = Schemas['ChatMessagesView'];
 
 /** 서버는 문자열로 내려주므로 앱에서 좁혀 쓴다. */
 export type NotifyTone = 'GENTLE' | 'FACT' | 'SPARTA' | 'TSUNDERE' | 'SILENT';
