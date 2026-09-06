@@ -1,9 +1,11 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
-  CreateQuote, EmailCodeResponse, LibrarySummary, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
-  PopularBook, QuoteAgree, ReadingRecord, ReadingStatus,
-  Review, Session, SessionEndResult, StatsSummary, TokenResponse, VerificationPreview,
+  CreateQuote, EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
+  LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
+  PopularBook, PostLikeResult, PostView, PostcardView, QuoteAgree, ReadingRecord, ReadingStatus,
+  Review, Session, SessionEndResult, StatsSummary, TokenResponse, UserProfileView, VerificationPreview,
+  VisitorView, WalletView,
 } from './types';
 
 export const authApi = {
@@ -108,6 +110,60 @@ export const clubApi = {
     api<ClubPost>(`/api/v1/clubs/${clubId}/posts/${postId}/reveal`, { method: 'POST' }),
   react: (clubId: number, postId: number, kind: string) =>
     api<void>(`/api/v1/clubs/${clubId}/posts/${postId}/reactions`, { method: 'POST', body: { kind } }),
+};
+
+export const postApi = {
+  /** 독후감 피드 (§14.1) — HOT: 좋아요·시간 감쇠, NEW: 최신순. */
+  feed: (sort: FeedSort = 'HOT', page = 0, size = 10) =>
+    api<Page<PostView>>('/api/v1/posts/feed', { query: { sort, page, size } }),
+  like: (postId: number) => api<PostLikeResult>(`/api/v1/posts/${postId}/like`, { method: 'POST' }),
+  /** 유저 마이페이지의 공개 독후감 — 피드에서 휘발된 글도 여기엔 축적된다. */
+  byUser: (userId: number, page = 0, size = 20) =>
+    api<Page<PostView>>(`/api/v1/users/${userId}/posts`, { query: { page, size } }),
+  /** 내 글에 좋아요 누른 사람 — 글 주인 + 구독 회원 전용. */
+  likers: (postId: number, page = 0, size = 20) =>
+    api<Page<LikerView>>(`/api/v1/posts/${postId}/likers`, { query: { page, size } }),
+};
+
+export const walletApi = {
+  get: () => api<WalletView>('/api/v1/wallet'),
+  /** 책갈피 → 엽서(1책갈피) · 우표(2책갈피) 교환. */
+  exchange: (target: ExchangeTarget, quantity: number) =>
+    api<WalletView>('/api/v1/wallet/exchange', { method: 'POST', body: { target, quantity } }),
+};
+
+export const postcardApi = {
+  /** 엽서 보내기 — 16글자, 무료 일 5장(KST 자정 리셋) → 보유 엽서. attachStamp 는 내 우표 1개 소모. */
+  send: (body: { toUserId: number; postId?: number; body: string; attachStamp: boolean }) =>
+    api<PostcardView>('/api/v1/postcards', { method: 'POST', body }),
+  inbox: (page = 0, size = 20) =>
+    api<Page<PostcardView>>('/api/v1/postcards/inbox', { query: { page, size } }),
+  sent: (page = 0, size = 20) =>
+    api<Page<PostcardView>>('/api/v1/postcards/sent', { query: { page, size } }),
+  /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 성립하면 자동 맞팔로우. */
+  reply: (postcardId: number, body: string) =>
+    api<PostcardView>(`/api/v1/postcards/${postcardId}/reply`, { method: 'POST', body: { body } }),
+};
+
+export const followApi = {
+  myCode: () => api<FollowCodeView>('/api/v1/follows/my-code'),
+  rotateCode: () => api<FollowCodeView>('/api/v1/follows/my-code/rotate', { method: 'POST' }),
+  /** 코드로 팔로우 — 지인 전제, 즉시 맞팔로우. */
+  byCode: (code: string) =>
+    api<FollowUserView>('/api/v1/follows/code', { method: 'POST', body: { code } }),
+  followers: (page = 0, size = 20) =>
+    api<Page<FollowUserView>>('/api/v1/follows/followers', { query: { page, size } }),
+  following: (page = 0, size = 20) =>
+    api<Page<FollowUserView>>('/api/v1/follows/following', { query: { page, size } }),
+  unfollow: (userId: number) => api<void>(`/api/v1/follows/${userId}`, { method: 'DELETE' }),
+};
+
+export const profileApi = {
+  /** 유저 프로필 — 열람하면 방문 기록이 남는다(방문 수는 전체 공개). */
+  user: (userId: number) => api<UserProfileView>(`/api/v1/users/${userId}/profile`),
+  /** 내 방문자 목록 — 구독 회원 전용. */
+  visitors: (page = 0, size = 20) =>
+    api<Page<VisitorView>>('/api/v1/me/visitors', { query: { page, size } }),
 };
 
 export const notificationApi = {

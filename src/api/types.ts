@@ -19,6 +19,21 @@ export type Me = Schemas['MeResponse'];
 export type TokenResponse = Schemas['TokenResponse'];
 export type EmailCodeResponse = Schemas['EmailCodeResponse'];
 
+// ── 소셜 (§14) — 피드 · 엽서 · 지갑 · 팔로우 · 프로필 ────
+export type PostView = Schemas['PostView'];
+export type PostLikeResult = Schemas['PostLikeView'];
+/** 피드 정렬 — HOT: 좋아요·시간 감쇠, NEW: 최신순. */
+export type FeedSort = 'HOT' | 'NEW';
+export type WalletView = Schemas['WalletView'];
+export type ExchangeTarget = NonNullable<Schemas['ExchangeRequest']['target']>;
+export type PostcardView = Schemas['PostcardView'];
+export type PostcardStatus = NonNullable<PostcardView['status']>;
+export type FollowCodeView = Schemas['FollowCodeView'];
+export type FollowUserView = Schemas['FollowUserView'];
+export type UserProfileView = Schemas['UserProfileView'];
+export type VisitorView = Schemas['VisitorView'];
+export type LikerView = Schemas['LikerView'];
+
 /** 서버는 문자열로 내려주므로 앱에서 좁혀 쓴다. */
 export type NotifyTone = 'GENTLE' | 'FACT' | 'SPARTA' | 'TSUNDERE' | 'SILENT';
 

@@ -10,6 +10,7 @@ import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, plazaApi, quoteApi } from '@/api/endpoints';
 import type { Page, PlazaItem, PlazaItemType } from '@/api/types';
 import { Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { PostFeed } from '@/components/plaza/PostFeed';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -67,6 +68,8 @@ export default function PlazaScreen() {
   const { colors } = useTheme();
   const myId = useAuth((s) => s.user?.id);
 
+  /** 독후감 피드(§14.1)가 광장의 기본 탭이다. 밑줄·완독 자랑은 기존 광장 피드로 남는다. */
+  const [postTab, setPostTab] = useState(true);
   const [type, setType] = useState<PlazaItemType>('QUOTE');
   const [composing, setComposing] = useState(false);
   const [confirmId, setConfirmId] = useState<number | null>(null);
@@ -124,6 +127,11 @@ export default function PlazaScreen() {
       return;
     }
     if (focusHandled.current === raw) return;
+    // 독후감 탭에서 들어왔으면 광장(밑줄) 피드로 넘어간다 — 전환 뒤 이 effect 가 다시 온다.
+    if (postTab) {
+      setPostTab(false);
+      return;
+    }
     // 완독 자랑을 보던 중에 들어왔으면 밑줄로 되돌린다 — 전환 뒤 이 effect 가 다시 온다.
     if (type !== 'QUOTE') {
       setType('QUOTE');
@@ -143,7 +151,7 @@ export default function PlazaScreen() {
 
     setFocusedId(target);
     listRef.current?.scrollToIndex({ index: at, viewPosition: FOCUS_VIEW_POSITION, animated: true });
-  }, [focusQuoteId, type, feed.isSuccess, items, router]);
+  }, [focusQuoteId, postTab, type, feed.isSuccess, items, router]);
 
   /** scrollToIndex 재시도 타이머 — 화면을 떠날 때 남겨 두지 않는다. */
   const scrollRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,16 +235,25 @@ export default function PlazaScreen() {
   };
 
   const switchType = (next: PlazaItemType) => {
-    if (next === type) return;
+    // 독후감 탭에서 넘어오는 경우엔 같은 type 이라도 탭 전환은 해야 한다.
+    if (!postTab && next === type) return;
+    setPostTab(false);
     setConfirmId(null);
     // 완독 자랑에는 오려두기가 없다 — 열려 있던 컴포저를 접는다.
     setComposing(false);
     setType(next);
   };
 
+  const openPostTab = () => {
+    setPostTab(true);
+    setComposing(false);
+    setConfirmId(null);
+  };
+
   const header = (
     <View style={styles.header}>
       <View style={styles.chipRow}>
+        <Chip label="독후감" active={false} onPress={openPostTab} />
         <Chip label="밑줄" active={type === 'QUOTE'} onPress={() => switchType('QUOTE')} />
         <Chip label="완독 자랑" active={type === 'FINISH'} onPress={() => switchType('FINISH')} />
         {/* 오려두기는 밑줄 탭에서만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
@@ -258,6 +275,26 @@ export default function PlazaScreen() {
       {composing ? <QuoteComposer onDone={() => setComposing(false)} /> : null}
     </View>
   );
+
+  // 독후감 탭 (§14.1) — 알고리즘 피드. 밑줄·완독 자랑과 카드 구조가 달라 별도 리스트로 그린다.
+  if (postTab) {
+    return (
+      <PaperScreen>
+        <SectionNav active="plaza" />
+        <PostFeed
+          header={
+            <View style={styles.header}>
+              <View style={styles.chipRow}>
+                <Chip label="독후감" active onPress={openPostTab} />
+                <Chip label="밑줄" active={false} onPress={() => switchType('QUOTE')} />
+                <Chip label="완독 자랑" active={false} onPress={() => switchType('FINISH')} />
+              </View>
+            </View>
+          }
+        />
+      </PaperScreen>
+    );
+  }
 
   return (
     <PaperScreen>

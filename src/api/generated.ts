@@ -23,6 +23,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/wallet/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 책갈피 교환 — 엽서(1책갈피) · 우표(2책갈피) */
+        post: operations["exchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{sessionId}/end": {
         parameters: {
             query?: never;
@@ -266,6 +283,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 엽서 보내기 — 무료 일 5장(KST 자정 리셋) → 보유 엽서. 우표 동봉 가능 */
+        post: operations["send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postcards/{postcardId}/reply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 성립하면 자동 맞팔로우 */
+        post: operations["reply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}/open": {
         parameters: {
             query?: never;
@@ -380,6 +431,40 @@ export interface paths {
         put?: never;
         /** 하차 — 사유를 함께 기록한다 */
         post: operations["abandon"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follows/my-code/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 팔로우 코드 회전 — 유출 시 무효화 */
+        post: operations["rotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follows/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 코드로 팔로우 — 지인 전제, 즉시 맞팔로우 */
+        post: operations["followByCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -809,6 +894,41 @@ export interface paths {
         /** 가입 이메일 인증 코드 발급 */
         post: operations["requestEmailCode"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/users/{userId}/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 지갑 수동 조정 — 책갈피·엽서·우표, 사유 필수 (베타 운영 경로) */
+        post: operations["adjustWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/users/{userId}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 구독 수동 지급 — 사유 필수 (IAP 검증 전 운영 경로) */
+        post: operations["grantSubscription"];
+        /** 구독 회수 */
+        delete: operations["revokeSubscription"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1248,6 +1368,57 @@ export interface paths {
         patch: operations["changeRole"];
         trace?: never;
     };
+    "/api/v1/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 지갑 — 잔액 · 오늘 남은 무료 엽서 · 구독 상태 */
+        get: operations["wallet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 유저 프로필 — 열람 시 방문 기록이 남는다 (방문 수는 전체 공개) */
+        get: operations["profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 유저의 공개 독후감 — 피드에서 휘발된 글도 여기엔 축적 */
+        get: operations["posts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stats": {
         parameters: {
             query?: never;
@@ -1470,6 +1641,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/posts/{postId}/likers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 글에 좋아요 누른 사람 — 글 주인 + 구독 회원 전용 */
+        get: operations["likers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/posts/feed": {
         parameters: {
             query?: never;
@@ -1477,8 +1665,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 광장 독후감 피드 — 공개 독후감 최신순 */
+        /** 광장 독후감 피드 — HOT(좋아요·시간 감쇠) 또는 NEW(최신순) */
         get: operations["feed_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postcards/sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 보낸 엽서 */
+        get: operations["sent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/postcards/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 받은 엽서 */
+        get: operations["inbox"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1521,6 +1743,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/visitors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 방문자 목록 — 구독 회원 전용 (숫자는 프로필에서 전체 공개) */
+        get: operations["visitors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/library/{recordId}": {
         parameters: {
             query?: never;
@@ -1548,6 +1787,57 @@ export interface paths {
         };
         /** 서재 상태별 개수 */
         get: operations["summary_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follows/my-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 팔로우 코드 — QR 은 deepLink 로 그린다 */
+        get: operations["myCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follows/following": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 팔로잉 목록 */
+        get: operations["following"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follows/followers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 팔로워 목록 */
+        get: operations["followers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1719,7 +2009,7 @@ export interface paths {
             cookie?: never;
         };
         /** 책별 공개 독후감 목록 — 최신순 */
-        get: operations["posts"];
+        get: operations["posts_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2051,6 +2341,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/follows/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 언팔로우 — 내 방향만 끊는다 */
+        delete: operations["unfollow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/me": {
         parameters: {
             query?: never;
@@ -2122,6 +2429,25 @@ export interface components {
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+        };
+        ExchangeRequest: {
+            /** @enum {string} */
+            target: "POSTCARD" | "STAMP";
+            /** Format: int32 */
+            quantity: number;
+        };
+        WalletView: {
+            /** Format: int32 */
+            bookmarkBalance: number;
+            /** Format: int32 */
+            postcardBalance: number;
+            /** Format: int32 */
+            stampBalance: number;
+            /** Format: int32 */
+            freePostcardsLeftToday: number;
+            subscriptionActive: boolean;
+            /** Format: int32 */
+            subscriptionPriceKrw: number;
         };
         EndRequest: {
             /** Format: int32 */
@@ -2407,6 +2733,46 @@ export interface components {
             createdAt: string;
             replies: components["schemas"]["PostCommentView"][];
         };
+        SendPostcardRequest: {
+            /** Format: int64 */
+            toUserId: number;
+            /**
+             * Format: int64
+             * @description 어떤 독후감을 보고 보냈나 — 수신함에 컨텍스트로 표시
+             */
+            postId?: number;
+            body: string;
+            /** @description 우표 동봉 — 내 우표 1개를 부담해 상대가 무료로 답장하게 한다 */
+            attachStamp: boolean;
+        };
+        PostcardView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            fromUserId: number;
+            fromNickname: string;
+            fromAvatarUrl?: string;
+            /** Format: int64 */
+            toUserId: number;
+            toNickname: string;
+            toAvatarUrl?: string;
+            /** Format: int64 */
+            postId?: number;
+            postTitle?: string;
+            body: string;
+            stampAttached: boolean;
+            /** @enum {string} */
+            status: "SENT" | "REPLIED";
+            replyBody?: string;
+            /** Format: date-time */
+            repliedAt?: string;
+            mine: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ReplyPostcardRequest: {
+            body: string;
+        };
         DeviceRegisterRequest: {
             /** @enum {string} */
             platform: "IOS" | "ANDROID";
@@ -2491,6 +2857,22 @@ export interface components {
         AbandonRequest: {
             /** @enum {string} */
             reason: "BORING" | "DIFFICULT" | "NO_TIME" | "NOT_MY_TASTE" | "OTHER";
+        };
+        FollowCodeView: {
+            code: string;
+            deepLink: string;
+        };
+        FollowByCodeRequest: {
+            code: string;
+        };
+        FollowUserView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            mutual: boolean;
+            /** Format: date-time */
+            followedAt: string;
         };
         CheckpointRequest: {
             title?: string;
@@ -2769,6 +3151,20 @@ export interface components {
             expiresInSec: number;
             devCode?: string;
         };
+        WalletAdjustRequest: {
+            /** Format: int32 */
+            bookmarks: number;
+            /** Format: int32 */
+            postcards: number;
+            /** Format: int32 */
+            stamps: number;
+            reason: string;
+        };
+        SubscriptionGrantRequest: {
+            /** Format: int32 */
+            months: number;
+            reason: string;
+        };
         SanctionRequest: {
             /** @enum {string} */
             type: "WARN" | "WRITE_BAN" | "SUSPEND" | "TERMINATE";
@@ -2923,6 +3319,37 @@ export interface components {
             category?: string;
             reason: string;
         };
+        UserProfileView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            handle: string;
+            /** Format: int64 */
+            followerCount: number;
+            /** Format: int64 */
+            followingCount: number;
+            /** Format: int64 */
+            visitCount: number;
+            /** Format: int64 */
+            publicPostCount: number;
+            iFollow: boolean;
+            followsMe: boolean;
+            mutual: boolean;
+            me: boolean;
+        };
+        PageResponsePostView: {
+            content?: components["schemas"]["PostView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         DailyStat: {
             date: string;
             /** Format: int64 */
@@ -3026,8 +3453,16 @@ export interface components {
             /** Format: int64 */
             count: number;
         };
-        PageResponsePostView: {
-            content?: components["schemas"]["PostView"][];
+        LikerView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            /** Format: date-time */
+            likedAt: string;
+        };
+        PageResponseLikerView: {
+            content?: components["schemas"]["LikerView"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -3040,6 +3475,18 @@ export interface components {
         };
         PageResponsePostCommentView: {
             content?: components["schemas"]["PostCommentView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        PageResponsePostcardView: {
+            content?: components["schemas"]["PostcardView"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -3122,6 +3569,26 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PageResponseVisitorView: {
+            content?: components["schemas"]["VisitorView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        VisitorView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            /** Format: date-time */
+            visitedAt: string;
+        };
         PageResponseReadingRecordView: {
             content?: components["schemas"]["ReadingRecordView"][];
             /** Format: int32 */
@@ -3145,6 +3612,18 @@ export interface components {
             abandoned: number;
             /** Format: int64 */
             paused: number;
+        };
+        PageResponseFollowUserView: {
+            content?: components["schemas"]["FollowUserView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
         };
         ClubSummaryView: {
             /** Format: int64 */
@@ -3522,6 +4001,8 @@ export interface components {
 }
 export type SchemaBannerUpsertRequest = components['schemas']['BannerUpsertRequest'];
 export type SchemaBannerAdminView = components['schemas']['BannerAdminView'];
+export type SchemaExchangeRequest = components['schemas']['ExchangeRequest'];
+export type SchemaWalletView = components['schemas']['WalletView'];
 export type SchemaEndRequest = components['schemas']['EndRequest'];
 export type SchemaClubProgressEcho = components['schemas']['ClubProgressEcho'];
 export type SchemaSessionEndResult = components['schemas']['SessionEndResult'];
@@ -3544,6 +4025,9 @@ export type SchemaPostView = components['schemas']['PostView'];
 export type SchemaPostLikeView = components['schemas']['PostLikeView'];
 export type SchemaCreatePostCommentRequest = components['schemas']['CreatePostCommentRequest'];
 export type SchemaPostCommentView = components['schemas']['PostCommentView'];
+export type SchemaSendPostcardRequest = components['schemas']['SendPostcardRequest'];
+export type SchemaPostcardView = components['schemas']['PostcardView'];
+export type SchemaReplyPostcardRequest = components['schemas']['ReplyPostcardRequest'];
 export type SchemaDeviceRegisterRequest = components['schemas']['DeviceRegisterRequest'];
 export type SchemaAddBookRequest = components['schemas']['AddBookRequest'];
 export type SchemaBookSummary = components['schemas']['BookSummary'];
@@ -3551,6 +4035,9 @@ export type SchemaProgressView = components['schemas']['ProgressView'];
 export type SchemaReadingRecordView = components['schemas']['ReadingRecordView'];
 export type SchemaFinishRequest = components['schemas']['FinishRequest'];
 export type SchemaAbandonRequest = components['schemas']['AbandonRequest'];
+export type SchemaFollowCodeView = components['schemas']['FollowCodeView'];
+export type SchemaFollowByCodeRequest = components['schemas']['FollowByCodeRequest'];
+export type SchemaFollowUserView = components['schemas']['FollowUserView'];
 export type SchemaCheckpointRequest = components['schemas']['CheckpointRequest'];
 export type SchemaCreateClubRequest = components['schemas']['CreateClubRequest'];
 export type SchemaCheckpointView = components['schemas']['CheckpointView'];
@@ -3577,6 +4064,8 @@ export type SchemaRefreshRequest = components['schemas']['RefreshRequest'];
 export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
 export type SchemaEmailCodeRequest = components['schemas']['EmailCodeRequest'];
 export type SchemaEmailCodeResponse = components['schemas']['EmailCodeResponse'];
+export type SchemaWalletAdjustRequest = components['schemas']['WalletAdjustRequest'];
+export type SchemaSubscriptionGrantRequest = components['schemas']['SubscriptionGrantRequest'];
 export type SchemaSanctionRequest = components['schemas']['SanctionRequest'];
 export type SchemaOverrideVerificationRequest = components['schemas']['OverrideVerificationRequest'];
 export type SchemaResolveRequest = components['schemas']['ResolveRequest'];
@@ -3599,6 +4088,8 @@ export type SchemaChallengeProgressRequest = components['schemas']['ChallengePro
 export type SchemaOpsFlagRequest = components['schemas']['OpsFlagRequest'];
 export type SchemaEditorPickUpdateRequest = components['schemas']['EditorPickUpdateRequest'];
 export type SchemaUpdateBookRequest = components['schemas']['UpdateBookRequest'];
+export type SchemaUserProfileView = components['schemas']['UserProfileView'];
+export type SchemaPageResponsePostView = components['schemas']['PageResponsePostView'];
 export type SchemaDailyStat = components['schemas']['DailyStat'];
 export type SchemaStatsSummary = components['schemas']['StatsSummary'];
 export type SchemaPageResponseReviewCommentView = components['schemas']['PageResponseReviewCommentView'];
@@ -3608,14 +4099,19 @@ export type SchemaPageResponseBookQuoteView = components['schemas']['PageRespons
 export type SchemaPageResponseQuoteCommentView = components['schemas']['PageResponseQuoteCommentView'];
 export type SchemaBookDetail = components['schemas']['BookDetail'];
 export type SchemaRatingSummary = components['schemas']['RatingSummary'];
-export type SchemaPageResponsePostView = components['schemas']['PageResponsePostView'];
+export type SchemaLikerView = components['schemas']['LikerView'];
+export type SchemaPageResponseLikerView = components['schemas']['PageResponseLikerView'];
 export type SchemaPageResponsePostCommentView = components['schemas']['PageResponsePostCommentView'];
+export type SchemaPageResponsePostcardView = components['schemas']['PageResponsePostcardView'];
 export type SchemaPageResponsePlazaItemView = components['schemas']['PageResponsePlazaItemView'];
 export type SchemaPlazaItemView = components['schemas']['PlazaItemView'];
 export type SchemaNotificationView = components['schemas']['NotificationView'];
 export type SchemaPageResponseNotificationView = components['schemas']['PageResponseNotificationView'];
+export type SchemaPageResponseVisitorView = components['schemas']['PageResponseVisitorView'];
+export type SchemaVisitorView = components['schemas']['VisitorView'];
 export type SchemaPageResponseReadingRecordView = components['schemas']['PageResponseReadingRecordView'];
 export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
+export type SchemaPageResponseFollowUserView = components['schemas']['PageResponseFollowUserView'];
 export type SchemaClubSummaryView = components['schemas']['ClubSummaryView'];
 export type SchemaPageResponseClubSummaryView = components['schemas']['PageResponseClubSummaryView'];
 export type SchemaClubResultView = components['schemas']['ClubResultView'];
@@ -3686,6 +4182,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    exchange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WalletView"];
+                };
             };
         };
     };
@@ -4152,6 +4672,56 @@ export interface operations {
             };
         };
     };
+    send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendPostcardRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostcardView"];
+                };
+            };
+        };
+    };
+    reply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postcardId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplyPostcardRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostcardView"];
+                };
+            };
+        };
+    };
     open: {
         parameters: {
             query?: never;
@@ -4334,6 +4904,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReadingRecordView"];
+                };
+            };
+        };
+    };
+    rotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FollowCodeView"];
+                };
+            };
+        };
+    };
+    followByCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowByCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FollowUserView"];
                 };
             };
         };
@@ -4999,6 +5613,76 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["EmailCodeResponse"];
                 };
+            };
+        };
+    };
+    adjustWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WalletAdjustRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    grantSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionGrantRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revokeSubscription: {
+        parameters: {
+            query: {
+                reason: string;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5800,6 +6484,73 @@ export interface operations {
             };
         };
     };
+    wallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WalletView"];
+                };
+            };
+        };
+    };
+    profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserProfileView"];
+                };
+            };
+        };
+    };
+    posts: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
     summary: {
         parameters: {
             query?: {
@@ -6126,7 +6877,56 @@ export interface operations {
             };
         };
     };
+    likers: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseLikerView"];
+                };
+            };
+        };
+    };
     feed_1: {
+        parameters: {
+            query?: {
+                sort?: "HOT" | "NEW";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
+    sent: {
         parameters: {
             query?: {
                 page?: number;
@@ -6144,7 +6944,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageResponsePostView"];
+                    "*/*": components["schemas"]["PageResponsePostcardView"];
+                };
+            };
+        };
+    };
+    inbox: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostcardView"];
                 };
             };
         };
@@ -6192,6 +7015,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseNotificationView"];
+                };
+            };
+        };
+    };
+    visitors: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseVisitorView"];
                 };
             };
         };
@@ -6254,6 +7100,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LibrarySummary"];
+                };
+            };
+        };
+    };
+    myCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FollowCodeView"];
+                };
+            };
+        };
+    };
+    following: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseFollowUserView"];
+                };
+            };
+        };
+    };
+    followers: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseFollowUserView"];
                 };
             };
         };
@@ -6504,7 +7416,7 @@ export interface operations {
             };
         };
     };
-    posts: {
+    posts_1: {
         parameters: {
             query?: {
                 page?: number;
@@ -6938,6 +7850,26 @@ export interface operations {
             path: {
                 postId: number;
                 commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unfollow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
             };
             cookie?: never;
         };
