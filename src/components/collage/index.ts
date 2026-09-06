@@ -4,6 +4,7 @@
  */
 export { BackNote, BookBody, BoundFace } from './BoundBook';
 export type { BookBand, BookNote } from './BoundBook';
+export { BrandHeader } from './BrandHeader';
 export { Chip } from './Chip';
 export { DotGridBackground } from './DotGridBackground';
 export { FocusRing } from './FocusRing';

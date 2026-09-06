@@ -146,7 +146,7 @@ export function PostList({
 }
 
 const styles = StyleSheet.create({
-  list: { ...layout.content, paddingBottom: spacing.xxl, gap: spacing.lg },
+  list: { ...layout.content, paddingBottom: 104, gap: spacing.lg },
   // 헤더가 없는 화면은 SubHeader 바로 밑이라 첫 카드가 붙어 보인다 — 한 칸 띄운다.
   listTop: { paddingTop: spacing.md },
   cardWrap: { marginHorizontal: spacing.lg },

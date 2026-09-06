@@ -8,7 +8,7 @@ import {
 
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
-import { Chip, MemoScrap, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { BrandHeader, Chip, MemoScrap, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -98,7 +98,8 @@ export default function SearchScreen() {
   const todayPick = recommendedList.length > 0 ? recommendedList[todaySeed % recommendedList.length] : null;
 
   return (
-    <PaperScreen>
+    <PaperScreen withTopInset>
+      <BrandHeader />
       <SectionNav active="explore" />
       <View style={styles.searchBarWrap}>
         <View
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   input: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
-  explore: { ...layout.content, gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+  explore: { ...layout.content, gap: spacing.xl, paddingBottom: 104, paddingTop: spacing.sm },
   moodSection: { gap: spacing.sm, paddingHorizontal: spacing.lg },
   moodChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   todayWrap: { paddingHorizontal: spacing.lg },
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
   todayTitle: { fontFamily: serif.bold, fontSize: 17, lineHeight: 24 },
   todayBody: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
   todayInfo: { flex: 1, gap: 4, paddingTop: spacing.xs },
-  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104 },
   row: {
     flexDirection: 'row',
     gap: spacing.md,

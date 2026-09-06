@@ -8,7 +8,7 @@ import { plazaApi, quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
-import { Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { BrandHeader, Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
@@ -206,7 +206,8 @@ export default function PlazaScreen() {
   );
 
   return (
-    <PaperScreen>
+    <PaperScreen withTopInset>
+      <BrandHeader />
       <SectionNav active="plaza" />
       {tab === 'POST' ? (
         <PostFeed ListHeaderComponent={header} />
@@ -437,7 +438,7 @@ function QuoteComposer({ onDone }: { onDone: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  list: { ...layout.content, paddingBottom: spacing.xxl, gap: spacing.lg },
+  list: { ...layout.content, paddingBottom: 104, gap: spacing.lg },
   header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs },
   chipRow: {
     flexDirection: 'row',

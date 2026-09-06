@@ -1,120 +1,160 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { NotificationBell } from '@/components/home/NotificationBell';
 import { useTheme } from '@/theme';
-import { hairline, spacing, typeScale } from '@/theme/tokens';
+import { hairline, layout, radius, spacing, typeScale } from '@/theme/tokens';
 
-export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'me';
+export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'me' | 'social' | 'settings';
 
 /**
- * 라벨이 있는 구역은 서가·광장·모임·나 — 탐색은 서가의 검색 바로 들어가므로 라벨을 두지 않는다.
- * (서가 라벨은 한 번 뺐다가 사용자 요청으로 복구.) 경로는 한 곳에서만 정의한다.
+ * 하단 구역 네비. 탐색은 서가의 검색 진입점이라 탭으로 두지 않는다.
+ * 경로는 한 곳에서만 정의한다.
  */
 const SECTIONS: { key: SectionKey; label: string; path: string }[] = [
-  { key: 'shelf', label: '서가', path: '/home' },
   { key: 'plaza', label: '광장', path: '/plaza' },
+  { key: 'shelf', label: '서가', path: '/home' },
   { key: 'clubs', label: '모임', path: '/clubs' },
   { key: 'me', label: '나', path: '/profile' },
+  { key: 'social', label: '소셜', path: '/social' },
+  { key: 'settings', label: '설정', path: '/settings' },
 ];
 
-/** 로고 마크(북마크 B) — 다크는 흰 B, 라이트는 남색 B. */
-const LOGO = {
-  dark: require('../../../assets/logo-dark.png'),
-  light: require('../../../assets/logo.png'),
-} as const;
+let lastTabIndex = 0;
 
 /**
- * 상단 텍스트 라벨 네비 — 왼쪽 로고 마크(누르면 서가), 이어서 활자 구역 라벨, 오른쪽 종.
- * 네이티브 헤더가 없는 화면 최상단에 놓이므로 세이프에어리어를 직접 처리한다.
+ * 네이티브 헤더가 없는 메인 화면의 하단 탭.
+ * 각 화면이 PaperScreen 안에서 직접 렌더링하므로 세이프에어리어를 직접 처리한다.
  */
 export function SectionNav({ active }: { active: SectionKey }) {
   const router = useRouter();
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const [trackWidth, setTrackWidth] = useState(0);
+  const activeIndex = useMemo(() => {
+    const index = SECTIONS.findIndex((section) => section.key === active);
+    return index < 0 ? SECTIONS.findIndex((section) => section.key === 'shelf') : index;
+  }, [active]);
+  const translateX = useRef(new Animated.Value(lastTabIndex)).current;
+
+  useEffect(() => {
+    Animated.spring(translateX, {
+      toValue: activeIndex,
+      useNativeDriver: true,
+      stiffness: 260,
+      damping: 28,
+      mass: 0.8,
+    }).start();
+    lastTabIndex = activeIndex;
+  }, [activeIndex, translateX]);
+
+  const tabWidth = trackWidth / SECTIONS.length;
 
   return (
     <View
-      // 배경을 깔지 않는다 — PaperScreen 의 도트 그리드가 네비 아래로 이어져야 한다.
-      style={[styles.bar, { paddingTop: insets.top, borderBottomColor: colors.line }]}
+      style={[
+        styles.bar,
+        {
+          paddingBottom: Math.max(insets.bottom, spacing.sm),
+        },
+      ]}
     >
-      <View style={styles.row}>
-        <View style={styles.lead}>
-          {/* 마크를 누르면 서가로 — 이미 서가면 아무 일도 하지 않는다. 탭은 옆 '서가' 라벨이 맡는다. */}
-          <Pressable
-            onPress={() => {
-              if (active !== 'shelf') router.replace('/home');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="bookey 서가"
-            hitSlop={6}
-            style={styles.markWrap}
-          >
-            <Image source={LOGO[mode]} style={styles.mark} resizeMode="contain" />
-          </Pressable>
-          <View style={styles.tabs} accessibilityRole="tablist">
-          {SECTIONS.map((section) => {
-            const selected = section.key === active;
-            return (
-              <Pressable
-                key={section.key}
-                // 현재 구역을 다시 누르면 아무 일도 하지 않는다(스택 중복 방지).
-                onPress={() => {
-                  if (!selected) router.replace(section.path);
-                }}
-                accessibilityRole="tab"
-                accessibilityState={{ selected }}
-                hitSlop={6}
+      <View
+        style={[
+          styles.track,
+          {
+            borderColor: colors.lineStrong,
+            backgroundColor: colors.surfaceRaised,
+            shadowColor: colors.text,
+          },
+        ]}
+        onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+        accessibilityRole="tablist"
+      >
+        {trackWidth > 0 ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.indicator,
+              {
+                width: tabWidth,
+                backgroundColor: colors.accentSoft,
+                transform: [{ translateX: Animated.multiply(translateX, tabWidth) }],
+              },
+            ]}
+          />
+        ) : null}
+        {SECTIONS.map((section) => {
+          const selected = section.key === active || (active === 'explore' && section.key === 'shelf');
+          return (
+            <Pressable
+              key={section.key}
+              onPress={() => {
+                if (!selected) router.replace(section.path);
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              hitSlop={6}
+              style={styles.tab}
+            >
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+                style={[
+                  typeScale.label,
+                  styles.label,
+                  { color: selected ? colors.accent : colors.textMuted },
+                ]}
               >
-                <Text
-                  style={[
-                    selected
-                      ? [typeScale.titleSerif, styles.activeLabel, { color: colors.text }]
-                      : [typeScale.label, styles.label, { color: colors.textMuted }],
-                  ]}
-                >
-                  {section.label}
-                </Text>
-                <View
-                  style={[
-                    styles.underline,
-                    { backgroundColor: selected ? colors.accent : 'transparent' },
-                  ]}
-                />
-              </Pressable>
-            );
-          })}
-          </View>
-        </View>
-        {/* 종도 마크와 같은 높이·같은 바닥선에 — 헤더 양끝이 한 줄로 읽힌다. */}
-        <View style={styles.bellWrap}>
-          <NotificationBell />
-        </View>
+                {section.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { borderBottomWidth: hairline },
-  // 위 18 · 아래 12 — 8/8 이던 때 답답하다는 피드백으로 키웠다(라벨 줄 포함 약 60px).
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+  bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+      bottom: 0,
+      zIndex: 20,
+    paddingTop: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingTop: 18,
-    paddingBottom: spacing.md,
   },
-  lead: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
-  // 마크 22px 를 라벨 글자 상자(24, 밑줄 위 6px) 중심보다 3px 아래에 — 정중앙(7)은 떠 보인다는 피드백.
-  markWrap: { marginBottom: 4 },
-  mark: { width: 22, height: 22 },
-  bellWrap: { marginBottom: 4 },
-  tabs: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
-  // 활성 라벨은 titleSerif 를 19로 줄여 쓴다 — 네비에서 표제만큼 커지면 무겁다.
-  activeLabel: { fontSize: 19, lineHeight: 24, paddingBottom: 4 },
-  label: { lineHeight: 24, paddingBottom: 4 },
-  underline: { height: 2 },
+  track: {
+    ...layout.content,
+    minHeight: 64,
+    borderRadius: radius.pill,
+    borderWidth: hairline,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  indicator: {
+    position: 'absolute',
+    left: 0,
+    top: spacing.xs,
+    bottom: spacing.xs,
+    borderRadius: radius.pill,
+  },
+  tab: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  label: { lineHeight: 18, textAlign: 'center' },
 });

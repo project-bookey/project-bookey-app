@@ -27,6 +27,8 @@ const queryClient = new QueryClient({
   },
 });
 
+const mainTabOptions = { animation: 'none' as const };
+
 export default function RootLayout() {
   const restore = useAuth((s) => s.restore);
   const restoreTheme = useThemePreference((s) => s.restore);
@@ -69,16 +71,19 @@ export default function RootLayout() {
           {/* 헤더는 전역으로 끈다(화면 안의 SectionNav·SubHeader 가 대신한다).
               그래도 title 은 남긴다 — 웹에서 브라우저 탭·히스토리 제목으로 쓰인다. */}
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="home" options={{ title: '서가' }} />
-            <Stack.Screen name="search" options={{ title: '탐색' }} />
-            <Stack.Screen name="plaza" options={{ title: '광장' }} />
-            <Stack.Screen name="profile" options={{ title: '나' }} />
+            <Stack.Screen name="home" options={{ title: '서가', ...mainTabOptions }} />
+            <Stack.Screen name="search" options={{ title: '탐색', ...mainTabOptions }} />
+            <Stack.Screen name="plaza" options={{ title: '광장', ...mainTabOptions }} />
+            <Stack.Screen name="profile" options={{ title: '나', ...mainTabOptions }} />
+            <Stack.Screen name="social" options={{ title: '소셜', ...mainTabOptions }} />
+            <Stack.Screen name="settings" options={{ title: '설정', ...mainTabOptions }} />
             <Stack.Screen name="library" options={{ title: '서재' }} />
-            <Stack.Screen name="clubs" options={{ title: '모임' }} />
+            <Stack.Screen name="clubs" options={{ title: '모임', ...mainTabOptions }} />
             <Stack.Screen name="login" options={{ title: '로그인' }} />
             <Stack.Screen name="onboarding" options={{ title: '환영합니다' }} />
             <Stack.Screen name="profile-photo" options={{ title: '프로필 사진' }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
+            <Stack.Screen name="subscription" options={{ title: '구독' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
             <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
             <Stack.Screen name="challenge/[id]" options={{ title: '챌린지' }} />

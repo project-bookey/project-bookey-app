@@ -23,7 +23,16 @@ export default function VisitorsScreen() {
       {gated ? (
         <EmptyState
           title="구독 회원 전용이에요"
-          description="구독하면 누가 다녀갔는지 볼 수 있어요. (월 17,900원)"
+          description="해당 기능은 구독자 전용 기능이에요! 구독하면 누가 다녀갔는지 볼 수 있어요."
+          action={(
+            <Pressable
+              onPress={() => router.push({ pathname: '/subscription', params: { feature: 'visitors' } })}
+              accessibilityRole="button"
+              style={[styles.subscribeCta, { backgroundColor: colors.accent }]}
+            >
+              <Text style={[typeScale.label, { color: colors.onAccent }]}>구독하기</Text>
+            </Pressable>
+          )}
         />
       ) : (
         <FlatList
@@ -73,5 +82,11 @@ const styles = StyleSheet.create({
   avatar: {
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  },
+  subscribeCta: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: 999,
   },
 });

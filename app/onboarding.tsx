@@ -17,7 +17,7 @@ const BOOK_PICK_TARGET = 5;
 /** 카테고리 선택 상한. */
 const CATEGORY_MAX = 5;
 
-const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   '소설', '에세이', '시', '인문학', '역사', '과학',
   '자기계발', '경제/경영', '컴퓨터/IT', '예술', '여행', '만화',
 ];
@@ -59,6 +59,15 @@ export default function OnboardingScreen() {
   const CATEGORY_STEP = GUIDE_STEPS.length;
   const BOOK_STEP = GUIDE_STEPS.length + 1;
   const totalSteps = GUIDE_STEPS.length + 2;
+  const categoryOptions = useQuery({
+    queryKey: ['onboardingCategories'],
+    queryFn: onboardingApi.categories,
+    enabled: step >= CATEGORY_STEP,
+    staleTime: 1000 * 60 * 60,
+  });
+  const categoryItems = categoryOptions.data && categoryOptions.data.length > 0
+    ? categoryOptions.data
+    : FALLBACK_CATEGORIES;
 
   const goTo = (next: number) => {
     Animated.timing(fade, { toValue: 0, duration: 120, useNativeDriver: true }).start(() => {
@@ -145,7 +154,7 @@ export default function OnboardingScreen() {
             <Text style={styles.title}>어떤 책을 좋아하세요?</Text>
             <Text style={styles.copy}>골라주시면 피드와 추천이 그 취향을 따라가요. (최대 {CATEGORY_MAX}개)</Text>
             <View style={styles.categoryGrid}>
-              {CATEGORIES.map((category) => {
+              {categoryItems.map((category) => {
                 const selected = categories.includes(category);
                 return (
                   <Pressable

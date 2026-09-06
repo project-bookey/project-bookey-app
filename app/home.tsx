@@ -8,7 +8,7 @@ import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
 import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { ReadingRecord } from '@/api/types';
-import { PaperScreen, SectionNav } from '@/components/collage';
+import { BrandHeader, PaperScreen, SectionNav } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { NoticePopup } from '@/components/home/NoticePopup';
@@ -49,6 +49,9 @@ export default function HomeScreen() {
     })),
   });
   const heroSynopses = heroBooks.map((q) => q.data?.description);
+  const recommendationBooks = (recommended.data?.length ?? 0) > 0
+    ? recommended.data ?? []
+    : bestsellers.data ?? [];
   const streakLine = stats.data
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
@@ -80,7 +83,8 @@ export default function HomeScreen() {
   });
 
   return (
-    <PaperScreen>
+    <PaperScreen withTopInset>
+      <BrandHeader />
       <SectionNav active="shelf" />
       <Animated.ScrollView
         contentContainerStyle={styles.container}
@@ -177,8 +181,9 @@ export default function HomeScreen() {
         <HomeSection>
           <BookRow
             title="추천"
-            loading={recommended.isLoading}
-            books={(recommended.data ?? []).map((b): RowBook => ({
+            label={(recommended.data?.length ?? 0) > 0 ? undefined : 'YES24'}
+            loading={recommended.isLoading || (recommended.isError && bestsellers.isLoading)}
+            books={recommendationBooks.map((b): RowBook => ({
               key: `pick-${b.id}`,
               bookId: b.id,
               title: b.title,
@@ -247,7 +252,7 @@ const styles = StyleSheet.create({
   container: {
     ...layout.content,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 104,
     gap: spacing.xl,
   },
   searchBar: {

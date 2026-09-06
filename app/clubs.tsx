@@ -4,7 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubSummary } from '@/api/types';
-import { PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { BrandHeader, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
 import {
   Button, EmptyState, Loading, Numeral, ProgressBar, Tag, percent,
 } from '@/components/ui';
@@ -18,7 +18,8 @@ export default function ClubsScreen() {
   const items = (clubs.data?.content ?? []).filter(Boolean);
 
   return (
-    <PaperScreen>
+    <PaperScreen withTopInset>
+      <BrandHeader />
       <SectionNav active="clubs" />
 
       <View style={styles.actions}>
@@ -118,7 +119,7 @@ function ClubRow({ club, onPress }: { club: ClubSummary; onPress: () => void }) 
 
 const styles = StyleSheet.create({
   actions: { ...layout.content, flexDirection: 'row', gap: spacing.sm, padding: spacing.lg },
-  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104 },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.lg },
   rowBody: { flex: 1, gap: 4 },
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

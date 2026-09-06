@@ -41,6 +41,9 @@ export const authApi = {
 };
 
 export const onboardingApi = {
+  /** 온보딩 선호 카테고리 (비회원). */
+  categories: () =>
+    api<string[]>('/api/v1/public/onboarding/categories', { auth: false }),
   /** 온보딩 책 고르기 (비회원) — 카테고리 부분 일치, 표지 있는 책 우선. */
   books: (category?: string, size = 30) =>
     api<BookSummary[]>('/api/v1/public/onboarding/books', { auth: false, query: { category, size } }),
@@ -136,6 +139,24 @@ export const walletApi = {
   /** 책갈피 → 엽서(1책갈피) · 우표(2책갈피) 교환. */
   exchange: (target: ExchangeTarget, quantity: number) =>
     api<WalletView>('/api/v1/wallet/exchange', { method: 'POST', body: { target, quantity } }),
+};
+
+export type SubscriptionProvider = 'APPLE' | 'GOOGLE' | 'TOSS';
+export type SubscriptionCheckout = {
+  provider: SubscriptionProvider;
+  productId: string;
+  orderId: string;
+  amountKrw: number;
+  customerKey: string;
+  checkoutUrl?: string;
+  tossClientKey?: string;
+  successUrl?: string;
+  failUrl?: string;
+};
+
+export const subscriptionApi = {
+  begin: (provider: SubscriptionProvider) =>
+    api<SubscriptionCheckout>('/api/v1/subscriptions/checkout', { method: 'POST', body: { provider } }),
 };
 
 export const postcardApi = {

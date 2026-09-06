@@ -59,6 +59,9 @@ export function SocialCard() {
   const w = wallet.data;
   const p = myProfile.data;
   const subscribed = w?.subscriptionActive ?? false;
+  const openSubscription = () => {
+    router.push({ pathname: '/subscription', params: { feature: 'visitors' } });
+  };
 
   return (
     <View style={styles.section}>
@@ -95,10 +98,13 @@ export function SocialCard() {
           />
         </View>
         {!subscribed ? (
-          <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-            구독(월 {w ? w.subscriptionPriceKrw.toLocaleString() : '17,900'}원)하면 매달 엽서 50장 ·
-            우표 30개를 드리고, 방문자와 좋아요 누른 사람을 볼 수 있어요.
-          </Text>
+          <View style={styles.subscribeBlock}>
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+              구독(월 {w ? w.subscriptionPriceKrw.toLocaleString() : '17,900'}원)하면 매달 엽서 50장 ·
+              우표 30개를 드리고, 방문자와 좋아요 누른 사람을 볼 수 있어요.
+            </Text>
+            <Button label="구독하기" size="sm" onPress={openSubscription} />
+          </View>
         ) : null}
       </Card>
 
@@ -128,15 +134,15 @@ export function SocialCard() {
         />
         <Rule />
         <Pressable
-          onPress={subscribed ? () => router.push('/visitors') : undefined}
-          accessibilityRole={subscribed ? 'button' : undefined}
+          onPress={subscribed ? () => router.push('/visitors') : openSubscription}
+          accessibilityRole="button"
           style={styles.linkRow}
         >
           <Text style={[typeScale.body, { color: colors.textMuted }]}>
             내 페이지 방문 {p?.visitCount ?? 0}회
           </Text>
           <Text style={[typeScale.monoLabel, { color: subscribed ? colors.accent : colors.textFaint }]}>
-            {subscribed ? '방문자 보기 ›' : '🔒 구독 전용'}
+            {subscribed ? '방문자 보기 ›' : '구독 전용 ›'}
           </Text>
         </Pressable>
       </Card>
@@ -202,6 +208,7 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md },
   walletHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   walletActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  subscribeBlock: { gap: spacing.sm, marginTop: spacing.sm, alignItems: 'flex-start' },
   linkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.xs,
