@@ -8,6 +8,7 @@ import type { ReadingRecord } from '@/api/types';
 import { PaperScreen, SectionNav } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
+import { NoticePopup } from '@/components/home/NoticePopup';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
@@ -25,7 +26,8 @@ export default function HomeScreen() {
   const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
   const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
   const stats = useQuery({ queryKey: ['stats', 30], queryFn: () => statsApi.summary(30) });
-  const banners = useQuery({ queryKey: ['banners'], queryFn: bannerApi.list });
+  const banners = useQuery({ queryKey: ['banners', 'AD'], queryFn: () => bannerApi.list('AD') });
+  const notices = useQuery({ queryKey: ['banners', 'NOTICE'], queryFn: () => bannerApi.list('NOTICE') });
   const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
   const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
 
@@ -48,10 +50,10 @@ export default function HomeScreen() {
 
   const refreshing =
     reading.isFetching || want.isFetching || stats.isFetching ||
-    banners.isFetching || popular.isFetching || recommended.isFetching || quotesFetching;
+    banners.isFetching || notices.isFetching || popular.isFetching || recommended.isFetching || quotesFetching;
   const refetchAll = () => {
     reading.refetch(); want.refetch(); stats.refetch();
-    banners.refetch(); popular.refetch(); recommended.refetch();
+    banners.refetch(); notices.refetch(); popular.refetch(); recommended.refetch();
     queryClient.invalidateQueries({ queryKey: ['challenges'] });
     queryClient.invalidateQueries({ queryKey: ['plaza'] });
   };
@@ -178,6 +180,7 @@ export default function HomeScreen() {
           <ClubRow />
         </HomeSection>
       </Animated.ScrollView>
+      <NoticePopup notice={notices.data?.[0]} />
     </PaperScreen>
   );
 }

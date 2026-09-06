@@ -186,7 +186,8 @@ export const notificationApi = {
 };
 
 export const bannerApi = {
-  list: () => api<Banner[]>('/api/v1/banners', { auth: false }),
+  list: (kind: 'AD' | 'NOTICE' = 'AD') =>
+    api<Banner[]>('/api/v1/banners', { auth: false, query: { kind } }),
 };
 
 export const reviewApi = {
