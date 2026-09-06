@@ -264,9 +264,6 @@ export default function LoginScreen() {
           <View>
             <Text style={styles.wordmark}>bookey</Text>
             <View style={styles.wordmarkRule} />
-            <Text style={styles.tagline}>
-              읽기로 한 책을 끝까지.{'\n'}읽은 사람만 리뷰를 쓴다.
-            </Text>
           </View>
 
           <View style={styles.form}>
@@ -470,7 +467,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   wordmarkRule: { width: 40, height: 3, backgroundColor: darkColors.text, marginTop: spacing.md },
-  tagline: { ...typeScale.body, color: darkColors.textMuted, marginTop: spacing.lg, lineHeight: 23 },
   form: { gap: spacing.md },
   field: { gap: spacing.xs },
   fieldLabel: { ...typeScale.label, color: darkColors.textMuted },

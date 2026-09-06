@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { BrandHeader, PaperScreen, SectionNav } from '@/components/collage';
+import { BrandHeader, PaperScreen } from '@/components/collage';
 import { SocialCard } from '@/components/social/SocialCard';
 import { layout, spacing } from '@/theme';
 
@@ -13,7 +13,6 @@ export default function SocialScreen() {
           <SocialCard />
         </View>
       </ScrollView>
-      <SectionNav active="social" />
     </PaperScreen>
   );
 }

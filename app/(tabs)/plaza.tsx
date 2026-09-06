@@ -8,7 +8,7 @@ import { plazaApi, quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
-import { BrandHeader, Chip, FocusRing, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { BrandHeader, Chip, FocusRing, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
@@ -208,7 +208,6 @@ export default function PlazaScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      <SectionNav active="plaza" />
       {tab === 'POST' ? (
         <PostFeed ListHeaderComponent={header} />
       ) : (

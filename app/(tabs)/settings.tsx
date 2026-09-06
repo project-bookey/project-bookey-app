@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { API_BASE_URL } from '@/api/client';
 import { notificationApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
-import { BrandHeader, PaperScreen, SectionNav } from '@/components/collage';
+import { BrandHeader, PaperScreen } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle,
 } from '@/components/ui';
@@ -146,7 +146,6 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
-      <SectionNav active="settings" />
     </PaperScreen>
   );
 }

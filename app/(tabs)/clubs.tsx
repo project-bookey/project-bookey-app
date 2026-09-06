@@ -4,7 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubSummary } from '@/api/types';
-import { BrandHeader, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { BrandHeader, PaperScreen, TiltCover } from '@/components/collage';
 import {
   Button, EmptyState, Loading, Numeral, ProgressBar, Tag, percent,
 } from '@/components/ui';
@@ -20,7 +20,6 @@ export default function ClubsScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      <SectionNav active="clubs" />
 
       <View style={styles.actions}>
         <Button

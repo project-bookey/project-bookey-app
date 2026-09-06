@@ -7,7 +7,7 @@ import { libraryApi, postApi, quoteApi, statsApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { DailyStat, ReadingRecord } from '@/api/types';
 import {
-  BrandHeader, MemoScrap, PaperScreen, SectionNav, StickyNote, TiltCover, useCoverEntrance,
+  BrandHeader, MemoScrap, PaperScreen, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PostScrap } from '@/components/post/PostScrap';
 import {
@@ -64,7 +64,6 @@ export default function ProfileScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      <SectionNav active="me" />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.profileRow}>
           <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>

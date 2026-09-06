@@ -8,7 +8,7 @@ import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
 import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { ReadingRecord } from '@/api/types';
-import { BrandHeader, PaperScreen, SectionNav } from '@/components/collage';
+import { BrandHeader, PaperScreen } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { NoticePopup } from '@/components/home/NoticePopup';
@@ -85,7 +85,6 @@ export default function HomeScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      <SectionNav active="shelf" />
       <Animated.ScrollView
         contentContainerStyle={styles.container}
         onScroll={onScroll}

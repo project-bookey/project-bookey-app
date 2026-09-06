@@ -8,7 +8,7 @@ import {
 
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
-import { BrandHeader, Chip, MemoScrap, PaperScreen, SectionNav, TiltCover } from '@/components/collage';
+import { BrandHeader, Chip, MemoScrap, PaperScreen, TiltCover } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -100,7 +100,6 @@ export default function SearchScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      <SectionNav active="explore" />
       <View style={styles.searchBarWrap}>
         <View
           style={[
