@@ -56,6 +56,9 @@ export const bookApi = {
   quotes: (bookId: number, page = 0, size = 20) =>
     api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, { query: { page, size } }),
   popular: (size = 20) => api<PopularBook[]>('/api/v1/books/popular', { query: { size } }),
+  /** YES24 큐레이션 — 베스트셀러·스테디셀러·신상품 (서버 1시간 캐시, 키 없으면 빈 목록). */
+  yes24Curation: (kind: 'BESTSELLER' | 'STEADY' | 'NEW' = 'BESTSELLER', size = 20) =>
+    api<BookSummary[]>('/api/v1/books/curation/yes24', { query: { kind, size } }),
   recommended: (size = 20) => api<BookSummary[]>('/api/v1/books/recommended', { query: { size } }),
 };
 
