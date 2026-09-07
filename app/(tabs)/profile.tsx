@@ -261,9 +261,11 @@ export default function ProfileScreen() {
   );
 }
 
+// 장식용 아이콘 — aria-hidden 은 RN 이 네이티브 접근성 숨김으로 옮기고 웹은 그대로 쓴다.
+// (accessibilityElementsHidden 은 react-native-svg 웹에서 DOM 에 새어 React 경고가 뜬다)
 function PencilLine({ color }: { color: string }) {
   return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path
         d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z"
         stroke={color}
