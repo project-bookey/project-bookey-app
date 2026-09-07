@@ -89,9 +89,11 @@ function HeaderIconButton({ label, icon, onPress }: { label: string; icon: React
   );
 }
 
+// 장식용 아이콘 — aria-hidden 은 RN 이 네이티브 접근성 숨김으로 옮기고 웹은 그대로 쓴다.
+// (accessibilityElementsHidden 은 react-native-svg 웹에서 DOM 에 새어 React 경고가 뜬다)
 function MailLine({ color }: { color: string }) {
   return (
-    <Svg width={23} height={23} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+    <Svg width={23} height={23} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path
         d="M4.5 6.75h15v10.5h-15z"
         stroke={color}
@@ -112,7 +114,7 @@ function MailLine({ color }: { color: string }) {
 
 function ChatLine({ color }: { color: string }) {
   return (
-    <Svg width={23} height={23} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+    <Svg width={23} height={23} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path
         d="M5.25 6.75h13.5v8.25h-8.4L6.5 18.25V15h-1.25z"
         stroke={color}
