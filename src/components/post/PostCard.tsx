@@ -110,7 +110,7 @@ function PosterHead({ post }: { post: Post }) {
 
   if (!photo) {
     return (
-      <View style={[styles.plainHead, { backgroundColor: colors.surfaceDeep, borderBottomColor: colors.line }]}>
+      <View style={[styles.plainHead, { backgroundColor: colors.surfaceRaised, borderBottomColor: colors.lineStrong }]}>
         {post.bookId != null ? (
           <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={56} tilt={-3} entering={false} />
         ) : null}
@@ -183,6 +183,8 @@ const styles = StyleSheet.create({
   },
 
   // 사진 없는 글의 머리판 — 표지를 세우고 옆에 책 이름·표제.
+  // 판 색은 카드보다 한 단 올린 surfaceRaised 다: surfaceDeep 은 다크에서 카드와 3 단위밖에
+  // 차이가 안 나 단차가 안 보였다. 아래 경계선도 lineStrong 으로 올려 단을 또렷하게 끊는다.
   plainHead: {
     flexDirection: 'row',
     alignItems: 'center',
