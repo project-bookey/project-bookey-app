@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { walletApi } from '@/api/endpoints';
+import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -54,7 +55,7 @@ function BookmarkBalance() {
         accessibilityLabel={`책갈피 ${balance}개, 구매하기`}
         style={({ pressed }) => [styles.plusButton, pressed && styles.pressed]}
       >
-        <Text style={[styles.plusText, { color: colors.accent }]}>+</Text>
+        <PlusGlyph size={14} stroke={2.5} color={colors.accent} />
       </Pressable>
     </View>
   );
@@ -87,7 +88,6 @@ const styles = StyleSheet.create({
   bookmarkMark: { fontSize: 14, lineHeight: 16 },
   bookmarkCount: { ...typeScale.monoLabel, flex: 1, textAlign: 'right', fontSize: 11, lineHeight: 14 },
   plusButton: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  plusText: { fontSize: 24, lineHeight: 24, fontWeight: '800' },
   pressed: { opacity: 0.7 },
   wordmark: {
     position: 'absolute',
