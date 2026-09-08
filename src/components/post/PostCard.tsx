@@ -112,10 +112,11 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
 
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
-  nickname: { fontSize: 12 },
-  where: { fontSize: 9, letterSpacing: 0.4, marginTop: 2 },
+  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  nickname: { lineHeight: 20 },
+  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
 
   bodyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   bodyText: { flex: 1, gap: spacing.xs },

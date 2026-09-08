@@ -269,10 +269,11 @@ const styles = StyleSheet.create({
   bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.md, marginVertical: -spacing.sm },
   bookLinkText: { fontSize: 10, letterSpacing: 0.6 },
 
-  byline: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  byline: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   bylineText: { flex: 1 },
-  nickname: { fontSize: 12 },
-  meta: { fontSize: 9, letterSpacing: 0.4, marginTop: 2 },
+  // 바이라인 조판은 홈 '오늘의 글'(ScrapAuthor)·광장 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  nickname: { lineHeight: 20 },
+  meta: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
 
   // 기울인 인화지 모서리가 잘리지 않게 사방으로 숨을 둔다.
   photos: { gap: spacing.md, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },

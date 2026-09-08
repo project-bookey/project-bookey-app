@@ -5,6 +5,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { ApiError } from '@/api/client';
 import { profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { AVATAR_SIZE } from '@/components/quote/QuoteCard';
 import { EmptyState, formatRelative } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
@@ -79,8 +80,9 @@ export default function VisitorsScreen() {
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: spacing.xxl },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
+  // 아바타는 앱 공통 크기(광장 카드·홈 '오늘의 글'과 같은 AVATAR_SIZE) — 여기서만 작으면 다른 사람처럼 보인다.
   avatar: {
-    width: 36, height: 36, borderRadius: 18,
+    width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   subscribeCta: {

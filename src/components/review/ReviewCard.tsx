@@ -98,11 +98,12 @@ export function ReviewCard({
 
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
-  nickname: { fontSize: 12 },
+  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  nickname: { lineHeight: 20 },
   whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
-  where: { fontSize: 9, letterSpacing: 0.4, flexShrink: 1 },
+  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, flexShrink: 1 },
   // 검증 마크 — 밑줄 카드의 완독 마크와 같은 치수.
   verification: {
     fontSize: 8,

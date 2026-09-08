@@ -7,6 +7,7 @@ import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import type { PostcardView } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { AVATAR_SIZE } from '@/components/quote/QuoteCard';
 import { Button, Card, EmptyState, Segmented, Tag, formatRelative } from '@/components/ui';
 import { countGraphemes } from '@/lib/graphemes';
 import { hairline, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
@@ -201,8 +202,9 @@ const styles = StyleSheet.create({
   head: { gap: spacing.sm, marginBottom: spacing.md },
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   person: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // 아바타는 앱 공통 크기(광장 카드·홈 '오늘의 글'과 같은 AVATAR_SIZE) — 여기서만 작으면 다른 사람처럼 보인다.
   avatar: {
-    width: 28, height: 28, borderRadius: 14,
+    width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   body: { ...typeScale.quote, marginTop: spacing.sm },
