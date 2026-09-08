@@ -1,19 +1,27 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 본문 오른쪽에 붙인 사진 조각(px) — 표지(44)보다 조금 크게, 인화지를 얹은 크기. */
-const THUMB = 56;
+/** 포스터 사진 높이(px) — 카드 머리를 채우고 그 위에 표제까지 얹는다. */
+const POSTER_H = 208;
 
 /** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. 상세 바이라인도 같이 쓴다. */
 export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크' } as const;
 
 /**
  * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다(밑줄의 QuoteCard 와 같은 꼴).
+ *
+ * '포스터' 꼴이다 — 첫 사진이 카드 머리를 통째로 채우고, 아래로 깔린 그라데이션 위에
+ * 책 이름과 표제를 얹는다. 표지는 사진 오른쪽 위에 붙인 것처럼 걸친다. 그 아래로
+ * 발췌 세 줄, 작성자 줄, 발치 액션이 온다.
+ *
+ * 사진이 없는 글은 포스터 자리를 검은 판으로 남기지 않는다 — 표지를 세운 짧은
+ * 머리판으로 갈아 끼워 카드 키를 줄인다(아래 PosterHead 참고).
  *
  * 본문 행만 눌러 상세로 가고 푸터는 그 형제다 — 웹에서 버튼 안에 버튼이 들어가면 안 되기 때문이다.
  * 삭제는 여기 없다(상세에서만) — 목록에서 실수로 지우는 일을 만들지 않는다.
@@ -32,107 +40,168 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
   showVisibility?: boolean;
 }) {
   const { colors } = useTheme();
-
-  const photo = post.images[0];
-  const extraPhotos = post.images.length - 1;
   const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
-      <Pressable
-        onPress={onOpenAuthor}
-        disabled={!onOpenAuthor}
-        accessibilityRole={onOpenAuthor ? 'button' : undefined}
-        accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
-        style={styles.authorRow}
-      >
-        <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
-        <View style={styles.authorText}>
-          <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-            {post.authorNickname}
-          </Text>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
-            {post.bookTitle ?? '책 없음'} · {formatRelative(post.publishedAt ?? post.createdAt)}
-          </Text>
-        </View>
-      </Pressable>
+      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="독후감 상세">
+        <PosterHead post={post} />
 
-      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="독후감 상세" style={styles.bodyRow}>
-        {/* 책에 매인 글에만 표지를 세운다 — 광장 완독 카드와 같은 44px 판. */}
-        {post.bookId != null ? (
-          <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={44} tilt={0} entering={false} />
-        ) : null}
-
-        <View style={styles.bodyText}>
-          <Text numberOfLines={2} style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>
-            {post.title}
-          </Text>
+        <View style={styles.below}>
           <Text numberOfLines={3} style={[typeScale.body, styles.excerpt, { color: colors.textMuted }]}>
             {post.excerpt}
           </Text>
         </View>
-
-        {photo ? (
-          <View style={styles.photoSlot}>
-            <Image
-              source={{ uri: photo.url }}
-              style={[styles.photo, { borderColor: colors.line }]}
-              resizeMode="cover"
-              accessibilityLabel="독후감 사진"
-            />
-            {extraPhotos > 0 ? (
-              <Text style={[typeScale.monoLabel, styles.photoMore, { color: colors.textFaint }]}>
-                +{extraPhotos}
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
       </Pressable>
 
-      <View style={styles.footRow}>
-        <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
-        <FootAction label={`조회 ${post.viewCount}`} />
-        {/* 엮은 밑줄은 세기만 한다 — 펼쳐 보는 것은 상세의 몫이다. */}
-        {post.quotes.length > 0 ? <FootAction label={`밑줄 ${post.quotes.length}`} /> : null}
-        <View style={styles.footRight}>
-          {onOpenBook ? (
-            <FootAction
-              label="책 보기 →"
-              onPress={onOpenBook}
-              tone="accent"
-              accessibilityLabel={`${post.bookTitle ?? '책'} 상세`}
-            />
-          ) : null}
-          {showVisibility && visibilityLabel ? <Tag label={visibilityLabel} /> : null}
+      {/* 카드가 사진을 물고 있어 패딩이 0 이다 — 활자 쪽만 제 여백을 갖는다. */}
+      <View style={styles.pad}>
+        <Pressable
+          onPress={onOpenAuthor}
+          disabled={!onOpenAuthor}
+          accessibilityRole={onOpenAuthor ? 'button' : undefined}
+          accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
+          style={styles.authorRow}
+        >
+          <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
+          <View style={styles.authorText}>
+            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
+              {post.authorNickname}
+            </Text>
+            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
+              {formatRelative(post.publishedAt ?? post.createdAt)}
+            </Text>
+          </View>
+        </Pressable>
+
+        <View style={styles.footRow}>
+          <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
+          <FootAction label={`조회 ${post.viewCount}`} />
+          {/* 엮은 밑줄은 세기만 한다 — 펼쳐 보는 것은 상세의 몫이다. */}
+          {post.quotes.length > 0 ? <FootAction label={`밑줄 ${post.quotes.length}`} /> : null}
+          <View style={styles.footRight}>
+            {onOpenBook ? (
+              <FootAction
+                label="책 보기 →"
+                onPress={onOpenBook}
+                tone="accent"
+                accessibilityLabel={`${post.bookTitle ?? '책'} 상세`}
+              />
+            ) : null}
+            {showVisibility && visibilityLabel ? <Tag label={visibilityLabel} /> : null}
+          </View>
         </View>
       </View>
     </Card>
   );
 }
 
+/**
+ * 카드 머리 — 사진이 있으면 포스터, 없으면 표지를 세운 짧은 판.
+ *
+ * 사진 없는 글에 같은 높이의 빈 판을 두면 검은 덩어리만 남는다. 그때는 판을 낮추고
+ * 표지를 세워 책 이름·표제를 나란히 읽게 한다 — 카드 키가 자연스럽게 줄어든다.
+ */
+function PosterHead({ post }: { post: Post }) {
+  const { colors } = useTheme();
+  const photo = post.images[0];
+  const extraPhotos = post.images.length - 1;
+  const bookLabel = post.bookTitle ?? '책 없음';
+
+  if (!photo) {
+    return (
+      <View style={[styles.plainHead, { backgroundColor: colors.surfaceDeep, borderBottomColor: colors.line }]}>
+        {post.bookId != null ? (
+          <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={56} tilt={-3} entering={false} />
+        ) : null}
+        <View style={styles.plainHeadText}>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.accent }]}>
+            {bookLabel}
+          </Text>
+          <Text numberOfLines={2} style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>
+            {post.title}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.poster, { backgroundColor: colors.surfaceDeep }]}>
+      <Image
+        source={{ uri: photo.url }}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+        accessibilityLabel="독후감 사진"
+      />
+
+      {/* 표제를 읽히게 하는 그라데이션 — 사진이 밝아도 활자가 뜨지 않는다. */}
+      <LinearGradient colors={colors.scrimStops} style={styles.scrim} />
+
+      {/* 사진 왼쪽 위는 비어 있다 — 남은 장수는 표제와 겹치지 않게 여기 얹는다. */}
+      {extraPhotos > 0 ? (
+        <View style={[styles.moreBadge, { backgroundColor: colors.scrimDim }]}>
+          <Text style={[typeScale.monoLabel, { color: darkColors.text }]}>+{extraPhotos}</Text>
+        </View>
+      ) : null}
+
+      {post.bookId != null ? (
+        <View style={styles.coverCorner}>
+          <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={46} tilt={4} entering={false} />
+        </View>
+      ) : null}
+
+      <View style={styles.posterText}>
+        <Text numberOfLines={1} style={[typeScale.monoLabel, { color: darkColors.accent }]}>
+          {bookLabel}
+        </Text>
+        {/* 사진 위 글씨는 모드와 무관하게 밝은 잉크로 읽는다 — 뒤에 깔린 것이 늘 어두운 사진이다. */}
+        <Text numberOfLines={2} style={[typeScale.titleSerif, styles.title, { color: darkColors.text }]}>
+          {post.title}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  card: { gap: spacing.md },
+  // 사진이 카드 모서리까지 차오르도록 패딩을 0 으로 둔다 — Card 의 overflow:hidden 이 모서리를 깎는다.
+  card: { gap: spacing.md, padding: 0 },
+
+  poster: { height: POSTER_H, justifyContent: 'flex-end' },
+  // 아래 절반만 덮는다 — 사진 윗부분은 그대로 보인다.
+  scrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: POSTER_H * 0.7 },
+  coverCorner: { position: 'absolute', top: spacing.md, right: spacing.md },
+  posterText: { padding: spacing.lg, gap: spacing.xs },
+  moreBadge: {
+    position: 'absolute',
+    left: spacing.sm,
+    top: spacing.sm,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+
+  // 사진 없는 글의 머리판 — 표지를 세우고 옆에 책 이름·표제.
+  plainHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderBottomWidth: hairline,
+  },
+  plainHeadText: { flex: 1, gap: spacing.xs },
+
+  title: { fontSize: 20, lineHeight: 27 },
+  below: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  excerpt: { fontSize: 14, lineHeight: 22 },
+  pad: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
+
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { lineHeight: 20 },
   where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
-
-  bodyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  bodyText: { flex: 1, gap: spacing.xs },
-  title: { fontSize: 16, lineHeight: 22 },
-  excerpt: { fontSize: 13, lineHeight: 20 },
-
-  photoSlot: { alignItems: 'center', gap: 2 },
-  // 살짝 비뚤게 붙인 인화지 — 표지와 반대 방향으로 기울여 둘이 겹쳐 보이지 않게.
-  photo: {
-    width: THUMB,
-    height: THUMB,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    transform: [{ rotate: '2deg' }],
-  },
-  photoMore: { fontSize: 9, letterSpacing: 0.4 },
 
   // 좋아요·조회·밑줄·책 보기 — 댓글은 없다(§14.1). 숫자가 커지면 한 줄에 못 담는다.
   // Card 가 overflow:hidden 이라 넘치면 소리 없이 잘리므로, 넘칠 때만 다음 줄로 내린다.
