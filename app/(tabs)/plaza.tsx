@@ -56,7 +56,8 @@ export default function PlazaScreen() {
   const { colors } = useTheme();
   const myId = useAuth((s) => s.user?.id);
 
-  const [tab, setTab] = useState<PlazaTab>('QUOTE');
+  // 광장에 들어오면 독후감이 먼저 보인다 — 밑줄은 홈 '오늘의 글'에서도 흐르지만 독후감은 여기가 입구다.
+  const [tab, setTab] = useState<PlazaTab>('POST');
   /** 독후감 탭에서는 광장 피드를 멈춰 두지만 키·파라미터는 마지막으로 보던 밑줄 쪽에 그대로 둔다. */
   const type: PlazaItemType = tab === 'POST' ? 'QUOTE' : tab;
   const [composing, setComposing] = useState(false);
@@ -171,8 +172,9 @@ export default function PlazaScreen() {
   const header = (
     <View style={styles.header}>
       <View style={styles.chipRow}>
-        <Chip label="밑줄" active={tab === 'QUOTE'} onPress={() => switchTab('QUOTE')} />
+        {/* 기본으로 열리는 칩이 맨 앞에 온다 — 독후감 · 밑줄 · 완독 자랑 순. */}
         <Chip label="독후감" active={tab === 'POST'} onPress={() => switchTab('POST')} />
+        <Chip label="밑줄" active={tab === 'QUOTE'} onPress={() => switchTab('QUOTE')} />
         <Chip label="완독 자랑" active={tab === 'FINISH'} onPress={() => switchTab('FINISH')} />
         {/* 쓰기는 밑줄·독후감 탭에만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
         {tab === 'QUOTE' ? (
