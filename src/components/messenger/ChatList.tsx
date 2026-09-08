@@ -6,11 +6,15 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatSummary } from '@/api/types';
+import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { EmptyState, FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
 /** 하단 구역 탭(SectionNav)이 목록 위에 떠 있어 그만큼 아래를 비운다 — 서가 홈과 같은 값. */
+/** 채팅 상대 사진 지름(px) — 목록 행이 커서 작성자 아바타(AVATAR_SIZE)보다 한 단 크다. */
+const AVATAR = 44;
+
 const NAV_CLEARANCE = 104;
 
 /**
@@ -97,10 +101,8 @@ function ChatRow({ chat, confirming, onOpen, onDelete }: {
         {chat.otherAvatarUrl ? (
           <Image source={{ uri: chat.otherAvatarUrl }} style={styles.avatar} />
         ) : (
-          <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[typeScale.label, { color: colors.accent }]}>
-              {chat.otherNickname.slice(0, 1)}
-            </Text>
+          <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
+            <PersonGlyph size={AVATAR} color={colors.textFaint} />
           </View>
         )}
         <View style={{ flex: 1, gap: 2 }}>
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   avatar: {
-    width: 44, height: 44, borderRadius: 22,
+    width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   meta: { alignItems: 'flex-end', gap: spacing.xs },

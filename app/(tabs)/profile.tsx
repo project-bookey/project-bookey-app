@@ -10,6 +10,7 @@ import type { ReadingRecord } from '@/api/types';
 import {
   BrandHeader, MemoScrap, PaperScreen, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
+import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { SocialCard } from '@/components/social/SocialCard';
 import {
   Card, Eyebrow, KeyValue, Rule, formatDuration,
@@ -86,9 +87,7 @@ export default function ProfileScreen() {
               {user?.avatarUrl ? (
                 <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
               ) : (
-                <Text style={[styles.avatarInitial, { color: colors.textMuted }]}>
-                  {user?.nickname?.slice(0, 1) ?? '?'}
-                </Text>
+                <PersonGlyph size={AVATAR} color={colors.textFaint} />
               )}
             </View>
             {/* 사진 모서리에 붙는 민트 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다. */}
@@ -560,7 +559,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarInitial: { ...typeScale.titleSerif, fontSize: 34, lineHeight: 42 },
   profileText: { flex: 1, gap: 5 },
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 22로 줄여 쓴다.
