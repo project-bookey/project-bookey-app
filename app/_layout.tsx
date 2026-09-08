@@ -77,6 +77,7 @@ export default function RootLayout() {
             <Stack.Screen name="profile-edit" options={{ title: '프로필 편집' }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
             <Stack.Screen name="bookmarks" options={{ title: '책갈피 구매' }} />
+            <Stack.Screen name="wallet" options={{ title: '지갑' }} />
             <Stack.Screen name="subscription" options={{ title: '구독' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
             <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />

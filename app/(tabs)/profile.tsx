@@ -124,17 +124,28 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* 지갑 메모 + 방문 스티키(시안 C) — 예전 '전부 보기' 조각 행과 같은 꼴.
-            엽서·우표 교환은 아래 소셜 카드의 몫이라 메모는 누르지 않고, 스티키만 방문자 화면으로 간다. */}
+        {/* 지갑 메모 + 방문 스티키 — 예전 '전부 보기' 조각 행과 같은 꼴.
+            메모는 잔액 요약이고 누르면 지갑 화면(교환·구독·책갈피 구매)으로, 스티키는 방문자 화면으로 간다. */}
         <View style={[styles.block, styles.scrapRow]}>
-          <MemoScrap rotate={-0.8} style={styles.walletMemo}>
-            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지갑</Text>
-            <View style={styles.walletRow}>
-              <WalletCell value={wallet.data?.postcardBalance ?? 0} label="엽서" />
-              <WalletCell value={wallet.data?.freePostcardsLeftToday ?? 0} label="무료엽서" />
-              <WalletCell value={wallet.data?.stampBalance ?? 0} label="우표" />
-            </View>
-          </MemoScrap>
+          <Pressable
+            onPress={() => router.push('/wallet')}
+            accessibilityRole="button"
+            accessibilityLabel={`지갑, 책갈피 ${wallet.data?.bookmarkBalance ?? 0}개 · 엽서 ${wallet.data?.postcardBalance ?? 0}장 · 무료엽서 ${wallet.data?.freePostcardsLeftToday ?? 0}장 · 우표 ${wallet.data?.stampBalance ?? 0}개, 교환·구독 열기`}
+            style={({ pressed }) => [styles.walletPress, pressed && styles.pressed]}
+          >
+            <MemoScrap rotate={-0.8} style={styles.walletMemo}>
+              <View style={styles.walletHead}>
+                <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지갑</Text>
+                <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>교환·구독 →</Text>
+              </View>
+              <View style={styles.walletRow}>
+                <WalletCell value={wallet.data?.bookmarkBalance ?? 0} label="책갈피" />
+                <WalletCell value={wallet.data?.postcardBalance ?? 0} label="엽서" />
+                <WalletCell value={wallet.data?.freePostcardsLeftToday ?? 0} label="무료엽서" />
+                <WalletCell value={wallet.data?.stampBalance ?? 0} label="우표" />
+              </View>
+            </MemoScrap>
+          </Pressable>
           <Pressable
             onPress={subscribed
               ? () => router.push('/visitors')
@@ -529,9 +540,11 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.72 },
 
   scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  walletPress: { flex: 1 },
   walletMemo: { flex: 1, justifyContent: 'center', gap: spacing.sm, paddingHorizontal: spacing.md + 2 },
-  // 세 칸을 메모 폭에 고르게 편다 — 왼쪽에 몰리면 오른쪽이 빈 종이로 남는다.
-  walletRow: { flexDirection: 'row', gap: spacing.md },
+  walletHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  // 네 칸을 메모 폭에 고르게 편다 — 왼쪽에 몰리면 오른쪽이 빈 종이로 남는다.
+  walletRow: { flexDirection: 'row', gap: spacing.sm },
   walletCell: { flex: 1, gap: 2 },
   walletValue: { fontSize: 17, lineHeight: 22 },
   walletLabel: { fontSize: 11 },
