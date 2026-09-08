@@ -110,8 +110,11 @@ export const clubApi = {
   myClubs: () => api<Page<ClubSummary>>('/api/v1/clubs', { query: { size: 50 } }),
   publicClubs: () => api<Page<ClubPreview>>('/api/v1/clubs/public'),
   preview: (code: string) => api<ClubPreview>('/api/v1/clubs/preview', { query: { code } }),
+  previewById: (clubId: number) => api<ClubPreview>(`/api/v1/clubs/${clubId}/preview`),
   join: (code: string, body: { adoptTargetDate: boolean; shareProgress: boolean }) =>
     api<ClubHome>('/api/v1/clubs/join', { method: 'POST', body: { code, ...body } }),
+  joinPublic: (clubId: number, body: { adoptTargetDate: boolean; shareProgress: boolean }) =>
+    api<ClubHome>(`/api/v1/clubs/${clubId}/join`, { method: 'POST', body }),
   create: (body: {
     name: string; description?: string; bookId: number; startsAt: string; endsAt: string;
     visibility?: string; memberLimit?: number; autoCheckpoints?: boolean; allowNudge?: boolean;

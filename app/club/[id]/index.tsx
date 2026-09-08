@@ -5,10 +5,10 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
-import type { Checkpoint, ClubHome, MemberProgress, NudgeMessageKey } from '@/api/types';
+import type { Checkpoint, ClubHome, ClubPreview, MemberProgress, NudgeMessageKey } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Button, Card, Eyebrow, Loading, Numeral, ProgressBar, Rule, Tag,
+  Button, Card, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, Tag, Toggle,
   formatDuration, formatRelative, percent,
 } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
@@ -29,11 +29,32 @@ export default function ClubHomeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clubId = Number(id);
   const [nudgeTarget, setNudgeTarget] = useState<MemberProgress | null>(null);
+  const [shareProgress, setShareProgress] = useState(true);
+  const [adoptTarget, setAdoptTarget] = useState(true);
 
   const club = useQuery({
     queryKey: ['club', clubId],
     queryFn: () => clubApi.home(clubId),
     enabled: Number.isFinite(clubId),
+    retry: false,
+  });
+
+  const preview = useQuery({
+    queryKey: ['club', 'preview', clubId],
+    queryFn: () => clubApi.previewById(clubId),
+    enabled: Number.isFinite(clubId),
+    retry: false,
+  });
+
+  const join = useMutation({
+    mutationFn: () => clubApi.joinPublic(clubId, { adoptTargetDate: adoptTarget, shareProgress }),
+    onSuccess: (joined) => {
+      queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['club', 'preview', clubId] });
+      queryClient.setQueryData(['club', joined.id], joined);
+      router.replace(`/club/${joined.id}`);
+    },
+    onError: (e) => notify(e instanceof ApiError ? e.message : '참가하지 못했습니다.'),
   });
 
   const nudge = useMutation({
@@ -49,7 +70,7 @@ export default function ClubHomeScreen() {
     },
   });
 
-  if (club.isLoading) {
+  if (club.isLoading && !preview.data) {
     return (
       <PaperScreen>
         <SubHeader category="모임" />
@@ -58,6 +79,19 @@ export default function ClubHomeScreen() {
     );
   }
   if (!club.data) {
+    if (preview.data) {
+      return (
+        <PublicClubPreview
+          club={preview.data}
+          adoptTarget={adoptTarget}
+          shareProgress={shareProgress}
+          onAdoptTargetChange={setAdoptTarget}
+          onShareProgressChange={setShareProgress}
+          onJoin={() => join.mutate()}
+          joining={join.isPending}
+        />
+      );
+    }
     return (
       <PaperScreen>
         <SubHeader category="모임" />
@@ -232,6 +266,98 @@ function SummaryCell({ label, value, colors }: {
       <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
       <Numeral style={[styles.summaryValue, { color: colors.text }]}>{value}</Numeral>
     </View>
+  );
+}
+
+function PublicClubPreview({
+  club,
+  adoptTarget,
+  shareProgress,
+  onAdoptTargetChange,
+  onShareProgressChange,
+  onJoin,
+  joining,
+}: {
+  club: ClubPreview;
+  adoptTarget: boolean;
+  shareProgress: boolean;
+  onAdoptTargetChange: (value: boolean) => void;
+  onShareProgressChange: (value: boolean) => void;
+  onJoin: () => void;
+  joining: boolean;
+}) {
+  const router = useRouter();
+  const { colors } = useTheme();
+  const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
+
+  return (
+    <PaperScreen>
+      <SubHeader category="추천 모임" onBack={() => router.back()} />
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={58} tilt={0} entering={false} />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={[styles.title, { color: colors.text }]}>{club.name}</Text>
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>{club.book?.title}</Text>
+            <View style={styles.headerTags}>
+              <Tag label={`${club.memberCount}/${club.memberLimit}명`} />
+              {ended ? (
+                <Tag label="종료" />
+              ) : (
+                <Tag label={club.status === 'RECRUITING' ? '모집 중' : '진행 중'} />
+              )}
+            </View>
+          </View>
+        </View>
+
+        {club.description ? (
+          <Card>
+            <Text style={[typeScale.body, { color: colors.textMuted, lineHeight: 22 }]}>
+              {club.description}
+            </Text>
+          </Card>
+        ) : null}
+
+        <Card style={{ gap: spacing.md }}>
+          <Eyebrow plain>모임 정보</Eyebrow>
+          <KeyValue label="호스트" value={club.hostNickname ?? '-'} />
+          <Rule />
+          <KeyValue label="인원" value={`${club.memberCount} / ${club.memberLimit}`} />
+          <Rule />
+          <KeyValue label="기간" value={`${compactDate(club.startsAt)}-${compactDate(club.endsAt)}`} />
+        </Card>
+
+        {club.joinable ? (
+          <Card style={{ gap: spacing.md }}>
+            <Eyebrow plain>참가 설정</Eyebrow>
+            <Toggle
+              label="진척 공개"
+              description="끄면 리더보드에 비공개로 표시되고 모임 평균 계산에서 빠집니다."
+              value={shareProgress}
+              onChange={onShareProgressChange}
+            />
+            <Toggle
+              label="모임 목표일을 내 목표로"
+              description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
+              value={adoptTarget}
+              onChange={onAdoptTargetChange}
+            />
+          </Card>
+        ) : club.joinBlockedReason ? (
+          <Text style={[styles.error, { color: colors.danger }]}>{club.joinBlockedReason}</Text>
+        ) : null}
+
+        <Button
+          label={club.alreadyMember ? '모임 홈 보기' : '참가하기'}
+          disabled={!club.joinable && !club.alreadyMember}
+          loading={joining}
+          onPress={() => {
+            if (club.alreadyMember) router.replace(`/club/${club.id}`);
+            else onJoin();
+          }}
+        />
+      </ScrollView>
+    </PaperScreen>
   );
 }
 
