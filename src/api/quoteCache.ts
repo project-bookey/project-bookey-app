@@ -9,7 +9,7 @@ import type { BookQuote, Page, PlazaItem, PlazaItemType, Post } from '@/api/type
  * 다섯 곳을 한 번에 손봐야 화면끼리 어긋나지 않는다. 키와 패치를 여기 한 곳에 둔다.
  */
 export const plazaFeedKey = (type: PlazaItemType) => ['plaza', type] as const;
-/** 홈 '오려둔 글' 스포트라이트의 밑줄 몫(HomeScraps) — 광장 피드와 갈라 둔 키. */
+/** 홈 '오늘의 글' 스포트라이트의 밑줄 몫(HomeScraps) — 광장 피드와 갈라 둔 키. */
 export const PLAZA_HOME_KEY = ['plaza', 'QUOTE', 'home'] as const;
 /** 책별 밑줄(도서 상세 밑줄 탭). `['quotes']` 뿌리라 내 밑줄과 같이 무효화된다. */
 export const bookQuotesKey = (bookId: number) => ['quotes', 'book', bookId] as const;

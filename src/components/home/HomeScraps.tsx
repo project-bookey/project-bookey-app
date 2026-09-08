@@ -17,7 +17,8 @@ import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { PlazaItem, Post } from '@/api/types';
 import { MemoScrap, TiltCover } from '@/components/collage';
 import { HomeSection } from '@/components/home/HomeSection';
-import { HOT_GAP, META_LH, META_SIZE, QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
+import { ScrapAuthor } from '@/components/home/ScrapAuthor';
+import { AUTHOR_GAP, AUTHOR_H, QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
 
@@ -34,7 +35,7 @@ const SLOTS = ['quote', 'post', 'quote', 'post', 'quote'] as const;
 const ROTATE_MS = 6000;
 /** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. 높이는 1.5배(108). */
 const COVER_W = 72;
-// 인용·메타 조판(QUOTE_LINES·QUOTE_MAX_H·META_*·HOT_GAP)은 독후감 조각과 나눠 쓰는 값이라
+// 작성자 행·인용 조판(AUTHOR_*·QUOTE_LINES·QUOTE_MAX_H)은 독후감 조각과 나눠 쓰는 값이라
 // scrapMetrics 한 곳에 있다 — 스포트라이트는 인용 토큰(`typeScale.quote`, 세리프 17/28)을 그대로 세운다.
 
 /**
@@ -47,19 +48,17 @@ const COVER_W = 72;
  * 인용 3줄 최악의 경우 필요한 높이:
  *
  *   스크랩 테두리 1×2 + 안쪽 여백 12×2  = 26
+ *   작성자 행 40 + 아래 간격 8          = 48
  *   인용 28 × 3                         = 84
- *   메타 lineHeight 14                  = 14
- *   핫   간격 3 + lineHeight 14         = 17
- *                                     합 = 141
+ *                                     합 = 158
  *
- * 여기에 인용과 메타 사이 숨 쉴 자리 겸, 글꼴 폴백으로 줄상자가 두꺼워질 때를 위한
- * 여유 15px 을 얹어 156 (인용을 15/24 로 쓰던 종전엔 같은 셈으로 144 였다).
- * 남는 자리는 메타의 `marginTop:'auto'` 가 인용 아래로 몰아 준다 —
- * 메타·핫 지표는 문장 길이와 무관하게 늘 조각 바닥에 붙는다.
- * 독후감 조각도 같은 짜임(글 상자 84 + 메타 + 핫)이라 어느 쪽이 서도 행 높이가 같다.
+ * 여기에 글꼴 폴백으로 줄상자가 두꺼워질 때를 위한 여유 4px 을 얹어 162.
+ * 핫 지표(좋아요)는 바닥 줄이 아니라 작성자 행 오른쪽에 있다 — 바닥에 한 줄을 더 두면
+ * 상자가 위아래로 너무 크다는 피드백(2026-09-08)으로 187 에서 여기까지 줄였다.
+ * 독후감 조각도 같은 짜임(작성자 행 + 글 상자 84)이라 어느 쪽이 서도 행 높이가 같다.
  */
-const ROW_SLACK = 15;
-const ROW_H = 2 + spacing.md * 2 + QUOTE_MAX_H + META_LH + HOT_GAP + META_LH + ROW_SLACK;
+const ROW_SLACK = 4;
+const ROW_H = 2 + spacing.md * 2 + AUTHOR_H + AUTHOR_GAP + QUOTE_MAX_H + ROW_SLACK;
 /** 들어오는 조각이 올라오는 거리(px) — 책상에 내려놓는 듯한 짧은 낙차. */
 const ENTER_RISE = 8;
 /** 카드 기울기(도) — 회전 항목마다 좌우로 엇갈린다. */
@@ -71,9 +70,10 @@ const EASE_OUT = Easing.out(Easing.quad);
 type Scrap = { kind: 'quote'; item: PlazaItem } | { kind: 'post'; item: Post };
 
 /**
- * 홈 '지금 붐비는 책' 바로 아래 '오려둔 글' — 광장의 밑줄과 독후감 중 핫한 것을
+ * 홈 히어로 바로 아래('지금 붐비는 책' 위) '오늘의 글' — 광장의 밑줄과 독후감 중 핫한 것을
  * 한 장씩 스포트라이트로 세우고 6초마다 돌린다 (시안 2a: 글 카드 + 표지 스크랩 한 쌍).
  *
+ * 조각 머리에는 작성자 아바타·닉네임을 세운다(ScrapAuthor) — 누구의 글인지가 먼저 읽히게.
  * 밑줄 셋·독후감 둘을 번갈아 세워 광장에 두 종류의 글이 있다는 것을 홈에서부터 알린다.
  * 한쪽이 모자라면 다른 쪽이 그 자리를 메우고, 둘 다 0건이면 섹션을 통째로 감춘다 —
  * 홈에 빈 상자를 남기지 않는다. 그래서 섹션 틀(HomeSection: 괘선 + 위 여백)도 홈이 아니라
@@ -226,17 +226,17 @@ export function HomeScraps() {
         {scrap.kind === 'quote' ? (
           /* 기울기는 회전 연출과 함께 움직여야 해서 바깥에서 준다. */
           <MemoScrap rotate={0} style={styles.card}>
+            {/* 좋아요는 표시 전용 — 홈에서는 누를 수 없다. 토글은 광장에서만.
+                0 이어도 쓴다: 독후감 조각도 늘 쓰므로 여기서만 비우면 작성자 행 오른쪽이 들쭉날쭉하다. */}
+            <ScrapAuthor
+              nickname={scrap.item.authorNickname}
+              avatarUrl={scrap.item.authorAvatarUrl}
+              where={scrap.item.bookTitle}
+              kind="밑줄"
+              stat={`좋아요 ${scrap.item.agreeCount ?? 0}`}
+            />
             <Text numberOfLines={QUOTE_LINES} style={[styles.quote, { color: colors.text }]}>
               {scrap.item.content}
-            </Text>
-            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-              {scrap.item.authorNickname} · {scrap.item.bookTitle}
-            </Text>
-            {/* 표시 전용 — 홈에서는 누를 수 없다. 토글은 광장에서만.
-                0 이어도 그린다: 독후감 조각도 핫 줄을 늘 세우므로, 여기서만 줄을 빼면
-                6초마다 조각의 줄 수가 달라져 같은 자리에 선 글의 y 가 흔들린다. */}
-            <Text style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
-              좋아요 {scrap.item.agreeCount ?? 0}
             </Text>
           </MemoScrap>
         ) : (
@@ -278,7 +278,7 @@ export function HomeScraps() {
     <HomeSection>
       <View style={styles.section}>
         <View style={styles.header}>
-          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오려둔 글</Text>
+          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오늘의 글</Text>
           <Pressable
             onPress={openPlaza}
             hitSlop={8}
@@ -328,10 +328,6 @@ const styles = StyleSheet.create({
   card: { flex: 1, overflow: 'hidden' },
   // 인용은 제 줄 수만큼만 차지하고 3줄에서 끊긴다(QUOTE_MAX_H 주석 참고).
   quote: { ...typeScale.quote, maxHeight: QUOTE_MAX_H, overflow: 'hidden' },
-  // 남는 자리를 인용 아래로 몰아 메타·핫 지표를 조각 바닥에 붙인다 —
-  // 문장이 1줄이든 3줄이든 두 줄의 y 가 같아 회전해도 눈이 흔들리지 않는다.
-  meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: 'auto' },
-  hot: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: HOT_GAP },
-  // 표지(108)는 행(156)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
+  // 표지(108)는 행(162)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
   coverSlot: { justifyContent: 'center' },
 });
