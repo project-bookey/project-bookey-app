@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
@@ -109,6 +109,21 @@ export default function ProfileScreen() {
                 style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
               >
                 <PencilLine color={colors.accent} />
+              </Pressable>
+              {/* 설정은 탭이 아니라 여기서 들어간다 — '내 서재 · 전체보기' 처럼 제목 줄 오른쪽 끝의 알약. */}
+              <Pressable
+                onPress={() => router.push('/settings')}
+                accessibilityRole="button"
+                accessibilityLabel="설정"
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.settingsPill,
+                  { borderColor: colors.line, backgroundColor: colors.surface },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <GearLine size={14} color={colors.textMuted} />
+                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
               </Pressable>
             </View>
             {/* 서버 MeResponse 에 가입일이 없어 핸들로 대신한다 — 필드가 생기면 '{연도} 가입'으로 바꾼다. */}
@@ -278,6 +293,24 @@ export default function ProfileScreen() {
 
 // 장식용 아이콘 — aria-hidden 은 RN 이 네이티브 접근성 숨김으로 옮기고 웹은 그대로 쓴다.
 // (accessibilityElementsHidden 은 react-native-svg 웹에서 DOM 에 새어 React 경고가 뜬다)
+/** 톱니 — 예전 하단 탭 '설정' 아이콘과 같은 꼴. */
+function GearLine({ size, color }: { size: number; color: string }) {
+  const stroke = { stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <Circle cx={12} cy={12} r={3} {...stroke} />
+      <Path d="M12 4.5v2" {...stroke} />
+      <Path d="M12 17.5v2" {...stroke} />
+      <Path d="M4.5 12h2" {...stroke} />
+      <Path d="M17.5 12h2" {...stroke} />
+      <Path d="m6.7 6.7 1.4 1.4" {...stroke} />
+      <Path d="m15.9 15.9 1.4 1.4" {...stroke} />
+      <Path d="m17.3 6.7-1.4 1.4" {...stroke} />
+      <Path d="m8.1 15.9-1.4 1.4" {...stroke} />
+    </Svg>
+  );
+}
+
 function PencilLine({ color }: { color: string }) {
   return (
     <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -533,6 +566,17 @@ const styles = StyleSheet.create({
   // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 22로 줄여 쓴다.
   nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  // 닉네임 줄과 같은 30 높이 — marginLeft auto 로 줄 오른쪽 끝에 붙는다.
+  settingsPill: {
+    marginLeft: 'auto',
+    height: 30,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: radius.pill,
+    borderWidth: hairline,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
   profileCount: { fontFamily: sans.semiBold },

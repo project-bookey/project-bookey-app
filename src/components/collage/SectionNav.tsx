@@ -7,12 +7,13 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useTheme } from '@/theme';
 import { hairline, layout, radius, spacing, typeScale } from '@/theme/tokens';
 
-export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me' | 'settings';
+export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
 /**
  * 하단 구역 네비. 탐색은 서가의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
  * 메신저(엽서함·채팅)는 헤더 아이콘 둘이던 것을 사람 사이 글끼리 한 구역으로 묶은 것 — 모임 옆에 선다.
+ * 설정은 탭이 아니라 '나' 화면 프로필 행의 톱니로 들어가는 서브 화면이다(2026-09-08).
  */
 const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[] = [
   { key: 'plaza', label: '광장', path: '/plaza', route: 'plaza' },
@@ -20,7 +21,6 @@ const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[
   { key: 'clubs', label: '모임', path: '/clubs', route: 'clubs' },
   { key: 'messenger', label: '메신저', path: '/messenger', route: 'messenger' },
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
-  { key: 'settings', label: '설정', path: '/settings', route: 'settings' },
 ];
 
 let lastTabIndex = 0;
@@ -174,20 +174,6 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Circle cx={12} cy={8} r={3.25} {...stroke} />
           <Path d="M5.5 19c1-3.5 3.3-5.25 6.5-5.25S17.5 15.5 18.5 19" {...stroke} />
-        </Svg>
-      );
-    case 'settings':
-      return (
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-          <Circle cx={12} cy={12} r={3} {...stroke} />
-          <Path d="M12 4.5v2" {...stroke} />
-          <Path d="M12 17.5v2" {...stroke} />
-          <Path d="M4.5 12h2" {...stroke} />
-          <Path d="M17.5 12h2" {...stroke} />
-          <Path d="m6.7 6.7 1.4 1.4" {...stroke} />
-          <Path d="m15.9 15.9 1.4 1.4" {...stroke} />
-          <Path d="m17.3 6.7-1.4 1.4" {...stroke} />
-          <Path d="m8.1 15.9-1.4 1.4" {...stroke} />
         </Svg>
       );
     default:
