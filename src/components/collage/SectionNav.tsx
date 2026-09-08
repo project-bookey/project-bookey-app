@@ -7,16 +7,18 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useTheme } from '@/theme';
 import { hairline, layout, radius, spacing, typeScale } from '@/theme/tokens';
 
-export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'me' | 'settings';
+export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me' | 'settings';
 
 /**
  * 하단 구역 네비. 탐색은 서가의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
+ * 메신저(엽서함·채팅)는 헤더 아이콘 둘이던 것을 사람 사이 글끼리 한 구역으로 묶은 것 — 모임 옆에 선다.
  */
 const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[] = [
   { key: 'plaza', label: '광장', path: '/plaza', route: 'plaza' },
   { key: 'shelf', label: '서가', path: '/home', route: 'home' },
   { key: 'clubs', label: '모임', path: '/clubs', route: 'clubs' },
+  { key: 'messenger', label: '메신저', path: '/messenger', route: 'messenger' },
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
   { key: 'settings', label: '설정', path: '/settings', route: 'settings' },
 ];
@@ -158,6 +160,13 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
           <Circle cx={16} cy={8.5} r={2.5} {...stroke} />
           <Path d="M4.5 18c.6-2.5 2-4 3.5-4s2.9 1.5 3.5 4" {...stroke} />
           <Path d="M12.5 18c.6-2.5 2-4 3.5-4s2.9 1.5 3.5 4" {...stroke} />
+        </Svg>
+      );
+    case 'messenger':
+      // 말풍선 — 헤더에 있던 채팅 아이콘과 같은 꼴을 탭 크기(22)로.
+      return (
+        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+          <Path d="M5 6.5h14v8.5h-8.5L7 18.5V15H5z" {...stroke} />
         </Svg>
       );
     case 'me':

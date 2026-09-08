@@ -33,8 +33,16 @@ export type QuoteCardProps = {
   onOpenBook?: () => void;
 };
 
-/** 24px 아바타(기본, size로 축소 가능 — 댓글 답글은 20px) — 사진이 없으면 닉네임 첫 글자. 밑줄 카드·완독 카드·댓글 행이 같이 쓴다. */
-export function QuoteAvatar({ uri, nickname, size = 24 }: {
+/**
+ * 작성자 아바타 지름(px) — 앱 어디서나 같은 크기다.
+ * 홈 '오늘의 글'에서 누가 썼는지가 먼저 보여야 한다는 피드백으로 40 까지 키운 뒤(2026-09-08),
+ * 광장·상세·댓글·방문자 등 다른 자리도 여기에 맞췄다 — 화면마다 사람 크기가 다르면 같은 사람이
+ * 다른 사람처럼 보인다. 옆에 닉네임(15/20) + 메타 한 줄(10/14) = 36 이 서면 위아래가 딱 맞는다.
+ */
+export const AVATAR_SIZE = 40;
+
+/** 작성자 아바타(기본 AVATAR_SIZE) — 사진이 없으면 닉네임 첫 글자. 밑줄·독후감·리뷰·완독 카드와 댓글 행, 홈 조각이 같이 쓴다. */
+export function QuoteAvatar({ uri, nickname, size = AVATAR_SIZE }: {
   uri?: string | null;
   nickname: string;
   size?: number;
@@ -125,7 +133,7 @@ export function QuoteCard({
 
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: {
     borderRadius: radius.pill,
     borderWidth: hairline,
@@ -135,10 +143,11 @@ const styles = StyleSheet.create({
   },
   avatarImage: { width: '100%', height: '100%' },
   authorText: { flex: 1 },
-  nickname: { fontSize: 12 },
+  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  nickname: { lineHeight: 20 },
   // 제목과 완독 마크 사이 — 4는 붙어 보인다는 피드백으로 8.
   whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
-  where: { fontSize: 9, letterSpacing: 0.4, flexShrink: 1 },
+  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, flexShrink: 1 },
   // 완독 인증 마크 — 민트 테두리의 작은 pill.
   finishedMark: {
     fontSize: 8,
