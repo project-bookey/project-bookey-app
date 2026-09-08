@@ -6,11 +6,15 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+
+/** 프로필 사진 판 지름(px) — 이 화면에서만 크게 본다(목록의 AVATAR_SIZE 와는 다른 자리). */
+const AVATAR = 112;
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'PREFER_NOT_TO_SAY', label: '선택 안 함' },
@@ -93,9 +97,7 @@ export default function ProfileEditScreen() {
               {user?.avatarUrl ? (
                 <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
               ) : (
-                <Text style={[styles.avatarInitial, { color: colors.textMuted }]}>
-                  {user?.nickname?.slice(0, 1) ?? '?'}
-                </Text>
+                <PersonGlyph size={AVATAR} color={colors.textFaint} />
               )}
             </View>
             <Text style={[typeScale.bodyStrong, { color: colors.accent }]}>사진 수정</Text>
@@ -181,9 +183,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   avatar: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
     borderWidth: hairline,
     overflow: 'hidden',
     alignItems: 'center',

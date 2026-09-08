@@ -6,7 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import type { PostcardView } from '@/api/types';
-import { AVATAR_SIZE } from '@/components/quote/QuoteCard';
+import { AVATAR_SIZE, PersonGlyph } from '@/components/quote/QuoteCard';
 import { Button, Card, EmptyState, FootAction, Tag, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
@@ -126,10 +126,8 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
           {counterpartAvatar ? (
             <Image source={{ uri: counterpartAvatar }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-              <Text style={[typeScale.label, { color: colors.accent }]}>
-                {counterpartName.slice(0, 1)}
-              </Text>
+            <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
+              <PersonGlyph size={AVATAR_SIZE} color={colors.textFaint} />
             </View>
           )}
           <Text style={[typeScale.bodyStrong, { color: colors.text }]}>

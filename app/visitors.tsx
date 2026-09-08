@@ -5,7 +5,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { ApiError } from '@/api/client';
 import { profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { AVATAR_SIZE } from '@/components/quote/QuoteCard';
+import { AVATAR_SIZE, PersonGlyph } from '@/components/quote/QuoteCard';
 import { EmptyState, formatRelative } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
@@ -52,10 +52,8 @@ export default function VisitorsScreen() {
               {item.avatarUrl ? (
                 <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-                  <Text style={[typeScale.label, { color: colors.accent }]}>
-                    {item.nickname.slice(0, 1)}
-                  </Text>
+                <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
+                  <PersonGlyph size={AVATAR_SIZE} color={colors.textFaint} />
                 </View>
               )}
               <Text style={[typeScale.bodyStrong, { color: colors.text, flex: 1 }]}>
