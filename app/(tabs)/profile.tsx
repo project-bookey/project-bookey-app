@@ -110,21 +110,6 @@ export default function ProfileScreen() {
               >
                 <PencilLine color={colors.accent} />
               </Pressable>
-              {/* 설정은 탭이 아니라 여기서 들어간다 — '내 서재 · 전체보기' 처럼 제목 줄 오른쪽 끝의 알약. */}
-              <Pressable
-                onPress={() => router.push('/settings')}
-                accessibilityRole="button"
-                accessibilityLabel="설정"
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.settingsPill,
-                  { borderColor: colors.line, backgroundColor: colors.surface },
-                  pressed && styles.pressed,
-                ]}
-              >
-                <GearLine size={14} color={colors.textMuted} />
-                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
-              </Pressable>
             </View>
             {/* 서버 MeResponse 에 가입일이 없어 핸들로 대신한다 — 필드가 생기면 '{연도} 가입'으로 바꾼다. */}
             <Text style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
@@ -137,6 +122,21 @@ export default function ProfileScreen() {
               <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
             </Text>
           </View>
+          {/* 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다. */}
+          <Pressable
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="설정"
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.settingsPill,
+              { borderColor: colors.line, backgroundColor: colors.surface },
+              pressed && styles.pressed,
+            ]}
+          >
+            <GearLine size={14} color={colors.textMuted} />
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
+          </Pressable>
         </View>
 
         {/* 지갑 메모 + 방문 스티키 — 예전 '전부 보기' 조각 행과 같은 꼴.
@@ -566,9 +566,9 @@ const styles = StyleSheet.create({
   // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 22로 줄여 쓴다.
   nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  // 닉네임 줄과 같은 30 높이 — marginLeft auto 로 줄 오른쪽 끝에 붙는다.
+  // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
   settingsPill: {
-    marginLeft: 'auto',
+    alignSelf: 'flex-end',
     height: 30,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: radius.pill,
