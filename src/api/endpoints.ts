@@ -159,10 +159,21 @@ export type SubscriptionCheckout = {
   successUrl?: string;
   failUrl?: string;
 };
+export type SubscriptionVerify = {
+  provider: SubscriptionProvider;
+  productId: string;
+  orderId?: string;
+  amountKrw?: number;
+  paymentKey?: string;
+  receiptData?: string;
+  originalTransactionId?: string;
+};
 
 export const subscriptionApi = {
   begin: (provider: SubscriptionProvider) =>
     api<SubscriptionCheckout>('/api/v1/subscriptions/checkout', { method: 'POST', body: { provider } }),
+  verify: (body: SubscriptionVerify) =>
+    api<void>('/api/v1/subscriptions/verify', { method: 'POST', body }),
 };
 
 export const postcardApi = {
