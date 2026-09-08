@@ -7,7 +7,8 @@ import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import type { PostcardView } from '@/api/types';
 import { AVATAR_SIZE } from '@/components/quote/QuoteCard';
-import { Button, Card, EmptyState, Tag, formatRelative } from '@/components/ui';
+import { Button, Card, EmptyState, FootAction, Tag, formatRelative } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
 import { hairline, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
@@ -75,6 +76,8 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
   const [replying, setReplying] = useState(false);
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { confirm, arm, disarm } = useDeleteConfirm<number>();
+  const confirmingDelete = confirm === card.id;
 
   const inbox = box === 'INBOX';
   const counterpartName = inbox ? card.fromNickname : card.toNickname;
@@ -93,6 +96,24 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : '답장을 보내지 못했어요.'),
   });
+
+  const remove = useMutation({
+    mutationFn: () => postcardApi.remove(card.id),
+    onSuccess: () => {
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['postcards'] });
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : '엽서를 삭제하지 못했어요.'),
+  });
+
+  const pressDelete = () => {
+    if (confirmingDelete) {
+      disarm();
+      remove.mutate();
+      return;
+    }
+    arm(card.id);
+  };
 
   return (
     <Card>
@@ -186,6 +207,14 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
           </View>
         )
       ) : null}
+      <View style={styles.deleteRow}>
+        <FootAction
+          label={confirmingDelete ? '한 번 더' : '삭제'}
+          onPress={pressDelete}
+          tone={confirmingDelete ? 'danger' : 'faint'}
+          accessibilityLabel={confirmingDelete ? '엽서 삭제 확인' : '엽서 삭제'}
+        />
+      </View>
     </Card>
   );
 }
@@ -217,4 +246,5 @@ const styles = StyleSheet.create({
   },
   counter: { alignSelf: 'flex-end' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
+  deleteRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.sm },
 });

@@ -11,7 +11,7 @@ export type QuoteCardProps = {
   content: string;
   agreeCount: number;
   agreedByMe: boolean;
-  commentCount: number;
+  commentCount?: number;
   /**
    * 작성자가 그 책을 완독했는지 — 광장 응답(`PlazaItemView`)에만 있는 값이다.
    * 밑줄 상세·책별 목록이 쓰는 `BookQuoteView` 에는 이 필드가 없어 그쪽 카드에는 마크가 서지 않는다.
@@ -64,7 +64,7 @@ export function QuoteAvatar({ uri, nickname, size = AVATAR_SIZE }: {
 
 /** 밑줄 카드 — 광장 피드와 밑줄 상세가 같은 카드를 쓴다(시안 2d · D1). */
 export function QuoteCard({
-  authorNickname, authorAvatarUrl, bookTitle, page, content, agreeCount, agreedByMe, commentCount,
+  authorNickname, authorAvatarUrl, bookTitle, page, content, agreeCount, agreedByMe,
   authorFinished = false, mine, confirming = false, error, tilt = 0,
   onAgree, onDelete, onOpen, onOpenBook,
 }: QuoteCardProps) {
@@ -110,8 +110,6 @@ export function QuoteCard({
 
       <View style={styles.footRow}>
         <FootAction label={`좋아요 ${agreeCount}`} onPress={onAgree} selected={agreedByMe} />
-        {/* 광장(onOpen)에서는 눌러 상세로, 상세에서는 글자만. */}
-        <FootAction label={`댓글 ${commentCount}`} onPress={onOpen} />
         <View style={styles.footRight}>
           {onOpenBook ? (
             <FootAction label="책 보기 →" onPress={onOpenBook} tone="accent" accessibilityLabel={`${bookTitle} 상세`} />
