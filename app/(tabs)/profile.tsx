@@ -8,7 +8,7 @@ import { libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { ReadingRecord } from '@/api/types';
 import {
-  BrandHeader, PaperScreen, TiltCover, useCoverEntrance,
+  BrandHeader, MemoScrap, PaperScreen, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { SocialCard } from '@/components/social/SocialCard';
 import {
@@ -17,8 +17,10 @@ import {
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import { hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
-import { rowOffsetY, tiltFor } from '@/theme/tokens';
+import { rowOffsetY, sans, tiltFor } from '@/theme/tokens';
 
+/** 아바타 지름(px) — 시안 A. 글줄 가운데에 앉히므로 이름·핸들·팔로우 세 줄 높이보다 조금 크다. */
+const AVATAR = 88;
 /** 선반에 올리는 최대 권수 — 넘치면 '전체보기'로 넘긴다. */
 const SHELF_CAP = 10;
 /** 선반 표지 폭(px) — 시안 2e 기준. */
@@ -27,7 +29,7 @@ const SHELF_COVER_W = 100;
 const HEATMAP_DAYS = 90;
 
 /**
- * 구역 4. 나 — 프로필 · 내 서재 선반 · 기록 · 오려둔 문장/독후감 링크 · 소셜 (시안 2e).
+ * 구역 4. 나 — 프로필 · 지갑 메모/방문 노트 · 내 서재 선반 · 기록 · 오려둔 문장/독후감 링크 · 소셜 (시안 2e).
  *
  * 올해 읽은 시간 차트는 뺐고 기록 카드만 남겼다. 오려둔 문장·독후감은 여기서 펼치지 않고
  * 각자의 화면(/quote/mine · /post/mine)으로 보내는 링크만 둔다.
@@ -47,6 +49,7 @@ export default function ProfileScreen() {
   });
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
   const subscribed = wallet.data?.subscriptionActive ?? false;
+  const visitCount = myProfile.data?.visitCount ?? 0;
   // 홈과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
   const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
   const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
@@ -79,7 +82,7 @@ export default function ProfileScreen() {
             accessibilityLabel="프로필 사진 변경"
             style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
           >
-            <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
+            <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.lineStrong }]}>
               {user?.avatarUrl ? (
                 <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
               ) : (
@@ -88,8 +91,9 @@ export default function ProfileScreen() {
                 </Text>
               )}
             </View>
-            <View style={styles.avatarEdit}>
-              <Text style={[styles.avatarEditText, { color: colors.accent }]}>+</Text>
+            {/* 사진 모서리에 붙는 민트 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다. */}
+            <View style={[styles.avatarBadge, { backgroundColor: colors.accent, borderColor: colors.bg }]}>
+              <Text style={[styles.avatarBadgeText, { color: colors.onAccent }]}>+</Text>
             </View>
           </Pressable>
           <View style={styles.profileText}>
@@ -111,31 +115,40 @@ export default function ProfileScreen() {
             <Text style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
               @{user?.handle ?? '—'} · 완독 {counts?.finished ?? 0}권
             </Text>
-            <Text style={[typeScale.caption, styles.profileSocial, { color: colors.textMuted }]}>
-              팔로워 {myProfile.data?.followerCount ?? 0} · 팔로잉 {myProfile.data?.followingCount ?? 0}
-            </Text>
-            <View style={styles.visitRow}>
-              <Text style={[typeScale.caption, styles.visitText, { color: colors.textFaint }]}>
-                {myProfile.data?.visitCount ?? 0}명이 내 페이지를 방문했어요!
-              </Text>
-              <Pressable
-                onPress={subscribed
-                  ? () => router.push('/visitors')
-                  : () => router.push({ pathname: '/subscription', params: { feature: 'visitors' } })}
-                accessibilityRole="button"
-                accessibilityLabel="방문자 확인하기"
-                hitSlop={8}
-                style={({ pressed }) => pressed && styles.pressed}
-              >
-                <Text style={[typeScale.monoLabel, styles.visitAction, { color: colors.accent }]}>
-                  확인하기 →
-                </Text>
-              </Pressable>
-            </View>
-            <Text style={[typeScale.caption, styles.profileWallet, { color: colors.textMuted }]}>
-              엽서 {wallet.data?.postcardBalance ?? 0} · 무료엽서 {wallet.data?.freePostcardsLeftToday ?? 0} · 우표 {wallet.data?.stampBalance ?? 0}
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+              팔로워{' '}
+              <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followerCount ?? 0}</Text>
+              {' · '}팔로잉{' '}
+              <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
             </Text>
           </View>
+        </View>
+
+        {/* 지갑 메모 + 방문 스티키(시안 C) — 예전 '전부 보기' 조각 행과 같은 꼴.
+            엽서·우표 교환은 아래 소셜 카드의 몫이라 메모는 누르지 않고, 스티키만 방문자 화면으로 간다. */}
+        <View style={[styles.block, styles.scrapRow]}>
+          <MemoScrap rotate={-0.8} style={styles.walletMemo}>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지갑</Text>
+            <View style={styles.walletRow}>
+              <WalletCell value={wallet.data?.postcardBalance ?? 0} label="엽서" />
+              <WalletCell value={wallet.data?.freePostcardsLeftToday ?? 0} label="무료엽서" />
+              <WalletCell value={wallet.data?.stampBalance ?? 0} label="우표" />
+            </View>
+          </MemoScrap>
+          <Pressable
+            onPress={subscribed
+              ? () => router.push('/visitors')
+              : () => router.push({ pathname: '/subscription', params: { feature: 'visitors' } })}
+            accessibilityRole="button"
+            accessibilityLabel={`${visitCount}명이 내 페이지에 다녀갔어요, 방문자 확인하기`}
+            style={({ pressed }) => pressed && styles.pressed}
+          >
+            <StickyNote rotate={1.5} style={styles.visitNote}>
+              <Text style={[typeScale.monoNumeral, styles.visitCount, { color: colors.onNote }]}>{visitCount}명</Text>
+              <Text style={[typeScale.label, styles.visitText, { color: colors.onNote }]}>내 페이지에{'\n'}다녀갔어요</Text>
+              <Text style={[typeScale.monoEyebrow, styles.visitAction, { color: colors.onNote }]}>확인하기 →</Text>
+            </StickyNote>
+          </Pressable>
         </View>
 
         <View style={styles.shelfSection}>
@@ -391,6 +404,17 @@ function ShelfItem({ record, index, onPress }: {
   );
 }
 
+/** 지갑 메모의 숫자 한 칸 — 모노 숫자 위, 캡션 라벨 아래('기록' 카드의 StatCell 보다 한 치수 작다). */
+function WalletCell({ value, label }: { value: number; label: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.walletCell}>
+      <Text style={[typeScale.monoNumeral, styles.walletValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[typeScale.caption, styles.walletLabel, { color: colors.textFaint }]}>{label}</Text>
+    </View>
+  );
+}
+
 function StatCell({ label, value }: { label: string; value: string }) {
   const { colors } = useTheme();
   return (
@@ -465,14 +489,14 @@ const styles = StyleSheet.create({
 
   profileRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.md,
+    alignItems: 'center',
+    gap: spacing.lg,
     paddingHorizontal: spacing.lg,
   },
-  avatarButton: { width: 64, height: 64, borderRadius: radius.pill, transform: [{ translateY: -12 }] },
+  avatarButton: { width: AVATAR, height: AVATAR, borderRadius: radius.pill },
   avatar: {
-    width: 64,
-    height: 64,
+    width: AVATAR,
+    height: AVATAR,
     borderRadius: radius.pill,
     borderWidth: hairline,
     overflow: 'hidden',
@@ -480,29 +504,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarImage: { width: '100%', height: '100%' },
-  avatarEdit: {
+  // 배지 테두리 3px 는 배경색 — 사진과 배지 사이를 끊어 주는 여백 역할이라 hairline 이 아니다.
+  avatarBadge: {
     position: 'absolute',
     right: -2,
-    bottom: -4,
-    width: 22,
-    height: 22,
+    bottom: -2,
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarEditText: { fontSize: 24, lineHeight: 24, fontWeight: '800' },
-  avatarInitial: { ...typeScale.titleSerif, fontSize: 26, lineHeight: 32 },
-  profileText: { flex: 1, gap: 4 },
+  avatarBadgeText: { fontSize: 19, lineHeight: 21, fontWeight: '800' },
+  avatarInitial: { ...typeScale.titleSerif, fontSize: 34, lineHeight: 42 },
+  profileText: { flex: 1, gap: 5 },
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 21로 줄여 쓴다.
-  nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 21, lineHeight: 28 },
+  // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 22로 줄여 쓴다.
+  nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   profileMeta: { letterSpacing: 0.4 },
-  profileSocial: { marginTop: spacing.xs },
-  visitRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  visitText: { flexShrink: 1 },
-  visitAction: { fontSize: 10, letterSpacing: 0.4 },
-  profileWallet: { marginTop: spacing.xs },
+  // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
+  profileCount: { fontFamily: sans.semiBold },
   pressed: { opacity: 0.72 },
+
+  scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  walletMemo: { flex: 1, justifyContent: 'center', gap: spacing.sm, paddingHorizontal: spacing.md + 2 },
+  // 세 칸을 메모 폭에 고르게 편다 — 왼쪽에 몰리면 오른쪽이 빈 종이로 남는다.
+  walletRow: { flexDirection: 'row', gap: spacing.md },
+  walletCell: { flex: 1, gap: 2 },
+  walletValue: { fontSize: 17, lineHeight: 22 },
+  walletLabel: { fontSize: 11 },
+  visitNote: { width: 92, justifyContent: 'center', gap: spacing.xs, paddingHorizontal: 10 },
+  visitCount: { fontSize: 18, lineHeight: 22 },
+  visitText: { fontSize: 11, lineHeight: 15 },
+  visitAction: { fontSize: 9, letterSpacing: 1, marginTop: 2 },
 
   shelfSection: { gap: spacing.sm },
   shelfHeader: {
