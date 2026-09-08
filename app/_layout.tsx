@@ -93,6 +93,7 @@ export default function RootLayout() {
             <Stack.Screen name="chats" options={{ title: '채팅' }} />
             <Stack.Screen name="chat/[id]" options={{ title: '대화' }} />
             <Stack.Screen name="quote/[id]" options={{ title: '밑줄' }} />
+            <Stack.Screen name="quote/mine" options={{ title: '내가 오려둔 문장' }} />
             <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
             <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />

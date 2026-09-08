@@ -6,33 +6,32 @@ import Svg, { Path } from 'react-native-svg';
 
 import { libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
-import type { DailyStat, ReadingRecord } from '@/api/types';
+import type { ReadingRecord } from '@/api/types';
 import {
-  BrandHeader, MemoScrap, PaperScreen, StickyNote, TiltCover, useCoverEntrance,
+  BrandHeader, PaperScreen, TiltCover, useCoverEntrance,
 } from '@/components/collage';
-import { PostScrap } from '@/components/post/PostScrap';
+import { SocialCard } from '@/components/social/SocialCard';
 import {
   Card, Eyebrow, KeyValue, Rule, formatDuration,
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import { hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
-import { rowOffsetY, serif, tiltFor } from '@/theme/tokens';
+import { rowOffsetY, tiltFor } from '@/theme/tokens';
 
 /** 선반에 올리는 최대 권수 — 넘치면 '전체보기'로 넘긴다. */
 const SHELF_CAP = 10;
 /** 선반 표지 폭(px) — 시안 2e 기준. */
 const SHELF_COVER_W = 100;
-/** 월별 차트 막대 영역 높이(px). */
-const CHART_H = 76;
-/** 막대로 세우는 최대 개월 수 — 시안 2e 의 6칸. */
-const CHART_MONTHS = 6;
 /** 히트맵에 그리는 최근 일수 — 통계 응답이 더 짧으면 응답 길이를 따른다. */
 const HEATMAP_DAYS = 90;
 
 /**
- * 구역 4. 나 — 프로필 · 내 서재 선반 · 올해 읽은 시간 · 기록 · 설정 (시안 2e).
- * 설정 영역은 스킨만 바뀌었고 호출하는 API·상태는 이전과 동일하다.
+ * 구역 4. 나 — 프로필 · 내 서재 선반 · 기록 · 오려둔 문장/독후감 링크 · 소셜 (시안 2e).
+ *
+ * 올해 읽은 시간 차트는 뺐고 기록 카드만 남겼다. 오려둔 문장·독후감은 여기서 펼치지 않고
+ * 각자의 화면(/quote/mine · /post/mine)으로 보내는 링크만 둔다.
+ * 소셜(지갑·팔로우 코드·방문)은 따로 탭이었다가 이 화면 맨 아래로 돌아왔다 — 호출하는 API·상태는 그대로다.
  */
 export default function ProfileScreen() {
   const router = useRouter();
@@ -51,9 +50,8 @@ export default function ProfileScreen() {
   // 홈과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
   const reading = useQuery({ queryKey: ['library', 'READING'], queryFn: () => libraryApi.list('READING') });
   const want = useQuery({ queryKey: ['library', 'WANT_TO_READ'], queryFn: () => libraryApi.list('WANT_TO_READ') });
-  // 차트 헤더가 '올해' 총합을 말하므로 한 해를 덮는 365일을 받는다.
-  // 서버가 기간을 줄여 내려주면 받은 범위만 집계한다 — 이때 헤더 총합은 잘린 만큼 실제보다 적다.
-  // 히트맵은 이 응답의 최근 구간만 잘라 쓴다.
+  // 올해 읽은 시간 차트는 뺐지만 기록 카드의 값(총 독서시간·스트릭)은 그대로 두려고
+  // 범위를 줄이지 않았다 — 한 해를 덮는 365일을 그대로 받는다. 히트맵은 이 응답의 최근 구간만 잘라 쓴다.
   const stats = useQuery({ queryKey: ['stats', 365], queryFn: () => statsApi.summary(365) });
 
   // 읽는 중을 앞에 세우고 읽고 싶은 책을 뒤에 잇는다 — 선반은 '지금 손이 가는 순서'다.
@@ -199,14 +197,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={styles.block}>
-          <YearChart
-            daily={stats.data?.daily ?? []}
-            loading={stats.isLoading}
-            failed={!stats.isLoading && !stats.data}
-          />
-        </View>
-
         {stats.isLoading ? null : (
           <View style={styles.block}>
             <Card>
@@ -252,10 +242,11 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <MyQuotes />
+        <MyScraps />
 
-        <MyPosts />
-
+        <View style={styles.block}>
+          <SocialCard />
+        </View>
       </ScrollView>
     </PaperScreen>
   );
@@ -284,100 +275,60 @@ function PencilLine({ color }: { color: string }) {
 }
 
 /**
- * '내가 오려둔 문장' — 총 개수와 가장 최근 한 조각 (시안 2e).
+ * '내가 오려둔 문장'·'내 독후감' — 프로필에서는 목록을 펼치지 않고 각자의 화면으로 보내는 링크만 둔다.
  *
- * 목록 전체를 여기서 보여 주지 않는다. 총 개수(totalElements)만 세고 최신 한 건을 걸어 둔 뒤,
- * 나머지는 광장으로 넘긴다 — 그래서 size 1 이면 충분하다.
- * 0건이면 섹션을 통째로 감춘다.
+ * 개수는 size 1 응답의 totalElements 로 센다 — 목록은 /quote/mine · /post/mine 의 몫이라 그 이상은 받지 않는다.
+ * 서버가 totalElements 를 생략했거나 아직 못 받았으면 개수 없이 링크만 보인다. 0건이어도 링크는 남긴다 —
+ * 들어간 화면의 빈 상태가 첫 문장·첫 독후감을 권한다.
  */
-function MyQuotes() {
+function MyScraps() {
   const router = useRouter();
-  const { colors } = useTheme();
-  const mine = useQuery({ queryKey: ['quotes', 'mine'], queryFn: () => quoteApi.mine(0, 1) });
-
-  // 렌더 여부는 '최신 한 건이 있는가'로만 가른다 — 서버가 totalElements 를 생략해도
-  // 실제로 있는 문장이 사라지지 않는다. 개수는 값이 있을 때만 덧붙인다.
-  const latest = mine.data?.content?.[0];
-  const total = mine.data?.totalElements;
-  if (!latest) return null;
+  const quotes = useQuery({ queryKey: ['quotes', 'mine'], queryFn: () => quoteApi.mine(0, 1) });
+  const posts = useQuery({ queryKey: MY_POSTS_LATEST_KEY, queryFn: () => postApi.mine(0, 1) });
 
   return (
-    <View style={[styles.block, styles.scrapSection]}>
-      <Rule />
-      <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
-        내가 오려둔 문장{total != null ? ` ${total}` : ''}
-      </Text>
-      <View style={styles.scrapRow}>
-        <MemoScrap rotate={-1} style={styles.scrapFill}>
-          <Text numberOfLines={4} style={[styles.quoteText, { color: colors.text }]}>
-            {latest.content}
-          </Text>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.quoteMeta, { color: colors.textFaint }]}>
-            {latest.bookTitle}
-            {latest.page != null ? ` · ${latest.page}쪽` : ''}
-          </Text>
-        </MemoScrap>
-        <Pressable
-          onPress={() => router.navigate('/plaza')}
-          accessibilityRole="button"
-          accessibilityLabel={total != null ? `오려둔 문장 전부 보기, 총 ${total}개` : '오려둔 문장 전부 보기'}
-        >
-          <StickyNote rotate={1.5} style={styles.scrapAll}>
-            <Text style={[typeScale.label, styles.scrapAllLabel, { color: colors.onNote }]}>
-              전부{'\n'}보기
-            </Text>
-          </StickyNote>
-        </Pressable>
-      </View>
+    <View style={styles.block}>
+      <Card>
+        <LinkRow
+          label="내가 오려둔 문장"
+          count={quotes.data?.totalElements}
+          unit="개"
+          onPress={() => router.push('/quote/mine')}
+        />
+        <Rule />
+        <LinkRow
+          label="내 독후감"
+          count={posts.data?.totalElements}
+          unit="편"
+          onPress={() => router.push('/post/mine')}
+        />
+      </Card>
     </View>
   );
 }
 
-/**
- * '내 독후감' — 총 편수와 가장 최근 한 편 (바로 위 MyQuotes 와 같은 꼴).
- *
- * 비공개 글도 여기 걸린다 — 내 화면이고, 조각의 메타가 공개 범위를 밝힌다.
- * 목록은 /post/mine 의 몫이라 여기서는 size 1 이면 충분하다. 0편이면 섹션을 통째로 감춘다.
- */
-function MyPosts() {
-  const router = useRouter();
+/** 카드 안 한 줄 링크 — 왼쪽 제목, 오른쪽 'N개 →'. 개수를 모르면 '보기 →'. */
+function LinkRow({ label, count, unit, onPress }: {
+  label: string;
+  count?: number;
+  unit: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
-  const mine = useQuery({ queryKey: MY_POSTS_LATEST_KEY, queryFn: () => postApi.mine(0, 1) });
-
-  // MyQuotes 와 같은 규칙 — 렌더 여부는 '최신 한 편이 있는가'로만 가른다.
-  const latest = mine.data?.content?.[0];
-  const total = mine.data?.totalElements;
-  if (!latest) return null;
-
   return (
-    <View style={[styles.block, styles.scrapSection]}>
-      <Rule />
-      <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
-        내 독후감{total != null ? ` ${total}` : ''}
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={count != null ? `${label}, 총 ${count}${unit}` : label}
+      style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+    >
+      <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.linkLabel, { color: colors.text }]}>
+        {label}
       </Text>
-      <View style={styles.scrapRow}>
-        {/* 조각 스스로가 버튼이라 행을 또 감싸지 않는다 — 웹에서 버튼 안에 버튼이 들어가면 안 된다. */}
-        <View style={styles.scrapFill}>
-          <PostScrap
-            post={latest}
-            rotate={-1}
-            variant="profile"
-            onPress={() => router.push(`/post/${latest.id}`)}
-          />
-        </View>
-        <Pressable
-          onPress={() => router.push('/post/mine')}
-          accessibilityRole="button"
-          accessibilityLabel={total != null ? `내 독후감 전부 보기, 총 ${total}편` : '내 독후감 전부 보기'}
-        >
-          <StickyNote rotate={1.5} style={styles.scrapAll}>
-            <Text style={[typeScale.label, styles.scrapAllLabel, { color: colors.onNote }]}>
-              전부{'\n'}보기
-            </Text>
-          </StickyNote>
-        </Pressable>
-      </View>
-    </View>
+      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
+        {count != null ? `${count}${unit} →` : '보기 →'}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -438,143 +389,6 @@ function ShelfItem({ record, index, onPress }: {
       </Animated.View>
     </View>
   );
-}
-
-/**
- * 올해 읽은 시간 — 통계 응답의 일별 기록을 월 버킷으로 접어 막대로 세운다.
- *
- * 제목이 '올해'라고 말하므로 집계도 **올해 것만** 센다. 헤더 총합은 올해 버킷 전체 합이고,
- * 막대는 시안대로 마지막 6칸까지만 보여 준다 — 즉 1~3월이 화면에서 잘려도 총합에는 들어 있다.
- * 서버가 기간을 줄여 내려주면(클램프) 받은 범위만 집계되므로 총합이 실제보다 적을 수 있다.
- */
-function YearChart({ daily, loading, failed }: {
-  daily: DailyStat[];
-  loading?: boolean;
-  failed?: boolean;
-}) {
-  const { colors } = useTheme();
-  const thisYear = String(new Date().getFullYear());
-  const yearMonths = bucketByMonth(daily).filter((m) => m.key.startsWith(thisYear));
-
-  // 헤더는 올해 전체, 막대는 마지막 6칸.
-  const totalSec = yearMonths.reduce((sum, m) => sum + m.durationSec, 0);
-  const months = yearMonths.slice(-CHART_MONTHS);
-
-  const max = Math.max(1, ...months.map((m) => m.durationSec));
-  const last = months[months.length - 1];
-  // 최상급은 헤더와 같은 연 스코프로 고른다 — 헤더가 올해 전체를 말하는데 '가장 길었던 달'만
-  // 표시 6칸에서 뽑으면 잘려 나간 달이 더 길 때 거짓말이 된다.
-  const best = yearMonths.reduce(
-    (top, m) => (m.durationSec > top.durationSec ? m : top),
-    yearMonths[0] ?? { key: '', month: 0, durationSec: 0 },
-  );
-
-  // 이번 달이 표시 구간 최저면 회복을 권한다. 아니면 가장 길었던 달을 짚어 준다.
-  const lastIsLowest = last != null && months.length >= 2 && months.every((m) => m.durationSec >= last.durationSec);
-  const caption = last == null
-    ? null
-    : lastIsLowest
-      ? `${last.month}월은 아직 ${Math.floor(last.durationSec / 60)}분입니다. 회복 가능합니다.`
-      : `가장 길었던 달은 ${best.month}월, ${roughDuration(best.durationSec)}입니다.`;
-
-  const a11y = months.length
-    ? `월별 독서 시간. ${months.map((m) => `${m.month}월 ${formatDuration(m.durationSec)}`).join(', ')}`
-    : '월별 독서 시간 기록이 없습니다.';
-
-  return (
-    <Card style={styles.chartCard}>
-      <View style={styles.chartHeader}>
-        <Text style={[styles.chartTitle, { color: colors.text }]}>올해 읽은 시간</Text>
-        {/* 아직 못 세었거나 못 불러온 상태에서는 수치를 말하지 않는다 — 바로 아래 실패 문구와 어긋난다.
-            값이 있을 때는 캡션과 같은 포맷 규칙(1시간 미만을 '0시간'이라 적지 않는다). */}
-        <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-          {loading || failed ? '—' : roughDuration(totalSec)}
-        </Text>
-      </View>
-
-      {loading || failed || months.length === 0 ? (
-        <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-          {loading
-            ? '기록을 세는 중입니다.'
-            // 기록 카드와 같은 문구를 쓴다 — 한 화면에서 실패를 두 가지로 말하지 않는다.
-            : failed
-              ? '통계를 불러오지 못했습니다.'
-              : '아직 쌓인 기록이 없습니다.'}
-        </Text>
-      ) : (
-        <>
-          <View accessible accessibilityLabel={a11y} style={styles.chartRow}>
-            {months.map((m) => (
-              <View key={m.key} style={styles.chartCol}>
-                <View style={styles.barSlot}>
-                  <View
-                    style={[
-                      styles.bar,
-                      {
-                        // 값이 0인 달도 바닥 선으로 남긴다 — 빈 달이 사라지면 리듬이 끊긴다.
-                        height: Math.max(2, Math.round((m.durationSec / max) * CHART_H)),
-                        backgroundColor: colors.accent,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={[typeScale.monoLabel, styles.barLabel, { color: colors.textFaint }]}>
-                  {m.month}월
-                </Text>
-              </View>
-            ))}
-          </View>
-          {caption ? (
-            <Text style={[typeScale.monoLabel, styles.chartCaption, { color: colors.textFaint }]}>
-              {caption}
-            </Text>
-          ) : null}
-        </>
-      )}
-    </Card>
-  );
-}
-
-type MonthBucket = { key: string; month: number; durationSec: number };
-
-/** 1시간 미만이면 분으로 말한다 — 'O시간'으로 반올림해 0시간이라 적지 않기 위해서. */
-function roughDuration(seconds: number): string {
-  return seconds >= 3600 ? `${Math.round(seconds / 3600)}시간` : `${Math.floor(seconds / 60)}분`;
-}
-
-/**
- * 일별 기록을 'YYYY-MM' 버킷으로 합산한다.
- *
- * 버킷은 **응답의 첫 날과 끝 날 사이 모든 달**을 먼저 만들어 놓고 값을 더한다.
- * 서버가 세션이 있는 날만 내려주도록 바뀌어도 기록 없는 달이 0으로 남아 라벨이 사라지지 않는다.
- */
-function bucketByMonth(daily: DailyStat[]): MonthBucket[] {
-  if (daily.length === 0) return [];
-
-  const keys = daily.map((day) => day.date.slice(0, 7));
-  const first = keys.reduce((min, key) => (key < min ? key : min));
-  const last = keys.reduce((max, key) => (key > max ? key : max));
-
-  const buckets = new Map<string, MonthBucket>();
-  let year = Number(first.slice(0, 4));
-  let month = Number(first.slice(5, 7));
-  // 최대 24칸 — 날짜가 깨져 있어도 무한 루프에 빠지지 않게 상한을 둔다.
-  for (let guard = 0; guard < 24; guard++) {
-    const key = `${year}-${String(month).padStart(2, '0')}`;
-    buckets.set(key, { key, month, durationSec: 0 });
-    if (key >= last) break;
-    month += 1;
-    if (month > 12) {
-      month = 1;
-      year += 1;
-    }
-  }
-
-  for (const day of daily) {
-    const bucket = buckets.get(day.date.slice(0, 7));
-    if (bucket) bucket.durationSec += day.durationSec;
-  }
-  return [...buckets.values()];
 }
 
 function StatCell({ label, value }: { label: string; value: string }) {
@@ -729,17 +543,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
 
-  // 책상에 비스듬히 놓인 종이 한 장 — 기울기는 아주 얕게만 준다.
-  chartCard: { gap: spacing.md, transform: [{ rotate: '-0.6deg' }] },
-  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  chartTitle: { ...typeScale.titleSerif, fontSize: 16, lineHeight: 22 },
-  chartRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-end' },
-  chartCol: { flex: 1, alignItems: 'center', gap: 6 },
-  barSlot: { height: CHART_H, width: '100%', justifyContent: 'flex-end' },
-  bar: { width: '100%', opacity: 0.85 },
-  barLabel: { fontSize: 9, letterSpacing: 0.4 },
-  chartCaption: { fontSize: 9, letterSpacing: 0.4, lineHeight: 14 },
-
   statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
   statCell: { flex: 1, gap: 3 },
   statValue: { fontSize: 18 },
@@ -756,11 +559,12 @@ const styles = StyleSheet.create({
   },
   legendCell: { width: 11, height: 11, borderRadius: radius.sm },
 
-  scrapSection: { gap: spacing.md },
-  scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
-  scrapFill: { flex: 1 },
-  quoteText: { fontFamily: serif.regular, fontSize: 13, lineHeight: 21 },
-  quoteMeta: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
-  scrapAll: { width: 66, alignItems: 'center', justifyContent: 'center' },
-  scrapAllLabel: { fontSize: 11, lineHeight: 15, textAlign: 'center' },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    minHeight: 44,
+  },
+  linkLabel: { flexShrink: 1 },
 });

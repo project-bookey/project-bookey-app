@@ -7,7 +7,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useTheme } from '@/theme';
 import { hairline, layout, radius, spacing, typeScale } from '@/theme/tokens';
 
-export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'me' | 'social' | 'settings';
+export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'me' | 'settings';
 
 /**
  * 하단 구역 네비. 탐색은 서가의 검색 진입점이라 탭으로 두지 않는다.
@@ -18,7 +18,6 @@ const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[
   { key: 'shelf', label: '서가', path: '/home', route: 'home' },
   { key: 'clubs', label: '모임', path: '/clubs', route: 'clubs' },
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
-  { key: 'social', label: '소셜', path: '/social', route: 'social' },
   { key: 'settings', label: '설정', path: '/settings', route: 'settings' },
 ];
 
@@ -166,14 +165,6 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Circle cx={12} cy={8} r={3.25} {...stroke} />
           <Path d="M5.5 19c1-3.5 3.3-5.25 6.5-5.25S17.5 15.5 18.5 19" {...stroke} />
-        </Svg>
-      );
-    case 'social':
-      return (
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-          <Path d="M5 7h14v8H9l-4 3z" {...stroke} />
-          <Path d="M8.5 10.5h7" {...stroke} />
-          <Path d="M8.5 13h4.5" {...stroke} />
         </Svg>
       );
     case 'settings':
