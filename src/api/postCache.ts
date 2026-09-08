@@ -10,7 +10,7 @@ import type { Page, Post } from '@/api/types';
  * 키와 패치를 여기 한 곳에 둔다(밑줄의 quoteCache 와 같은 꼴).
  */
 export const postFeedKey = ['posts', 'feed'] as const;
-/** 홈 '오려둔 글' 스포트라이트의 독후감 몫(HomeScraps) — 피드와 갈라 둔 키(Page 하나). */
+/** 홈 '오늘의 글' 스포트라이트의 독후감 몫(HomeScraps) — 피드와 갈라 둔 키(Page 하나). */
 export const POST_HOME_KEY = ['posts', 'home'] as const;
 /** 책별 독후감(도서 상세 독후감 탭). */
 export const bookPostsKey = (bookId: number) => ['posts', 'book', bookId] as const;
