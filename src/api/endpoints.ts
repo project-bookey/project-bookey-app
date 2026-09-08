@@ -176,6 +176,8 @@ export const postcardApi = {
   /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 성립하면 자동 맞팔로우. */
   reply: (postcardId: number, body: string) =>
     api<PostcardView>(`/api/v1/postcards/${postcardId}/reply`, { method: 'POST', body: { body } }),
+  remove: (postcardId: number) =>
+    api<void>(`/api/v1/postcards/${postcardId}`, { method: 'DELETE' }),
 };
 
 export const followApi = {
@@ -200,6 +202,7 @@ export const chatApi = {
     api<ChatMessages>(`/api/v1/chats/${chatId}/messages`, { query: { beforeId } }),
   send: (chatId: number, body: string) =>
     api<ChatMessage>(`/api/v1/chats/${chatId}/messages`, { method: 'POST', body: { body } }),
+  remove: (chatId: number) => api<void>(`/api/v1/chats/${chatId}`, { method: 'DELETE' }),
 };
 
 export const profileApi = {
