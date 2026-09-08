@@ -8,7 +8,7 @@ import { libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { ReadingRecord } from '@/api/types';
 import {
-  BrandHeader, MemoScrap, PaperScreen, StickyNote, TiltCover, useCoverEntrance,
+  BrandHeader, MemoScrap, PaperScreen, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { SocialCard } from '@/components/social/SocialCard';
 import {
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
             </View>
             {/* 사진 모서리에 붙는 민트 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다. */}
             <View style={[styles.avatarBadge, { backgroundColor: colors.accent, borderColor: colors.bg }]}>
-              <Text style={[styles.avatarBadgeText, { color: colors.onAccent }]}>+</Text>
+              <PlusGlyph size={12} stroke={2.5} color={colors.onAccent} />
             </View>
           </Pressable>
           <View style={styles.profileText}>
@@ -527,7 +527,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarBadgeText: { fontSize: 19, lineHeight: 21, fontWeight: '800' },
   avatarInitial: { ...typeScale.titleSerif, fontSize: 34, lineHeight: 42 },
   profileText: { flex: 1, gap: 5 },
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
