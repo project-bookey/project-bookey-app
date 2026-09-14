@@ -5,7 +5,9 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
-import type { Checkpoint, ClubHome, ClubPreview, MemberProgress, NudgeMessageKey } from '@/api/types';
+import type {
+  Checkpoint, ClubHome, ClubPreview, ClubSeatPolicy, MemberProgress, NudgeMessageKey,
+} from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, Tag, Toggle,
@@ -161,6 +163,18 @@ export default function ClubHomeScreen() {
               onPress={() => router.push(`/club/${clubId}/posts`)}
             />
           </View>
+          {/* 구버전 서버는 seatPolicy 를 내리지 않는다 — 배포 순서가 어긋나도 홈이 깨지지 않게 줄만 숨긴다. */}
+          {data.seatPolicy && !ended ? (
+            <>
+              <Rule />
+              <SeatRow
+                club={data}
+                policy={data.seatPolicy}
+                colors={colors}
+                onExpand={() => router.push(`/club/${clubId}/seats`)}
+              />
+            </>
+          ) : null}
         </Card>
 
         {data.nextCheckpoint ? (
@@ -265,6 +279,63 @@ function SummaryCell({ label, value, colors }: {
     <View style={styles.summaryCell}>
       <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
       <Numeral style={[styles.summaryValue, { color: colors.text }]}>{value}</Numeral>
+    </View>
+  );
+}
+
+/**
+ * 자리 줄 — 멤버(채움) · 빈자리(테두리) · 아직 열지 않은 자리(점선)를 점으로 보여준다.
+ * 자리 늘리기는 호스트만 — 멤버에게는 가득 찼을 때 안내만 한다.
+ */
+function SeatRow({ club, policy, colors, onExpand }: {
+  club: ClubHome;
+  policy: ClubSeatPolicy;
+  colors: ColorTokens;
+  onExpand: () => void;
+}) {
+  const full = club.memberCount >= club.memberLimit;
+  const expandable = club.memberLimit < policy.maxLimit;
+  const isHost = club.myRole === 'HOST';
+  const open = Math.max(0, club.memberLimit - club.memberCount);
+  // 예전 규칙으로 만든 큰 모임(정원 > 최대 정원)은 점이 너무 많아지므로 문구만 보여준다.
+  const showDots = club.memberLimit <= policy.maxLimit;
+  const dots = showDots
+    ? Array.from({ length: policy.maxLimit }, (_, i) =>
+        i < club.memberCount ? 'member' : i < club.memberLimit ? 'open' : 'locked')
+    : [];
+
+  return (
+    <View style={styles.seatRow}>
+      {showDots ? (
+        <View
+          style={styles.seatDots}
+          accessible
+          accessibilityLabel={`정원 ${club.memberLimit}명 중 ${club.memberCount}명 참가`}
+        >
+          {dots.map((kind, i) => (
+            <View
+              key={i}
+              style={[
+                styles.seatDot,
+                kind === 'member' && { backgroundColor: colors.accent },
+                kind === 'open' && { borderWidth: 1, borderColor: colors.accent },
+                kind === 'locked' && { borderWidth: 1, borderStyle: 'dashed', borderColor: colors.lineStrong },
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+          {full ? '자리가 가득 찼어요' : `${open}자리 비었어요`}
+        </Text>
+        {!isHost && full && expandable ? (
+          <Text style={[typeScale.caption, { color: colors.textFaint }]}>호스트만 자리를 늘릴 수 있어요</Text>
+        ) : null}
+      </View>
+      {isHost && expandable ? (
+        <Button label="자리 늘리기" size="sm" variant={full ? 'primary' : 'outline'} onPress={onExpand} />
+      ) : null}
     </View>
   );
 }
@@ -505,6 +576,9 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 14 },
   vRule: { width: hairline, marginHorizontal: spacing.md },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  seatRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  seatDots: { flexDirection: 'row', gap: spacing.xs },
+  seatDot: { width: 10, height: 10, borderRadius: radius.pill },
   code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 5 },
   checkpointHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   checkpointTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },

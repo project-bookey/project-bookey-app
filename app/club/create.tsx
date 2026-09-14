@@ -10,6 +10,12 @@ import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Button, Card, Eyebrow, Field, Rule, Segmented, Toggle } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
+/** 무료 정원은 3명까지 — 더 필요하면 만든 뒤 모임 홈에서 책갈피로 자리를 늘린다(서버가 같은 상한을 검사한다). */
+const MEMBER_LIMITS = [
+  { value: '2', label: '2명' },
+  { value: '3', label: '3명' },
+] as const;
+
 const DURATIONS = [
   { value: '2', label: '2주' },
   { value: '4', label: '4주' },
@@ -27,7 +33,7 @@ export default function ClubCreateScreen() {
   const [description, setDescription] = useState('');
   const [bookId, setBookId] = useState<number | null>(null);
   const [weeks, setWeeks] = useState<'2' | '4' | '6' | '8'>('4');
-  const [memberLimit, setMemberLimit] = useState('6');
+  const [memberLimit, setMemberLimit] = useState<'2' | '3'>('3');
   const [autoCheckpoints, setAutoCheckpoints] = useState(true);
   const [isPublic, setIsPublic] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +63,7 @@ export default function ClubCreateScreen() {
         startsAt: toIso(today),
         endsAt: toIso(endsAt),
         visibility: isPublic ? 'PUBLIC' : 'CODE_ONLY',
-        memberLimit: Number(memberLimit) || 6,
+        memberLimit: Number(memberLimit),
         autoCheckpoints,
       }),
     onSuccess: (club) => {
@@ -155,13 +161,19 @@ export default function ClubCreateScreen() {
           </Text>
         </View>
 
-        <Field
-          label="정원"
-          value={memberLimit}
-          onChangeText={(text) => setMemberLimit(text.replace(/[^0-9]/g, ''))}
-          keyboardType="number-pad"
-          hint="2~50명. 소규모일수록 완독률이 높다는 가설을 검증 중입니다."
-        />
+        <View>
+          <Eyebrow>정원</Eyebrow>
+          <View style={{ marginTop: spacing.sm }}>
+            <Segmented
+              options={MEMBER_LIMITS.map((m) => ({ value: m.value, label: m.label }))}
+              value={memberLimit}
+              onChange={(v) => setMemberLimit(v as typeof memberLimit)}
+            />
+          </View>
+          <Text style={[styles.helper, { color: colors.textFaint }]}>
+            호스트 포함 3명까지 무료예요. 더 필요하면 모임을 만든 뒤 책갈피로 자리를 늘릴 수 있어요.
+          </Text>
+        </View>
 
         <Card style={{ gap: spacing.md }}>
           <Toggle

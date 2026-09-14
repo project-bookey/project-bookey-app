@@ -58,11 +58,12 @@
 
 - **설정** — `BookeyProperties.Club` 에 `freeMemberLimit: 3`, `seatCostBookmarks: 4` 를 더하고, 지금 아무도 읽지 않는
   `maxMemberLimit` 을 50 → **6** 으로 바꿔 실제로 쓴다. `defaultMemberLimit` 은 3.
-- **마이그레이션 `V20__club_seats.sql`** — DB CHECK 는 `2..50` 그대로 둔다(기존 모임 보호, 아래 "기존 모임"). 컬럼 추가 없음 —
+- **마이그레이션 없음** — DB CHECK 는 `2..50` 그대로 둔다(기존 모임 보호, 아래 "기존 모임"). 컬럼 추가도 없다 —
   구매 이력은 원장이 맡는다.
-- **생성** — `CreateClubRequest.memberLimit` 를 `@Min(2) @Max(3)` 로 좁히고, 서비스에서도 `freeMemberLimit` 초과를 `INVALID_REQUEST` 로 막는다.
+- **생성** — `CreateClubRequest.memberLimit` 는 `@Min(2)` 만 두고, 상한은 서비스가 `freeMemberLimit` 설정으로 검사해 `INVALID_REQUEST` 로 막는다(책 조회 전).
 - **수정** — `UpdateClubRequest.memberLimit` 를 제거한다. 올리면 결제를 우회하고, 내리면 산 자리를 버리는 경로가 되기 때문이다.
-- **자리 구매 API** — `POST /api/v1/clubs/{clubId}/seats`, 본문 `{ "targetLimit": 4 | 5 | 6 }`.
+- **자리 구매 API** — `POST /api/v1/clubs/{clubId}/seats`, 본문 `{ "targetLimit": 4 | 5 | 6 }`. `ClubSeatService` 가 맡고,
+  책갈피 차감은 `WalletService.spendBookmarks`(잠근 지갑 + 원장) 공용 경로로 한다.
   1. `requireHost` → `CLUB_NOT_HOST`
   2. `club.status.isOver()` → `CLUB_ENDED`
   3. `targetLimit <= memberLimit` 또는 `> maxMemberLimit` → `INVALID_REQUEST`
@@ -74,7 +75,6 @@
   돈이 걸린 정원이 되었으므로 기존 초과 참가 버그를 이번에 같이 막는다.
 - **enum** — `WalletTransactionKind.CLUB_SEAT` 추가(`kind` 는 VARCHAR, DB CHECK 없음).
 - **조회 필드** — `ClubHomeView` 뒤에 `seatPolicy { freeLimit, maxLimit, costPerSeat }` 를 더한다. 앱이 가격·상한을 하드코딩하지 않게 한다.
-  `ClubPreview.joinBlockedReason` 은 `CLUB_FULL` 일 때 "자리가 가득 찼어요" 로 맞춘다.
 - **레이트리밋** — `club:seat:{userId}` 10/시간.
 
 기존 모임: 정원이 3을 넘는 기존 모임은 **그대로 둔다**(유예). 새 규칙은 생성·자리 구매 경로에서만 적용되고, DB CHECK 를 좁히지 않는 이유가 이것이다.
@@ -114,7 +114,7 @@
 새 테이블 대신 `club_posts` 에 `type=LOG` 를 더한다. 스포일러 가리기(`isMaskedFor`)·공개(`reveal`)·반응·신고·자동 숨김·
 `CLUB_ENDED` 차단·레이트리밋을 전부 그대로 얻는다.
 
-**마이그레이션 `V21__club_logs.sql`**
+**마이그레이션 `V20__club_logs.sql`**
 
 | 변경 | 내용 |
 |---|---|
@@ -196,8 +196,8 @@
 
 | 단계 | 백엔드 | 앱 | 비고 |
 |---|---|---|---|
-| 1 | `feature/club-seats` (V20) | `feature/club-seats` | 작고 독립적. 책갈피 결제 전에는 어드민 지급으로 검증 |
-| 2 | `feature/club-logs` (V21) | `feature/club-logs` | 1과 무관하게 진행 가능 |
+| 1 ✅ | `feature/club-seats` (마이그레이션 없음) | `feature/club-seats` | 2026-09-14 구현. 책갈피 결제 전에는 DB·어드민 지급으로 검증 |
+| 2 | `feature/club-logs` (V20) | `feature/club-logs` | 1과 무관하게 진행 가능 |
 | 3 | `feature/club-log-week` | `feature/club-log-week` | 네이티브 의존성 추가 |
 
 각 단계는 백엔드 먼저 머지 → 앱에서 `npm run types` → 타입 diff 커밋 → 화면 작업 순서로 간다.

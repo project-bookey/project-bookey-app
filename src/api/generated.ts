@@ -40,6 +40,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/subscriptions/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 구독 결제 검증 — IAP 영수증 또는 Toss paymentKey 검증 후 구독 활성화 */
+        post: operations["verify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/subscriptions/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 구독 결제 시작 — 결제 SDK/웹 위젯에 넘길 주문 계약 */
+        post: operations["checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{sessionId}/end": {
         parameters: {
             query?: never;
@@ -523,6 +557,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 자리 늘리기 (호스트) — 자리당 책갈피 차감, 모임이 끝나면 늘린 자리는 사라진다 */
+        post: operations["expandSeats"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/rotate-code": {
         parameters: {
             query?: never;
@@ -654,6 +705,23 @@ export interface paths {
         put?: never;
         /** 멤버 강퇴 (호스트) — 사유 필수 */
         post: operations["kick"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 공개 모임 참가 — 추천 모임 상세에서 코드 없이 참가 */
+        post: operations["joinPublic"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1609,6 +1677,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/onboarding/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 온보딩 선호 카테고리 — 실제 책 메타 기반 (비회원) */
+        get: operations["onboardingCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/onboarding/books": {
         parameters: {
             query?: never;
@@ -1925,6 +2010,23 @@ export interface paths {
         };
         /** 모임 결산 — 완독률 · 총 시간 · 베스트 인용 */
         get: operations["result"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 공개 모임 미리보기 — 추천 모임 상세 진입용 */
+        get: operations["previewById"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2445,6 +2547,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postcards/{postcardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 엽서 삭제 — 보낸 사람 또는 받은 사람만 */
+        delete: operations["delete_11"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/follows/{userId}": {
         parameters: {
             query?: never;
@@ -2474,6 +2593,23 @@ export interface paths {
         post?: never;
         /** 모임 나가기 */
         delete: operations["leave"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{chatId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 채팅방 삭제 — 참가자만, 메시지도 함께 삭제된다 */
+        delete: operations["delete_12"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2552,6 +2688,34 @@ export interface components {
             subscriptionActive: boolean;
             /** Format: int32 */
             subscriptionPriceKrw: number;
+        };
+        SubscriptionVerifyRequest: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            productId: string;
+            orderId?: string;
+            /** Format: int32 */
+            amountKrw?: number;
+            paymentKey?: string;
+            receiptData?: string;
+            originalTransactionId?: string;
+        };
+        SubscriptionCheckoutRequest: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+        };
+        SubscriptionCheckoutView: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            productId: string;
+            orderId: string;
+            /** Format: int32 */
+            amountKrw: number;
+            customerKey: string;
+            checkoutUrl?: string;
+            tossClientKey?: string;
+            successUrl?: string;
+            failUrl?: string;
         };
         EndRequest: {
             /** Format: int32 */
@@ -3076,6 +3240,15 @@ export interface components {
             members: components["schemas"]["MemberProgressView"][];
             checkpoints: components["schemas"]["CheckpointView"][];
             nextCheckpoint?: components["schemas"]["CheckpointView"];
+            seatPolicy: components["schemas"]["ClubSeatPolicy"];
+        };
+        ClubSeatPolicy: {
+            /** Format: int32 */
+            freeLimit: number;
+            /** Format: int32 */
+            maxLimit: number;
+            /** Format: int32 */
+            costPerSeat: number;
         };
         MemberProgressView: {
             /** Format: int64 */
@@ -3103,6 +3276,16 @@ export interface components {
         TransferHostRequest: {
             /** Format: int64 */
             userId: number;
+        };
+        ExpandSeatsRequest: {
+            /** Format: int32 */
+            targetLimit: number;
+        };
+        ClubSeatResult: {
+            /** Format: int32 */
+            memberLimit: number;
+            /** Format: int32 */
+            bookmarkBalance: number;
         };
         CreateClubPostRequest: {
             /** @enum {string} */
@@ -3158,6 +3341,10 @@ export interface components {
             /** Format: int64 */
             userId: number;
             reason: string;
+        };
+        JoinPublicRequest: {
+            adoptTargetDate?: boolean;
+            shareProgress?: boolean;
         };
         JoinRequest: {
             code: string;
@@ -3433,8 +3620,6 @@ export interface components {
             description?: string;
             /** @enum {string} */
             visibility?: "CODE_ONLY" | "LINK" | "PUBLIC";
-            /** Format: int32 */
-            memberLimit?: number;
             /** Format: date */
             endsAt?: string;
             allowNudge?: boolean;
@@ -3688,7 +3873,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -3823,18 +4008,6 @@ export interface components {
             bestQuotes: string[];
             topDiscussant?: string;
         };
-        PageResponseClubPostView: {
-            content?: components["schemas"]["ClubPostView"][];
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            hasNext?: boolean;
-        };
         ClubPreview: {
             /** Format: int64 */
             id: number;
@@ -3855,6 +4028,18 @@ export interface components {
             alreadyMember: boolean;
             joinable: boolean;
             joinBlockedReason?: string;
+        };
+        PageResponseClubPostView: {
+            content?: components["schemas"]["ClubPostView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
         };
         PageResponseClubPreview: {
             content?: components["schemas"]["ClubPreview"][];
@@ -4176,6 +4361,9 @@ export type SchemaBannerUpsertRequest = components['schemas']['BannerUpsertReque
 export type SchemaBannerAdminView = components['schemas']['BannerAdminView'];
 export type SchemaExchangeRequest = components['schemas']['ExchangeRequest'];
 export type SchemaWalletView = components['schemas']['WalletView'];
+export type SchemaSubscriptionVerifyRequest = components['schemas']['SubscriptionVerifyRequest'];
+export type SchemaSubscriptionCheckoutRequest = components['schemas']['SubscriptionCheckoutRequest'];
+export type SchemaSubscriptionCheckoutView = components['schemas']['SubscriptionCheckoutView'];
 export type SchemaEndRequest = components['schemas']['EndRequest'];
 export type SchemaClubProgressEcho = components['schemas']['ClubProgressEcho'];
 export type SchemaSessionEndResult = components['schemas']['SessionEndResult'];
@@ -4216,13 +4404,17 @@ export type SchemaCheckpointRequest = components['schemas']['CheckpointRequest']
 export type SchemaCreateClubRequest = components['schemas']['CreateClubRequest'];
 export type SchemaCheckpointView = components['schemas']['CheckpointView'];
 export type SchemaClubHomeView = components['schemas']['ClubHomeView'];
+export type SchemaClubSeatPolicy = components['schemas']['ClubSeatPolicy'];
 export type SchemaMemberProgressView = components['schemas']['MemberProgressView'];
 export type SchemaTransferHostRequest = components['schemas']['TransferHostRequest'];
+export type SchemaExpandSeatsRequest = components['schemas']['ExpandSeatsRequest'];
+export type SchemaClubSeatResult = components['schemas']['ClubSeatResult'];
 export type SchemaCreateClubPostRequest = components['schemas']['CreateClubPostRequest'];
 export type SchemaClubPostView = components['schemas']['ClubPostView'];
 export type SchemaReactionRequest = components['schemas']['ReactionRequest'];
 export type SchemaNudgeRequest = components['schemas']['NudgeRequest'];
 export type SchemaKickRequest = components['schemas']['KickRequest'];
+export type SchemaJoinPublicRequest = components['schemas']['JoinPublicRequest'];
 export type SchemaJoinRequest = components['schemas']['JoinRequest'];
 export type SchemaOpenChatRequest = components['schemas']['OpenChatRequest'];
 export type SchemaChatSummaryView = components['schemas']['ChatSummaryView'];
@@ -4292,8 +4484,8 @@ export type SchemaPageResponseFollowUserView = components['schemas']['PageRespon
 export type SchemaClubSummaryView = components['schemas']['ClubSummaryView'];
 export type SchemaPageResponseClubSummaryView = components['schemas']['PageResponseClubSummaryView'];
 export type SchemaClubResultView = components['schemas']['ClubResultView'];
-export type SchemaPageResponseClubPostView = components['schemas']['PageResponseClubPostView'];
 export type SchemaClubPreview = components['schemas']['ClubPreview'];
+export type SchemaPageResponseClubPostView = components['schemas']['PageResponseClubPostView'];
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
 export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
 export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
@@ -4385,6 +4577,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["WalletView"];
+                };
+            };
+        };
+    };
+    verify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    checkout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionCheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SubscriptionCheckoutView"];
                 };
             };
         };
@@ -5231,6 +5469,32 @@ export interface operations {
             };
         };
     };
+    expandSeats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpandSeatsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubSeatResult"];
+                };
+            };
+        };
+    };
     rotateCode: {
         parameters: {
             query?: never;
@@ -5452,6 +5716,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    joinPublic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JoinPublicRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubHomeView"];
+                };
             };
         };
     };
@@ -7061,6 +7351,26 @@ export interface operations {
             };
         };
     };
+    onboardingCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string[];
+                };
+            };
+        };
+    };
     onboardingBooks: {
         parameters: {
             query?: {
@@ -7517,6 +7827,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ClubResultView"];
+                };
+            };
+        };
+    };
+    previewById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubPreview"];
                 };
             };
         };
@@ -8237,6 +8569,26 @@ export interface operations {
             };
         };
     };
+    delete_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postcardId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     unfollow: {
         parameters: {
             query?: never;
@@ -8263,6 +8615,26 @@ export interface operations {
             header?: never;
             path: {
                 clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: number;
             };
             cookie?: never;
         };

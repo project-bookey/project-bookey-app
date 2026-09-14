@@ -1,7 +1,7 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
-  Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSummary,
+  Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary,
   CreatePost, CreateQuote, CreateQuoteComment, CreateReviewComment,
   EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
@@ -127,6 +127,9 @@ export const clubApi = {
     api<void>(`/api/v1/clubs/${clubId}/sharing`, { method: 'PATCH', body }),
   leave: (clubId: number) => api<void>(`/api/v1/clubs/${clubId}/me`, { method: 'DELETE' }),
   end: (clubId: number) => api<void>(`/api/v1/clubs/${clubId}/end`, { method: 'POST' }),
+  /** 자리 늘리기 (호스트) — 목표 정원까지 늘어나는 자리만큼 책갈피를 쓴다. */
+  expandSeats: (clubId: number, targetLimit: number) =>
+    api<ClubSeatResult>(`/api/v1/clubs/${clubId}/seats`, { method: 'POST', body: { targetLimit } }),
   nudge: (clubId: number, toUserId: number, messageKey: NudgeMessageKey) =>
     api<{ remainingToday: number }>(`/api/v1/clubs/${clubId}/nudges`, {
       method: 'POST',
