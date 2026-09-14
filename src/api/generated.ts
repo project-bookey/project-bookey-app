@@ -694,6 +694,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 읽기로그 하루 보드 — 그날 조각 + 모임 합산(date 는 KST, 비우면 오늘) */
+        get: operations["day"];
+        put?: never;
+        /** 조각 남기기 — 사진 한 장(선택) + 한 줄, 쪽에 붙이면 그 쪽까지 읽은 멤버에게만 보인다 */
+        post: operations["create_8"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/kick": {
         parameters: {
             query?: never;
@@ -808,7 +826,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 챌린지 생성 — 즉시 시작 */
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1134,7 +1152,7 @@ export interface paths {
         get: operations["list_5"];
         put?: never;
         /** 에디터 픽 추가 */
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1203,7 +1221,7 @@ export interface paths {
         get: operations["list_6"];
         put?: never;
         /** 배너 생성 */
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1254,7 +1272,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 관리자 계정 생성 (SUPER_ADMIN) */
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2018,6 +2036,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/reading-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 지금 읽는 중 — 열린 독서 세션이 있는 멤버(진척 비공개·나 제외) */
+        get: operations["readingNow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/preview": {
         parameters: {
             query?: never;
@@ -2048,6 +2083,23 @@ export interface paths {
         post?: never;
         /** 삭제 (작성자 또는 운영자) */
         delete: operations["delete_6"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/logs/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 요일 스트립 — 날짜마다 조각 수(최대 14일) */
+        get: operations["days"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3289,7 +3341,7 @@ export interface components {
         };
         CreateClubPostRequest: {
             /** @enum {string} */
-            type?: "DISCUSSION" | "QUESTION" | "QUOTE" | "NOTICE" | "CHECKPOINT";
+            type?: "DISCUSSION" | "QUESTION" | "QUOTE" | "NOTICE" | "CHECKPOINT" | "LOG";
             body: string;
             /** Format: int32 */
             anchorPage?: number;
@@ -3306,7 +3358,7 @@ export interface components {
             /** Format: int64 */
             parentId?: number;
             /** @enum {string} */
-            type: "DISCUSSION" | "QUESTION" | "QUOTE" | "NOTICE" | "CHECKPOINT";
+            type: "DISCUSSION" | "QUESTION" | "QUOTE" | "NOTICE" | "CHECKPOINT" | "LOG";
             /** Format: int64 */
             authorId: number;
             authorNickname: string;
@@ -3326,6 +3378,11 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             comments: components["schemas"]["ClubPostView"][];
+            imageUrl?: string;
+            /** Format: int32 */
+            imageWidth?: number;
+            /** Format: int32 */
+            imageHeight?: number;
         };
         ReactionRequest: {
             /** @enum {string} */
@@ -4008,6 +4065,14 @@ export interface components {
             bestQuotes: string[];
             topDiscussant?: string;
         };
+        ReadingNowView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            /** Format: date-time */
+            startedAt: string;
+        };
         ClubPreview: {
             /** Format: int64 */
             id: number;
@@ -4040,6 +4105,28 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             hasNext?: boolean;
+        };
+        ClubLogDayView: {
+            /** Format: date */
+            date: string;
+            logs: components["schemas"]["ClubPostView"][];
+            summary: components["schemas"]["ClubLogSummary"];
+        };
+        ClubLogSummary: {
+            /** Format: int64 */
+            pagesRead: number;
+            /** Format: int64 */
+            durationSec: number;
+            /** Format: int64 */
+            readerCount: number;
+            /** Format: int32 */
+            logCount: number;
+        };
+        ClubLogDayCount: {
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            logCount: number;
         };
         PageResponseClubPreview: {
             content?: components["schemas"]["ClubPreview"][];
@@ -4484,8 +4571,12 @@ export type SchemaPageResponseFollowUserView = components['schemas']['PageRespon
 export type SchemaClubSummaryView = components['schemas']['ClubSummaryView'];
 export type SchemaPageResponseClubSummaryView = components['schemas']['PageResponseClubSummaryView'];
 export type SchemaClubResultView = components['schemas']['ClubResultView'];
+export type SchemaReadingNowView = components['schemas']['ReadingNowView'];
 export type SchemaClubPreview = components['schemas']['ClubPreview'];
 export type SchemaPageResponseClubPostView = components['schemas']['PageResponseClubPostView'];
+export type SchemaClubLogDayView = components['schemas']['ClubLogDayView'];
+export type SchemaClubLogSummary = components['schemas']['ClubLogSummary'];
+export type SchemaClubLogDayCount = components['schemas']['ClubLogDayCount'];
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
 export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
 export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
@@ -5695,6 +5786,64 @@ export interface operations {
             };
         };
     };
+    day: {
+        parameters: {
+            query?: {
+                date?: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubLogDayView"];
+                };
+            };
+        };
+    };
+    create_8: {
+        parameters: {
+            query?: {
+                body?: string;
+                anchorPage?: number;
+                spoilerLevel?: "NONE" | "PAGE" | "BOOK";
+                readingSessionId?: number;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubPostView"];
+                };
+            };
+        };
+    };
     kick: {
         parameters: {
             query?: never;
@@ -5886,7 +6035,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -6393,7 +6542,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -6517,7 +6666,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -6587,7 +6736,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -7831,6 +7980,28 @@ export interface operations {
             };
         };
     };
+    readingNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReadingNowView"][];
+                };
+            };
+        };
+    };
     previewById: {
         parameters: {
             query?: never;
@@ -7894,6 +8065,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    days: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubLogDayCount"][];
+                };
             };
         };
     };

@@ -112,8 +112,22 @@ export default function TimerScreen() {
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
       // 완독이어도 책 id 를 모르면 /book/undefined 로 튄다 — 그때는 그냥 되돌아간다.
       const bookId = record.data?.book?.id;
+      // 모임 책이면 끝나자마자 읽기로그 조각을 남기러 간다. 같은 책으로 여러 모임에 있으면 첫 모임으로.
+      // 완독은 책 상세의 축하 흐름을 우선한다.
+      const club = result.clubs[0];
       if (result.bookFinished && bookId != null) {
         router.replace(`/book/${bookId}?recordId=${id}`);
+      } else if (club?.clubId != null) {
+        router.replace({
+          pathname: '/club/[id]/log/new',
+          params: {
+            id: String(club.clubId),
+            sessionId: String(result.session.id),
+            durationSec: String(result.session.durationSec),
+            ...(result.session.startPage != null ? { startPage: String(result.session.startPage) } : {}),
+            endPage: String(result.session.endPage ?? result.currentPage),
+          },
+        });
       } else {
         router.back();
       }

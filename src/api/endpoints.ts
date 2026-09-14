@@ -1,12 +1,12 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
-  Checkpoint, ClubHome, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary,
+  Checkpoint, ClubHome, ClubLogDay, ClubLogDayCount, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary,
   CreatePost, CreateQuote, CreateQuoteComment, CreateReviewComment,
   EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
   PopularBook, Post, PostImage, PostLike, PostcardView, QuoteAgree, QuoteComment,
-  ReadingRecord, ReadingStatus,
+  ReadingNow, ReadingRecord, ReadingStatus,
   Review, ReviewComment, Session, SessionEndResult, SignupConfig, StatsSummary, TokenResponse,
   UpdatePost, UserProfileView, VerificationPreview,
   VisitorView, WalletView,
@@ -144,6 +144,16 @@ export const clubApi = {
     api<ClubPost>(`/api/v1/clubs/${clubId}/posts/${postId}/reveal`, { method: 'POST' }),
   react: (clubId: number, postId: number, kind: string) =>
     api<void>(`/api/v1/clubs/${clubId}/posts/${postId}/reactions`, { method: 'POST', body: { kind } }),
+  /** 읽기로그 하루 보드 — date 는 KST 'YYYY-MM-DD', 비우면 서버 기준 오늘. */
+  logs: (clubId: number, date?: string) =>
+    api<ClubLogDay>(`/api/v1/clubs/${clubId}/logs`, { query: { date } }),
+  /** 요일 스트립 — from~to(포함, 최대 14일) 날짜마다 조각 수. */
+  logDays: (clubId: number, from: string, to: string) =>
+    api<ClubLogDayCount[]>(`/api/v1/clubs/${clubId}/logs/days`, { query: { from, to } }),
+  readingNow: (clubId: number) => api<ReadingNow[]>(`/api/v1/clubs/${clubId}/reading-now`),
+  /** 조각 남기기 — 멀티파트(file 선택 · body · anchorPage · spoilerLevel · readingSessionId). */
+  createLog: (clubId: number, form: FormData) =>
+    api<ClubPost>(`/api/v1/clubs/${clubId}/logs`, { method: 'POST', body: form }),
 };
 
 export const walletApi = {

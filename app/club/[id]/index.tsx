@@ -8,6 +8,7 @@ import { clubApi } from '@/api/endpoints';
 import type {
   Checkpoint, ClubHome, ClubPreview, ClubSeatPolicy, MemberProgress, NudgeMessageKey,
 } from '@/api/types';
+import { LogEntryCard } from '@/components/clubLog';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, Tag, Toggle,
@@ -176,6 +177,19 @@ export default function ClubHomeScreen() {
             </>
           ) : null}
         </Card>
+
+        <LogEntryCard
+          clubId={clubId}
+          canWrite={!ended}
+          onOpenBoard={() => router.push(`/club/${clubId}/log`)}
+          onWrite={() => {
+            const mine = data.members.find((m) => m.isMe)?.currentPage;
+            router.push({
+              pathname: '/club/[id]/log/new',
+              params: { id: String(clubId), ...(mine != null ? { endPage: String(mine) } : {}) },
+            });
+          }}
+        />
 
         {data.nextCheckpoint ? (
           <View>

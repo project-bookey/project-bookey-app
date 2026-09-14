@@ -70,6 +70,10 @@ export type Checkpoint = Schemas['CheckpointView'];
 export type ClubPost = Schemas['ClubPostView'];
 export type ClubSeatPolicy = Schemas['ClubSeatPolicy'];
 export type ClubSeatResult = Schemas['ClubSeatResult'];
+export type ClubLogDay = Schemas['ClubLogDayView'];
+export type ClubLogSummary = Schemas['ClubLogSummary'];
+export type ClubLogDayCount = Schemas['ClubLogDayCount'];
+export type ReadingNow = Schemas['ReadingNowView'];
 
 export type ClubVisibility = NonNullable<ClubHome['visibility']>;
 export type ClubStatus = NonNullable<ClubHome['status']>;

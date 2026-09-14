@@ -159,7 +159,7 @@
   사진은 `FormData` 로 보내므로 `client.ts` 가 `Content-Type` 을 비워 둔다(기존 동작).
 - **화면 3 · 한 조각 남기기** (`SubHeader` 가운데 "한 조각 남기기", 우측 "건너뛰기")
   - 진입: `app/timer.tsx` 종료 `onSuccess` 에서 `result.clubs` 가 있고 완독이 아니면 `router.back()` 대신
-    `router.replace('/club/{clubId}/log/new?sessionId=&page=')`. 모임이 둘 이상이면 첫 화면에서 모임을 고른다.
+    `router.replace('/club/{clubId}/log/new?sessionId=&startPage=&endPage=&durationSec=')`. 같은 책으로 모임이 둘 이상이면 첫 모임으로 간다(고르기는 백로그).
     완독이면 지금처럼 책 상세로 간다.
   - 세션 요약 카드(방금 읽은 시간 · 읽은 쪽 · 오늘 몇 번째 조각)
   - 폴라로이드 프레임(`memoPad` 종이, -2°, 마스킹 테이프) 안에 사진 미리보기. `촬영` · `앨범에서 고르기` · `글만`.
@@ -174,10 +174,11 @@
     배치는 인덱스 기반 2열 지그재그(`rowOffsetY`)로 결정적으로 만든다 — 다시 그려도 조각이 튀지 않게.
   - 가려진 조각: 빗금 면 + 자물쇠 + "142쪽까지 읽으면 열려요" · "내 진도 128쪽". 누르면 기존 `reveal` 확인.
   - 하단 고정 CTA "한 조각 남기기"(세션 없이 들어오면 `sessionId` 없이, 쪽은 내 현재 쪽).
-  - 반응은 조각을 길게 눌러 기존 4종(`LIKE·FIRE·CRY·THINK`).
+  - 반응은 조각을 눌러(길게 눌러도) 반응 줄을 열고 기존 4종(`LIKE·FIRE·CRY·THINK`)을 고른다.
+  - 남기기에 성공하면 `router.dismissTo(보드)` — 보드에서 왔으면 그 보드로 돌아가 스택에 보드가 두 겹 쌓이지 않는다.
 - **화면 1 · 모임 홈 진입 카드** — 요약 카드와 다음 체크포인트 사이. `Eyebrow` "읽기로그" + "보드 열기 →".
   지금 읽는 중 한 줄 · 조각 가로 스트립(첫 칸은 점선 "오늘 한 조각", 이어 최근 3조각) · "오늘 함께 212쪽 · 3시간 10분 · 6조각".
-- **캐시** — `['club', id, 'logs', date]` · `['club', id, 'logDays', from]` · `['club', id, 'readingNow']`(30초 `refetchInterval`, 화면 포커스일 때만).
+- **캐시** — `clubLogKeys`(`src/components/clubLog/queries.ts`): `['club', id, 'log', 'day', date]` · `['club', id, 'log', 'days', monday]` · `['club', id, 'log', 'readingNow']`(30초 `refetchInterval`).
   조각 작성 성공 시 오늘 보드·요일 스트립·모임 홈을 무효화한다.
 
 ---
@@ -197,7 +198,7 @@
 | 단계 | 백엔드 | 앱 | 비고 |
 |---|---|---|---|
 | 1 ✅ | `feature/club-seats` (마이그레이션 없음) | `feature/club-seats` | 2026-09-14 구현. 책갈피 결제 전에는 DB·어드민 지급으로 검증 |
-| 2 | `feature/club-logs` (V20) | `feature/club-logs` | 1과 무관하게 진행 가능 |
+| 2 ✅ | `feature/club-logs` (V20) | `feature/club-logs` | 2026-09-14 구현. 카메라 권한(`app.json`)이 늘어 dev client 재빌드 필요 |
 | 3 | `feature/club-log-week` | `feature/club-log-week` | 네이티브 의존성 추가 |
 
 각 단계는 백엔드 먼저 머지 → 앱에서 `npm run types` → 타입 diff 커밋 → 화면 작업 순서로 간다.
@@ -224,5 +225,5 @@
 
 ## 백로그
 
-서명 URL · 페이지 도착 알림("지유님이 87쪽에 조각을 남겼어요") · 예약형 같이 읽기 시간 · 조각 여러 장/짧은 영상 ·
+같은 책 여러 모임일 때 조각 남길 모임 고르기 · 서명 URL · 페이지 도착 알림("지유님이 87쪽에 조각을 남겼어요") · 예약형 같이 읽기 시간 · 조각 여러 장/짧은 영상 ·
 모임 생성 시 자리 구매 · 책갈피 결제 연동 · `Club.archive()` 전환 배치 · 자리 구매 이력 화면(원장 조회 API).
