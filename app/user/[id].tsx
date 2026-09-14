@@ -6,11 +6,15 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { ApiError } from '@/api/client';
 import { chatApi, followApi, postApi, profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { Button, Card, EmptyState, Numeral, Tag, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
+
+/** 프로필 사진 판 지름(px) — 화면 머리라 목록의 AVATAR_SIZE 보다 크다. */
+const AVATAR = 56;
 
 /**
  * 유저 마이페이지 (§14.3) — 피드에서 작성자를 눌러 들어온다.
@@ -65,10 +69,8 @@ export default function UserProfileScreen() {
         {p.avatarUrl ? (
           <Image source={{ uri: p.avatarUrl }} style={styles.avatar} />
         ) : (
-          <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[typeScale.titleSerif, { color: colors.accent }]}>
-              {p.nickname.slice(0, 1)}
-            </Text>
+          <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
+            <PersonGlyph size={AVATAR} color={colors.textFaint} />
           </View>
         )}
         <View style={{ flex: 1, gap: spacing.xs }}>
@@ -190,7 +192,7 @@ const styles = StyleSheet.create({
   head: { gap: spacing.md, marginBottom: spacing.md },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   avatar: {
-    width: 56, height: 56, borderRadius: 28,
+    width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   tagRow: { flexDirection: 'row', gap: spacing.xs },

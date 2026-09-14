@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -20,13 +21,27 @@ export default function SubscriptionScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { feature } = useLocalSearchParams<{ feature?: string }>();
+  const [notice, setNotice] = useState<string | null>(null);
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
   const checkout = useMutation({
     mutationFn: (provider: SubscriptionProvider) => subscriptionApi.begin(provider),
-    onSuccess: (view) => {
-      if (view.checkoutUrl) {
-        Linking.openURL(view.checkoutUrl).catch(() => {});
+    onMutate: () => setNotice(null),
+    onSuccess: (view, provider) => {
+      if (provider === 'TOSS') {
+        if (!view.checkoutUrl) {
+          setNotice('토스 결제창 URL을 받지 못했습니다.');
+          return;
+        }
+        Linking.openURL(view.checkoutUrl).catch(() => {
+          setNotice('토스 결제창을 열지 못했습니다.');
+        });
+        return;
       }
+      if (provider === 'APPLE') {
+        setNotice('App Store 결제는 development build에서 테스트할 수 있습니다. 결제 후 거래 ID는 서버에서 Apple로 재검증합니다.');
+        return;
+      }
+      setNotice('Google Play 결제는 아직 막아 두었습니다.');
     },
   });
 
@@ -99,9 +114,13 @@ export default function SubscriptionScreen() {
               <Text style={[typeScale.caption, styles.error, { color: colors.warn }]}>
                 {error}
               </Text>
+            ) : notice ? (
+              <Text style={[typeScale.caption, styles.note, { color: colors.textMuted }]}>
+                {notice}
+              </Text>
             ) : (
               <Text style={[typeScale.caption, styles.note, { color: colors.textFaint }]}>
-                결제 승인 연동 전까지는 결제창 준비 상태만 확인합니다.
+                토스 결제 완료 후 앱으로 돌아오면 서버에서 결제를 다시 검증합니다.
               </Text>
             )}
           </Card>

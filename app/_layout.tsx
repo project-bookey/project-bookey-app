@@ -77,6 +77,8 @@ export default function RootLayout() {
             <Stack.Screen name="profile-edit" options={{ title: '프로필 편집' }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
             <Stack.Screen name="bookmarks" options={{ title: '책갈피 구매' }} />
+            <Stack.Screen name="wallet" options={{ title: '지갑' }} />
+            <Stack.Screen name="settings" options={{ title: '설정' }} />
             <Stack.Screen name="subscription" options={{ title: '구독' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
             <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
@@ -93,6 +95,7 @@ export default function RootLayout() {
             <Stack.Screen name="chats" options={{ title: '채팅' }} />
             <Stack.Screen name="chat/[id]" options={{ title: '대화' }} />
             <Stack.Screen name="quote/[id]" options={{ title: '밑줄' }} />
+            <Stack.Screen name="quote/mine" options={{ title: '내가 오려둔 문장' }} />
             <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
             <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />

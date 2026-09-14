@@ -10,6 +10,8 @@ import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatMessage } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { FootAction } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
 /** 새 메시지 폴링 주기(ms) — 실시간 인프라 없이 시작한다 (§13-11 결정). */
@@ -27,6 +29,8 @@ export default function ChatRoomScreen() {
   const chatId = Number(id);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { confirm, arm, disarm } = useDeleteConfirm<'chat'>();
+  const confirmingDelete = confirm === 'chat';
 
   const messages = useInfiniteQuery({
     queryKey: ['chatMessages', chatId],
@@ -55,6 +59,24 @@ export default function ChatRoomScreen() {
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : '메시지를 보내지 못했어요.'),
   });
+  const remove = useMutation({
+    mutationFn: () => chatApi.remove(chatId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      queryClient.removeQueries({ queryKey: ['chatMessages', chatId] });
+      if (router.canGoBack()) router.back();
+      else router.replace('/chats');
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : '채팅을 삭제하지 못했어요.'),
+  });
+  const pressDelete = () => {
+    if (confirmingDelete) {
+      disarm();
+      remove.mutate();
+      return;
+    }
+    arm('chat');
+  };
 
   const submit = () => {
     const body = draft.trim();
@@ -64,7 +86,20 @@ export default function ChatRoomScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category={name ?? '채팅'} onBack={() => router.back()} />
+      <SubHeader
+        category={name ?? '채팅'}
+        onBack={() => router.back()}
+        right={
+          <View style={styles.headerAction}>
+            <FootAction
+              label={confirmingDelete ? '한 번 더' : '삭제'}
+              onPress={pressDelete}
+              tone={confirmingDelete ? 'danger' : 'faint'}
+              accessibilityLabel={confirmingDelete ? '채팅 삭제 확인' : '채팅 삭제'}
+            />
+          </View>
+        }
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.fill}
@@ -167,6 +202,7 @@ function Bubble({ message }: { message: ChatMessage }) {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  headerAction: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
   list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.xs },
   empty: { textAlign: 'center', paddingVertical: spacing.xl },
   loading: { padding: spacing.md, alignItems: 'center' },

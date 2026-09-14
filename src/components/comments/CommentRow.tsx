@@ -16,7 +16,8 @@ import type { ThreadComment } from './types';
  * 본문이 '@닉네임' 으로 시작하면 그 앞머리만 악센트로 띄워 누구에게 한 말인지 읽힌다.
  *
  * variant — 'card'(최상위, 기본)는 줄 전체(와 펼친 답글)를 카드 박스로 감싼다.
- * 'reply'(답글)는 박스 없이 부모 카드 안에서 얕게 들여쓴 줄로만 그린다(아바타도 20px로 줄인다).
+ * 'reply'(답글)는 박스 없이 부모 카드 안에서 얕게 들여쓴 줄로만 그린다.
+ * 아바타·닉네임 크기는 최상위와 같다 — 앱 어디서나 사람은 한 크기(QuoteCard 의 AVATAR_SIZE)로 선다.
  */
 export function CommentRow({
   comment, confirming, error, expanded = false, variant = 'card', onDelete, onToggleReplies, onPressReply, children,
@@ -43,12 +44,8 @@ export function CommentRow({
 
   return (
     <View style={isReply ? undefined : [styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-      <View style={[styles.row, isReply && styles.rowReply]}>
-        <QuoteAvatar
-          uri={comment.authorAvatarUrl}
-          nickname={comment.authorNickname}
-          size={isReply ? 20 : 24}
-        />
+      <View style={styles.row}>
+        <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
         <View style={styles.rowBody}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {comment.authorNickname}
@@ -105,9 +102,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  rowReply: { gap: 8 },
   rowBody: { flex: 1, gap: 2 },
-  nickname: { fontSize: 12 },
+  // 닉네임은 홈 '오늘의 글'·광장 카드와 같은 15/20 — 아바타(AVATAR_SIZE)와 나란히 서서 누구 말인지 먼저 읽힌다.
+  nickname: { lineHeight: 20 },
   body: { ...typeScale.body, fontSize: 13, lineHeight: 20 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 2 },
   meta: { fontSize: 9, letterSpacing: 0.4 },

@@ -13,6 +13,7 @@ import { VISIBILITY_LABEL } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
+import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { EmptyState, Eyebrow, FootAction, Tag, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -29,6 +30,7 @@ export default function PostDetailScreen() {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
   const pressLike = useLikePost();
+  const [postcardOpen, setPostcardOpen] = useState(false);
 
   const post = useQuery({
     queryKey: postKey(postId),
@@ -82,6 +84,9 @@ export default function PostDetailScreen() {
       error={removeError}
       onLike={() => pressLike(postId)}
       onDelete={post.data.mine ? pressDeletePost : undefined}
+      postcardOpen={postcardOpen}
+      onTogglePostcard={post.data.mine ? undefined : () => setPostcardOpen((open) => !open)}
+      onClosePostcard={() => setPostcardOpen(false)}
     />
   ) : null;
 
@@ -130,7 +135,7 @@ const PHOTO = 160;
  * 글 한 편 — 스레드의 header 로 들어간다.
  * 카드에 넣지 않고 종이 위에 바로 펼친다 — 긴 글이라 상자보다 지면이 읽기 편하고, 기울인 표지·사진의 그림자도 잘리지 않는다.
  */
-function PostArticle({ post, confirming, error, onLike, onDelete }: {
+function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, onTogglePostcard, onClosePostcard }: {
   post: Post;
   /** 삭제 재확인 상태 — 라벨이 '한 번 더'로 바뀐다. */
   confirming: boolean;
@@ -139,6 +144,10 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
   onLike: () => void;
   /** 본인 글에서만 넘긴다. */
   onDelete?: () => void;
+  postcardOpen: boolean;
+  /** 남의 글에서만 넘긴다. */
+  onTogglePostcard?: () => void;
+  onClosePostcard: () => void;
 }) {
   const router = useRouter();
   const { colors } = useTheme();
@@ -237,6 +246,14 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
       <View style={styles.footRow}>
         <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
         <FootAction label={`조회 ${post.viewCount}`} />
+        {onTogglePostcard ? (
+          <FootAction
+            label="엽서 보내기"
+            onPress={onTogglePostcard}
+            tone="accent"
+            accessibilityLabel={`${post.authorNickname}에게 엽서 보내기`}
+          />
+        ) : null}
         {onDelete ? (
           <View style={styles.footRight}>
             <FootAction
@@ -249,6 +266,15 @@ function PostArticle({ post, confirming, error, onLike, onDelete }: {
         ) : null}
       </View>
       {error ? <Text style={[typeScale.caption, { color: colors.warn }]}>{error}</Text> : null}
+      {postcardOpen ? (
+        <PostcardComposer
+          toUserId={post.authorId}
+          toNickname={post.authorNickname}
+          postId={post.id}
+          postTitle={post.title}
+          onDone={onClosePostcard}
+        />
+      ) : null}
     </View>
   );
 }
@@ -269,10 +295,11 @@ const styles = StyleSheet.create({
   bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.md, marginVertical: -spacing.sm },
   bookLinkText: { fontSize: 10, letterSpacing: 0.6 },
 
-  byline: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  byline: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   bylineText: { flex: 1 },
-  nickname: { fontSize: 12 },
-  meta: { fontSize: 9, letterSpacing: 0.4, marginTop: 2 },
+  // 바이라인 조판은 홈 '오늘의 글'(ScrapAuthor)·광장 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  nickname: { lineHeight: 20 },
+  meta: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
 
   // 기울인 인화지 모서리가 잘리지 않게 사방으로 숨을 둔다.
   photos: { gap: spacing.md, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },

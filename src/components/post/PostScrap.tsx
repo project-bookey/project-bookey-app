@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Post } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
-import { HOT_GAP, META_LH, META_SIZE, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
+import { ScrapAuthor } from '@/components/home/ScrapAuthor';
+import { META_LH, META_SIZE, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
 import { spacing, typeScale, useTheme } from '@/theme';
 
@@ -37,9 +38,9 @@ const HOME_TEXT_MAX_H = QUOTE_MAX_H;
  * 다 보여 주는 자리라면, 조각은 '무슨 글인지'만 오려 붙인 종잇조각이다.
  * 쓰이는 자리마다 곁들이는 메타가 달라 variant 로 가른다.
  *
- * - `home`  — 홈 '오려둔 글' 스포트라이트. 어느 종류인지부터 알려야 해서 `독후감` 을 앞세우고,
- *             밑줄 조각의 핫 줄 자리에 좋아요·댓글 수를 얹는다. 행 높이가 못 박혀 있어
- *             글 상자를 3줄 자리로 가두고 메타는 조각 바닥에 붙인다.
+ * - `home`  — 홈 '오늘의 글' 스포트라이트. 머리에 작성자 행(ScrapAuthor: 아바타·닉네임·책)을
+ *             밑줄 조각과 똑같이 세우고, 오른쪽 열에 `독후감` 태그와 `좋아요 n` 을 얹어 어느
+ *             종류인지 알린다. 행 높이가 못 박혀 있어 글 상자를 인용 3줄 자리로 가둔다.
  * - `book`  — 도서 상세. 책은 이미 아니까 누가 썼는지와 반응만.
  * - `profile` — 내 독후감. 내가 쓴 글이니 작성자 대신 어느 책·공개 범위·조회 수를 본다.
  */
@@ -62,6 +63,18 @@ export function PostScrap({ post, rotate, variant, onPress }: {
 
   const memo = (
     <MemoScrap rotate={rotate} style={home ? styles.homeCard : undefined}>
+      {/* 홈은 밑줄 조각과 같은 작성자 행으로 시작한다 — 6초마다 번갈아 서도 첫 줄 모양이 같다.
+          무엇의 조각인지는 `독후감` 태그가 알린다 — 밑줄과 섞여 돌아가는 자리라서.
+          좋아요는 표시 전용(누를 수 없다). 0 이어도 쓴다 — 밑줄 조각도 같은 규칙. */}
+      {home ? (
+        <ScrapAuthor
+          nickname={post.authorNickname}
+          avatarUrl={post.authorAvatarUrl}
+          where={post.bookTitle ?? '책 없음'}
+          kind="독후감"
+          stat={`좋아요 ${post.likeCount}`}
+        />
+      ) : null}
       <View style={home ? styles.homeText : undefined}>
         <Text
           numberOfLines={TITLE_LINES}
@@ -77,30 +90,14 @@ export function PostScrap({ post, rotate, variant, onPress }: {
         </Text>
       </View>
 
-      <Text
-        numberOfLines={1}
-        style={[typeScale.monoLabel, styles.meta, home && styles.metaBottom, { color: colors.textFaint }]}
-      >
-        {variant === 'home' ? (
-          <>
-            {/* 무엇의 조각인지부터 — 밑줄과 섞여 돌아가는 자리라 종류를 색으로도 가른다. */}
-            <Text style={{ color: colors.accent }}>독후감</Text>
-            {` · ${post.authorNickname} · ${post.bookTitle ?? '책 없음'}`}
-          </>
-        ) : variant === 'profile' ? (
-          `${post.bookTitle ?? '책 없음'} · ${visibility} · 조회 ${post.viewCount}`
-        ) : (
-          `${post.authorNickname} · 좋아요 ${post.likeCount}`
-        )}
-      </Text>
-
-      {/* 홈에서는 밑줄 조각의 핫 줄과 같은 자리에 반응 수를 세운다 — 표시 전용(누를 수 없다).
-          0 이어도 그린다: 밑줄 조각도 같은 규칙이라 회전 중에 줄 수가 달라지지 않는다. */}
-      {home ? (
-        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.hot, { color: colors.accent }]}>
-          좋아요 {post.likeCount}
+      {/* 홈은 작성자·책·좋아요를 머리 행이 이미 보여 줘 메타 줄이 없다 — 밑줄 조각과 줄 수를 맞춘다. */}
+      {home ? null : (
+        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
+          {variant === 'profile'
+            ? `${post.bookTitle ?? '책 없음'} · ${visibility} · 조회 ${post.viewCount}`
+            : `${post.authorNickname} · 좋아요 ${post.likeCount}`}
         </Text>
-      ) : null}
+      )}
     </MemoScrap>
   );
 
@@ -139,7 +136,4 @@ const styles = StyleSheet.create({
   homeTitle: { maxHeight: TITLE_LINES * TITLE_LH, overflow: 'hidden' },
   homeExcerpt: { maxHeight: EXCERPT_LINES.home * EXCERPT_LH, overflow: 'hidden' },
   meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: spacing.sm },
-  // 남는 자리를 글 위로 몰아 메타·핫 줄을 조각 바닥에 붙인다 — 글 길이와 무관하게 두 줄의 y 가 같다.
-  metaBottom: { marginTop: 'auto' },
-  hot: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: HOT_GAP },
 });

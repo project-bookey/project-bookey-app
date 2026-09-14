@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { API_BASE_URL } from '@/api/client';
 import { notificationApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
-import { BrandHeader, PaperScreen } from '@/components/collage';
+import { PaperScreen, SubHeader } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle,
 } from '@/components/ui';
@@ -49,13 +49,10 @@ export default function SettingsScreen() {
   });
 
   return (
-    <PaperScreen withTopInset>
-      <BrandHeader />
+    <PaperScreen>
+      <SubHeader category="설정" />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={[styles.block, styles.settings]}>
-          <Rule />
-          <Eyebrow>설정</Eyebrow>
-
           <View>
             <Eyebrow plain>재촉 톤</Eyebrow>
             <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
@@ -151,7 +148,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, gap: spacing.xl, paddingBottom: 104, paddingTop: spacing.lg },
+  container: { ...layout.content, gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
   block: { paddingHorizontal: spacing.lg },
   settings: { gap: spacing.lg },
   toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: radius.md, overflow: 'hidden' },

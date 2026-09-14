@@ -9,7 +9,7 @@ import { VERIFICATION_LABEL } from './verification';
 
 /**
  * 리뷰 조각 — 도서 상세에 오려 붙인 짧은 메모. 통째로 눌러 리뷰 상세로 간다.
- * 전문은 상세에서 읽으라고 두 줄까지만 보이고, 메타 줄에 검증 등급과 댓글 수만 남긴다.
+ * 전문은 상세에서 읽으라고 두 줄까지만 보이고, 메타 줄에는 검증 등급만 남긴다.
  */
 export function ReviewScrap({ review, rotate, onPress }: {
   review: Review;
@@ -36,9 +36,6 @@ export function ReviewScrap({ review, rotate, onPress }: {
             color: verified ? colors.accent : colors.textFaint,
           }]}>
             {VERIFICATION_LABEL[review.verificationLevel]}
-          </Text>
-          <Text style={[typeScale.monoLabel, styles.metaText, { color: colors.accent }]}>
-            댓글 {review.commentCount}
           </Text>
         </View>
       </MemoScrap>

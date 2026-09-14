@@ -110,8 +110,11 @@ export const clubApi = {
   myClubs: () => api<Page<ClubSummary>>('/api/v1/clubs', { query: { size: 50 } }),
   publicClubs: () => api<Page<ClubPreview>>('/api/v1/clubs/public'),
   preview: (code: string) => api<ClubPreview>('/api/v1/clubs/preview', { query: { code } }),
+  previewById: (clubId: number) => api<ClubPreview>(`/api/v1/clubs/${clubId}/preview`),
   join: (code: string, body: { adoptTargetDate: boolean; shareProgress: boolean }) =>
     api<ClubHome>('/api/v1/clubs/join', { method: 'POST', body: { code, ...body } }),
+  joinPublic: (clubId: number, body: { adoptTargetDate: boolean; shareProgress: boolean }) =>
+    api<ClubHome>(`/api/v1/clubs/${clubId}/join`, { method: 'POST', body }),
   create: (body: {
     name: string; description?: string; bookId: number; startsAt: string; endsAt: string;
     visibility?: string; memberLimit?: number; autoCheckpoints?: boolean; allowNudge?: boolean;
@@ -159,10 +162,21 @@ export type SubscriptionCheckout = {
   successUrl?: string;
   failUrl?: string;
 };
+export type SubscriptionVerify = {
+  provider: SubscriptionProvider;
+  productId: string;
+  orderId?: string;
+  amountKrw?: number;
+  paymentKey?: string;
+  receiptData?: string;
+  originalTransactionId?: string;
+};
 
 export const subscriptionApi = {
   begin: (provider: SubscriptionProvider) =>
     api<SubscriptionCheckout>('/api/v1/subscriptions/checkout', { method: 'POST', body: { provider } }),
+  verify: (body: SubscriptionVerify) =>
+    api<void>('/api/v1/subscriptions/verify', { method: 'POST', body }),
 };
 
 export const postcardApi = {
@@ -176,6 +190,8 @@ export const postcardApi = {
   /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 성립하면 자동 맞팔로우. */
   reply: (postcardId: number, body: string) =>
     api<PostcardView>(`/api/v1/postcards/${postcardId}/reply`, { method: 'POST', body: { body } }),
+  remove: (postcardId: number) =>
+    api<void>(`/api/v1/postcards/${postcardId}`, { method: 'DELETE' }),
 };
 
 export const followApi = {
@@ -200,6 +216,7 @@ export const chatApi = {
     api<ChatMessages>(`/api/v1/chats/${chatId}/messages`, { query: { beforeId } }),
   send: (chatId: number, body: string) =>
     api<ChatMessage>(`/api/v1/chats/${chatId}/messages`, { method: 'POST', body: { body } }),
+  remove: (chatId: number) => api<void>(`/api/v1/chats/${chatId}`, { method: 'DELETE' }),
 };
 
 export const profileApi = {

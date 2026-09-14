@@ -17,13 +17,11 @@ export function ClubRow() {
   const clubs = useQuery({ queryKey: ['clubs', 'public'], queryFn: clubApi.publicClubs });
 
   const items = (clubs.data?.content ?? []).filter(
-    (c) => c.status === 'RECRUITING' || c.status === 'ACTIVE',
+    (c) => (c.status === 'RECRUITING' || c.status === 'ACTIVE') && c.joinable,
   );
 
   const open = (club: ClubPreview) => {
-    // 모임 목록은 상단 구역이라 push 가 아니라 navigate — 스택에 구역이 겹치지 않게.
-    if (club.alreadyMember) router.push(`/club/${club.id}`);
-    else router.navigate('/clubs');
+    router.push(`/club/${club.id}`);
   };
 
   return (

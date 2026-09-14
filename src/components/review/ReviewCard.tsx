@@ -20,7 +20,7 @@ export type ReviewCardProps = {
   verificationLevel: VerificationLevel;
   body: string;
   tags: string[];
-  commentCount: number;
+  commentCount?: number;
   createdAt: string;
   /** 아직 책 정보를 못 받았으면 '책'으로 대신한다. */
   bookTitle?: string;
@@ -37,7 +37,7 @@ export type ReviewCardProps = {
  * 삭제·수정은 아직 없다(서버에도 없음).
  */
 export function ReviewCard({
-  authorNickname, rating, verificationLevel, body, tags, commentCount, createdAt,
+  authorNickname, rating, verificationLevel, body, tags, createdAt,
   bookTitle, tilt = 0, onOpenBook,
 }: ReviewCardProps) {
   const { colors } = useTheme();
@@ -82,9 +82,6 @@ export function ReviewCard({
       ) : null}
 
       <View style={styles.footRow}>
-        <Text style={[typeScale.monoLabel, styles.footLabel, styles.footAction, { color: colors.textMuted }]}>
-          댓글 {commentCount}
-        </Text>
         <View style={styles.footRight}>
           <Pressable onPress={onOpenBook} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
             accessibilityRole="button" accessibilityLabel={`${where} 상세`}>
@@ -98,11 +95,12 @@ export function ReviewCard({
 
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
-  nickname: { fontSize: 12 },
+  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  nickname: { lineHeight: 20 },
   whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
-  where: { fontSize: 9, letterSpacing: 0.4, flexShrink: 1 },
+  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, flexShrink: 1 },
   // 검증 마크 — 밑줄 카드의 완독 마크와 같은 치수.
   verification: {
     fontSize: 8,

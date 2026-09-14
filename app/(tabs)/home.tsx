@@ -20,7 +20,7 @@ import { HomeSection } from '@/components/home/HomeSection';
 import { HomeScraps } from '@/components/home/HomeScraps';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 인기 → 오려둔 글 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
+/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -56,7 +56,7 @@ export default function HomeScreen() {
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
 
-  // '오려둔 글' 쿼리(밑줄·독후감)는 HomeScraps 안에 있어 여기서 직접 못 본다 — 키로 조회해
+  // '오늘의 글' 쿼리(밑줄·독후감)는 HomeScraps 안에 있어 여기서 직접 못 본다 — 키로 조회해
   // 새로고침 인디케이터가 그 섹션이 다 돌 때까지 함께 남게 한다.
   const scrapsFetching =
     useIsFetching({ queryKey: PLAZA_HOME_KEY }) + useIsFetching({ queryKey: POST_HOME_KEY }) > 0;
@@ -117,6 +117,10 @@ export default function HomeScreen() {
           onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         />
 
+        {/* '오늘의 글'만 섹션 틀을 제 안에서 두른다 — 밑줄·독후감이 둘 다 0건이면 통째로
+            사라져야 하는데, 여기서 감싸면 괘선과 여백만 남는다(HomeScraps 주석 참고). */}
+        <HomeScraps />
+
         {/* 섹션은 HomeSection 으로 감싸 괘선으로 나눈다 */}
         <HomeSection>
           <BookRow
@@ -172,10 +176,6 @@ export default function HomeScreen() {
             />
           </HomeSection>
         ) : null}
-
-        {/* '오려둔 글'만 섹션 틀을 제 안에서 두른다 — 밑줄·독후감이 둘 다 0건이면 통째로
-            사라져야 하는데, 여기서 감싸면 괘선과 여백만 남는다(HomeScraps 주석 참고). */}
-        <HomeScraps />
 
         <HomeSection>
           <BookRow

@@ -10,6 +10,7 @@ export { DotGridBackground } from './DotGridBackground';
 export { FocusRing } from './FocusRing';
 export { MemoScrap } from './MemoScrap';
 export { PaperScreen } from './PaperScreen';
+export { PlusGlyph } from './PlusGlyph';
 export { SectionNav } from './SectionNav';
 export type { SectionKey } from './SectionNav';
 export { StickyNote } from './StickyNote';

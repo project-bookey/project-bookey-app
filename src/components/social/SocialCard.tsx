@@ -5,12 +5,12 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { followApi, profileApi, walletApi } from '@/api/endpoints';
-import { Button, Card, Eyebrow, KeyValue, Rule, Tag } from '@/components/ui';
+import { Button, Card, Eyebrow, KeyValue, Rule } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
-/** 나의 소셜 (§14.2·14.3) — 지갑 · 팔로우 코드 · 방문 기록. */
+/** 나의 소셜 (§14.3) — 팔로우 · 방문 기록 · 팔로우 코드. 지갑(잔액·교환·구독)은 app/wallet.tsx 로 옮겨 갔다. */
 export function SocialCard() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -48,14 +48,9 @@ export function SocialCard() {
     },
   });
 
-  const exchange = useMutation({
-    mutationFn: (target: 'POSTCARD' | 'STAMP') => walletApi.exchange(target, 1),
-    onSuccess: (view) => queryClient.setQueryData(['wallet'], view),
-  });
-
-  const w = wallet.data;
   const p = myProfile.data;
-  const subscribed = w?.subscriptionActive ?? false;
+  // 방문자 보기는 구독자 전용 — 지갑 응답의 구독 여부만 여기서 쓴다.
+  const subscribed = wallet.data?.subscriptionActive ?? false;
   const openSubscription = () => {
     router.push({ pathname: '/subscription', params: { feature: 'visitors' } });
   };
@@ -64,42 +59,6 @@ export function SocialCard() {
     <View style={styles.section}>
       <Rule />
       <Eyebrow>소셜</Eyebrow>
-
-      {/* 지갑 (§14.2) — 책갈피가 기축, 엽서·우표로 교환 */}
-      <Card>
-        <View style={styles.walletHead}>
-          <Eyebrow plain>지갑</Eyebrow>
-          {subscribed ? <Tag label="구독 중" fg={colors.accent} bg={colors.accentSoft} /> : null}
-        </View>
-        <View style={{ marginTop: spacing.sm }}>
-          <KeyValue label="책갈피" value={`${w?.bookmarkBalance ?? 0}개`} />
-          <Rule />
-          <KeyValue label="엽서" value={`보유 ${w?.postcardBalance ?? 0}장 · 오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`} />
-          <Rule />
-          <KeyValue label="우표" value={`${w?.stampBalance ?? 0}개`} />
-        </View>
-        <View style={styles.walletActions}>
-          <Button
-            label="엽서로 교환 (책갈피 1)"
-            variant="outline"
-            size="sm"
-            onPress={() => exchange.mutate('POSTCARD')}
-            disabled={exchange.isPending || (w?.bookmarkBalance ?? 0) < 1}
-          />
-          <Button
-            label="우표로 교환 (책갈피 2)"
-            variant="outline"
-            size="sm"
-            onPress={() => exchange.mutate('STAMP')}
-            disabled={exchange.isPending || (w?.bookmarkBalance ?? 0) < 2}
-          />
-        </View>
-        {!subscribed ? (
-          <View style={styles.subscribeBlock}>
-            <Button label="구독하기" size="sm" onPress={openSubscription} />
-          </View>
-        ) : null}
-      </Card>
 
       {/* 팔로우 · 방문 */}
       <Card>
@@ -131,7 +90,7 @@ export function SocialCard() {
         >
           {myCode.data?.code ?? '................'}
         </Text>
-        <View style={styles.walletActions}>
+        <View style={styles.actions}>
           <Button
             label="코드 재발급"
             variant="ghost"
@@ -178,9 +137,7 @@ export function SocialCard() {
 
 const styles = StyleSheet.create({
   section: { gap: spacing.md },
-  walletHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  walletActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
-  subscribeBlock: { gap: spacing.sm, marginTop: spacing.sm, alignItems: 'flex-start' },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   linkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.xs,
