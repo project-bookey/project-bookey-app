@@ -71,6 +71,7 @@ export type ClubPost = Schemas['ClubPostView'];
 export type ClubSeatPolicy = Schemas['ClubSeatPolicy'];
 export type ClubSeatResult = Schemas['ClubSeatResult'];
 export type ClubLogDay = Schemas['ClubLogDayView'];
+export type ClubLogWeek = Schemas['ClubLogWeekView'];
 export type ClubLogSummary = Schemas['ClubLogSummary'];
 export type ClubLogDayCount = Schemas['ClubLogDayCount'];
 export type ReadingNow = Schemas['ReadingNowView'];

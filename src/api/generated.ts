@@ -2088,6 +2088,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/logs/week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 주간 공유 카드 — 한 주(월~일, KST) 합산과 대표 조각 6개(보는 사람에게 가려지지 않은 것만) */
+        get: operations["week"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/logs/days": {
         parameters: {
             query?: never;
@@ -3930,7 +3947,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_WEEKLY_LOG";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -4121,6 +4138,17 @@ export interface components {
             readerCount: number;
             /** Format: int32 */
             logCount: number;
+        };
+        ClubLogWeekView: {
+            /** Format: date */
+            weekStart: string;
+            /** Format: date */
+            weekEnd: string;
+            clubName: string;
+            book?: components["schemas"]["BookSummary"];
+            summary: components["schemas"]["ClubLogSummary"];
+            highlights: components["schemas"]["ClubPostView"][];
+            topQuote?: string;
         };
         ClubLogDayCount: {
             /** Format: date */
@@ -4576,6 +4604,7 @@ export type SchemaClubPreview = components['schemas']['ClubPreview'];
 export type SchemaPageResponseClubPostView = components['schemas']['PageResponseClubPostView'];
 export type SchemaClubLogDayView = components['schemas']['ClubLogDayView'];
 export type SchemaClubLogSummary = components['schemas']['ClubLogSummary'];
+export type SchemaClubLogWeekView = components['schemas']['ClubLogWeekView'];
 export type SchemaClubLogDayCount = components['schemas']['ClubLogDayCount'];
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
 export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
@@ -8065,6 +8094,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    week: {
+        parameters: {
+            query?: {
+                weekOf?: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubLogWeekView"];
+                };
             };
         };
     };

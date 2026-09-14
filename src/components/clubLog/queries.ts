@@ -9,6 +9,7 @@ export const clubLogKeys = {
   day: (clubId: number, date: string) => ['club', clubId, 'log', 'day', date] as const,
   days: (clubId: number, from: string) => ['club', clubId, 'log', 'days', from] as const,
   readingNow: (clubId: number) => ['club', clubId, 'log', 'readingNow'] as const,
+  week: (clubId: number, monday: string) => ['club', clubId, 'log', 'week', monday] as const,
 };
 
 /**

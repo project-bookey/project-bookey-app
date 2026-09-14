@@ -1,7 +1,7 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
-  Checkpoint, ClubHome, ClubLogDay, ClubLogDayCount, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary,
+  Checkpoint, ClubHome, ClubLogDay, ClubLogDayCount, ClubLogWeek, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary,
   CreatePost, CreateQuote, CreateQuoteComment, CreateReviewComment,
   EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
@@ -150,6 +150,9 @@ export const clubApi = {
   /** 요일 스트립 — from~to(포함, 최대 14일) 날짜마다 조각 수. */
   logDays: (clubId: number, from: string, to: string) =>
     api<ClubLogDayCount[]>(`/api/v1/clubs/${clubId}/logs/days`, { query: { from, to } }),
+  /** 주간 공유 카드 — weekOf 가 속한 주(KST 월~일). 비우면 이번 주. */
+  logWeek: (clubId: number, weekOf?: string) =>
+    api<ClubLogWeek>(`/api/v1/clubs/${clubId}/logs/week`, { query: { weekOf } }),
   readingNow: (clubId: number) => api<ReadingNow[]>(`/api/v1/clubs/${clubId}/reading-now`),
   /** 조각 남기기 — 멀티파트(file 선택 · body · anchorPage · spoilerLevel · readingSessionId). */
   createLog: (clubId: number, form: FormData) =>

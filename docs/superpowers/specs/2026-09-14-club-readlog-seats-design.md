@@ -188,8 +188,13 @@
 - **화면 4** — 360×640(9:16). 표제 "월요일의 데미안, 이번 주" · 조각 6장 콜라주 · 스티키 "함께 읽은 일주일 742쪽 · 3명 · 9시간 40분 · 19조각" · 푸터 `bookey · 9/8 – 9/14`.
 - 서버 `GET /api/v1/clubs/{clubId}/logs/week?weekOf=` → 합산 + 대표 조각 6개(반응 많은 순, **가려지지 않는 조각만** — 공유 이미지에 스포일러가 새지 않게) +
   "이번 주 가장 많이 멈춘 문장"(그 주 `QUOTE` 글 중 반응 최다, 없으면 생략).
-- 앱에서 카드를 그려 이미지로 저장·공유 — `react-native-view-shot` + `expo-sharing` 추가 필요(네이티브 모듈 → dev client 재빌드).
-- 일요일 21:00 KST `ClubScheduleJob` 에 주간 알림(`CLUB_WEEKLY_LOG`, 신규 enum) — 실제 발송은 푸시 연동 이후.
+  "가려지지 않는 조각"은 **보는 사람 기준**이다 — 내 진도보다 뒤 쪽에 붙은 조각·문장은 싣지 않는다.
+- 앱 `/club/[id]/log/week`(보드 머리의 '주간 카드'로 진입): 주 이동, 카드 미리보기, '이미지로 공유하기'.
+  카드는 `WeekCard` View 를 그대로 캡처한다 — 네이티브 `react-native-view-shot` → `expo-sharing`,
+  웹은 html2canvas(view-shot 웹 구현) → 파일 공유 지원 브라우저는 공유 시트, 아니면 PNG 내려받기. 내보내기 1080×1920.
+  네이티브 모듈이 늘었으므로 dev client 재빌드 필요. 웹 캡처에서는 도트 종이 질감(radial-gradient)이 빠진다.
+- 일요일 21:00 KST `ClubScheduleJob.notifyWeeklyLogCards` — 그 주 조각이 있는 진행 중 모임 멤버에게 `CLUB_WEEKLY_LOG`.
+  실제 발송은 푸시 연동 이후이고, 앱 알림 목록은 아직 탭 이동이 없어 카드로 바로 가지 않는다.
 
 ---
 
@@ -199,7 +204,7 @@
 |---|---|---|---|
 | 1 ✅ | `feature/club-seats` (마이그레이션 없음) | `feature/club-seats` | 2026-09-14 구현. 책갈피 결제 전에는 DB·어드민 지급으로 검증 |
 | 2 ✅ | `feature/club-logs` (V20) | `feature/club-logs` | 2026-09-14 구현. 카메라 권한(`app.json`)이 늘어 dev client 재빌드 필요 |
-| 3 | `feature/club-log-week` | `feature/club-log-week` | 네이티브 의존성 추가 |
+| 3 ✅ | `feature/club-log-week` | `feature/club-log-week` | 2026-09-14 구현. 네이티브 의존성 추가 → dev client 재빌드 |
 
 각 단계는 백엔드 먼저 머지 → 앱에서 `npm run types` → 타입 diff 커밋 → 화면 작업 순서로 간다.
 
@@ -225,5 +230,5 @@
 
 ## 백로그
 
-같은 책 여러 모임일 때 조각 남길 모임 고르기 · 서명 URL · 페이지 도착 알림("지유님이 87쪽에 조각을 남겼어요") · 예약형 같이 읽기 시간 · 조각 여러 장/짧은 영상 ·
+같은 책 여러 모임일 때 조각 남길 모임 고르기 · 알림 탭 → 해당 화면 이동(주간 카드 등) · 서명 URL · 페이지 도착 알림("지유님이 87쪽에 조각을 남겼어요") · 예약형 같이 읽기 시간 · 조각 여러 장/짧은 영상 ·
 모임 생성 시 자리 구매 · 책갈피 결제 연동 · `Club.archive()` 전환 배치 · 자리 구매 이력 화면(원장 조회 API).

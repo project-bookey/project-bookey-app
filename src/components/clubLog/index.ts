@@ -3,6 +3,7 @@
  */
 export { LogEntryCard } from './LogEntryCard';
 export { LogScrap, LOG_REACTIONS } from './LogScrap';
+export { WEEK_CARD_BASE_WIDTH, WEEK_CARD_RATIO, WeekCard } from './WeekCard';
 export { ReadingNowCard, SummaryNote, WeekStrip } from './LogBoardParts';
 export { addDays, dayOfMonth, kstTime, mondayOf, todayKst, weekTitle, weekdayLabel } from './dates';
 export { clubLogKeys, useMyClubRecord } from './queries';

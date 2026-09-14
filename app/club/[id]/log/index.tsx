@@ -109,6 +109,12 @@ export default function ClubLogBoardScreen() {
               {weekTitle(monday)}{authors > 0 ? ` · ${authors}명이 남긴 조각` : ''}
             </Text>
           </View>
+          <Button
+            label="주간 카드"
+            size="sm"
+            variant="outline"
+            onPress={() => router.push({ pathname: '/club/[id]/log/week', params: { id: String(clubId), weekOf: monday } })}
+          />
         </View>
 
         {date === today ? (

@@ -44,7 +44,8 @@
           "cameraPermission": "모임 읽기로그에 남길 조각을 찍기 위해 카메라에 접근합니다.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "apiBaseUrl": "https://bookey-backend-292036527025.asia-northeast3.run.app"
