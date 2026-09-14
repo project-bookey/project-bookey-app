@@ -3,27 +3,48 @@ import { Platform } from 'react-native';
 
 import { getTokens, setTokens, clearTokens } from '@/store/tokenStorage';
 
+/** extra.apiBaseUrl 도 없는 최악의 경우에만 쓰는 값. */
+const FALLBACK_API_URL = 'http://localhost:8080';
+
+function isLoopback(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * API 베이스 URL 결정.
- * Expo Go 로 실제 기기에서 열면 localhost 가 폰 자신을 가리키므로,
- * 개발 서버 호스트(=맥의 LAN IP)를 그대로 사용한다.
+ *
+ * 1. `EXPO_PUBLIC_API_URL` — 개발자 개인 오버라이드(.env.local). 있으면 무조건 이긴다.
+ * 2. `app.json` 의 `extra.apiBaseUrl` — 저장소에 커밋된 기본값. env 파일이 없는
+ *    팀원·CI·EAS 빌드가 보게 되는 주소다.
+ * 3. 기본값이 로컬 백엔드(localhost)를 가리킬 때에 한해 개발 서버 호스트(=맥의 LAN IP)로
+ *    바꾼다. Expo Go 를 실제 기기에서 열면 localhost 는 폰 자신을 가리키기 때문이다.
+ *    기본값이 원격 주소면 이 치환은 건너뛴다 — 로컬 백엔드를 위한 장치일 뿐이다.
  */
 function resolveBaseUrl(): string {
-  const configured = process.env.EXPO_PUBLIC_API_URL
-    ?? (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl;
+  const override = process.env.EXPO_PUBLIC_API_URL;
+  if (override) {
+    return override;
+  }
 
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+  const configured =
+    (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl
+    ?? FALLBACK_API_URL;
+
+  if (Platform.OS === 'web' || !isLoopback(configured)) {
+    return configured;
   }
-  if (Platform.OS === 'web') {
-    return configured ?? 'http://localhost:8080';
-  }
+
   const hostUri = Constants.expoConfig?.hostUri ?? Constants.expoGoConfig?.debuggerHost;
   const host = hostUri?.split(':')[0];
   if (host && host !== 'localhost' && host !== '127.0.0.1') {
-    return `http://${host}:8080`;
+    return `http://${host}:${new URL(configured).port || '8080'}`;
   }
-  return configured ?? 'http://localhost:8080';
+  return configured;
 }
 
 export const API_BASE_URL = resolveBaseUrl();
