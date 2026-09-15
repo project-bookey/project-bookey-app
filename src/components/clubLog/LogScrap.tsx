@@ -18,21 +18,28 @@ export const LOG_REACTIONS = [
  * 읽기로그 조각 하나 — 사진 조각은 폴라로이드, 글만 남긴 조각은 메모 조각, 가려진 조각은 빗금 폴라로이드.
  * 기울기는 목록 순서(index)로 정해 다시 그려도 조각이 튀지 않는다.
  */
-export function LogScrap({ log, index, myPage, selected, onPress, onReveal, onReact }: {
+export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactions, onReveal, onReact }: {
   log: ClubPost;
   index: number;
   /** 뷰어의 현재 쪽 — 가려진 조각에 '내 진도'를 함께 적는다. */
   myPage?: number | null;
   /** 반응 줄이 열려 있는지(길게 눌러 연다). */
   selected: boolean;
-  onPress: () => void;
+  /** 탭 — 조각을 펼쳐 한 마디까지 본다. */
+  onOpen: () => void;
+  /** 길게 누르기 — 보드에서 바로 반응만 남긴다. */
+  onToggleReactions: () => void;
   onReveal: () => void;
   onReact: (kind: string) => void;
 }) {
   const { colors, cardShadow } = useTheme();
   const rotate = `${tiltFor(index)}deg`;
   const meta = `${log.authorNickname} · ${kstTime(log.createdAt)}${log.anchorPage != null ? ` · ${log.anchorPage}쪽` : ''}`;
-  const reactionTotal = log.reactionCount > 0 ? ` · 반응 ${log.reactionCount}` : '';
+  const tail = [
+    log.reactionCount > 0 ? `반응 ${log.reactionCount}` : null,
+    log.commentCount > 0 ? `한 마디 ${log.commentCount}` : null,
+  ].filter(Boolean).join(' · ');
+  const reactionTotal = tail ? ` · ${tail}` : '';
 
   const reactions = selected && !log.masked ? (
     <View style={styles.reactions}>
@@ -85,7 +92,12 @@ export function LogScrap({ log, index, myPage, selected, onPress, onReveal, onRe
   if (!log.imageUrl) {
     return (
       <View>
-        <Pressable onPress={onPress} onLongPress={onPress} accessibilityRole="button" accessibilityHint="눌러서 반응 남기기">
+        <Pressable
+          onPress={onOpen}
+          onLongPress={onToggleReactions}
+          accessibilityRole="button"
+          accessibilityHint="눌러서 펼치기, 길게 눌러 반응 남기기"
+        >
           <MemoScrap rotate={tiltFor(index) / 2}>
             <Text style={[typeScale.quote, { color: colors.text, fontSize: 15, lineHeight: 24 }]}>{log.body}</Text>
             <Text style={[styles.meta, { color: colors.textFaint, marginTop: spacing.sm }]}>{meta}{reactionTotal}</Text>
@@ -100,10 +112,10 @@ export function LogScrap({ log, index, myPage, selected, onPress, onReveal, onRe
   return (
     <View>
       <Pressable
-        onPress={onPress}
-        onLongPress={onPress}
+        onPress={onOpen}
+        onLongPress={onToggleReactions}
         accessibilityRole="button"
-        accessibilityHint="눌러서 반응 남기기"
+        accessibilityHint="눌러서 펼치기, 길게 눌러 반응 남기기"
         style={[styles.polaroid, { backgroundColor: colors.memoPad, transform: [{ rotate }] }, cardShadow]}
       >
         <View style={[styles.tape, { backgroundColor: colors.bookPage }]} />

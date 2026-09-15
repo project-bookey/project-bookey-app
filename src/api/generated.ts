@@ -1421,6 +1421,25 @@ export interface paths {
         patch: operations["updateSharing"];
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 토론 상세 — 댓글 포함 */
+        get: operations["detail_1"];
+        put?: never;
+        post?: never;
+        /** 삭제 (작성자 또는 운영자) */
+        delete: operations["delete_3"];
+        options?: never;
+        head?: never;
+        /** 글 · 조각 수정 — 작성자만, 한 줄과 쪽을 보낸 값으로 바꾼다 */
+        patch: operations["update_5"];
+        trace?: never;
+    };
     "/api/v1/challenges/{id}/progress": {
         parameters: {
             query?: never;
@@ -1466,11 +1485,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** 에디터 픽 삭제 */
-        delete: operations["delete_3"];
+        delete: operations["delete_4"];
         options?: never;
         head?: never;
         /** 에디터 픽 수정 — 정렬·메모 */
-        patch: operations["update_5"];
+        patch: operations["update_6"];
         trace?: never;
     };
     "/admin/v1/books/{bookId}": {
@@ -1672,7 +1691,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 문장 삭제 — 본인만 */
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1941,11 +1960,11 @@ export interface paths {
             cookie?: never;
         };
         /** 독서 기록 상세 — 진척도 포함 */
-        get: operations["detail_1"];
+        get: operations["detail_2"];
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2065,24 +2084,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clubs/{clubId}/posts/{postId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 토론 상세 — 댓글 포함 */
-        get: operations["detail_2"];
-        put?: never;
-        post?: never;
-        /** 삭제 (작성자 또는 운영자) */
-        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3400,6 +3401,8 @@ export interface components {
             imageWidth?: number;
             /** Format: int32 */
             imageHeight?: number;
+            /** Format: date-time */
+            editedAt?: string;
         };
         ReactionRequest: {
             /** @enum {string} */
@@ -3701,6 +3704,13 @@ export interface components {
         UpdateSharingRequest: {
             shareProgress?: boolean;
             allowNudge?: boolean;
+        };
+        UpdateClubPostRequest: {
+            body?: string;
+            /** Format: int32 */
+            anchorPage?: number;
+            /** @enum {string} */
+            spoilerLevel?: "NONE" | "PAGE" | "BOOK";
         };
         ChallengeProgressRequest: {
             /** Format: int32 */
@@ -4568,6 +4578,7 @@ export type SchemaUpdateProgressRequest = components['schemas']['UpdateProgressR
 export type SchemaUpdateGoalRequest = components['schemas']['UpdateGoalRequest'];
 export type SchemaUpdateClubRequest = components['schemas']['UpdateClubRequest'];
 export type SchemaUpdateSharingRequest = components['schemas']['UpdateSharingRequest'];
+export type SchemaUpdateClubPostRequest = components['schemas']['UpdateClubPostRequest'];
 export type SchemaChallengeProgressRequest = components['schemas']['ChallengeProgressRequest'];
 export type SchemaOpsFlagRequest = components['schemas']['OpsFlagRequest'];
 export type SchemaEditorPickUpdateRequest = components['schemas']['EditorPickUpdateRequest'];
@@ -7115,6 +7126,77 @@ export interface operations {
             };
         };
     };
+    detail_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubPostView"];
+                };
+            };
+        };
+    };
+    delete_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateClubPostRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubPostView"];
+                };
+            };
+        };
+    };
     progress: {
         parameters: {
             query?: never;
@@ -7165,7 +7247,7 @@ export interface operations {
             };
         };
     };
-    delete_3: {
+    delete_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -7185,7 +7267,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -7483,7 +7565,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -7859,7 +7941,7 @@ export interface operations {
             };
         };
     };
-    detail_1: {
+    detail_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -7881,7 +7963,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -8050,50 +8132,6 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ClubPreview"];
                 };
-            };
-        };
-    };
-    detail_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-                postId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClubPostView"];
-                };
-            };
-        };
-    };
-    delete_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-                postId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
