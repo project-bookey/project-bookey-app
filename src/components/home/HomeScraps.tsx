@@ -18,7 +18,7 @@ import type { PlazaItem, Post } from '@/api/types';
 import { MemoScrap, TiltCover } from '@/components/collage';
 import { HomeSection } from '@/components/home/HomeSection';
 import { ScrapAuthor } from '@/components/home/ScrapAuthor';
-import { AUTHOR_GAP, AUTHOR_H, QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
+import { QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
 
@@ -33,32 +33,34 @@ const POST_FEED_SIZE = 5;
 const SLOTS = ['quote', 'post', 'quote', 'post', 'quote'] as const;
 /** 회전 간격(ms). */
 const ROTATE_MS = 6000;
-/** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. 높이는 1.5배(108). */
+/** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. */
 const COVER_W = 72;
+/** 표지 높이(px) — TiltCover 가 폭의 1.5배로 그린다. 글 조각도 이 높이에 맞춰 선다. */
+const COVER_H = Math.round(COVER_W * 1.5);
 // 작성자 행·인용 조판(AUTHOR_*·QUOTE_LINES·QUOTE_MAX_H)은 독후감 조각과 나눠 쓰는 값이라
 // scrapMetrics 한 곳에 있다 — 스포트라이트는 인용 토큰(`typeScale.quote`, 세리프 17/28)을 그대로 세운다.
 
 /**
- * 행 고정 높이(px).
+ * 행 고정 높이(px) — **표지와 같은 108**.
  *
- * 회전할 때 아래 행들이 밀리면 안 되므로 minHeight 가 아니라 **높이를 못 박는다**.
- * minHeight 만 주면 문장이 3줄인 항목에서 카드가 그 값을 넘겨 행이 커지고,
- * 1줄짜리로 넘어가는 순간 홈 전체가 출렁인다.
+ * 회전할 때 아래 행들이 밀리면 안 되므로 minHeight 가 아니라 높이를 못 박는다.
+ * minHeight 만 주면 문장이 긴 항목에서 카드가 그 값을 넘겨 행이 커지고, 짧은 항목으로
+ * 넘어가는 순간 홈 전체가 출렁인다.
  *
- * 인용 3줄 최악의 경우 필요한 높이:
+ * 값은 계산이 아니라 COVER_H 다 — 글 조각이 옆 표지보다 훨씬 커서 어색하다는
+ * 피드백(2026-09-08)으로 표지 높이에 맞췄다(그전엔 인용 3줄 기준 162였다).
+ * 그 108 을 안에서 이렇게 나눠 쓴다:
  *
  *   스크랩 테두리 1×2 + 안쪽 여백 12×2  = 26
- *   작성자 행 40 + 아래 간격 8          = 48
- *   인용 28 × 3                         = 84
- *                                     합 = 158
+ *   작성자 행 44 + 아래 간격 8          = 52
+ *   글 상자(인용 1줄 · 독후감 제목 1줄) = 28
+ *                                     합 = 106  (남는 2px 은 글꼴 폴백 여유)
  *
- * 여기에 글꼴 폴백으로 줄상자가 두꺼워질 때를 위한 여유 4px 을 얹어 162.
- * 핫 지표(좋아요)는 바닥 줄이 아니라 작성자 행 오른쪽에 있다 — 바닥에 한 줄을 더 두면
- * 상자가 위아래로 너무 크다는 피드백(2026-09-08)으로 187 에서 여기까지 줄였다.
- * 독후감 조각도 같은 짜임(작성자 행 + 글 상자 84)이라 어느 쪽이 서도 행 높이가 같다.
+ * 작성자 행이나 인용 줄 수를 키우려면 scrapMetrics 를 고치되 이 셈이 108 을 넘지 않아야 한다 —
+ * 넘으면 조각 안에서 글이 소리 없이 잘린다(글 상자마다 overflow:hidden 이 걸려 있다).
+ * 독후감 조각도 같은 짜임(작성자 행 + 글 상자 28)이라 어느 쪽이 서도 행 높이가 같다.
  */
-const ROW_SLACK = 4;
-const ROW_H = 2 + spacing.md * 2 + AUTHOR_H + AUTHOR_GAP + QUOTE_MAX_H + ROW_SLACK;
+const ROW_H = COVER_H;
 /** 들어오는 조각이 올라오는 거리(px) — 책상에 내려놓는 듯한 짧은 낙차. */
 const ENTER_RISE = 8;
 /** 카드 기울기(도) — 회전 항목마다 좌우로 엇갈린다. */
@@ -328,6 +330,7 @@ const styles = StyleSheet.create({
   card: { flex: 1, overflow: 'hidden' },
   // 인용은 제 줄 수만큼만 차지하고 3줄에서 끊긴다(QUOTE_MAX_H 주석 참고).
   quote: { ...typeScale.quote, maxHeight: QUOTE_MAX_H, overflow: 'hidden' },
-  // 표지(108)는 행(162)보다 낮다 — 가운데에 걸어 위아래 여백을 맞춘다.
+  // 표지와 행 높이가 같다(ROW_H = COVER_H) — 그래도 가운데 걸기는 남긴다.
+  // 표지가 폭의 1.5배에서 반올림되는 자리라 1px 어긋나도 위아래가 갈리지 않게.
   coverSlot: { justifyContent: 'center' },
 });

@@ -1,6 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AUTHOR_AVATAR, AUTHOR_GAP, AUTHOR_H, META_LH, META_SIZE } from '@/components/home/scrapMetrics';
+import {
+  AUTHOR_AVATAR,
+  AUTHOR_GAP,
+  AUTHOR_H,
+  AUTHOR_LINE1_H,
+  AUTHOR_LINE_GAP,
+  META_LH,
+  META_SIZE,
+} from '@/components/home/scrapMetrics';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Tag } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
@@ -67,11 +75,18 @@ const styles = StyleSheet.create({
     height: AUTHOR_H,
     marginBottom: AUTHOR_GAP,
   },
-  // 두 줄이 아바타 세로 가운데에 걸린다 — 20 + 2 + 14 = 36, 아바타 40 안에 든다.
+  // 두 줄이 아바타 세로 가운데에 걸린다 — 20 + 10 + 14 = 44 가 곧 행 높이(AUTHOR_H)다.
   text: { flex: 1, justifyContent: 'center' },
   // 태그(패딩 3 + 글자 ≈ 20)가 닉네임 줄 높이와 같아 줄이 늘어나지 않는다.
-  line1: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 20 },
-  line2: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: META_LH, marginTop: 2 },
+  line1: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: AUTHOR_LINE1_H },
+  // 줄 사이는 AUTHOR_LINE_GAP — 태그와 좋아요가 붙어 보이지 않게 벌린 값이다(행 높이에 반영됨).
+  line2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    height: META_LH,
+    marginTop: AUTHOR_LINE_GAP,
+  },
   // 닉네임은 본문 굵기 그대로(15) — 아바타(40)와 나란히 서서 누구 글인지 먼저 읽힌다.
   // 오른쪽 열(태그·좋아요)은 줄어들지 않는다 — 닉네임·책 제목이 먼저 말줄임된다.
   nickname: { flex: 1, lineHeight: 20 },
