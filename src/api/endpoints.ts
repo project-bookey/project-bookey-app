@@ -140,6 +140,15 @@ export const clubApi = {
   createPost: (clubId: number, body: {
     type?: string; body: string; anchorPage?: number; spoilerLevel?: string; parentId?: number;
   }) => api<ClubPost>(`/api/v1/clubs/${clubId}/posts`, { method: 'POST', body }),
+  /** 글 · 조각 한 건 — 한 마디(댓글)까지 함께 내려온다. */
+  post: (clubId: number, postId: number) =>
+    api<ClubPost>(`/api/v1/clubs/${clubId}/posts/${postId}`),
+  /** 수정 (작성자) — 보낸 값으로 전부 바뀐다. 쪽을 떼려면 anchorPage 를 빼고 spoilerLevel 을 NONE 으로. */
+  updatePost: (clubId: number, postId: number, body: {
+    body: string; anchorPage?: number; spoilerLevel?: string;
+  }) => api<ClubPost>(`/api/v1/clubs/${clubId}/posts/${postId}`, { method: 'PATCH', body }),
+  deletePost: (clubId: number, postId: number) =>
+    api<void>(`/api/v1/clubs/${clubId}/posts/${postId}`, { method: 'DELETE' }),
   reveal: (clubId: number, postId: number) =>
     api<ClubPost>(`/api/v1/clubs/${clubId}/posts/${postId}/reveal`, { method: 'POST' }),
   react: (clubId: number, postId: number, kind: string) =>

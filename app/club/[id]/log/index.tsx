@@ -90,7 +90,11 @@ export default function ClubLogBoardScreen() {
         index={index}
         myPage={me?.currentPage}
         selected={openReactions === log.id}
-        onPress={() => setOpenReactions((cur) => (cur === log.id ? null : log.id))}
+        onOpen={() => router.push({
+          pathname: '/club/[id]/log/[postId]',
+          params: { id: String(clubId), postId: String(log.id) },
+        })}
+        onToggleReactions={() => setOpenReactions((cur) => (cur === log.id ? null : log.id))}
         onReveal={() => reveal.mutate(log.id)}
         onReact={(kind) => react.mutate({ postId: log.id, kind })}
       />

@@ -10,6 +10,8 @@ export const clubLogKeys = {
   days: (clubId: number, from: string) => ['club', clubId, 'log', 'days', from] as const,
   readingNow: (clubId: number) => ['club', clubId, 'log', 'readingNow'] as const,
   week: (clubId: number, monday: string) => ['club', clubId, 'log', 'week', monday] as const,
+  /** 조각 한 장 — 한 마디까지 붙어 오는 상세. all() 아래가 아니라서 따로 무효화한다. */
+  scrap: (clubId: number, postId: number) => ['club', clubId, 'post', postId] as const,
 };
 
 /**

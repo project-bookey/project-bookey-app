@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubApi } from '@/api/endpoints';
+import { clubApi, libraryApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { clubLogKeys, kstTime, todayKst } from '@/components/clubLog';
+import { clubLogKeys, kstTime, todayKst, useMyClubRecord } from '@/components/clubLog';
 import { Button, Card, Eyebrow, Toggle, formatDuration } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -43,7 +43,9 @@ export default function ClubLogNewScreen() {
 
   const [photo, setPhoto] = useState<PickedPhoto | null>(null);
   const [body, setBody] = useState('');
-  const [anchor, setAnchor] = useState(endPage != null);
+  // 타이머에서 왔으면 방금 읽은 마지막 쪽이 채워져 있고, 보드에서 왔으면 내 진도가 채워진다. 직접 고칠 수 있다.
+  const [page, setPage] = useState(endPage != null ? String(endPage) : '');
+  const [anchor, setAnchor] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
 
   const today = useQuery({
@@ -51,6 +53,16 @@ export default function ClubLogNewScreen() {
     queryFn: () => clubApi.logs(clubId, todayKst()),
     enabled: Number.isFinite(clubId),
   });
+  const club = useQuery({
+    queryKey: ['club', clubId],
+    queryFn: () => clubApi.home(clubId),
+    enabled: Number.isFinite(clubId),
+  });
+  const myRecord = useMyClubRecord(club.data);
+  const atPage = page.trim() ? Number(page) : null;
+  const readPage = myRecord?.progress.currentPage ?? 0;
+  /** 지금 진도보다 앞선 쪽을 적었을 때만 서재 진도를 밀어 올린다 — 되감지는 않는다. */
+  const willBump = atPage != null && atPage > readPage;
 
   const leave = () => {
     if (router.canGoBack()) {
@@ -89,17 +101,25 @@ export default function ClubLogNewScreen() {
       const form = photo ? await prepareImage(photo) : new FormData();
       const text = body.trim();
       if (text) form.append('body', text);
-      if (anchor && endPage != null) {
-        form.append('anchorPage', String(endPage));
-        form.append('spoilerLevel', 'PAGE');
+      if (atPage != null) {
+        form.append('anchorPage', String(atPage));
+        form.append('spoilerLevel', anchor ? 'PAGE' : 'NONE');
       } else {
         form.append('spoilerLevel', 'NONE');
       }
       if (sessionId != null) form.append('readingSessionId', String(sessionId));
-      return clubApi.createLog(clubId, form);
+      const saved = await clubApi.createLog(clubId, form);
+
+      // 적어 둔 쪽이 서재 진도보다 앞서면 진도도 같이 올린다 — 보드의 가림 기준과 숫자가 어긋나지 않게.
+      if (willBump && myRecord != null && atPage != null) {
+        await libraryApi.updateProgress(myRecord.id, atPage);
+      }
+      return saved;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clubLogKeys.all(clubId) });
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      queryClient.invalidateQueries({ queryKey: ['library'] });
       // 보드에서 왔으면 그 보드로 돌아가고(스택에 보드가 두 겹 쌓이지 않게), 타이머에서 왔으면 보드로 바꾼다.
       router.dismissTo(`/club/${clubId}/log`);
     },
@@ -151,7 +171,7 @@ export default function ClubLogNewScreen() {
               {body.trim() || '한 줄을 적으면 여기에 적혀요'}
             </Text>
             <Text style={[styles.meta, { color: colors.mid }]}>
-              나 · {kstTime(new Date().toISOString())}{anchor && endPage != null ? ` · ${endPage}쪽` : ''}
+              나 · {kstTime(new Date().toISOString())}{atPage != null ? ` · ${atPage}쪽` : ''}
             </Text>
           </View>
 
@@ -176,10 +196,32 @@ export default function ClubLogNewScreen() {
           <Text style={[styles.counter, { color: colors.textFaint }]}>{body.length}/{BODY_MAX}</Text>
         </View>
 
-        {endPage != null ? (
+        <View style={{ gap: spacing.sm }}>
+          <Eyebrow plain>몇 쪽까지 읽었나요</Eyebrow>
+          <View style={styles.pageRow}>
+            <TextInput
+              value={page}
+              onChangeText={(t) => setPage(t.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              placeholder={readPage > 0 ? String(readPage) : '쪽'}
+              placeholderTextColor={colors.textFaint}
+              style={[styles.pageInput, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.text }]}
+              accessibilityLabel="몇 쪽까지 읽었나요"
+            />
+            <Text style={[typeScale.caption, { color: colors.textFaint, flex: 1 }]}>
+              {atPage == null
+                ? '비워 두면 쪽 없이 남겨요.'
+                : willBump
+                  ? '서재 진도도 여기까지 올라가요.'
+                  : `지금 진도 ${readPage}쪽은 그대로 둬요.`}
+            </Text>
+          </View>
+        </View>
+
+        {atPage != null ? (
           <Toggle
-            label={`${endPage}쪽에 붙이기`}
-            description={`${endPage}쪽까지 읽은 멤버에게만 보여요. 책 본문이 찍혀도 스포일러 걱정 없이.`}
+            label={`${atPage}쪽까지 읽은 사람에게만 보이기`}
+            description="책 본문이 찍혀도 스포일러 걱정 없이. 끄면 쪽은 적어 두되 모두에게 보여요."
             value={anchor}
             onChange={setAnchor}
           />
@@ -260,4 +302,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   counter: { fontFamily: mono.regular, fontSize: 10, alignSelf: 'flex-end' },
+  pageRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  pageInput: {
+    width: 108,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontFamily: mono.regular,
+    fontSize: 16,
+  },
 });
