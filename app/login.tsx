@@ -35,8 +35,8 @@ const BUTTON_HEIGHT = 48;
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
  * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 소셜 버튼은 연동된 계정의 로그인 전용(신규 가입 불가).
- * 가입 인증은 서버 설정(signup-config)을 따른다 — IDENTITY(휴대폰 본인인증, 기본) 또는 EMAIL_CODE.
- * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 프로필 사진 등록(필수)으로 넘어간다.
+ * 가입 인증은 서버 설정(signup-config)을 따른다 — IDENTITY, EMAIL_CODE 또는 NONE.
+ * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 바로 홈으로 넘어간다.
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -103,7 +103,12 @@ export default function LoginScreen() {
     setSocialLoading('GOOGLE');
     setError(null);
     socialLogin('GOOGLE', idToken)
-      .then(() => router.replace('/home'))
+      .then(async (newUser) => {
+        if (newUser) {
+          await applyOnboardingPicks();
+        }
+        router.replace('/home');
+      })
       .catch((e) => setError(e instanceof Error ? e.message : 'Google 로그인에 실패했습니다.'))
       .finally(() => setSocialLoading(null));
   }, [googleResponse, router, socialLogin]);
@@ -175,11 +180,18 @@ export default function LoginScreen() {
     setError(null);
     try {
       if (isSignup) {
-        await emailSignup(email.trim(), password, nickname.trim(),
-          method === 'EMAIL_CODE' ? { code: code.trim() } : { identityVerificationId: identityId ?? undefined });
+        await emailSignup(
+          email.trim(),
+          password,
+          nickname.trim(),
+          method === 'EMAIL_CODE'
+            ? { code: code.trim() }
+            : method === 'IDENTITY'
+              ? { identityVerificationId: identityId ?? undefined }
+              : {},
+        );
         await applyOnboardingPicks();
-        // 프로필 사진 등록은 필수 — 홈 대신 사진 등록으로 보낸다.
-        router.replace('/profile-photo');
+        router.replace('/home');
       } else {
         await emailLogin(email.trim(), password);
         router.replace('/home');
@@ -206,7 +218,10 @@ export default function LoginScreen() {
       if (!credential.identityToken) {
         throw new Error('Apple 인증 토큰을 받지 못했습니다.');
       }
-      await socialLogin('APPLE', credential.identityToken);
+      const newUser = await socialLogin('APPLE', credential.identityToken);
+      if (newUser) {
+        await applyOnboardingPicks();
+      }
       router.replace('/home');
     } catch (e) {
       if ((e as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') {
@@ -227,7 +242,10 @@ export default function LoginScreen() {
     try {
       const accessToken = await kakao.login();
       if (!accessToken) return; // 사용자가 취소
-      await socialLogin('KAKAO', accessToken);
+      const newUser = await socialLogin('KAKAO', accessToken);
+      if (newUser) {
+        await applyOnboardingPicks();
+      }
       router.replace('/home');
     } catch (e) {
       setError(e instanceof Error ? e.message : '카카오 로그인에 실패했습니다.');

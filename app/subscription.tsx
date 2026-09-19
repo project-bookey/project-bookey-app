@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { subscriptionApi, walletApi } from '@/api/endpoints';
@@ -16,6 +16,7 @@ const FEATURE_COPY: Record<string, string> = {
   visitors: '누가 내 페이지를 다녀갔는지 확인할 수 있어요.',
   likers: '내 글에 좋아요를 누른 사람을 확인할 수 있어요.',
 };
+const PAYMENTS_ENABLED = process.env.EXPO_PUBLIC_ENABLE_PAYMENTS === 'true';
 
 export default function SubscriptionScreen() {
   const router = useRouter();
@@ -27,16 +28,6 @@ export default function SubscriptionScreen() {
     mutationFn: (provider: SubscriptionProvider) => subscriptionApi.begin(provider),
     onMutate: () => setNotice(null),
     onSuccess: (view, provider) => {
-      if (provider === 'TOSS') {
-        if (!view.checkoutUrl) {
-          setNotice('토스 결제창 URL을 받지 못했습니다.');
-          return;
-        }
-        Linking.openURL(view.checkoutUrl).catch(() => {
-          setNotice('토스 결제창을 열지 못했습니다.');
-        });
-        return;
-      }
       if (provider === 'APPLE') {
         setNotice('App Store 결제는 development build에서 테스트할 수 있습니다. 결제 후 거래 ID는 서버에서 Apple로 재검증합니다.');
         return;
@@ -91,24 +82,20 @@ export default function SubscriptionScreen() {
             <View style={styles.checkoutButtons}>
               {Platform.OS === 'ios' ? (
                 <Button
-                  label="Apple로 구독하기"
+                  label={PAYMENTS_ENABLED ? 'Apple로 구독하기' : 'App Store 결제 준비 중'}
                   onPress={() => checkout.mutate('APPLE')}
                   loading={checkout.isPending}
+                  disabled={!PAYMENTS_ENABLED}
                 />
               ) : null}
               {Platform.OS === 'android' ? (
                 <Button
-                  label="Google Play로 구독하기"
+                  label={PAYMENTS_ENABLED ? 'Google Play로 구독하기' : 'Google Play 결제 준비 중'}
                   onPress={() => checkout.mutate('GOOGLE')}
                   loading={checkout.isPending}
+                  disabled={!PAYMENTS_ENABLED}
                 />
               ) : null}
-              <Button
-                label="웹에서 Toss 결제하기"
-                variant={Platform.OS === 'web' ? 'primary' : 'outline'}
-                onPress={() => checkout.mutate('TOSS')}
-                loading={checkout.isPending}
-              />
             </View>
             {error ? (
               <Text style={[typeScale.caption, styles.error, { color: colors.warn }]}>
@@ -118,9 +105,13 @@ export default function SubscriptionScreen() {
               <Text style={[typeScale.caption, styles.note, { color: colors.textMuted }]}>
                 {notice}
               </Text>
+            ) : !PAYMENTS_ENABLED ? (
+              <Text style={[typeScale.caption, styles.note, { color: colors.textMuted }]}> 
+                스토어 인앱 결제를 준비하고 있습니다.
+              </Text>
             ) : (
               <Text style={[typeScale.caption, styles.note, { color: colors.textFaint }]}>
-                토스 결제 완료 후 앱으로 돌아오면 서버에서 결제를 다시 검증합니다.
+                앱 결제 완료 후 서버에서 결제를 다시 검증합니다.
               </Text>
             )}
           </Card>

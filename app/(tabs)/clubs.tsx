@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
@@ -15,7 +17,14 @@ export default function ClubsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const clubs = useQuery({ queryKey: ['clubs'], queryFn: clubApi.myClubs });
+  const { refetch } = clubs;
   const items = (clubs.data?.content ?? []).filter(Boolean);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   return (
     <PaperScreen withTopInset>

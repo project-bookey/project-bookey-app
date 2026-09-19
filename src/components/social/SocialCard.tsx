@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -28,6 +29,7 @@ export function SocialCard() {
   const [friendCode, setFriendCode] = useState('');
   const [followMessage, setFollowMessage] = useState<string | null>(null);
   const [followError, setFollowError] = useState<string | null>(null);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
 
   const rotate = useMutation({
     mutationFn: followApi.rotateCode,
@@ -54,6 +56,13 @@ export function SocialCard() {
   const openSubscription = () => {
     router.push({ pathname: '/subscription', params: { feature: 'visitors' } });
   };
+  const copyMyCode = async () => {
+    const code = myCode.data?.code;
+    if (!code) return;
+
+    await Clipboard.setStringAsync(code);
+    setCopyMessage('복사했습니다.');
+  };
 
   return (
     <View style={styles.section}>
@@ -62,10 +71,28 @@ export function SocialCard() {
 
       {/* 팔로우 · 방문 */}
       <Card>
-        <KeyValue
-          label="팔로워 · 팔로잉"
-          value={`${p?.followerCount ?? 0} · ${p?.followingCount ?? 0}`}
-        />
+        {/* 검색이 없으므로 이 목록이 사람에게 닿는 길이다 — 눌러 팔로우 목록으로 (§14.3) */}
+        <Pressable
+          onPress={() => router.push({ pathname: '/follows', params: { tab: 'FOLLOWING' } })}
+          accessibilityRole="button"
+          style={styles.linkRow}
+        >
+          <Text style={[typeScale.body, { color: colors.textMuted }]}>
+            팔로잉 {p?.followingCount ?? 0}명
+          </Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>목록 보기 ›</Text>
+        </Pressable>
+        <Rule />
+        <Pressable
+          onPress={() => router.push({ pathname: '/follows', params: { tab: 'FOLLOWER' } })}
+          accessibilityRole="button"
+          style={styles.linkRow}
+        >
+          <Text style={[typeScale.body, { color: colors.textMuted }]}>
+            팔로워 {p?.followerCount ?? 0}명
+          </Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>목록 보기 ›</Text>
+        </Pressable>
         <Rule />
         <Pressable
           onPress={subscribed ? () => router.push('/visitors') : openSubscription}
@@ -84,12 +111,32 @@ export function SocialCard() {
       {/* 팔로우 코드 (§14.3) — 검색이 없으므로 지인은 이 코드로만 */}
       <Card>
         <Eyebrow plain>내 팔로우 코드</Eyebrow>
-        <Text
-          selectable
-          style={[styles.code, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]}
-        >
-          {myCode.data?.code ?? '................'}
-        </Text>
+        <View style={styles.myCodeRow}>
+          <Text
+            selectable
+            style={[styles.code, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]}
+          >
+            {myCode.data?.code ?? '................'}
+          </Text>
+          <Pressable
+            onPress={copyMyCode}
+            disabled={!myCode.data?.code}
+            accessibilityRole="button"
+            accessibilityLabel="팔로우 코드 복사"
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.copyButton,
+              { borderColor: colors.lineStrong, opacity: pressed ? 0.7 : 1 },
+              !myCode.data?.code && styles.copyButtonDisabled,
+            ]}
+          >
+            <View style={[styles.copyIconBack, { borderColor: colors.textMuted }]} />
+            <View style={[styles.copyIconFront, { borderColor: colors.text }]} />
+          </Pressable>
+        </View>
+        {copyMessage ? (
+          <Text style={[typeScale.caption, { color: colors.accent }]}>{copyMessage}</Text>
+        ) : null}
         <View style={styles.actions}>
           <Button
             label="코드 재발급"
@@ -143,6 +190,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   code: {
+    flex: 1,
     fontFamily: mono.semiBold,
     fontSize: 18,
     letterSpacing: 2,
@@ -150,7 +198,31 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: hairline,
-    marginTop: spacing.md,
+  },
+  myCodeRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, alignItems: 'center' },
+  copyButton: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.md,
+    borderWidth: hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyButtonDisabled: { opacity: 0.35 },
+  copyIconBack: {
+    position: 'absolute',
+    width: 15,
+    height: 18,
+    borderWidth: 1.5,
+    borderRadius: 2,
+    transform: [{ translateX: -3 }, { translateY: -3 }],
+  },
+  copyIconFront: {
+    width: 15,
+    height: 18,
+    borderWidth: 1.5,
+    borderRadius: 2,
+    transform: [{ translateX: 3 }, { translateY: 3 }],
   },
   codeInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
   codeInput: {

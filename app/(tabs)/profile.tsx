@@ -114,12 +114,22 @@ export default function ProfileScreen() {
             <Text style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
               @{user?.handle ?? '—'} · 완독 {counts?.finished ?? 0}권
             </Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              팔로워{' '}
-              <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followerCount ?? 0}</Text>
-              {' · '}팔로잉{' '}
-              <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
-            </Text>
+            {/* 눌러 팔로우 목록으로 — 거기서 사람을 골라 엽서·채팅을 건다 (§14.3) */}
+            <Pressable
+              onPress={() => router.push({ pathname: '/follows', params: { tab: 'FOLLOWER' } })}
+              accessibilityRole="button"
+              accessibilityLabel="팔로워 · 팔로잉 목록"
+              hitSlop={8}
+              style={({ pressed }) => [styles.profileSocial, pressed && styles.pressed]}
+            >
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                팔로워{' '}
+                <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followerCount ?? 0}</Text>
+                {' · '}팔로잉{' '}
+                <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
+                {' ›'}
+              </Text>
+            </Pressable>
           </View>
           {/* 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다. */}
           <Pressable
@@ -578,6 +588,7 @@ const styles = StyleSheet.create({
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
   profileCount: { fontFamily: sans.semiBold },
+  profileSocial: { alignSelf: 'flex-start' },
   pressed: { opacity: 0.72 },
 
   scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },

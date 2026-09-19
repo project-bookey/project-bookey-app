@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "bookey",
+    "name": "Bookey",
     "slug": "bookey",
     "scheme": "bookey",
     "version": "0.1.0",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.bookey.mobile",
+      "buildNumber": "1",
       "usesAppleSignIn": true
     },
     "android": {
@@ -24,6 +25,7 @@
         "backgroundColor": "#F7F4EF"
       },
       "package": "app.bookey.mobile",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -48,7 +50,12 @@
       "expo-sharing"
     ],
     "extra": {
-      "apiBaseUrl": "https://bookey-backend-292036527025.asia-northeast3.run.app"
-    }
+      "apiBaseUrl": "https://api.bookey.site",
+      "router": {},
+      "eas": {
+        "projectId": "a70b0194-a7e3-47c2-828f-71e2a37f3bef"
+      }
+    },
+    "owner": "jaygamo"
   }
 }

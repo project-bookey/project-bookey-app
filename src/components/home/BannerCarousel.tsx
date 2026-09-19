@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Banner } from '@/api/types';
-import { darkColors, radius, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { InlineMarkdownText } from './InlineMarkdownText';
 
 const CARD_H = 108;
 
@@ -61,11 +62,11 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
                   <Text style={[typeScale.monoEyebrow, { color: darkColors.onAccent }]}>EVENT</Text>
                 </View>
                 <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: darkColors.text }]}>
-                  {item.title}
+                  <InlineMarkdownText text={item.title} strongStyle={styles.titleStrong} />
                 </Text>
                 {item.subtitle ? (
                   <Text numberOfLines={1} style={[typeScale.caption, { color: darkColors.textMuted }]}>
-                    {item.subtitle}
+                    <InlineMarkdownText text={item.subtitle} strongStyle={styles.subtitleStrong} />
                   </Text>
                 ) : null}
               </View>
@@ -114,4 +115,6 @@ const styles = StyleSheet.create({
   },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
   dot: { width: 4, height: 4, borderRadius: radius.pill },
+  titleStrong: { fontFamily: sans.bold },
+  subtitleStrong: { fontFamily: sans.semiBold },
 });
