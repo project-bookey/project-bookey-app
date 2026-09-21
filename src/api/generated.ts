@@ -4045,6 +4045,18 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        ClubMemberBrief: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            /** @enum {string} */
+            role: "HOST" | "MODERATOR" | "MEMBER";
+            isMe: boolean;
+            /** Format: double */
+            completionRate?: number;
+            readingNow: boolean;
+        };
         ClubSummaryView: {
             /** Format: int64 */
             id: number;
@@ -4065,6 +4077,7 @@ export interface components {
             unreadPostCount: number;
             /** @enum {string} */
             myRole: "HOST" | "MODERATOR" | "MEMBER";
+            members: components["schemas"]["ClubMemberBrief"][];
         };
         PageResponseClubSummaryView: {
             content?: components["schemas"]["ClubSummaryView"][];
@@ -4610,6 +4623,7 @@ export type SchemaVisitorView = components['schemas']['VisitorView'];
 export type SchemaPageResponseReadingRecordView = components['schemas']['PageResponseReadingRecordView'];
 export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
 export type SchemaPageResponseFollowUserView = components['schemas']['PageResponseFollowUserView'];
+export type SchemaClubMemberBrief = components['schemas']['ClubMemberBrief'];
 export type SchemaClubSummaryView = components['schemas']['ClubSummaryView'];
 export type SchemaPageResponseClubSummaryView = components['schemas']['PageResponseClubSummaryView'];
 export type SchemaClubResultView = components['schemas']['ClubResultView'];

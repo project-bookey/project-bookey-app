@@ -62,6 +62,7 @@ export type DailyStat = Schemas['DailyStat'];
 
 // ── 모임 ─────────────────────────────────────────────────
 export type ClubSummary = Schemas['ClubSummaryView'];
+export type ClubMemberBrief = Schemas['ClubMemberBrief'];
 export type ClubPreview = Schemas['ClubPreview'];
 export type ClubHome = Schemas['ClubHomeView'];
 export type ClubResult = Schemas['ClubResultView'];
