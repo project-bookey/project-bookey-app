@@ -4,7 +4,8 @@ import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useRouter } from 'expo-router';
 
 import type { Banner } from '@/api/types';
-import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
+import { InlineMarkdownText } from './InlineMarkdownText';
 
 const DISMISSED_KEY = 'bookey.dismissedNoticeId';
 
@@ -53,9 +54,13 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
               <Text style={[styles.close, { color: colors.textFaint }]}>×</Text>
             </Pressable>
           </View>
-          <Text style={[typeScale.titleSerif, { color: colors.text }]}>{notice.title}</Text>
+          <Text style={[typeScale.titleSerif, { color: colors.text }]}>
+            <InlineMarkdownText text={notice.title} strongStyle={styles.titleStrong} />
+          </Text>
           {notice.subtitle ? (
-            <Text style={[typeScale.body, styles.subtitle, { color: colors.textMuted }]}>{notice.subtitle}</Text>
+            <Text style={[typeScale.body, styles.subtitle, { color: colors.textMuted }]}>
+              <InlineMarkdownText text={notice.subtitle} strongStyle={styles.subtitleStrong} />
+            </Text>
           ) : null}
           <View style={styles.actions}>
             <Pressable onPress={dismiss} style={[styles.button, { borderColor: colors.lineStrong }]}>
@@ -94,4 +99,6 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: spacing.xs },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
   button: { minWidth: 64, alignItems: 'center', borderWidth: 1, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  titleStrong: { fontFamily: serif.extraBold },
+  subtitleStrong: { fontFamily: sans.semiBold },
 });

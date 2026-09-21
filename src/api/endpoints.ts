@@ -35,6 +35,7 @@ export const authApi = {
   uploadAvatar: (form: FormData) =>
     api<Me>("/api/v1/me/avatar", { method: "POST", body: form }),
   logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
+  deleteAccount: () => api<void>("/api/v1/me", { method: "DELETE" }),
   me: () => api<Me>("/api/v1/me"),
   updateProfile: (body: {
     nickname?: string;
@@ -212,6 +213,41 @@ export const subscriptionApi = {
     api<SubscriptionCheckout>('/api/v1/subscriptions/checkout', { method: 'POST', body: { provider } }),
   verify: (body: SubscriptionVerify) =>
     api<void>('/api/v1/subscriptions/verify', { method: 'POST', body }),
+};
+
+export type BookmarkPurchaseCheckout = {
+  provider: SubscriptionProvider;
+  productId: string;
+  orderId: string;
+  quantity: number;
+  bonusQuantity: number;
+  totalQuantity: number;
+  amountKrw: number;
+  customerKey: string;
+  checkoutUrl?: string;
+  tossClientKey?: string;
+  successUrl?: string;
+  failUrl?: string;
+};
+export type BookmarkPurchaseVerify = {
+  provider: SubscriptionProvider;
+  productId: string;
+  orderId: string;
+  quantity: number;
+  amountKrw: number;
+  paymentKey?: string;
+  receiptData?: string;
+  originalTransactionId?: string;
+};
+
+export const bookmarkPurchaseApi = {
+  begin: (quantity: number, provider: SubscriptionProvider = 'TOSS') =>
+    api<BookmarkPurchaseCheckout>('/api/v1/bookmark-purchases/checkout', {
+      method: 'POST',
+      body: { provider, quantity },
+    }),
+  verify: (body: BookmarkPurchaseVerify) =>
+    api<WalletView>('/api/v1/bookmark-purchases/verify', { method: 'POST', body }),
 };
 
 export const postcardApi = {

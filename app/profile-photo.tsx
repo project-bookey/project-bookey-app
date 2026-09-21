@@ -40,10 +40,7 @@ function normalizeBirthDate(value: string): string | null {
   return dashed;
 }
 
-/**
- * 프로필 사진 등록 — 온보딩 마지막 필수 단계. 가입 직후 여기로 온다.
- * 건너뛰기는 없다(사용자 결정: 필수). 등록이 끝나야 홈으로 들어간다.
- */
+/** 프로필 사진 등록·변경. 가입 직후에는 건너뛰고 나중에 프로필에서 바꿀 수 있다. */
 export default function ProfilePhotoScreen() {
   const router = useRouter();
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
@@ -159,7 +156,7 @@ export default function ProfilePhotoScreen() {
         <Text style={[styles.copy, { color: colors.textMuted }]}>
           {editing
             ? '피드와 엽서에서 보일 사진을 새로 고를 수 있어요.'
-            : `피드와 엽서에서 나를 알아보게 하는 얼굴이에요.\n프로필 사진은 꼭 등록해야 시작할 수 있어요.`}
+            : `피드와 엽서에서 나를 알아보게 하는 얼굴이에요.\n나중에 프로필에서 다시 등록할 수 있어요.`}
         </Text>
 
         <Pressable
@@ -185,6 +182,11 @@ export default function ProfilePhotoScreen() {
         {pickedUri ? (
           <Pressable onPress={pick} accessibilityRole="button" style={styles.ghost}>
             <Text style={[typeScale.label, { color: colors.textMuted }]}>다른 사진 고르기</Text>
+          </Pressable>
+        ) : null}
+        {!editing ? (
+          <Pressable onPress={() => router.replace('/home')} accessibilityRole="button" style={styles.ghost}>
+            <Text style={[typeScale.label, { color: colors.textMuted }]}>나중에 하기</Text>
           </Pressable>
         ) : null}
 

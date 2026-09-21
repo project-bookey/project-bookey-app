@@ -1,13 +1,18 @@
+import { useMutation } from '@tanstack/react-query';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { ApiError } from '@/api/client';
+import { bookmarkPurchaseApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { Button, Card, Eyebrow, KeyValue, Rule } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const PRICE_PER_BOOKMARK = 200;
 const PRESETS = [5, 10, 50] as const;
+const PAYMENTS_ENABLED = process.env.EXPO_PUBLIC_ENABLE_PAYMENTS === 'true';
 
 function bonusFor(quantity: number): number {
   return quantity >= 10 ? Math.floor(quantity * 0.1) : 0;
@@ -19,16 +24,36 @@ function normalizeQuantity(value: string): number {
   return Math.max(0, Math.min(999, Math.floor(parsed)));
 }
 
+function checkoutLabel() {
+  return '결제창으로 구매하기';
+}
+
 export default function BookmarksScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const [quantity, setQuantity] = useState(10);
   const [custom, setCustom] = useState('10');
   const [notice, setNotice] = useState<string | null>(null);
+  const checkout = useMutation({
+    mutationFn: () => bookmarkPurchaseApi.begin(quantity),
+    onMutate: () => setNotice(null),
+    onSuccess: async (view) => {
+      if (!view.checkoutUrl) {
+        setNotice('결제창을 열 수 없습니다.');
+        return;
+      }
+      await WebBrowser.openBrowserAsync(view.checkoutUrl);
+    },
+  });
 
   const bonus = bonusFor(quantity);
   const total = quantity + bonus;
   const price = quantity * PRICE_PER_BOOKMARK;
+  const error = checkout.error instanceof ApiError
+    ? checkout.error.message
+    : checkout.error
+      ? '결제를 시작하지 못했습니다.'
+      : null;
 
   const setAmount = (next: number) => {
     setNotice(null);
@@ -122,14 +147,23 @@ export default function BookmarksScreen() {
               <KeyValue label="결제 금액" value={`${price.toLocaleString()}원`} />
             </View>
             <Button
-              label="구매하기"
+              label={PAYMENTS_ENABLED ? checkoutLabel() : '스토어 결제 준비 중'}
               style={styles.checkout}
-              disabled={quantity < 1}
-              onPress={() => setNotice('책갈피 결제는 Toss 결제 계약 후 연결됩니다.')}
+              disabled={!PAYMENTS_ENABLED || quantity < 1}
+              onPress={() => checkout.mutate()}
+              loading={checkout.isPending}
             />
-            {notice ? (
+            {error ? (
+              <Text style={[typeScale.caption, styles.notice, { color: colors.warn }]}>
+                {error}
+              </Text>
+            ) : notice ? (
               <Text style={[typeScale.caption, styles.notice, { color: colors.warn }]}>
                 {notice}
+              </Text>
+            ) : !PAYMENTS_ENABLED ? (
+              <Text style={[typeScale.caption, styles.notice, { color: colors.textMuted }]}> 
+                안전한 인앱 결제를 준비하고 있습니다.
               </Text>
             ) : null}
           </Card>

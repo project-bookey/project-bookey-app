@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
 import { notificationApi } from '@/api/endpoints';
@@ -28,6 +28,8 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: '다크' },
 ];
 
+const LEGAL_URL = 'https://api.bookey.site/legal/index.html';
+
 export default function SettingsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -35,6 +37,7 @@ export default function SettingsScreen() {
   const user = useAuth((s) => s.user);
   const setUser = useAuth((s) => s.setUser);
   const logout = useAuth((s) => s.logout);
+  const deleteAccount = useAuth((s) => s.deleteAccount);
   const preference = useThemePreference((s) => s.preference);
   const setPreference = useThemePreference((s) => s.setPreference);
 
@@ -131,6 +134,21 @@ export default function SettingsScreen() {
 
           <View style={{ gap: spacing.sm }}>
             <Rule />
+            <Button
+              label="개인정보처리방침"
+              variant="ghost"
+              onPress={() => void Linking.openURL(`${LEGAL_URL}#privacy`)}
+            />
+            <Button
+              label="이용약관"
+              variant="ghost"
+              onPress={() => void Linking.openURL(`${LEGAL_URL}#terms`)}
+            />
+            <Button
+              label="고객지원 · 계정 삭제 안내"
+              variant="ghost"
+              onPress={() => void Linking.openURL(`${LEGAL_URL}#deletion`)}
+            />
             <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>API {API_BASE_URL}</Text>
             <Button
               label="로그아웃"
@@ -138,6 +156,32 @@ export default function SettingsScreen() {
               onPress={async () => {
                 await logout();
                 router.replace('/login');
+              }}
+            />
+            <Button
+              label="계정 영구 삭제"
+              variant="ghost"
+              onPress={() => {
+                Alert.alert(
+                  '계정을 삭제할까요?',
+                  '프로필과 로그인 정보가 영구 삭제되며 복구할 수 없습니다. 스토어 구독은 별도로 취소해야 합니다.',
+                  [
+                    { text: '취소', style: 'cancel' },
+                    {
+                      text: '영구 삭제',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await deleteAccount();
+                          queryClient.clear();
+                          router.replace('/login');
+                        } catch {
+                          Alert.alert('계정 삭제 실패', '잠시 후 다시 시도해 주세요.');
+                        }
+                      },
+                    },
+                  ],
+                );
               }}
             />
           </View>

@@ -11,8 +11,9 @@ type AuthState = {
   emailLogin: (email: string, password: string) => Promise<void>;
   emailSignup: (email: string, password: string, nickname: string,
                 verification: { code?: string; identityVerificationId?: string }) => Promise<void>;
-  socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO', token: string) => Promise<void>;
+  socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO', token: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   setUser: (user: Me) => void;
 };
 
@@ -51,6 +52,7 @@ export const useAuth = create<AuthState>((set) => ({
     const result = await authApi.socialLogin(provider, token);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     set({ user: result.user, status: 'authenticated' });
+    return result.newUser;
   },
 
   logout: async () => {
@@ -59,6 +61,12 @@ export const useAuth = create<AuthState>((set) => ({
     } catch {
       // 서버 실패와 무관하게 로컬 토큰은 지운다.
     }
+    await clearTokens();
+    set({ user: null, status: 'anonymous' });
+  },
+
+  deleteAccount: async () => {
+    await authApi.deleteAccount();
     await clearTokens();
     set({ user: null, status: 'anonymous' });
   },
