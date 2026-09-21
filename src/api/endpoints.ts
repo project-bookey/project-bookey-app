@@ -1,7 +1,7 @@
 import { api } from './client';
 import type {
   Banner, BookDetail, BookLikeView, BookQuote, BookSummary, Challenge, ChatMessage, ChatMessages, ChatSummary,
-  Checkpoint, ClubHome, ClubLogDay, ClubLogDayCount, ClubLogWeek, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary,
+  Checkpoint, ClubHome, ClubLogDay, ClubLogDayCount, ClubLogWeek, ClubPost, ClubPreview, ClubResult, ClubSeatResult, ClubSummary, ClubVisibility,
   CreatePost, CreateQuote, CreateQuoteComment, CreateReviewComment,
   EmailCodeResponse, ExchangeTarget, FeedSort, FollowCodeView, FollowUserView,
   LibrarySummary, LikerView, Me, Notification, NudgeMessageKey, Page, PlazaItem, PlazaItemType,
@@ -125,6 +125,16 @@ export const clubApi = {
     api<{ joinCode: string }>(`/api/v1/clubs/${clubId}/rotate-code`, { method: 'POST' }),
   updateSharing: (clubId: number, body: { shareProgress?: boolean; allowNudge?: boolean }) =>
     api<void>(`/api/v1/clubs/${clubId}/sharing`, { method: 'PATCH', body }),
+  /** 모임 설정 (호스트) — 보낸 값만 바뀐다. 서버가 CLUB_NOT_HOST 로 멤버를 막는다. */
+  update: (clubId: number, body: {
+    name?: string; description?: string; visibility?: ClubVisibility; endsAt?: string; allowNudge?: boolean;
+  }) => api<ClubHome>(`/api/v1/clubs/${clubId}`, { method: 'PATCH', body }),
+  /** 멤버 내보내기 (호스트) — 사유는 감사 로그에 남는다. */
+  kick: (clubId: number, userId: number, reason: string) =>
+    api<void>(`/api/v1/clubs/${clubId}/kick`, { method: 'POST', body: { userId, reason } }),
+  /** 호스트 넘기기 (호스트) — 나는 멤버가 된다. */
+  transferHost: (clubId: number, userId: number) =>
+    api<void>(`/api/v1/clubs/${clubId}/transfer-host`, { method: 'POST', body: { userId } }),
   leave: (clubId: number) => api<void>(`/api/v1/clubs/${clubId}/me`, { method: 'DELETE' }),
   end: (clubId: number) => api<void>(`/api/v1/clubs/${clubId}/end`, { method: 'POST' }),
   /** 자리 늘리기 (호스트) — 목표 정원까지 늘어나는 자리만큼 책갈피를 쓴다. */
