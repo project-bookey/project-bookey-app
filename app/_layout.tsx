@@ -89,6 +89,7 @@ export default function RootLayout() {
             <Stack.Screen name="club/[id]/posts" options={{ title: '토론' }} />
             <Stack.Screen name="club/[id]/result" options={{ title: '결산' }} />
             <Stack.Screen name="club/[id]/seats" options={{ title: '자리 늘리기' }} />
+            <Stack.Screen name="club/[id]/settings" options={{ title: '모임 설정' }} />
             <Stack.Screen name="club/[id]/log/index" options={{ title: '읽기로그' }} />
             <Stack.Screen name="club/[id]/log/new" options={{ title: '한 조각 남기기' }} />
             <Stack.Screen name="club/[id]/log/week" options={{ title: '이번 주 카드' }} />

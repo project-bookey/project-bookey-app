@@ -3311,6 +3311,7 @@ export interface components {
             checkpoints: components["schemas"]["CheckpointView"][];
             nextCheckpoint?: components["schemas"]["CheckpointView"];
             seatPolicy: components["schemas"]["ClubSeatPolicy"];
+            allowNudge: boolean;
         };
         ClubSeatPolicy: {
             /** Format: int32 */
@@ -4062,6 +4063,8 @@ export interface components {
             averageCompletionRate?: number;
             /** Format: int32 */
             unreadPostCount: number;
+            /** @enum {string} */
+            myRole: "HOST" | "MODERATOR" | "MEMBER";
         };
         PageResponseClubSummaryView: {
             content?: components["schemas"]["ClubSummaryView"][];
