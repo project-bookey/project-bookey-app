@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import { ClubCard } from '@/components/club';
-import type { ClubCardVariant } from '@/components/club';
 import { BrandHeader, PaperScreen } from '@/components/collage';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { layout, spacing } from '@/theme';
@@ -13,9 +12,6 @@ import { layout, spacing } from '@/theme';
 /** 구역 4. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12). 광장 칩이 아니라 상단 구역 탭으로 들어온다. */
 export default function ClubsScreen() {
   const router = useRouter();
-  // 시안 비교용 — ?v=b 면 포스터 띠 카드. 고른 뒤 지운다.
-  const { v } = useLocalSearchParams<{ v?: string }>();
-  const variant: ClubCardVariant = v === 'b' ? 'b' : 'a';
   const clubs = useQuery({ queryKey: ['clubs'], queryFn: clubApi.myClubs });
   const { refetch } = clubs;
   const items = (clubs.data?.content ?? []).filter(Boolean);
@@ -63,7 +59,6 @@ export default function ClubsScreen() {
         renderItem={({ item }) => (
           <ClubCard
             club={item}
-            variant={variant}
             onPress={() => router.push(`/club/${item.id}`)}
             // 관리는 모임을 연 사람(호스트)만 — 서버도 CLUB_NOT_HOST 로 막는다.
             onManage={item.myRole === 'HOST' ? () => router.push(`/club/${item.id}/settings`) : undefined}

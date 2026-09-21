@@ -4,24 +4,22 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
 import { Chip, StickyNote, TiltCover } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { Numeral, ProgressBar, Tag, percent } from '@/components/ui';
+import { Numeral, ProgressBar, percent } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
-/** 시안 비교용 — a: 큰 표지 카드, b: 포스터 띠 카드. 고른 뒤 하나로 줄인다. */
-export type ClubCardVariant = 'a' | 'b';
-
 const AVATAR = 24;
 const MAX_AVATARS = 4;
+const BAND_H = 128;
 
 /**
- * 내 모임 카드 — 표지·책·함께 읽는 사람이 한눈에 들어오게.
+ * 내 모임 카드(포스터 띠) — 표지·책·함께 읽는 사람이 한눈에 들어오게.
+ * 위 띠는 표지를 흐려 깐 배경 위에 기울인 표지와 D-day 스티키, 아래 본문은 이름 · 책 · 사람 · 내 진척.
  * 카드 본문은 누르면 모임 홈으로, 호스트에게만 붙는 '관리' 칩은 본문 Pressable 의 형제로 둬
  * 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
-export function ClubCard({ club, variant, onPress, onManage }: {
+export function ClubCard({ club, onPress, onManage }: {
   club: ClubSummary;
-  variant: ClubCardVariant;
   onPress: () => void;
   onManage?: () => void;
 }) {
@@ -31,72 +29,50 @@ export function ClubCard({ club, variant, onPress, onManage }: {
   const bookLine = [club.book?.title ?? '도서 없음', club.book?.author].filter(Boolean).join(' · ');
   const cover = club.book?.coverUrl ?? club.coverUrl;
 
-  const body = (
-    <View style={styles.body}>
-      <Text numberOfLines={variant === 'a' ? 2 : 1} style={[styles.name, { color: colors.text }, onManage && styles.nameWithManage]}>
-        {club.name}
-      </Text>
-      <Text numberOfLines={1} style={[styles.book, { color: colors.textMuted }]}>
-        {variant === 'a' ? (
-          <>
-            <Text style={[styles.ddayInline, { color: ended ? colors.textFaint : colors.accent }]}>{dday}</Text>
-            {' · '}
-          </>
-        ) : null}
-        {bookLine}
-      </Text>
-      <MembersLine members={club.members ?? []} />
-      <View style={styles.progressLine}>
-        <View style={{ flex: 1 }}>
-          <ProgressBar value={club.myCompletionRate} height={5} />
-        </View>
-        <Numeral style={[styles.pct, { color: colors.text }]}>{percent(club.myCompletionRate)}</Numeral>
-        <Text style={[styles.avg, { color: colors.textFaint }]}>평균 {percent(club.averageCompletionRate)}</Text>
-      </View>
-    </View>
-  );
-
-  if (variant === 'b') {
-    return (
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
-        <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={club.name}>
-          <View style={[styles.band, { backgroundColor: colors.surfaceRaised }]}>
-            {cover ? (
-              <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={18} />
-            ) : null}
-            <LinearGradient colors={[colors.scrimDim, colors.surface]} locations={[0, 1]} style={StyleSheet.absoluteFill} />
-            <View style={styles.bandCover}>
-              <TiltCover uri={cover} title={club.book?.title} width={76} tilt={-4} entering={false} />
-            </View>
-            <View style={styles.bandNote}>
-              <StickyNote rotate={4} style={styles.note}>
-                <Text style={[styles.noteText, { color: colors.onNote }]}>{dday}</Text>
-              </StickyNote>
-            </View>
-          </View>
-          <View style={styles.bandBody}>{body}</View>
-        </Pressable>
-        {onManage ? (
-          <View style={styles.manageB}>
-            <Chip label="관리" onPress={onManage} accessibilityLabel={`${club.name} 관리`} />
-          </View>
-        ) : null}
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
-      <Pressable onPress={onPress} style={styles.cardA} accessibilityRole="button" accessibilityLabel={club.name}>
-        <TiltCover uri={cover} title={club.book?.title} width={84} tilt={-3} entering={false} />
-        {body}
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={club.name}>
+        <View style={[styles.band, { backgroundColor: colors.surfaceRaised }]}>
+          {cover ? (
+            <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={18} />
+          ) : null}
+          {/* 검은 스크림 대신 카드 표면색으로 녹아들게 — 라이트 모드에서 띠가 회색으로 무거워지지 않는다. */}
+          <LinearGradient
+            colors={[`${colors.surface}66`, colors.surface]}
+            locations={[0, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.bandCover}>
+            <TiltCover uri={cover} title={club.book?.title} width={76} tilt={-4} entering={false} />
+          </View>
+          <View style={styles.bandNote}>
+            <StickyNote rotate={4} style={styles.note}>
+              <Text style={[styles.noteText, { color: colors.onNote }]}>{dday}</Text>
+            </StickyNote>
+          </View>
+        </View>
+
+        <View style={styles.body}>
+          <Text numberOfLines={1} style={[styles.name, { color: colors.text }, onManage && styles.nameWithManage]}>
+            {club.name}
+          </Text>
+          <Text numberOfLines={1} style={[styles.book, { color: colors.textMuted }]}>{bookLine}</Text>
+          <MembersLine members={club.members ?? []} />
+          <View style={styles.progressLine}>
+            <View style={{ flex: 1 }}>
+              <ProgressBar value={club.myCompletionRate} height={5} />
+            </View>
+            <Numeral style={[styles.pct, { color: colors.text }]}>{percent(club.myCompletionRate)}</Numeral>
+            <Text style={[styles.avg, { color: colors.textFaint }]}>평균 {percent(club.averageCompletionRate)}</Text>
+          </View>
+        </View>
       </Pressable>
+
       {onManage ? (
-        <View style={styles.manageA}>
+        <View style={styles.manage}>
           <Chip label="관리" onPress={onManage} accessibilityLabel={`${club.name} 관리`} />
         </View>
       ) : null}
-      {ended ? <View style={styles.endedTag}><Tag label="종료" /></View> : null}
     </View>
   );
 }
@@ -141,23 +117,15 @@ function MembersLine({ members }: { members: ClubMemberBrief[] }) {
 
 const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: hairline, overflow: 'hidden' },
-  // A — 큰 표지 카드
-  cardA: { flexDirection: 'row', gap: spacing.md, padding: spacing.md, paddingRight: spacing.lg },
-  manageA: { position: 'absolute', top: spacing.md, right: spacing.md },
-  endedTag: { position: 'absolute', top: spacing.md, right: spacing.md },
-  // B — 포스터 띠 카드
-  band: { height: 128, overflow: 'hidden' },
+  band: { height: BAND_H, overflow: 'hidden' },
   bandCover: { position: 'absolute', left: spacing.lg, top: spacing.md },
   bandNote: { position: 'absolute', right: spacing.lg, top: spacing.md },
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
-  bandBody: { padding: spacing.lg, paddingTop: spacing.md },
-  manageB: { position: 'absolute', top: 128 + spacing.md, right: spacing.lg },
-  // 본문 공통
-  body: { flex: 1, gap: 4, justifyContent: 'center' },
+  body: { padding: spacing.lg, paddingTop: spacing.md, gap: 4 },
+  manage: { position: 'absolute', top: BAND_H + spacing.md, right: spacing.lg },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
-  nameWithManage: { paddingRight: 56 },
-  ddayInline: { fontFamily: mono.semiBold, fontSize: 11, letterSpacing: 0.5 },
+  nameWithManage: { paddingRight: 64 },
   book: { ...typeScale.caption },
   membersLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
   avatars: { flexDirection: 'row' },
