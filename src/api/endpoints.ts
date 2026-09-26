@@ -109,10 +109,12 @@ export const statsApi = {
 
 export type AttendanceView = {
   checkedInToday: boolean;
-  streakDays: number;
-  dailyRewardBookmarks: number;
-  rewardedBookmarks: number;
-  bookmarkBalance: number;
+  monthlyAttendanceDays: number;
+  monthlyMaxDays: number;
+  rewardEveryDays: number;
+  nextRewardDay?: number;
+  rewardedStamps: number;
+  stampBalance: number;
   attendanceDate?: string;
 };
 
