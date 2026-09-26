@@ -113,7 +113,10 @@ export type AttendanceView = {
   monthlyMaxDays: number;
   rewardEveryDays: number;
   nextRewardDay?: number;
+  nextRewardType?: 'POSTCARD' | 'STAMP';
+  rewardedPostcards: number;
   rewardedStamps: number;
+  postcardBalance: number;
   stampBalance: number;
   attendanceDate?: string;
 };
