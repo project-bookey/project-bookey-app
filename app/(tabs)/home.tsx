@@ -11,6 +11,7 @@ import type { ReadingRecord } from '@/api/types';
 import { BrandHeader, PaperScreen } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
+import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { NoticePopup } from '@/components/home/NoticePopup';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import { ChallengeRow } from '@/components/home/ChallengeRow';
@@ -104,6 +105,8 @@ export default function HomeScreen() {
         </Pressable>
 
         <BannerCarousel banners={banners.data ?? []} />
+
+        <AttendanceCard />
 
         <HeroPager
           records={heroRecords}

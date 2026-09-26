@@ -135,6 +135,11 @@ export default function SettingsScreen() {
           <View style={{ gap: spacing.sm }}>
             <Rule />
             <Button
+              label="앱 사용법 다시 보기"
+              variant="ghost"
+              onPress={() => router.push('/onboarding?guide=1')}
+            />
+            <Button
               label="개인정보처리방침"
               variant="ghost"
               onPress={() => void Linking.openURL(`${LEGAL_URL}#privacy`)}

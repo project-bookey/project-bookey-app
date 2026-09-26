@@ -107,6 +107,20 @@ export const statsApi = {
   summary: (days = 90) => api<StatsSummary>('/api/v1/stats', { query: { days } }),
 };
 
+export type AttendanceView = {
+  checkedInToday: boolean;
+  streakDays: number;
+  dailyRewardBookmarks: number;
+  rewardedBookmarks: number;
+  bookmarkBalance: number;
+  attendanceDate?: string;
+};
+
+export const attendanceApi = {
+  status: () => api<AttendanceView>('/api/v1/attendance'),
+  checkIn: () => api<AttendanceView>('/api/v1/attendance', { method: 'POST' }),
+};
+
 export const clubApi = {
   myClubs: () => api<Page<ClubSummary>>('/api/v1/clubs', { query: { size: 50 } }),
   publicClubs: () => api<Page<ClubPreview>>('/api/v1/clubs/public'),
