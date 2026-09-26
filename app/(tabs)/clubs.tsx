@@ -7,6 +7,7 @@ import { clubApi } from '@/api/endpoints';
 import { ClubCard } from '@/components/club';
 import { BrandHeader, PaperScreen } from '@/components/collage';
 import { Button, EmptyState, Loading } from '@/components/ui';
+import { TourTarget } from '@/components/tour/TourTarget';
 import { layout, spacing } from '@/theme';
 
 /** 구역 4. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12). 광장 칩이 아니라 상단 구역 탭으로 들어온다. */
@@ -26,7 +27,7 @@ export default function ClubsScreen() {
     <PaperScreen withTopInset>
       <BrandHeader />
 
-      <View style={styles.actions}>
+      <TourTarget id="club-actions" style={styles.actions}>
         <Button
           label="코드로 참가"
           variant="outline"
@@ -38,7 +39,7 @@ export default function ClubsScreen() {
           style={{ flex: 1 }}
           onPress={() => router.push('/club/create')}
         />
-      </View>
+      </TourTarget>
 
       {clubs.isLoading ? <Loading /> : null}
 

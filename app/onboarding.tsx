@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, Text, View,
@@ -22,49 +22,13 @@ const FALLBACK_CATEGORIES = [
   '자기계발', '경제/경영', '컴퓨터/IT', '예술', '여행', '만화',
 ];
 
-/** 안내 카드 단계 — 그 뒤로 카테고리·책 고르기 단계가 이어진다. */
+/** 첫 인사 뒤에는 실제 화면을 따라가는 스팟라이트 투어가 별도로 시작된다. */
 const GUIDE_STEPS: { mark: string; eyebrow: string; title: string; body: string }[] = [
   {
     mark: '📖',
     eyebrow: 'WELCOME',
     title: '만나서 반가워요',
-    body: 'bookey는 읽기로 한 책을\n진짜로 다 읽게 만드는 독서 앱이에요.\n잠깐만 구경하고 시작할까요?',
-  },
-  {
-    mark: '⌕',
-    eyebrow: 'DISCOVER',
-    title: '먼저 읽을 책을 찾아요',
-    body: '제목이나 저자로 책을 검색하고\n읽고 싶은 책을 내 서재에 담아보세요.\n베스트셀러와 취향 추천도 만날 수 있어요.',
-  },
-  {
-    mark: '📚',
-    eyebrow: 'MY SHELF',
-    title: '내 서재에서 독서를 관리해요',
-    body: '읽고 싶은 책, 읽는 중인 책, 다 읽은 책을\n한곳에서 관리하고 완독 목표일과\n현재 페이지를 기록할 수 있어요.',
-  },
-  {
-    mark: '⏱',
-    eyebrow: 'READ',
-    title: '타이머를 켜고 읽어요',
-    body: '읽기 시작을 누르면 시간이 기록되고\n읽은 페이지와 메모가 차곡차곡 쌓여요.\n연속 독서 기록도 홈에서 확인할 수 있어요.',
-  },
-  {
-    mark: '✂️',
-    eyebrow: 'RECORD',
-    title: '마음에 남은 문장을 오려둬요',
-    body: '좋아하는 문장에는 밑줄을 남기고\n완독 뒤에는 독후감을 써보세요.\n기록은 광장에서 다른 독자와 나눌 수 있어요.',
-  },
-  {
-    mark: '👥',
-    eyebrow: 'BOOK CLUB',
-    title: '함께 읽으면 끝까지 읽게 돼요',
-    body: '독서 모임을 만들거나 참가해\n서로의 진척도와 읽기 조각을 나눠보세요.\n친구에게 가볍게 읽기 알림도 보낼 수 있어요.',
-  },
-  {
-    mark: '✉️',
-    eyebrow: 'FEED & POSTCARD',
-    title: '읽은 사람들과 연결돼요',
-    body: '실제로 읽은 사람의 독후감이 피드에 흐르고,\n마음이 닿으면 딱 16글자의 엽서를 보내요.\n답장이 오면 서로 팔로우되고 채팅이 열립니다.',
+    body: 'bookey는 읽기로 한 책을\n진짜로 다 읽게 만드는 독서 앱이에요.\n취향을 알려주시면 바로 시작할게요.',
   },
 ];
 
@@ -74,8 +38,6 @@ const GUIDE_STEPS: { mark: string; eyebrow: string; title: string; body: string 
  */
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { guide } = useLocalSearchParams<{ guide?: string }>();
-  const guideOnly = guide === '1';
   /** 0..2 가이드, 3 카테고리, 4 책 고르기. */
   const [step, setStep] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
@@ -84,7 +46,7 @@ export default function OnboardingScreen() {
 
   const CATEGORY_STEP = GUIDE_STEPS.length;
   const BOOK_STEP = GUIDE_STEPS.length + 1;
-  const totalSteps = GUIDE_STEPS.length + (guideOnly ? 0 : 2);
+  const totalSteps = GUIDE_STEPS.length + 2;
   const categoryOptions = useQuery({
     queryKey: ['onboardingCategories'],
     queryFn: onboardingApi.categories,
@@ -103,10 +65,6 @@ export default function OnboardingScreen() {
   };
 
   const finish = (signup: boolean) => {
-    if (guideOnly) {
-      router.back();
-      return;
-    }
     markOnboardingSeen();
     router.replace(signup ? { pathname: '/login', params: { signup: '1' } } : '/login');
   };
@@ -145,15 +103,12 @@ export default function OnboardingScreen() {
         : true;
 
   const ctaLabel =
-    guideOnly && step === GUIDE_STEPS.length - 1 ? '튜토리얼 마치기'
-      : step === BOOK_STEP ? `${bookIds.length} / ${requiredPicks}권 담고 가입하기`
+    step === BOOK_STEP ? `${bookIds.length} / ${requiredPicks}권 담고 가입하기`
       : step === CATEGORY_STEP ? '다음'
         : '다음';
 
   const pressCta = () => {
-    if (guideOnly && step === GUIDE_STEPS.length - 1) {
-      finish(false);
-    } else if (step === BOOK_STEP) {
+    if (step === BOOK_STEP) {
       finish(true);
     } else {
       goTo(step + 1);
@@ -166,7 +121,7 @@ export default function OnboardingScreen() {
         <Text style={styles.wordmark}>bookey</Text>
         <Pressable onPress={() => finish(false)} accessibilityRole="button" hitSlop={10}>
           <Text style={[typeScale.monoLabel, { color: darkColors.textFaint }]}>
-            {guideOnly ? '닫기' : '건너뛰기'}
+            건너뛰기
           </Text>
         </Pressable>
       </View>
@@ -296,15 +251,13 @@ export default function OnboardingScreen() {
             {step === BOOK_STEP && bookItems.length === 0 ? '가입하러 가기' : ctaLabel}
           </Text>
         </Pressable>
-        {!guideOnly ? (
-          <Pressable
-            onPress={() => finish(false)}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-          >
-            <Text style={[typeScale.label, { color: darkColors.textMuted }]}>이미 계정이 있어요</Text>
-          </Pressable>
-        ) : null}
+        <Pressable
+          onPress={() => finish(false)}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
+        >
+          <Text style={[typeScale.label, { color: darkColors.textMuted }]}>이미 계정이 있어요</Text>
+        </Pressable>
       </View>
     </View>
   );

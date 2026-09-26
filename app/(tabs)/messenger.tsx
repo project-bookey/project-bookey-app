@@ -7,6 +7,7 @@ import { ChatList } from '@/components/messenger/ChatList';
 import { PostcardList } from '@/components/messenger/PostcardList';
 import { Segmented } from '@/components/ui';
 import { layout, spacing } from '@/theme';
+import { TourTarget } from '@/components/tour/TourTarget';
 
 /** 메신저의 칸 — 엽서함 두 상자와 채팅을 한 줄로 편다(엽서 → 답장 → 맞팔로우 → 채팅 순서 그대로). */
 type Pane = 'inbox' | 'sent' | 'chats';
@@ -35,9 +36,9 @@ export default function MessengerScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      <View style={styles.panes}>
+      <TourTarget id="messenger-panes" style={styles.panes}>
         <Segmented options={PANES} value={pane} onChange={setPane} />
-      </View>
+      </TourTarget>
       {pane === 'chats' ? <ChatList /> : <PostcardList box={pane === 'inbox' ? 'INBOX' : 'SENT'} />}
     </PaperScreen>
   );

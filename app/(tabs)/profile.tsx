@@ -13,6 +13,7 @@ import {
 import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { SocialCard } from '@/components/social/SocialCard';
+import { TourTarget } from '@/components/tour/TourTarget';
 import {
   Card, Eyebrow, KeyValue, Rule, formatDuration,
 } from '@/components/ui';
@@ -133,25 +134,27 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
           {/* 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다. */}
-          <Pressable
-            onPress={() => router.push('/settings')}
-            accessibilityRole="button"
-            accessibilityLabel="설정"
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.settingsPill,
-              { borderColor: colors.line, backgroundColor: colors.surface },
-              pressed && styles.pressed,
-            ]}
-          >
-            <GearLine size={14} color={colors.textMuted} />
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
-          </Pressable>
+          <TourTarget id="profile-settings" style={styles.settingsTarget}>
+            <Pressable
+              onPress={() => router.push('/settings')}
+              accessibilityRole="button"
+              accessibilityLabel="설정"
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.settingsPill,
+                { borderColor: colors.line, backgroundColor: colors.surface },
+                pressed && styles.pressed,
+              ]}
+            >
+              <GearLine size={14} color={colors.textMuted} />
+              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
+            </Pressable>
+          </TourTarget>
         </View>
 
         {/* 지갑 메모 + 방문 스티키 — 예전 '전부 보기' 조각 행과 같은 꼴.
             메모는 잔액 요약이고 누르면 지갑 화면(교환·구독·책갈피 구매)으로, 스티키는 방문자 화면으로 간다. */}
-        <View style={[styles.block, styles.scrapRow]}>
+        <TourTarget id="profile-wallet" style={[styles.block, styles.scrapRow]}>
           <Pressable
             onPress={() => router.push('/wallet')}
             accessibilityRole="button"
@@ -185,7 +188,7 @@ export default function ProfileScreen() {
               <Text style={[typeScale.monoEyebrow, styles.visitAction, { color: colors.onNote }]}>확인하기 →</Text>
             </StickyNote>
           </Pressable>
-        </View>
+        </TourTarget>
 
         <AttendanceCard />
 
@@ -579,7 +582,6 @@ const styles = StyleSheet.create({
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
   settingsPill: {
-    alignSelf: 'flex-end',
     height: 30,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: radius.pill,
@@ -588,6 +590,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
+  settingsTarget: { alignSelf: 'flex-end' },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
   profileCount: { fontFamily: sans.semiBold },

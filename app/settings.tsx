@@ -11,6 +11,7 @@ import {
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
+import { useAppTour } from '@/store/appTour';
 import type { ThemePreference } from '@/store/themePreference';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
   const deleteAccount = useAuth((s) => s.deleteAccount);
   const preference = useThemePreference((s) => s.preference);
   const setPreference = useThemePreference((s) => s.setPreference);
+  const startTour = useAppTour((s) => s.start);
 
   const updateSettings = useMutation({
     mutationFn: (body: Record<string, unknown>) => notificationApi.updateSettings(body),
@@ -137,7 +139,7 @@ export default function SettingsScreen() {
             <Button
               label="앱 사용법 다시 보기"
               variant="ghost"
-              onPress={() => router.push('/onboarding?guide=1')}
+              onPress={startTour}
             />
             <Button
               label="개인정보처리방침"

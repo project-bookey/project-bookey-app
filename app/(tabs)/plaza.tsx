@@ -15,6 +15,7 @@ import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFi
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Card, EmptyState, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
+import { TourTarget } from '@/components/tour/TourTarget';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -171,7 +172,7 @@ export default function PlazaScreen() {
 
   const header = (
     <View style={styles.header}>
-      <View style={styles.chipRow}>
+      <TourTarget id="plaza-actions" style={styles.chipRow}>
         {/* 기본으로 열리는 칩이 맨 앞에 온다 — 독후감 · 밑줄 · 완독 자랑 순. */}
         <Chip label="독후감" active={tab === 'POST'} onPress={() => switchTab('POST')} />
         <Chip label="밑줄" active={tab === 'QUOTE'} onPress={() => switchTab('QUOTE')} />
@@ -201,7 +202,7 @@ export default function PlazaScreen() {
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 독후감</Text>
           </Pressable>
         ) : null}
-      </View>
+      </TourTarget>
 
       {composing ? <QuoteComposer onDone={() => setComposing(false)} /> : null}
     </View>

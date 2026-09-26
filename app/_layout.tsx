@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Loading } from '@/components/ui';
+import { AppTourOverlay } from '@/components/tour/AppTourOverlay';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import { useTheme } from '@/theme';
@@ -108,6 +109,7 @@ export default function RootLayout() {
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />
             <Stack.Screen name="post/mine" options={{ title: '내 독후감' }} />
           </Stack>
+          <AppTourOverlay />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

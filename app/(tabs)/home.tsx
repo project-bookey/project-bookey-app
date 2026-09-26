@@ -18,6 +18,7 @@ import { ClubRow } from '@/components/home/ClubRow';
 import { HeroPager } from '@/components/home/HeroPager';
 import { HomeSection } from '@/components/home/HomeSection';
 import { HomeScraps } from '@/components/home/HomeScraps';
+import { TourTarget } from '@/components/tour/TourTarget';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
@@ -93,15 +94,17 @@ export default function HomeScreen() {
       >
         {/* 구역(서가·탐색·광장·나) 이동은 push 가 아니라 navigate 다 — push 하면
             서가↔탐색을 오갈 때마다 스택에 같은 구역이 쌓여 뒤로 가기가 길어진다. */}
-        <Pressable
-          onPress={() => router.navigate('/search')}
-          style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
-          accessibilityRole="button"
-          accessibilityLabel="책 검색"
-        >
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>⌕</Text>
-          <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
-        </Pressable>
+        <TourTarget id="home-search">
+          <Pressable
+            onPress={() => router.navigate('/search')}
+            style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
+            accessibilityRole="button"
+            accessibilityLabel="책 검색"
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>⌕</Text>
+            <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
+          </Pressable>
+        </TourTarget>
 
         <BannerCarousel banners={banners.data ?? []} />
 
