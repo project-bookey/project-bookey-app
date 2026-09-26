@@ -11,6 +11,7 @@ import {
   BrandHeader, MemoScrap, PaperScreen, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/quote/QuoteCard';
+import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { SocialCard } from '@/components/social/SocialCard';
 import {
   Card, Eyebrow, KeyValue, Rule, formatDuration,
@@ -185,6 +186,8 @@ export default function ProfileScreen() {
             </StickyNote>
           </Pressable>
         </View>
+
+        <AttendanceCard />
 
         <View style={styles.shelfSection}>
           <View style={styles.shelfHeader}>
