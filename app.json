@@ -47,7 +47,14 @@
           "microphonePermission": false
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#70E0B5",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "extra": {
       "apiBaseUrl": "https://api.bookey.site",

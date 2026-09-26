@@ -18,6 +18,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Loading } from '@/components/ui';
 import { AppTourOverlay } from '@/components/tour/AppTourOverlay';
+import { PushNotifications } from '@/components/notifications/PushNotifications';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import { useTheme } from '@/theme';
@@ -110,6 +111,7 @@ export default function RootLayout() {
             <Stack.Screen name="post/mine" options={{ title: '내 독후감' }} />
           </Stack>
           <AppTourOverlay />
+          <PushNotifications />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

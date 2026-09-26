@@ -37,6 +37,8 @@ export const authApi = {
   logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
   deleteAccount: () => api<void>("/api/v1/me", { method: "DELETE" }),
   me: () => api<Me>("/api/v1/me"),
+  registerDevice: (platform: 'IOS' | 'ANDROID', pushToken: string, pushEnabled = true) =>
+    api<void>('/api/v1/me/devices', { method: 'POST', body: { platform, pushToken, pushEnabled } }),
   updateProfile: (body: {
     nickname?: string;
     avatarUrl?: string;
