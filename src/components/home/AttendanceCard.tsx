@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { attendanceApi } from '@/api/endpoints';
@@ -7,6 +8,7 @@ import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 export function AttendanceCard() {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
   const attendance = useQuery({
     queryKey: ['attendance'],
     queryFn: attendanceApi.status,
@@ -67,6 +69,22 @@ export function AttendanceCard() {
           {checkIn.isPending ? '확인 중…' : done ? '출석 완료 ✓' : completed ? '28일 완료' : '출석하기'}
         </Text>
       </Pressable>
+      <Pressable
+        onPress={() => setExpanded((value) => !value)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={expanded ? '출석 달력 접기' : '출석 달력 펼치기'}
+        style={({ pressed }) => [
+          styles.expandButton,
+          { borderColor: colors.line },
+          pressed && styles.pressed,
+        ]}
+      >
+        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+          {expanded ? '달력 접기 ︿' : '달력 보기 ﹀'}
+        </Text>
+      </Pressable>
+      {expanded ? (
       <View style={styles.board} accessibilityLabel={`이번 달 ${data.monthlyAttendanceDays}일 출석`}>
         <View style={styles.calendarHeader}>
           <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{monthLabel} 출석 달력</Text>
@@ -98,6 +116,7 @@ export function AttendanceCard() {
         ))}
         <Text style={[typeScale.caption, { color: colors.textMuted }]}>7일 💌 엽서 · 14일 ✉️ 우표 · 21일 💌 엽서 · 28일 ✉️ 우표</Text>
       </View>
+      ) : null}
     </View>
   );
 }
@@ -123,6 +142,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: { opacity: 0.75 },
+  expandButton: {
+    width: '100%',
+    minHeight: 36,
+    borderTopWidth: hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xs,
+  },
   board: {
     width: '100%',
     gap: spacing.sm,
