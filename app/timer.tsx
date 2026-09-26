@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  AppState, InputAccessoryView, Keyboard, KeyboardAvoidingView, Platform,
+  Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+} from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
@@ -11,6 +14,8 @@ import {
 } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
+
+const PAGE_INPUT_ACCESSORY_ID = 'timer-page-input-toolbar';
 
 /**
  * 독서 타이머 (§F3).
@@ -159,7 +164,16 @@ export default function TimerScreen() {
     <PaperScreen>
       <SubHeader category="타이머" />
 
-      <Pressable style={styles.container} onPress={() => { interactions.current += 1; }}>
+      <KeyboardAvoidingView
+        style={styles.keyboardArea}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled"
+        onTouchStart={() => { interactions.current += 1; }}
+      >
         <View style={styles.bookRow}>
           <TiltCover
             uri={record.data?.book?.coverUrl}
@@ -203,6 +217,8 @@ export default function TimerScreen() {
                   setEndPage(text.replace(/[^0-9]/g, ''));
                 }}
                 keyboardType="number-pad"
+                inputAccessoryViewID={Platform.OS === 'ios' ? PAGE_INPUT_ACCESSORY_ID : undefined}
+                onSubmitEditing={Keyboard.dismiss}
                 style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
                 placeholder="0"
                 placeholderTextColor={colors.textFaint}
@@ -224,7 +240,10 @@ export default function TimerScreen() {
             />
             <Button
               label="세션 종료"
-              onPress={() => end.mutate()}
+              onPress={() => {
+                Keyboard.dismiss();
+                end.mutate();
+              }}
               loading={end.isPending}
               disabled={!session || end.isPending}
             />
@@ -244,13 +263,29 @@ export default function TimerScreen() {
             </Text>
           </View>
         )}
-      </Pressable>
+      </ScrollView>
+        {Platform.OS === 'ios' ? (
+          <InputAccessoryView nativeID={PAGE_INPUT_ACCESSORY_ID}>
+            <View style={[styles.keyboardToolbar, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+              <Pressable
+                onPress={Keyboard.dismiss}
+                accessibilityRole="button"
+                accessibilityLabel="숫자 키패드 닫기"
+                style={styles.keyboardDone}
+              >
+                <Text style={[typeScale.label, { color: colors.accent }]}>완료</Text>
+              </Pressable>
+            </View>
+          </InputAccessoryView>
+        ) : null}
+      </KeyboardAvoidingView>
     </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, flex: 1, padding: spacing.lg, gap: spacing.xl },
+  keyboardArea: { flex: 1 },
+  container: { ...layout.content, flexGrow: 1, padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl },
   bookRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   bookTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
   bookMeta: { ...typeScale.caption, marginTop: 3 },
@@ -280,4 +315,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlignVertical: 'top',
   },
+  keyboardToolbar: {
+    minHeight: 44,
+    borderTopWidth: hairline,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  keyboardDone: { minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.sm },
 });
