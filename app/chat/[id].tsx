@@ -1,8 +1,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable,
+  ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
@@ -39,10 +39,20 @@ export default function ChatRoomScreen() {
     getNextPageParam: (last) => last.nextBeforeId ?? undefined,
     // 폴링은 로드된 전 페이지를 다시 받는다 — 보통 첫 페이지뿐이라 감당된다. 실시간은 후속.
     refetchInterval: POLL_MS,
-    // 방이 마운트된 동안만 도는 폴링이다 — 웹에서 창 포커스가 빠져도 멈추지 않게 한다.
-    refetchIntervalInBackground: true,
+    // 백그라운드에서는 네트워크·배터리를 쓰지 않고, 복귀 이벤트에서 즉시 동기화한다.
+    refetchIntervalInBackground: false,
     enabled: Number.isInteger(chatId),
   });
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'active' && Number.isInteger(chatId)) {
+        void messages.refetch();
+        void queryClient.invalidateQueries({ queryKey: ['chats'] });
+      }
+    });
+    return () => subscription.remove();
+  }, [chatId, messages.refetch, queryClient]);
 
   const items = useMemo(
     () => messages.data?.pages.flatMap((p) => p.messages ?? []) ?? [],
