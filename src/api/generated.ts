@@ -3541,6 +3541,10 @@ export interface components {
             nickname: string;
             code?: string;
             identityVerificationId?: string;
+            termsAgreed: boolean;
+            termsVersion: string;
+            privacyAgreed: boolean;
+            privacyVersion: string;
         };
         RefreshRequest: {
             refreshToken: string;

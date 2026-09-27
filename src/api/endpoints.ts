@@ -27,9 +27,10 @@ export const authApi = {
     api<EmailCodeResponse>("/api/v1/auth/email/code", { method: "POST", auth: false, body: { email } }),
   /** 가입 — 서버 설정에 따라 code(이메일 인증) 또는 identityVerificationId(휴대폰 본인인증)를 요구한다. */
   emailSignup: (email: string, password: string, nickname: string,
-                verification: { code?: string; identityVerificationId?: string }) =>
+                verification: { code?: string; identityVerificationId?: string },
+                consent: { termsAgreed: true; termsVersion: string; privacyAgreed: true; privacyVersion: string }) =>
     api<TokenResponse>("/api/v1/auth/signup", {
-      method: "POST", auth: false, body: { email, password, nickname, ...verification },
+      method: "POST", auth: false, body: { email, password, nickname, ...verification, ...consent },
     }),
   /** 프로필 사진 업로드 — 온보딩 필수 단계. */
   uploadAvatar: (form: FormData) =>

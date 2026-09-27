@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
@@ -15,6 +15,7 @@ import { useOnboarding } from '@/store/onboarding';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, radius, sans, spacing, typeScale } from '@/theme';
+import { LEGAL_DOCUMENTS, LEGAL_VERSION, LegalDocumentKey } from '@/legal/documents';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -64,6 +65,12 @@ export default function LoginScreen() {
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [legalOpen, setLegalOpen] = useState<LegalDocumentKey | null>(null);
+  const [legalReadToEnd, setLegalReadToEnd] = useState(false);
+  const [legalAgreed, setLegalAgreed] = useState<Record<LegalDocumentKey, boolean>>({
+    terms: false,
+    privacy: false,
+  });
 
   const kakao = useKakaoLogin();
 
@@ -176,6 +183,10 @@ export default function LoginScreen() {
       setError('휴대폰 본인인증을 먼저 완료해 주세요.');
       return;
     }
+    if (isSignup && (!legalAgreed.terms || !legalAgreed.privacy)) {
+      setError('이용약관과 개인정보 수집·이용 내용을 끝까지 읽고 동의해 주세요.');
+      return;
+    }
     setEmailLoading(true);
     setError(null);
     try {
@@ -189,6 +200,12 @@ export default function LoginScreen() {
             : method === 'IDENTITY'
               ? { identityVerificationId: identityId ?? undefined }
               : {},
+          {
+            termsAgreed: true,
+            termsVersion: LEGAL_VERSION,
+            privacyAgreed: true,
+            privacyVersion: LEGAL_VERSION,
+          },
         );
         await applyOnboardingPicks();
         router.replace('/home');
@@ -271,6 +288,25 @@ export default function LoginScreen() {
 
   const showApple = Boolean(Apple) && appleAvailable;
   const busy = emailLoading || socialLoading != null;
+  const signupConsentComplete = legalAgreed.terms && legalAgreed.privacy;
+
+  const openLegal = (key: LegalDocumentKey) => {
+    setLegalOpen(key);
+    setLegalReadToEnd(legalAgreed[key]);
+  };
+
+  const onLegalScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 24) {
+      setLegalReadToEnd(true);
+    }
+  };
+
+  const agreeCurrentLegal = () => {
+    if (!legalOpen || !legalReadToEnd) return;
+    setLegalAgreed((current) => ({ ...current, [legalOpen]: true }));
+    setLegalOpen(null);
+  };
 
   return (
     <View style={styles.screen}>
@@ -387,10 +423,34 @@ export default function LoginScreen() {
                 ) : null}
               </View>
             ) : null}
+            {isSignup ? (
+              <View style={styles.legalBox}>
+                <Text style={styles.legalHeading}>필수 동의</Text>
+                {(['terms', 'privacy'] as const).map((key) => (
+                  <Pressable
+                    key={key}
+                    onPress={() => openLegal(key)}
+                    style={({ pressed }) => [styles.legalRow, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${LEGAL_DOCUMENTS[key].title} 전문 보기`}
+                  >
+                    <View style={[styles.check, legalAgreed[key] && styles.checkDone]}>
+                      <Text style={styles.checkLabel}>{legalAgreed[key] ? '✓' : ''}</Text>
+                    </View>
+                    <Text style={styles.legalRowLabel}>{LEGAL_DOCUMENTS[key].title}</Text>
+                    <Text style={styles.legalView}>전문 보기 ›</Text>
+                  </Pressable>
+                ))}
+                <Text style={styles.legalHint}>각 문서를 끝까지 읽어야 동의할 수 있습니다.</Text>
+              </View>
+            ) : null}
             <Pressable
               onPress={submitEmail}
-              disabled={busy}
-              style={({ pressed }) => [styles.cta, (pressed || busy) && styles.pressed]}
+              disabled={busy || (isSignup && !signupConsentComplete)}
+              style={({ pressed }) => [
+                styles.cta,
+                (pressed || busy || (isSignup && !signupConsentComplete)) && styles.ctaDisabled,
+              ]}
               accessibilityRole="button"
             >
               {emailLoading
@@ -462,6 +522,47 @@ export default function LoginScreen() {
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+      <Modal
+        visible={legalOpen != null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setLegalOpen(null)}
+      >
+        <View style={styles.legalModal}>
+          <View style={styles.legalModalHeader}>
+            <Text style={styles.legalModalTitle}>
+              {legalOpen ? LEGAL_DOCUMENTS[legalOpen].title : ''}
+            </Text>
+            <Pressable onPress={() => setLegalOpen(null)} accessibilityRole="button" hitSlop={12}>
+              <Text style={styles.legalClose}>닫기</Text>
+            </Pressable>
+          </View>
+          <ScrollView
+            style={styles.legalScroll}
+            contentContainerStyle={styles.legalContent}
+            onScroll={onLegalScroll}
+            scrollEventThrottle={16}
+          >
+            <Text style={styles.legalBody}>{legalOpen ? LEGAL_DOCUMENTS[legalOpen].body : ''}</Text>
+            <Text style={styles.legalEnd}>— 문서의 끝 —</Text>
+          </ScrollView>
+          <View style={styles.legalFooter}>
+            {!legalReadToEnd ? (
+              <Text style={styles.legalScrollHint}>내용을 끝까지 내려 읽어 주세요.</Text>
+            ) : null}
+            <Pressable
+              onPress={agreeCurrentLegal}
+              disabled={!legalReadToEnd}
+              style={[styles.legalAgree, !legalReadToEnd && styles.legalAgreeDisabled]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.legalAgreeLabel}>
+                {legalOpen && legalAgreed[legalOpen] ? '동의 완료' : '읽었으며 동의합니다'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -508,6 +609,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
+  ctaDisabled: { opacity: 0.45 },
   ghost: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.pill,
@@ -545,6 +647,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  legalBox: {
+    borderWidth: hairline,
+    borderColor: darkColors.lineStrong,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  legalHeading: { ...typeScale.label, color: darkColors.text },
+  legalRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  check: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: hairline,
+    borderColor: darkColors.lineStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkDone: { backgroundColor: darkColors.accent, borderColor: darkColors.accent },
+  checkLabel: { color: darkColors.onAccent, fontSize: 13, fontWeight: '700' },
+  legalRowLabel: { ...typeScale.caption, color: darkColors.text, flex: 1 },
+  legalView: { ...typeScale.caption, color: darkColors.textMuted },
+  legalHint: { ...typeScale.caption, color: darkColors.textFaint },
+  legalModal: { flex: 1, backgroundColor: darkColors.bg },
+  legalModalHeader: {
+    minHeight: 64,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderBottomWidth: hairline,
+    borderBottomColor: darkColors.lineStrong,
+  },
+  legalModalTitle: { ...typeScale.bodyStrong, color: darkColors.text, flex: 1 },
+  legalClose: { ...typeScale.label, color: darkColors.textMuted },
+  legalScroll: { flex: 1 },
+  legalContent: { padding: spacing.lg, paddingBottom: spacing.xl },
+  legalBody: { ...typeScale.body, color: darkColors.textMuted, lineHeight: 25 },
+  legalEnd: { ...typeScale.caption, color: darkColors.textFaint, textAlign: 'center', marginTop: spacing.xl },
+  legalFooter: {
+    padding: spacing.lg,
+    gap: spacing.sm,
+    borderTopWidth: hairline,
+    borderTopColor: darkColors.lineStrong,
+  },
+  legalScrollHint: { ...typeScale.caption, color: darkColors.textFaint, textAlign: 'center' },
+  legalAgree: {
+    minHeight: BUTTON_HEIGHT,
+    borderRadius: radius.pill,
+    backgroundColor: darkColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legalAgreeDisabled: { opacity: 0.35 },
+  legalAgreeLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dividerRule: { flex: 1, height: hairline, backgroundColor: darkColors.lineStrong },
   dividerLabel: { ...typeScale.caption, color: darkColors.textFaint },
