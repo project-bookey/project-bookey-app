@@ -54,7 +54,8 @@
           "color": "#70E0B5",
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "apiBaseUrl": "https://api.bookey.site",

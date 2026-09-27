@@ -15,6 +15,7 @@
     "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
     "@expo-google-fonts/nanum-myeongjo": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "9.1.0",
     "@tanstack/react-query": "^5.90.2",
     "expo": "~57.0.24",
     "expo-apple-authentication": "~57.0.2",
