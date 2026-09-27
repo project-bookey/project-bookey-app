@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
@@ -37,6 +37,7 @@ export default function ClubHomeScreen() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [shareProgress, setShareProgress] = useState(true);
   const [adoptTarget, setAdoptTarget] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const monday = mondayOf(date);
 
   const club = useQuery({
@@ -189,16 +190,22 @@ export default function ClubHomeScreen() {
       <SubHeader
         category="모임"
         right={
-          <View style={styles.headerActions}>
-            <HeaderAction label="채팅" onPress={() => router.push(`/club/${clubId}/chat`)} colors={colors} />
-            <HeaderAction label="약속" onPress={() => router.push({ pathname: '/club/[id]/meetings', params: { id: String(clubId), host: isHost ? '1' : '0' } })} colors={colors} />
-            <HeaderAction label="토론" onPress={() => router.push(`/club/${clubId}/posts`)} colors={colors} />
-            {isHost ? (
-              <HeaderAction label="관리" onPress={() => router.push(`/club/${clubId}/settings`)} colors={colors} />
-            ) : null}
-          </View>
+          <Pressable onPress={() => setMenuOpen(true)} hitSlop={10} accessibilityRole="button" accessibilityLabel="모임 메뉴 열기" style={styles.menuButton}>
+            <Text style={[styles.menuGlyph, { color: colors.text }]}>☰</Text>
+          </Pressable>
         }
       />
+      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={[styles.menuBackdrop, { backgroundColor: colors.scrimDim }]} onPress={() => setMenuOpen(false)}>
+          <View style={[styles.menuSheet, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]} onStartShouldSetResponder={() => true}>
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 메뉴</Text>
+            <MenuItem icon="💬" label="채팅" description="멤버들과 이야기하기" colors={colors} onPress={() => { setMenuOpen(false); router.push(`/club/${clubId}/chat`); }} />
+            <MenuItem icon="📅" label="약속" description="오프라인 만남 확인하기" colors={colors} onPress={() => { setMenuOpen(false); router.push({ pathname: '/club/[id]/meetings', params: { id: String(clubId), host: isHost ? '1' : '0' } }); }} />
+            <MenuItem icon="💭" label="토론" description="책에 대한 생각 나누기" colors={colors} onPress={() => { setMenuOpen(false); router.push(`/club/${clubId}/posts`); }} />
+            {isHost ? <MenuItem icon="⚙️" label="모임 관리" description="정보·멤버·초대 설정" colors={colors} onPress={() => { setMenuOpen(false); router.push(`/club/${clubId}/settings`); }} /> : null}
+          </View>
+        </Pressable>
+      </Modal>
 
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
@@ -368,11 +375,15 @@ export default function ClubHomeScreen() {
   );
 }
 
-/** 서브 헤더 우측 글자 버튼 — '토론' · '관리'. 아이콘 없이 모노 라벨로 뜻을 그대로 적는다. */
-function HeaderAction({ label, onPress, colors }: { label: string; onPress: () => void; colors: ColorTokens }) {
+function MenuItem({ icon, label, description, onPress, colors }: { icon: string; label: string; description: string; onPress: () => void; colors: ColorTokens }) {
   return (
-    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={label} style={styles.headerAction}>
-      <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{label}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.menuItem, { borderBottomColor: colors.line }]}>
+      <Text style={styles.menuIcon}>{icon}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{label}</Text>
+        <Text style={[typeScale.caption, { color: colors.textMuted }]}>{description}</Text>
+      </View>
+      <Text style={[styles.menuArrow, { color: colors.textFaint }]}>›</Text>
     </Pressable>
   );
 }
@@ -515,8 +526,13 @@ function CheckpointGrid({ checkpoints, colors }: {
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: 120 },
-  headerActions: { flexDirection: 'row', gap: spacing.md },
-  headerAction: { paddingVertical: spacing.xs },
+  menuButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  menuGlyph: { fontSize: 25, lineHeight: 28 },
+  menuBackdrop: { flex: 1, alignItems: 'flex-end', paddingTop: 58, paddingRight: spacing.md },
+  menuSheet: { width: 280, borderWidth: hairline, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
+  menuIcon: { fontSize: 24, width: 34, textAlign: 'center' },
+  menuArrow: { fontSize: 24 },
   header: { flexDirection: 'row', gap: spacing.md },
   title: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
   headerTags: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs, flexWrap: 'wrap' },
