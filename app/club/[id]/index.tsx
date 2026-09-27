@@ -190,6 +190,8 @@ export default function ClubHomeScreen() {
         category="모임"
         right={
           <View style={styles.headerActions}>
+            <HeaderAction label="채팅" onPress={() => router.push(`/club/${clubId}/chat`)} colors={colors} />
+            <HeaderAction label="약속" onPress={() => router.push({ pathname: '/club/[id]/meetings', params: { id: String(clubId), host: isHost ? '1' : '0' } })} colors={colors} />
             <HeaderAction label="토론" onPress={() => router.push(`/club/${clubId}/posts`)} colors={colors} />
             {isHost ? (
               <HeaderAction label="관리" onPress={() => router.push(`/club/${clubId}/settings`)} colors={colors} />

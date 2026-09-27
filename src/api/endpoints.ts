@@ -312,6 +312,25 @@ export const chatApi = {
   remove: (chatId: number) => api<void>(`/api/v1/chats/${chatId}`, { method: 'DELETE' }),
 };
 
+export type ClubChatState = { unlocked: boolean; unlockCost: number; bookmarkBalance: number; unreadCount: number; totalMessageCount: number; lastActivityAt?: string };
+export type ClubChatMessage = { id: number; senderId: number; senderNickname: string; body: string; createdAt: string; mine: boolean };
+export type ClubChatMessages = { messages: ClubChatMessage[]; nextBeforeId?: number };
+export type ClubMeeting = { id: number; clubId: number; title: string; description?: string; startsAt: string; endsAt?: string; placeName: string; address: string; latitude?: number; longitude?: number; mapUrl?: string; responseDeadline?: string; status: 'OPEN' | 'CANCELLED'; attendeeCount: number; attending: boolean; host: boolean; attendeeNicknames: string[] };
+export type ClubMeetingInput = { title: string; description?: string; startsAt: string; endsAt?: string; placeName: string; address: string; latitude?: number; longitude?: number; mapUrl?: string; responseDeadline?: string };
+
+export const clubCommunityApi = {
+  chatState: (clubId: number) => api<ClubChatState>(`/api/v1/clubs/${clubId}/chat`),
+  unlockChat: (clubId: number) => api<{ unlocked: boolean; bookmarkBalance: number }>(`/api/v1/clubs/${clubId}/chat/unlock`, { method: 'POST' }),
+  chatMessages: (clubId: number, beforeId?: number) => api<ClubChatMessages>(`/api/v1/clubs/${clubId}/chat/messages`, { query: { beforeId } }),
+  sendChat: (clubId: number, body: string) => api<ClubChatMessage>(`/api/v1/clubs/${clubId}/chat/messages`, { method: 'POST', body: { body } }),
+  meetings: (clubId: number) => api<ClubMeeting[]>(`/api/v1/clubs/${clubId}/meetings`),
+  createMeeting: (clubId: number, body: ClubMeetingInput) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings`, { method: 'POST', body }),
+  updateMeeting: (clubId: number, meetingId: number, body: ClubMeetingInput) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings/${meetingId}`, { method: 'PUT', body }),
+  cancelMeeting: (clubId: number, meetingId: number) => api<void>(`/api/v1/clubs/${clubId}/meetings/${meetingId}`, { method: 'DELETE' }),
+  attend: (clubId: number, meetingId: number) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings/${meetingId}/attendees/me`, { method: 'POST' }),
+  unattend: (clubId: number, meetingId: number) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings/${meetingId}/attendees/me`, { method: 'DELETE' }),
+};
+
 export const profileApi = {
   /** 유저 프로필 — 열람하면 방문 기록이 남는다(방문 수는 전체 공개). */
   user: (userId: number) => api<UserProfileView>(`/api/v1/users/${userId}/profile`),
