@@ -1,13 +1,9 @@
-import { Modal, SafeAreaView, StyleSheet, View } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { Button } from '@/components/ui';
-import { spacing, useTheme } from '@/theme';
+import { useState } from 'react';
+import { Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { clubCommunityApi } from '@/api/endpoints';
+import { Button, Card, Loading } from '@/components/ui';
+import { spacing, typeScale, useTheme } from '@/theme';
 
-export type AddressSelection = { address: string; roadAddress: string; buildingName: string; zonecode: string };
-
-export function AddressSearchModal({ visible, onClose, onSelect }: { visible: boolean; onClose: () => void; onSelect: (value: AddressSelection) => void }) {
-  const { colors } = useTheme();
-  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><style>html,body,#postcode{width:100%;height:100%;margin:0}</style></head><body><div id="postcode"></div><script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script><script>new daum.Postcode({oncomplete:function(d){window.ReactNativeWebView.postMessage(JSON.stringify({address:d.address||'',roadAddress:d.roadAddress||'',buildingName:d.buildingName||'',zonecode:d.zonecode||''}))},width:'100%',height:'100%'}).embed(document.getElementById('postcode'));</script></body></html>`;
-  return <Modal visible={visible} animationType="slide" onRequestClose={onClose}><SafeAreaView style={[styles.safe,{backgroundColor:colors.bg}]}><View style={styles.header}><Button label="닫기" variant="ghost" size="sm" onPress={onClose}/></View><WebView source={{html}} originWhitelist={['*']} javaScriptEnabled onMessage={event=>{try{onSelect(JSON.parse(event.nativeEvent.data) as AddressSelection)}catch{}}}/></SafeAreaView></Modal>;
-}
-const styles=StyleSheet.create({safe:{flex:1},header:{padding:spacing.sm,alignItems:'flex-end'},web:{flex:1}});
+export type AddressSelection={address:string;roadAddress:string;buildingName:string;zonecode:string;latitude:number;longitude:number};
+export function AddressSearchModal({clubId,visible,onClose,onSelect}:{clubId:number;visible:boolean;onClose:()=>void;onSelect:(value:AddressSelection)=>void}){const {colors}=useTheme();const [query,setQuery]=useState(''),[loading,setLoading]=useState(false),[results,setResults]=useState<AddressSelection[]>([]),[error,setError]=useState('');const search=async()=>{if(query.trim().length<2)return;setLoading(true);setError('');try{setResults(await clubCommunityApi.searchAddresses(clubId,query.trim()))}catch{setError('주소를 검색하지 못했어요. 잠시 후 다시 시도해 주세요.')}finally{setLoading(false)}};return <Modal visible={visible} animationType="slide" onRequestClose={onClose}><SafeAreaView style={[s.safe,{backgroundColor:colors.bg}]}><View style={s.header}><Text style={[typeScale.title,{color:colors.text}]}>주소 검색</Text><Button label="닫기" variant="ghost" size="sm" onPress={onClose}/></View><View style={s.search}><TextInput value={query} onChangeText={setQuery} onSubmitEditing={search} returnKeyType="search" placeholder="도로명, 건물명 또는 지번" placeholderTextColor={colors.textFaint} style={[s.input,{color:colors.text,borderColor:colors.lineStrong}]}/><Button label="검색" onPress={search} disabled={query.trim().length<2||loading}/></View>{loading?<Loading/>:<ScrollView contentContainerStyle={s.list}>{results.map((r,i)=><Card key={`${r.latitude}-${r.longitude}-${i}`}><Text style={[typeScale.bodyStrong,{color:colors.text}]}>{r.buildingName||r.roadAddress||r.address}</Text><Text style={[typeScale.caption,{color:colors.textMuted}]}>{r.address}</Text><Button label="이 주소 선택" size="sm" variant="outline" onPress={()=>onSelect(r)}/></Card>)}{!loading&&results.length===0?<Text style={[typeScale.body,{color:colors.textMuted}]}>{error||'주소를 입력하고 검색을 눌러주세요.'}</Text>:null}</ScrollView>}</SafeAreaView></Modal>}
+const s=StyleSheet.create({safe:{flex:1},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:spacing.md},search:{padding:spacing.md,gap:spacing.sm},input:{borderWidth:1,borderRadius:12,padding:12},list:{padding:spacing.md,gap:spacing.sm}});

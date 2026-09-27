@@ -332,6 +332,7 @@ export const clubCommunityApi = {
   meetings: (clubId: number) => api<ClubMeeting[]>(`/api/v1/clubs/${clubId}/meetings`),
   searchPlaces: (clubId: number, query: string) => api<ClubPlace[]>(`/api/v1/clubs/${clubId}/places/search`, { query: { query } }),
   geocodePlace: async (clubId: number, address: string) => (await api<{ latitude: number; longitude: number } | undefined>(`/api/v1/clubs/${clubId}/places/geocode`, { query: { address } })) ?? null,
+  searchAddresses: (clubId: number, query: string) => api<Array<{ address: string; roadAddress: string; buildingName: string; zonecode: string; latitude: number; longitude: number }>>(`/api/v1/clubs/${clubId}/places/address-search`, { query: { query } }),
   createMeeting: (clubId: number, body: ClubMeetingInput) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings`, { method: 'POST', body }),
   updateMeeting: (clubId: number, meetingId: number, body: ClubMeetingInput) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings/${meetingId}`, { method: 'PUT', body }),
   cancelMeeting: (clubId: number, meetingId: number) => api<void>(`/api/v1/clubs/${clubId}/meetings/${meetingId}`, { method: 'DELETE' }),
