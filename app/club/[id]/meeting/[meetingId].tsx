@@ -163,9 +163,9 @@ export default function MeetingDetailScreen() {
           <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
             참여자 {m.attendeeCount}명
           </Text>
-          {m.attendees.length ? (
+          {(m.attendees ?? []).length ? (
             <View style={s.attendeeList}>
-              {m.attendees.map((person) => (
+              {(m.attendees ?? []).map((person) => (
                 <View
                   key={person.userId}
                   style={[s.attendeeRow, { borderBottomColor: colors.line }]}

@@ -409,7 +409,7 @@ export default function ClubMeetingsScreen() {
                 </Text>
                 <View style={s.listFooter}>
                   <View style={s.avatarStack}>
-                    {m.attendees.slice(0, 5).map((person, index) =>
+                    {(m.attendees ?? []).slice(0, 5).map((person, index) =>
                       person.avatarUrl ? (
                         <Image
                           key={person.userId}
@@ -443,11 +443,11 @@ export default function ClubMeetingsScreen() {
                         </View>
                       ),
                     )}
-                    {m.attendees.length > 5 ? (
+                    {(m.attendees ?? []).length > 5 ? (
                       <Text
                         style={[typeScale.caption, { color: colors.textMuted }]}
                       >
-                        +{m.attendees.length - 5}
+                        +{(m.attendees ?? []).length - 5}
                       </Text>
                     ) : null}
                   </View>
