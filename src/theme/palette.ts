@@ -9,6 +9,8 @@ export type ColorTokens = {
   bg: string;
   /** 카드·행 */
   surface: string;
+  /** 종이 카드에서 사진이 없을 때 쓰는 보조 바탕 */
+  paperAlt: string;
   /** 시트·모달·눌림 — 다크에서는 밝기가 곧 높이다 */
   surfaceRaised: string;
   text: string;
@@ -63,6 +65,7 @@ export type ThemeMode = 'dark' | 'light';
 export const darkColors: ColorTokens = {
   bg: '#0c0e0d',
   surface: '#171a16',
+  paperAlt: '#20251f',
   surfaceRaised: '#1d211c',
   text: '#e8e6e1',
   textMuted: '#9a9790',
@@ -95,6 +98,7 @@ export const darkColors: ColorTokens = {
 export const lightColors: ColorTokens = {
   bg: '#faf8f4',
   surface: '#ffffff',
+  paperAlt: '#f0eadf',
   surfaceRaised: '#efece4',
   text: '#1a1c18',
   textMuted: '#57554f',
