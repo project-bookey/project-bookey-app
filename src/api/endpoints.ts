@@ -318,6 +318,7 @@ export type ClubChatMessages = { messages: ClubChatMessage[]; nextBeforeId?: num
 export type ClubChatGiftCandidate = { userId: number; nickname: string; unlocked: boolean };
 export type ClubMeeting = { id: number; clubId: number; title: string; description?: string; startsAt: string; endsAt?: string; placeName: string; address: string; latitude?: number; longitude?: number; mapUrl?: string; responseDeadline?: string; status: 'OPEN' | 'CANCELLED'; attendeeCount: number; attending: boolean; host: boolean; attendeeNicknames: string[] };
 export type ClubMeetingInput = { title: string; description?: string; startsAt: string; endsAt?: string; placeName: string; address: string; latitude?: number; longitude?: number; mapUrl?: string; responseDeadline?: string };
+export type ClubPlace = { id: string; name: string; address: string; roadAddress: string; latitude: number; longitude: number; phone?: string; mapUrl?: string };
 export type ClubActivitySession = { id: number; startedAt: string; endedAt?: string; durationSec?: number };
 export type ClubActivityCard = { id: number; sessionId: number; userId: number; nickname: string; durationSec: number; caption?: string; decorationsJson: string; photoUrl?: string };
 
@@ -329,6 +330,7 @@ export const clubCommunityApi = {
   chatMessages: (clubId: number, beforeId?: number) => api<ClubChatMessages>(`/api/v1/clubs/${clubId}/chat/messages`, { query: { beforeId } }),
   sendChat: (clubId: number, body: string) => api<ClubChatMessage>(`/api/v1/clubs/${clubId}/chat/messages`, { method: 'POST', body: { body } }),
   meetings: (clubId: number) => api<ClubMeeting[]>(`/api/v1/clubs/${clubId}/meetings`),
+  searchPlaces: (clubId: number, query: string) => api<ClubPlace[]>(`/api/v1/clubs/${clubId}/places/search`, { query: { query } }),
   createMeeting: (clubId: number, body: ClubMeetingInput) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings`, { method: 'POST', body }),
   updateMeeting: (clubId: number, meetingId: number, body: ClubMeetingInput) => api<ClubMeeting>(`/api/v1/clubs/${clubId}/meetings/${meetingId}`, { method: 'PUT', body }),
   cancelMeeting: (clubId: number, meetingId: number) => api<void>(`/api/v1/clubs/${clubId}/meetings/${meetingId}`, { method: 'DELETE' }),
