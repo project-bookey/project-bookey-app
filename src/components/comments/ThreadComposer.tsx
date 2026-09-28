@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.sm,
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
@@ -121,6 +121,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlignVertical: 'top',
   },
-  send: { borderRadius: radius.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 3 },
+  send: { borderRadius: radius.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm + 3 },
   barError: { marginTop: spacing.xs },
 });

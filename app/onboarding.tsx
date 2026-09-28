@@ -9,7 +9,9 @@ import { onboardingApi } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
 import { markOnboardingSeen } from '@/lib/onboarding';
 import { useOnboarding } from '@/store/onboarding';
-import { darkColors, hairline, radius, spacing, typeScale } from '@/theme';
+import Svg, { Path } from 'react-native-svg';
+
+import { darkColors, hairline, iconStroke, radius, spacing, typeScale } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 /** 온보딩 책 선택 개수 — "5권 고르기". */
@@ -23,9 +25,8 @@ const FALLBACK_CATEGORIES = [
 ];
 
 /** 첫 인사 뒤에는 실제 화면을 따라가는 스팟라이트 투어가 별도로 시작된다. */
-const GUIDE_STEPS: { mark: string; eyebrow: string; title: string; body: string }[] = [
+const GUIDE_STEPS: { eyebrow: string; title: string; body: string }[] = [
   {
-    mark: '📖',
     eyebrow: 'WELCOME',
     title: '만나서 반가워요',
     body: 'bookey는 읽기로 한 책을\n진짜로 다 읽게 만드는 독서 앱이에요.\n취향을 알려주시면 바로 시작할게요.',
@@ -130,7 +131,7 @@ export default function OnboardingScreen() {
         {step < CATEGORY_STEP ? (
           <View style={styles.guide}>
             <View style={styles.markWrap}>
-              <Text style={styles.mark}>{GUIDE_STEPS[step].mark}</Text>
+              <BookGlyph size={34} color={darkColors.accent} />
             </View>
             <Text style={[typeScale.monoEyebrow, { color: darkColors.accent }]}>
               {GUIDE_STEPS[step].eyebrow}
@@ -153,12 +154,12 @@ export default function OnboardingScreen() {
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: selected }}
                     style={[styles.categoryChip, {
-                      borderColor: selected ? darkColors.accent : darkColors.lineStrong,
-                      backgroundColor: selected ? darkColors.accentSoft : darkColors.surface,
+                      borderColor: selected ? darkColors.ink : darkColors.lineStrong,
+                      backgroundColor: selected ? darkColors.ink : darkColors.surface,
                     }]}
                   >
                     <Text style={[typeScale.label, {
-                      color: selected ? darkColors.accent : darkColors.textMuted,
+                      color: selected ? darkColors.onInk : darkColors.textMuted,
                     }]}>
                       {category}
                     </Text>
@@ -202,8 +203,8 @@ export default function OnboardingScreen() {
                           </Text>
                         )}
                         {selected ? (
-                          <View style={[styles.bookCheck, { backgroundColor: darkColors.accent }]}>
-                            <Text style={{ color: darkColors.onAccent, fontSize: 12 }}>✓</Text>
+                          <View style={[styles.bookCheck, { backgroundColor: darkColors.ink }]}>
+                            <Text style={{ color: darkColors.onInk, fontSize: 12 }}>✓</Text>
                           </View>
                         ) : null}
                       </View>
@@ -263,6 +264,16 @@ export default function OnboardingScreen() {
   );
 }
 
+/** 첫 인사 마크 — 펼친 책(구역 네비 '서가' 아이콘과 같은 꼴). 이모지는 플랫폼마다 그림이 달라 선으로 그린다. */
+function BookGlyph({ size, color }: { size: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <Path d="M5 6.5h5.5A2.5 2.5 0 0 1 13 9v9.5a2.5 2.5 0 0 0-2.5-2.5H5z" stroke={color} {...iconStroke} />
+      <Path d="M19 6.5h-3.5A2.5 2.5 0 0 0 13 9v9.5a2.5 2.5 0 0 1 2.5-2.5H19z" stroke={color} {...iconStroke} />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -282,20 +293,19 @@ const styles = StyleSheet.create({
   body: { flex: 1, justifyContent: 'center' },
   guide: { gap: spacing.md },
   markWrap: {
-    width: 72, height: 72, borderRadius: 36,
+    width: 72, height: 72, borderRadius: radius.md,
     borderWidth: hairline, borderColor: darkColors.lineStrong,
     backgroundColor: darkColors.surface,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  mark: { fontSize: 34 },
   title: { fontFamily: serif.bold, fontSize: 26, lineHeight: 36, color: darkColors.text },
   copy: { ...typeScale.body, color: darkColors.textMuted, lineHeight: 24 },
   pickerStep: { flex: 1, gap: spacing.md, paddingTop: spacing.xl },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   categoryChip: {
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
   },
@@ -311,7 +321,7 @@ const styles = StyleSheet.create({
   bookFallback: { padding: spacing.sm, textAlign: 'center' },
   bookCheck: {
     position: 'absolute', top: 6, right: 6,
-    width: 20, height: 20, borderRadius: 10,
+    width: 20, height: 20, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
   bottom: { gap: spacing.sm },
@@ -319,7 +329,7 @@ const styles = StyleSheet.create({
   dot: { height: 6, borderRadius: 3 },
   cta: {
     minHeight: 48,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

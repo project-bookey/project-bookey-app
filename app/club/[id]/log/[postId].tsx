@@ -226,10 +226,10 @@ export default function ClubLogScrapScreen() {
                     style={[
                       styles.reaction,
                       { borderColor: colors.line, backgroundColor: colors.bg },
-                      on && { backgroundColor: colors.accent, borderColor: colors.accent },
+                      on && { backgroundColor: colors.ink, borderColor: colors.ink },
                     ]}
                   >
-                    <Text style={[typeScale.monoLabel, { color: on ? colors.onAccent : colors.textMuted }]}>{label}</Text>
+                    <Text style={[typeScale.monoLabel, { color: on ? colors.onInk : colors.textMuted }]}>{label}</Text>
                   </Pressable>
                 );
               })}
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   pageInput: { borderBottomWidth: hairline, paddingVertical: spacing.xs, fontFamily: mono.regular, fontSize: 15 },
   editActions: { flexDirection: 'row', gap: spacing.sm },
   reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  reaction: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  reaction: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
   ownerActions: { flexDirection: 'row', gap: spacing.sm },
   talks: { gap: spacing.sm },
   talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: 4 },

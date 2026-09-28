@@ -70,7 +70,7 @@ export function WeekStrip({ days, selected, today, onSelect }: {
       {days.map((day) => {
         const active = day.date === selected;
         const future = day.date > today;
-        const fg = active ? colors.onAccent : future ? colors.textFaint : colors.textMuted;
+        const fg = active ? colors.onInk : future ? colors.textFaint : colors.textMuted;
         return (
           <Pressable
             key={day.date}
@@ -79,15 +79,15 @@ export function WeekStrip({ days, selected, today, onSelect }: {
             accessibilityRole="button"
             accessibilityState={{ selected: active, disabled: future }}
             accessibilityLabel={`${dayOfMonth(day.date)}일 조각 ${day.logCount}개`}
-            style={[styles.day, active && { backgroundColor: colors.accent }, future && { opacity: 0.4 }]}
+            style={[styles.day, active && { backgroundColor: colors.ink }, future && { opacity: 0.4 }]}
           >
-            <Text style={[styles.weekday, { color: active ? colors.onAccent : colors.textFaint }]}>
+            <Text style={[styles.weekday, { color: active ? colors.onInk : colors.textFaint }]}>
               {weekdayLabel(day.date)}
             </Text>
             <Text style={[styles.dayNumber, { color: fg }]}>{dayOfMonth(day.date)}</Text>
             <View style={styles.dots}>
               {Array.from({ length: Math.min(3, day.logCount) }, (_, i) => (
-                <View key={i} style={[styles.dot, { backgroundColor: active ? colors.onAccent : colors.accent }]} />
+                <View key={i} style={[styles.dot, { backgroundColor: active ? colors.onInk : colors.accent }]} />
               ))}
             </View>
           </Pressable>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 28,
     height: 28,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
   },
   weekday: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 1 },
   dayNumber: { fontFamily: mono.semiBold, fontSize: 13 },
   dots: { flexDirection: 'row', gap: 2, height: 4 },
-  dot: { width: 4, height: 4, borderRadius: radius.pill },
+  dot: { width: 4, height: 4, borderRadius: radius.round },
   notePages: { fontFamily: mono.semiBold, fontSize: 24, marginTop: 4 },
 });

@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     left: -8,
     width: 26,
     height: 26,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

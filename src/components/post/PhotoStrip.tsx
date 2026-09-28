@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   remove: {
     width: REMOVE,
     height: REMOVE,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',

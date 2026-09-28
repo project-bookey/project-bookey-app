@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 0.6,
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },

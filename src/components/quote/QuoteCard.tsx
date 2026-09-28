@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   card: { gap: spacing.md },
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: {
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: hairline,
     overflow: 'hidden',
     alignItems: 'center',
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 0.6,
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },

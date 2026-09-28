@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { useTheme } from '@/theme';
 import { hairline, radius, spacing, typeScale } from '@/theme/tokens';
 
-/** 알약 칩 — 탐색 무드 칩·광장 필터 칩 공용. */
+/** 네모 칩 — 탐색 무드 칩·광장 필터 칩 공용. 활성은 잉크로 찍은 도장처럼 반전한다. */
 export function Chip({ label, active = false, onPress, disabled = false, accessibilityLabel }: {
   label: string;
   active?: boolean;
@@ -26,12 +26,12 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
       style={[
         styles.chip,
         active
-          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+          ? { backgroundColor: colors.ink, borderColor: colors.ink }
           : { backgroundColor: 'transparent', borderColor: colors.line },
         disabled ? styles.disabled : null,
       ]}
     >
-      <Text style={[typeScale.monoLabel, { color: active ? colors.onAccent : colors.textMuted }]}>
+      <Text style={[typeScale.monoLabel, { color: active ? colors.onInk : colors.textMuted }]}>
         {label}
       </Text>
     </Pressable>
@@ -40,7 +40,7 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
 
 const styles = StyleSheet.create({
   chip: {
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

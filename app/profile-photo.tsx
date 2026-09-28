@@ -8,7 +8,9 @@ import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import Svg, { Circle, Path } from 'react-native-svg';
+
+import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
@@ -173,7 +175,7 @@ export default function ProfilePhotoScreen() {
               styles.avatarEmpty,
               { borderColor: colors.lineStrong, backgroundColor: colors.surface },
             ]}>
-              <Text style={{ fontSize: 40 }}>📷</Text>
+              <CameraGlyph color={colors.textFaint} />
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>탭해서 고르기</Text>
             </View>
           )}
@@ -219,6 +221,16 @@ export default function ProfilePhotoScreen() {
   );
 }
 
+/** 사진 없음 자리의 카메라 — 이모지 대신 선으로 그린다. */
+function CameraGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <Path d="M4 8h4l1.5-2.5h5L16 8h4v11H4z" stroke={color} {...iconStroke} />
+      <Circle cx={12} cy={13} r={3.25} stroke={color} {...iconStroke} />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -251,7 +263,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   avatarWrap: { alignSelf: 'center', marginTop: spacing.lg },
-  avatar: { width: 160, height: 160, borderRadius: 80 },
+  avatar: { width: 160, height: 160, borderRadius: radius.round },
   avatarEmpty: {
     borderWidth: hairline,
     alignItems: 'center',
@@ -261,7 +273,7 @@ const styles = StyleSheet.create({
   ghost: { alignSelf: 'center', padding: spacing.sm },
   cta: {
     minHeight: 48,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

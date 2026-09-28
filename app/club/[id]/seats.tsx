@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   seat: {
     width: 40,
     height: 40,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

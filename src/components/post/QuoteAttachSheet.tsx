@@ -326,14 +326,14 @@ const styles = StyleSheet.create({
   composer: { gap: spacing.md },
   submit: {
     marginLeft: 'auto',
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
   },
   // 문장 찾기 입력 — 탐색 화면 검색바와 같은 pill(포커스는 테두리로).
   search: {
     borderWidth: 1,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontFamily: sans.regular,

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
-import { hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
 import { rowOffsetY, sans, tiltFor } from '@/theme/tokens';
 
 /** 아바타 지름(px) — 시안 A. 글줄 가운데에 앉히므로 이름·핸들·팔로우 세 줄 높이보다 조금 크다. */
@@ -310,7 +310,7 @@ export default function ProfileScreen() {
 // (accessibilityElementsHidden 은 react-native-svg 웹에서 DOM 에 새어 React 경고가 뜬다)
 /** 톱니 — 예전 하단 탭 '설정' 아이콘과 같은 꼴. */
 function GearLine({ size, color }: { size: number; color: string }) {
-  const stroke = { stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const stroke = { stroke: color, ...iconStroke };
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Circle cx={12} cy={12} r={3} {...stroke} />
@@ -332,15 +332,14 @@ function PencilLine({ color }: { color: string }) {
       <Path
         d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z"
         stroke={color}
+        {...iconStroke}
         strokeWidth={2.1}
-        strokeLinecap="round"
-        strokeLinejoin="round"
       />
       <Path
         d="m14.5 5.8 3.7 3.7"
         stroke={color}
+        {...iconStroke}
         strokeWidth={2.1}
-        strokeLinecap="round"
       />
     </Svg>
   );
@@ -552,11 +551,11 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingHorizontal: spacing.lg,
   },
-  avatarButton: { width: AVATAR, height: AVATAR, borderRadius: radius.pill },
+  avatarButton: { width: AVATAR, height: AVATAR, borderRadius: radius.round },
   avatar: {
     width: AVATAR,
     height: AVATAR,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: hairline,
     overflow: 'hidden',
     alignItems: 'center',
@@ -570,7 +569,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     width: 28,
     height: 28,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
@@ -584,7 +583,7 @@ const styles = StyleSheet.create({
   settingsPill: {
     height: 30,
     paddingHorizontal: spacing.sm + 2,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     flexDirection: 'row',
     alignItems: 'center',

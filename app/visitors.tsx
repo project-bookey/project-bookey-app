@@ -7,7 +7,7 @@ import { profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/quote/QuoteCard';
 import { EmptyState, formatRelative } from '@/components/ui';
-import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 내 방문자 (§14.2) — 구독 회원 전용. 방문자를 누르면 그 사람의 마이페이지로 간다. */
 export default function VisitorsScreen() {
@@ -87,6 +87,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    borderRadius: 999,
+    borderRadius: radius.sm,
   },
 });

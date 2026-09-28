@@ -3,7 +3,7 @@
  *
  * 방향: "콜라주 책상" — 어두운 책상 위에 책·메모·스티키 노트가 흩어진 감각.
  * 세리프(나눔명조)로 표제·인용에 위계를 주고, 모노(IBM Plex Mono)로
- * 아이브로우·라벨·숫자를 짚는다. 형태는 칩·CTA는 pill, 카드는 근사각.
+ * 아이브로우·라벨·숫자를 짚는다. 형태는 오려 낸 종이처럼 네모.
  * 설계 문서: docs/superpowers/specs/2026-09-01-collage-redesign-design.md
  */
 
@@ -16,13 +16,16 @@ export const spacing = {
   xxl: 36,
 } as const;
 
-/** 형태 언어. 칩·CTA는 pill(999) — 카드는 근사각(md/lg), 책 표지만 sm 유지. */
+/**
+ * 형태 언어 — 종이를 가위로 오린 네모. 칩·버튼·태그·카드 모두 각을 살리고(sm/md/lg),
+ * 원이어야만 하는 것(아바타·점·라디오)만 round 를 쓴다. pill(999)은 쓰지 않는다.
+ */
 export const radius = {
   none: 0,
-  sm: 2, // 책 표지
-  md: 6, // 카드·입력
-  lg: 10, // 시트·모달
-  pill: 999,
+  sm: 2, // 책 표지·칩·버튼·태그·입력
+  md: 4, // 카드
+  lg: 6, // 시트·모달
+  round: 999, // 아바타·점·라디오 — 원이어야만 하는 것
 } as const;
 
 /**
@@ -80,10 +83,10 @@ export const typeScale = {
   titleSerif: { fontFamily: serif.bold, fontSize: 22, lineHeight: 30 },
   /** 인용문 */
   quote: { fontFamily: serif.regular, fontSize: 17, lineHeight: 28 },
-  /** 라벨 — 모노 */
-  monoLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 1.2 },
+  /** 라벨 — 모노. 한글은 자간을 벌리면 글자가 흩어져 보여 좁게 둔다. */
+  monoLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
   /** 아이브로우 — 모노 */
-  monoEyebrow: { fontFamily: mono.semiBold, fontSize: 10, letterSpacing: 2 },
+  monoEyebrow: { fontFamily: mono.semiBold, fontSize: 10, letterSpacing: 1 },
   /** 숫자 — 모노 */
   monoNumeral: { fontFamily: mono.semiBold, fontSize: 13 },
 } as const;
@@ -114,6 +117,12 @@ export const stagger = { step: 60, max: 8 } as const;
 export const rowOffsetY = [0, 10, 4, 14, 6, 12] as const;
 
 export const hairline = 1;
+
+/**
+ * 선 아이콘 공통 획 — 끝(cap)과 모서리(join)를 각지게. 둥근 캡은 범용 아이콘 세트
+ * 느낌이 나서 쓰지 않는다. react-native-svg 의 Path/Circle 에 그대로 펼친다.
+ */
+export const iconStroke = { strokeWidth: 2, strokeLinecap: 'square', strokeLinejoin: 'miter' } as const;
 
 export const statusLabel: Record<string, string> = {
   WANT_TO_READ: '읽고 싶은',

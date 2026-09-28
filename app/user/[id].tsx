@@ -94,7 +94,7 @@ export default function UserProfileScreen() {
         <View style={styles.actions}>
           {p.mutual ? (
             <Button
-              label="💬 채팅"
+              label="채팅"
               onPress={() => openChat.mutate()}
               loading={openChat.isPending}
               style={{ flex: 1 }}
@@ -102,7 +102,7 @@ export default function UserProfileScreen() {
           ) : null}
           {!composing ? (
             <Button
-              label="✉ 엽서 보내기"
+              label="엽서 보내기"
               variant={p.mutual ? 'outline' : 'primary'}
               onPress={() => setComposing(true)}
               style={{ flex: 1 }}

@@ -13,7 +13,7 @@ import { clubCommunityApi } from "@/api/endpoints";
 import { PaperScreen, SubHeader } from "@/components/collage";
 import { PlaceMap } from "@/components/club/PlaceMap";
 import { Button, Card, Loading, formatClock } from "@/components/ui";
-import { spacing, typeScale, useTheme } from "@/theme";
+import { radius, spacing, typeScale, useTheme } from "@/theme";
 
 export default function MeetingDetailScreen() {
   const { id, meetingId, host } = useLocalSearchParams<{
@@ -272,7 +272,7 @@ const s = StyleSheet.create({
   avatar: {
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: radius.round,
     alignItems: "center",
     justifyContent: "center",
   },

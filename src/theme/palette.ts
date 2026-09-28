@@ -58,6 +58,10 @@ export type ColorTokens = {
   memoPad: string;
   /** 메모장 위 잉크 */
   onMemoPad: string;
+  /** 선택 상태(칩·세그먼트·달력 날짜·반응·라디오) — 도장처럼 잉크로 반전. 악센트는 CTA·진행·링크에만 쓴다. */
+  ink: string;
+  /** 잉크 위 텍스트 */
+  onInk: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
@@ -93,6 +97,8 @@ export const darkColors: ColorTokens = {
   onBookBand: '#0c0e0d',
   memoPad: '#e9e4d6',
   onMemoPad: '#2a2c27',
+  ink: '#e8e6e1',
+  onInk: '#0c0e0d',
 };
 
 export const lightColors: ColorTokens = {
@@ -126,6 +132,8 @@ export const lightColors: ColorTokens = {
   onBookBand: '#e8e6e1',
   memoPad: '#fbf9f2',
   onMemoPad: '#3b3d38',
+  ink: '#1a1c18',
+  onInk: '#faf8f4',
 };
 
 /** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. 새 민트 기준 재조정. */

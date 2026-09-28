@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     paddingHorizontal: spacing.lg,
   },
@@ -318,5 +318,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
   },
-  cta: { paddingVertical: spacing.md, borderRadius: radius.pill, alignItems: 'center', marginTop: spacing.sm },
+  cta: { paddingVertical: spacing.md, borderRadius: radius.sm, alignItems: 'center', marginTop: spacing.sm },
 });
