@@ -155,7 +155,7 @@ export default function ClubLogNewScreen() {
         ) : null}
 
         <View style={styles.photoBlock}>
-          <View style={[styles.polaroid, { backgroundColor: colors.memoPad }, cardShadow]}>
+          <View style={[styles.polaroid, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong }, cardShadow]}>
             <View style={[styles.tape, { backgroundColor: colors.bookPage }]} />
             {photo ? (
               <Image source={{ uri: photo.uri }} style={styles.photo} resizeMode="cover" accessibilityIgnoresInvertColors />
@@ -270,6 +270,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.lg,
     borderRadius: radius.sm,
+    borderWidth: hairline,
     transform: [{ rotate: '-2deg' }],
   },
   tape: {

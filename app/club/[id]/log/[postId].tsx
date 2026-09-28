@@ -138,7 +138,7 @@ export default function ClubLogScrapScreen() {
             <Pressable
               onPress={() => reveal.mutate()}
               accessibilityRole="button"
-              style={[styles.polaroid, { backgroundColor: colors.memoPad }, cardShadow]}
+              style={[styles.polaroid, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong }, cardShadow]}
             >
               <View style={[styles.photo, styles.maskedPhoto, { backgroundColor: colors.surfaceRaised }]}>
                 <Text style={[styles.maskedTitle, { color: colors.text }]}>
@@ -153,7 +153,7 @@ export default function ClubLogScrapScreen() {
               <Text style={[typeScale.label, { color: colors.onMemoPad, fontSize: 11 }]}>{linkLabel('그래도 볼래요', 'action')}</Text>
             </Pressable>
           ) : (
-            <View style={[styles.polaroid, { backgroundColor: colors.memoPad }, cardShadow]}>
+            <View style={[styles.polaroid, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong }, cardShadow]}>
               {data.imageUrl ? (
                 <Image
                   source={{ uri: data.imageUrl }}
@@ -337,7 +337,7 @@ function TalkRow({ talk, mine, confirming, onDelete }: {
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
-  polaroid: { padding: spacing.md, paddingBottom: spacing.lg, borderRadius: radius.sm },
+  polaroid: { padding: spacing.md, paddingBottom: spacing.lg, borderRadius: radius.sm, borderWidth: hairline },
   photo: { width: '100%', aspectRatio: 1, borderRadius: 1 },
   maskedPhoto: { alignItems: 'center', justifyContent: 'center' },
   maskedTitle: { fontFamily: mono.semiBold, fontSize: 12 },

@@ -141,23 +141,14 @@ export const lightColors: ColorTokens = {
 };
 
 /**
- * 종이 겹침 — 블러 그림자 대신 밑에 깔린 종이의 단(하드 오프셋). 새 아키텍처의 `boxShadow` 라
- * iOS·Android·웹이 같은 꼴로 그리고, 검정은 다크 바탕에서 안 보여 lineStrong 색으로 민다.
- * 카드·스티키 노트·CTA 는 3px, 표지는 2px, 눌러 들리면 5px. `shadow*`/`elevation` 은 쓰지 않는다.
+ * 엘리베이션 없음 — 종이는 헤어라인 테두리로만 구분한다. 블러 그림자(AI 느낌)도, 밑에 깔린 종이의
+ * 단(하드 오프셋 — "뒤에 종이가 하나 더 나온다"는 피드백)도 쓰지 않는다. 두 토큰은 소비처(Card·StickyNote·
+ * TiltCover 등)의 계약을 지키려고 빈 스타일로 남긴다 — 다시 무언가를 깔고 싶으면 여기 한 곳만 바꾼다.
  */
-const EDGE = { dark: '#33372e', light: '#cfcabc' } as const;
-const paperEdge = (px: number, mode: ThemeMode): ViewStyle => ({ boxShadow: `${px}px ${px}px 0 ${EDGE[mode]}` });
-
-/** 카드 단 — Card 프리미티브·스티키 노트·폴라로이드가 펼친다. useTheme() 이 mode 에 맞는 것을 내려준다. */
-export const cardShadow: Record<ThemeMode, ViewStyle> = {
-  dark: paperEdge(3, 'dark'),
-  light: paperEdge(3, 'light'),
-};
-
-/** 표지 단 — 평상시(rest) 2px, 눌림 리프트(lifted) 5px. TiltCover 등 콜라주 표지 컴포넌트가 사용. */
+export const cardShadow: Record<ThemeMode, ViewStyle> = { dark: {}, light: {} };
 export const coverShadow: Record<ThemeMode, { rest: ViewStyle; lifted: ViewStyle }> = {
-  dark: { rest: paperEdge(2, 'dark'), lifted: paperEdge(5, 'dark') },
-  light: { rest: paperEdge(2, 'light'), lifted: paperEdge(5, 'light') },
+  dark: { rest: {}, lifted: {} },
+  light: { rest: {}, lifted: {} },
 };
 
 /** 지연 단계(§F4) → 색. 팔레트를 따라가도록 함수로 제공한다. */
