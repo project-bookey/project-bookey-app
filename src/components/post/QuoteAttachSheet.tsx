@@ -19,7 +19,7 @@ import { plazaItemToQuote } from '@/components/post/quoteScope';
 import type { QuoteScope } from '@/components/post/quoteScope';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
-import { Card, Eyebrow } from '@/components/ui';
+import { Card, Eyebrow, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { sans } from '@/theme/tokens';
@@ -309,7 +309,7 @@ export function QuoteAttachSheet({ book, selectedIds, onPick, onClose, max }: {
                 accessibilityLabel="밑줄 더 보기"
                 style={styles.center}
               >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>더 보기 →</Text>
+                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('더 보기', 'action')}</Text>
               </Pressable>
             ) : null}
           </ScrollView>

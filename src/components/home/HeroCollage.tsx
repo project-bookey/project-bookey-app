@@ -7,6 +7,7 @@ import type { ReadingRecord } from '@/api/types';
 import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
 import { useTheme } from '@/theme';
 import { radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
+import { playLabel } from '@/components/ui';
 
 /**
  * 시안(390px) 기준 지오메트리 — 실제 폭에 비례 환산한다.
@@ -233,7 +234,7 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
             accessibilityLabel="이어서 읽기"
           >
             {/* 시안 라벨 — '읽기'를 붙이면 스트릭 캡션이 메모 조각에 닿아 말줄임된다. */}
-            <Text style={[typeScale.label, { color: colors.onAccent }]}>▶ 이어서</Text>
+            <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('이어서')}</Text>
           </Pressable>
           {streakLine ? (
             <Text

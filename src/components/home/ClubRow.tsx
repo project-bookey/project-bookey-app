@@ -6,6 +6,7 @@ import { clubApi } from '@/api/endpoints';
 import type { ClubPreview } from '@/api/types';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
+import { linkLabel } from '@/components/ui';
 
 /**
  * 홈 추천 모임 행 — 공개 모임 카드 + 맨 끝 '+ 모임 만들기' 타일.
@@ -31,7 +32,7 @@ export function ClubRow() {
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 모임</Text>
         </View>
         <Pressable onPress={() => router.navigate('/clubs')} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
-          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>전체보기 ›</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('전체보기')}</Text>
         </Pressable>
       </View>
       <FlatList

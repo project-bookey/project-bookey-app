@@ -14,7 +14,7 @@ import { useLikePost } from '@/components/post/useLikePost';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { EmptyState, Eyebrow, FootAction, Tag, formatRelative } from '@/components/ui';
+import { EmptyState, Eyebrow, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -111,7 +111,7 @@ export default function PostDetailScreen() {
         description="잠시 후 다시 시도해 주세요."
         action={
           <Pressable onPress={() => post.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
           </Pressable>
         }
       />
@@ -177,7 +177,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
               style={styles.bookLink}
             >
               <Text numberOfLines={1} style={[typeScale.monoLabel, styles.bookLinkText, { color: colors.accent }]}>
-                {post.bookTitle} →
+                {linkLabel(post.bookTitle ?? '책')}
               </Text>
             </Pressable>
           ) : (

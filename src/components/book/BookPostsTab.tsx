@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { postApi } from '@/api/endpoints';
 import { bookPostsKey, flattenPosts } from '@/api/postCache';
 import { PostScrap } from '@/components/post/PostScrap';
-import { Card } from '@/components/ui';
+import { Card, linkLabel } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받는 독후감 수 — 섹션 안에 붙는 조각이라 적게(밑줄 탭과 같은 값). */
@@ -47,7 +47,7 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
         <Text style={[typeScale.body, { color: colors.textMuted }]}>독후감을 불러오지 못했어요.</Text>
         <Pressable onPress={() => posts.refetch()} hitSlop={8} accessibilityRole="button"
           accessibilityLabel="독후감 다시 불러오기" style={styles.action}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
         </Pressable>
       </Card>
     );
@@ -85,7 +85,7 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
       ) : posts.hasNextPage ? (
         <Pressable onPress={() => posts.fetchNextPage()} accessibilityRole="button" hitSlop={8}
           style={[styles.center, styles.action]}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>독후감 더 보기 →</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('독후감 더 보기', 'action')}</Text>
         </Pressable>
       ) : null}
     </View>

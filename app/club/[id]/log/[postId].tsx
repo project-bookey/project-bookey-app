@@ -10,7 +10,7 @@ import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
-import { Button, Loading, Rule, Toggle, formatRelative } from '@/components/ui';
+import { Button, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -150,7 +150,7 @@ export default function ClubLogScrapScreen() {
                   ? `${data.anchorPage}쪽까지 읽으면 열려요${me?.currentPage != null ? ` · 내 진도 ${me.currentPage}쪽` : ''}`
                   : '완독하면 열려요'}
               </Text>
-              <Text style={[typeScale.label, { color: colors.onMemoPad, fontSize: 11 }]}>그래도 볼래요 →</Text>
+              <Text style={[typeScale.label, { color: colors.onMemoPad, fontSize: 11 }]}>{linkLabel('그래도 볼래요', 'action')}</Text>
             </Pressable>
           ) : (
             <View style={[styles.polaroid, { backgroundColor: colors.memoPad }, cardShadow]}>

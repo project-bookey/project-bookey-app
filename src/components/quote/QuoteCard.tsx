@@ -156,7 +156,7 @@ export function QuoteCard({
         <FootAction label={`좋아요 ${agreeCount}`} onPress={onAgree} selected={agreedByMe} />
         <View style={styles.footRight}>
           {onOpenBook ? (
-            <FootAction label="책 보기 →" onPress={onOpenBook} tone="accent" accessibilityLabel={`${bookTitle} 상세`} />
+            <FootAction label="책 보기" kind="nav" onPress={onOpenBook} tone="accent" accessibilityLabel={`${bookTitle} 상세`} />
           ) : null}
           {mine && onDelete ? (
             <FootAction

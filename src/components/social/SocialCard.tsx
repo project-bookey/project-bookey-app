@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { followApi, profileApi, walletApi } from '@/api/endpoints';
-import { Button, Card, Eyebrow, KeyValue, Rule } from '@/components/ui';
+import { Button, Card, Eyebrow, KeyValue, Rule, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
@@ -80,7 +80,7 @@ export function SocialCard() {
           <Text style={[typeScale.body, { color: colors.textMuted }]}>
             팔로잉 {p?.followingCount ?? 0}명
           </Text>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>목록 보기 ›</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('목록 보기')}</Text>
         </Pressable>
         <Rule />
         <Pressable
@@ -91,7 +91,7 @@ export function SocialCard() {
           <Text style={[typeScale.body, { color: colors.textMuted }]}>
             팔로워 {p?.followerCount ?? 0}명
           </Text>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>목록 보기 ›</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('목록 보기')}</Text>
         </Pressable>
         <Rule />
         <Pressable
@@ -103,7 +103,7 @@ export function SocialCard() {
             내 페이지 방문 {p?.visitCount ?? 0}회
           </Text>
           <Text style={[typeScale.monoLabel, { color: subscribed ? colors.accent : colors.textFaint }]}>
-            방문자 보기 ›
+            {linkLabel('방문자 보기')}
           </Text>
         </Pressable>
       </Card>

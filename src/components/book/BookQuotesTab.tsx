@@ -7,7 +7,7 @@ import { quoteApi } from '@/api/endpoints';
 import { bookQuotesKey, invalidateQuoteLists } from '@/api/quoteCache';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, linkLabel } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받는 밑줄 수 — 섹션 안에 붙는 조각이라 적게. */
@@ -51,7 +51,7 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
           <Text style={[typeScale.body, { color: colors.textMuted }]}>밑줄을 불러오지 못했습니다.</Text>
           <Pressable onPress={() => quotes.refetch()} hitSlop={8} accessibilityRole="button"
             accessibilityLabel="밑줄 다시 불러오기">
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
           </Pressable>
         </Card>
       ) : items.length === 0 ? (
@@ -82,7 +82,7 @@ export function BookQuotesTab({ bookId, rid, open, onClose }: {
           ) : quotes.hasNextPage ? (
             <Pressable onPress={() => quotes.fetchNextPage()} accessibilityRole="button" hitSlop={8}
               style={styles.center}>
-              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>밑줄 더 보기 →</Text>
+              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('밑줄 더 보기', 'action')}</Text>
             </Pressable>
           ) : null}
         </View>
