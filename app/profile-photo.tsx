@@ -10,7 +10,7 @@ import { Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
@@ -277,5 +277,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: { opacity: 0.75 },
+  pressed: pressedStyle,
 });

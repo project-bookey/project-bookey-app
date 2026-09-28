@@ -11,7 +11,7 @@ import { markOnboardingSeen } from '@/lib/onboarding';
 import { useOnboarding } from '@/store/onboarding';
 import Svg, { Path } from 'react-native-svg';
 
-import { darkColors, hairline, iconStroke, radius, spacing, typeScale } from '@/theme';
+import { darkColors, hairline, iconStroke, pressedStyle, radius, spacing, typeScale } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 /** 온보딩 책 선택 개수 — "5권 고르기". */
@@ -334,5 +334,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ghost: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.75 },
+  pressed: pressedStyle,
 });

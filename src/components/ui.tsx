@@ -1,10 +1,10 @@
-import { ReactNode, useMemo, useRef } from 'react';
+import { ReactNode, useMemo } from 'react';
 import {
-  ActivityIndicator, Animated, Platform, Pressable, StyleSheet, Text, TextInput, TextInputProps,
+  ActivityIndicator, Pressable, StyleSheet, Text, TextInput, TextInputProps,
   View, ViewStyle,
 } from 'react-native';
 
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import type { ColorTokens, ThemeMode } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
@@ -69,8 +69,6 @@ export function OrnamentDivider() {
   return <View style={styles.divider} />;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function Button({
   label, onPress, variant = 'primary', disabled, loading, style, size = 'md',
 }: {
@@ -84,22 +82,15 @@ export function Button({
 }) {
   const { styles, colors } = useStyles();
   const isDisabled = disabled || loading;
-  // 눌림 효과 — 스프링 스케일 다운(96%) + 스케일에 연동해 살짝 어두워짐
-  const scale = useRef(new Animated.Value(1)).current;
-  const springTo = (toValue: number) =>
-    Animated.spring(scale, {
-      toValue,
-      friction: 4,
-      useNativeDriver: Platform.OS !== 'web',
-    }).start();
+  // 눌림 — 종이 단(2px) 위에 놓인 버튼이 1px 옮겨 앉아 단이 1px 로 준다(물리적 눌림).
+  // 고스트는 단이 없어 흐려지기만 하고, 비활성은 아무 반응도 하지 않는다.
+  const plate = variant !== 'ghost' && !isDisabled;
   return (
-    <AnimatedPressable
+    <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      onPressIn={() => springTo(0.96)}
-      onPressOut={() => springTo(1)}
       disabled={isDisabled}
-      style={[
+      style={({ pressed }) => [
         styles.button,
         size === 'sm' && styles.buttonSm,
         variant === 'primary' && styles.buttonPrimary,
@@ -108,12 +99,8 @@ export function Button({
         variant === 'danger' && styles.buttonDanger,
         isDisabled && styles.buttonDisabled,
         style,
-        {
-          transform: [{ scale }],
-          ...(isDisabled
-            ? null
-            : { opacity: scale.interpolate({ inputRange: [0.96, 1], outputRange: [0.85, 1] }) }),
-        },
+        plate && styles.buttonPlate,
+        pressed && !isDisabled && (plate ? styles.buttonSat : pressedStyle),
       ]}
     >
       {loading ? (
@@ -133,7 +120,7 @@ export function Button({
           {label}
         </Text>
       )}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
@@ -198,10 +185,11 @@ export function Segmented<T extends string>({ options, value, onChange }: {
             onPress={() => onChange(option.value)}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
-            style={[
+            style={({ pressed }) => [
               styles.segment,
               index > 0 && styles.segmentDivider,
               active && styles.segmentActive,
+              pressed && !active && pressedStyle,
             ]}
           >
             <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
@@ -325,7 +313,7 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
     <Pressable
       onPress={onPress}
       hitSlop={FOOT_HIT_SLOP}
-      style={styles.footAction}
+      style={({ pressed }) => [styles.footAction, pressed && pressedStyle]}
       accessibilityRole="button"
       accessibilityState={selected === undefined ? undefined : { selected }}
       accessibilityLabel={accessibilityLabel ?? label}
@@ -415,6 +403,9 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       borderColor: colors.danger,
     },
     buttonDisabled: { opacity: 0.35 },
+    // 종이 단 위에 놓인 버튼 — 평상시 2px 단, 눌리면 1px 옮겨 앉아 단이 1px 로 준다(2번 종이 겹침과 같은 언어).
+    buttonPlate: { boxShadow: `2px 2px 0 ${colors.lineStrong}` },
+    buttonSat: { transform: [{ translateX: 1 }, { translateY: 1 }], boxShadow: `1px 1px 0 ${colors.lineStrong}` },
     buttonLabel: { ...typeScale.label, color: colors.text },
     buttonLabelSm: { fontSize: 12 },
     buttonLabelPrimary: { color: colors.onAccent },

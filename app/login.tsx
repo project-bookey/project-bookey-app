@@ -14,7 +14,7 @@ import { authApi, libraryApi } from '@/api/endpoints';
 import { useOnboarding } from '@/store/onboarding';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { useAuth } from '@/store/auth';
-import { darkColors, hairline, radius, sans, spacing, typeScale } from '@/theme';
+import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
 import { LEGAL_DOCUMENTS, LEGAL_VERSION, LegalDocumentKey } from '@/legal/documents';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   googleLabel: { ...typeScale.bodyStrong, color: darkColors.text },
-  pressed: { opacity: 0.75 },
+  pressed: pressedStyle,
   devInfo: { gap: spacing.sm },
   devRule: { height: hairline, backgroundColor: darkColors.line },
   devLine: { ...typeScale.caption, color: darkColors.textFaint, fontVariant: ['tabular-nums'] },
