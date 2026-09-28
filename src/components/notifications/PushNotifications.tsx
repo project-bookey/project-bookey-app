@@ -86,13 +86,18 @@ export function PushNotifications() {
       }
     };
 
+    // 웹은 알림 응답 API 를 지원하지 않아 호출하면 UnavailabilityError 가 난다.
+    if (Platform.OS === 'web') return;
+
     const subscription = Notifications.addNotificationResponseReceivedListener(open);
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response) {
-        open(response);
-        void Notifications.clearLastNotificationResponseAsync();
-      }
-    });
+    void Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) {
+          open(response);
+          void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+        }
+      })
+      .catch(() => undefined);
     return () => subscription.remove();
   }, [router, status]);
 
