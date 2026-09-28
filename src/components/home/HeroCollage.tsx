@@ -237,11 +237,12 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
             <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('이어서')}</Text>
           </Pressable>
           {streakLine ? (
+            /* 좁은 폭(360)에선 메모 조각에 밀려 한 줄에 안 들어간다 — 말줄임 대신 가운뎃점에서 줄을 나눠 두 줄로 내린다. */
             <Text
-              numberOfLines={1}
+              numberOfLines={2}
               style={[typeScale.monoEyebrow, styles.streak, { color: colors.textMuted }]}
             >
-              {streakLine}
+              {W < 376 ? streakLine.replace(' · ', '\n') : streakLine}
             </Text>
           ) : null}
         </View>
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   shelfTitle: { fontFamily: serif.extraBold, fontSize: 23, lineHeight: 26, marginTop: 5, letterSpacing: -0.2 },
   shelfRule: { width: 26, height: 2, marginTop: 7 },
   // 한글이 섞이는 캡션이라 모노 아이브로우의 넓은 자간은 덜어낸다.
-  streak: { flexShrink: 1, letterSpacing: 0.3, transform: [{ rotate: '-3deg' }] },
+  streak: { flexShrink: 1, letterSpacing: 0.3, lineHeight: 14, transform: [{ rotate: '-3deg' }] },
   memo: { paddingVertical: 9, paddingHorizontal: 11 },
   memoQuote: { fontFamily: serif.regular, fontSize: 12, lineHeight: 18 },
   memoSign: { fontSize: 8, letterSpacing: 0.5, marginTop: 5 },

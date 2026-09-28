@@ -473,9 +473,19 @@ function WalletCell({ value, label }: { value: number; label: string }) {
 
 function StatCell({ label, value }: { label: string; value: string }) {
   const { colors } = useTheme();
+  // '2시간 30분'처럼 긴 값은 세 칸 폭(≈100px)에 안 들어가 두 줄로 꺾인다 — 길면 한 치수 줄이고 한 줄로 고정한다.
+  // adjustsFontSizeToFit 은 웹이 무시하므로 글자 수로도 한 번 줄인다.
+  const long = value.length >= 6;
   return (
     <View style={styles.statCell}>
-      <Text style={[typeScale.monoNumeral, styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        style={[typeScale.monoNumeral, styles.statValue, long && styles.statValueLong, { color: colors.text }]}
+      >
+        {value}
+      </Text>
       <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
     </View>
   );
@@ -650,6 +660,7 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
   statCell: { flex: 1, gap: 3 },
   statValue: { fontSize: 18 },
+  statValueLong: { fontSize: 15 },
   vRule: { width: hairline, marginHorizontal: spacing.md },
   heatmap: { flexDirection: 'row', gap: 3, flexWrap: 'wrap', marginTop: spacing.md },
   heatWeek: { gap: 3 },

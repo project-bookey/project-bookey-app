@@ -128,7 +128,7 @@ function FollowRow({ user }: { user: FollowUserView }) {
 
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: spacing.xxl },
-  head: { gap: spacing.md, marginBottom: spacing.md },
+  head: { gap: spacing.md, marginBottom: spacing.md, paddingHorizontal: spacing.lg },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
   avatar: {
     width: 36, height: 36, borderRadius: radius.round,
