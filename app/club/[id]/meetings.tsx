@@ -2,7 +2,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Image,
@@ -20,8 +20,6 @@ import {
   type ClubMeetingInput,
   type ClubPlace,
 } from "@/api/endpoints";
-import { ClubTabs } from "@/components/club";
-import { PaperScreen, SubHeader } from "@/components/collage";
 import {
   AddressSearchModal,
   type AddressSelection,
@@ -47,10 +45,9 @@ const emptyForm = () => ({
   longitude: undefined as number | undefined,
 });
 
-export default function ClubMeetingsScreen() {
-  const { id, host } = useLocalSearchParams<{ id: string; host?: string }>();
-  const clubId = Number(id),
-    isHost = host === "1";
+export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const clubId = Number(id);
   const router = useRouter(),
     qc = useQueryClient();
   const { colors } = useTheme();
@@ -163,22 +160,17 @@ export default function ClubMeetingsScreen() {
       !create.isPending,
   );
   return (
-    <PaperScreen>
-      <SubHeader
-        category="모임 약속"
-        onBack={() => router.back()}
-        right={
-          isHost ? (
-            <Button
-              label={open ? "닫기" : "약속 만들기"}
-              size="sm"
-              variant="ghost"
-              onPress={() => setOpen((v) => !v)}
-            />
-          ) : undefined
-        }
-      />
-      <ClubTabs clubId={clubId} active="meetings" />
+    <View style={{ flex: 1 }}>
+      {isHost ? (
+        <View style={s.toolbarRow}>
+          <Button
+            label={open ? "닫기" : "약속 만들기"}
+            size="sm"
+            variant="ghost"
+            onPress={() => setOpen((v) => !v)}
+          />
+        </View>
+      ) : null}
       <AddressSearchModal
         clubId={clubId}
         visible={showAddress}
@@ -463,10 +455,11 @@ export default function ClubMeetingsScreen() {
           ))
         )}
       </ScrollView>
-    </PaperScreen>
+    </View>
   );
 }
 const s = StyleSheet.create({
+  toolbarRow: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: spacing.lg, paddingTop: spacing.xs },
   container: { padding: spacing.lg, gap: spacing.md },
   heading: { ...typeScale.bodyStrong },
   head: {
@@ -503,3 +496,9 @@ const s = StyleSheet.create({
   avatarFallback: { alignItems: "center", justifyContent: "center" },
   avatarInitial: { fontSize: 12, fontWeight: "800" },
 });
+
+/** 딥링크 호환 — 약속은 이제 모임 홈의 탭이다. */
+export default function ClubMeetingsRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <Redirect href={{ pathname: "/club/[id]", params: { id, tab: "meetings" } }} />;
+}

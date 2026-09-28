@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
@@ -7,8 +7,6 @@ import {
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
-import { ClubTabs } from '@/components/club';
-import { PaperScreen, SubHeader } from '@/components/collage';
 import {
   Button, Card, EmptyState, Loading, Numeral, Rule, Tag, formatRelative,
 } from '@/components/ui';
@@ -30,7 +28,7 @@ const TYPE_LABEL: Record<string, string> = {
  * 스포일러 가드는 서버가 강제한다 — 내 진도보다 앞선 글은 본문 없이(masked=true) 내려온다.
  * 여기서는 그 사실을 사용자에게 설명하고, "그래도 볼래요"를 눌렀을 때만 서버에 해제를 요청한다.
  */
-export default function ClubPostsScreen() {
+export function ClubPostsBody() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clubId = Number(id);
   const queryClient = useQueryClient();
@@ -77,9 +75,7 @@ export default function ClubPostsScreen() {
   const items = posts.data?.content ?? [];
 
   return (
-    <PaperScreen>
-      <SubHeader category="토론" />
-      <ClubTabs clubId={clubId} active="posts" />
+    <>
 
       {/*
         오프셋을 주지 않는다. 기존 90 은 네이티브 헤더 높이를 상쇄하려던 값인데,
@@ -171,7 +167,7 @@ export default function ClubPostsScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </PaperScreen>
+    </>
   );
 }
 
@@ -358,3 +354,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+/** 딥링크 호환 — 토론은 이제 모임 홈의 탭이다. */
+export default function ClubPostsRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <Redirect href={{ pathname: '/club/[id]', params: { id, tab: 'posts' } }} />;
+}
