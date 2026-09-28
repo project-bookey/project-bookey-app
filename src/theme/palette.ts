@@ -139,58 +139,24 @@ export const lightColors: ColorTokens = {
 /** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. 새 민트 기준 재조정. */
 export const brandGradientStops = ['#123528', '#16352a', '#0a1712'] as const;
 
-/** 엘리베이션 — 콜라주 언어는 다크에서도 깊은 그림자를 쓴다. 라이트는 기존 카드 그림자 1종 유지. */
+/**
+ * 종이 겹침 — 블러 그림자 대신 밑에 깔린 종이의 단(하드 오프셋). 새 아키텍처의 `boxShadow` 라
+ * iOS·Android·웹이 같은 꼴로 그리고, 검정은 다크 바탕에서 안 보여 lineStrong 색으로 민다.
+ * 카드·스티키 노트·CTA 는 3px, 표지는 2px, 눌러 들리면 5px. `shadow*`/`elevation` 은 쓰지 않는다.
+ */
+const EDGE = { dark: '#33372e', light: '#cfcabc' } as const;
+const paperEdge = (px: number, mode: ThemeMode): ViewStyle => ({ boxShadow: `${px}px ${px}px 0 ${EDGE[mode]}` });
+
+/** 카드 단 — Card 프리미티브·스티키 노트·폴라로이드가 펼친다. useTheme() 이 mode 에 맞는 것을 내려준다. */
 export const cardShadow: Record<ThemeMode, ViewStyle> = {
-  dark: {
-    shadowColor: '#000000',
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
-  },
-  light: {
-    shadowColor: '#000000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
+  dark: paperEdge(3, 'dark'),
+  light: paperEdge(3, 'light'),
 };
 
-/** 표지 전용 2단 그림자 — 평상시(rest)/눌림 리프트(lifted). TiltCover 등 콜라주 표지 컴포넌트가 사용. */
+/** 표지 단 — 평상시(rest) 2px, 눌림 리프트(lifted) 5px. TiltCover 등 콜라주 표지 컴포넌트가 사용. */
 export const coverShadow: Record<ThemeMode, { rest: ViewStyle; lifted: ViewStyle }> = {
-  dark: {
-    rest: {
-      shadowColor: '#000000',
-      shadowOpacity: 0.45,
-      shadowRadius: 14,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 6,
-    },
-    lifted: {
-      shadowColor: '#000000',
-      shadowOpacity: 0.55,
-      shadowRadius: 22,
-      shadowOffset: { width: 0, height: 14 },
-      elevation: 12,
-    },
-  },
-  light: {
-    rest: {
-      shadowColor: '#000000',
-      shadowOpacity: 0.12,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 2,
-    },
-    lifted: {
-      shadowColor: '#000000',
-      shadowOpacity: 0.2,
-      shadowRadius: 18,
-      shadowOffset: { width: 0, height: 10 },
-      elevation: 6,
-    },
-  },
+  dark: { rest: paperEdge(2, 'dark'), lifted: paperEdge(5, 'dark') },
+  light: { rest: paperEdge(2, 'light'), lifted: paperEdge(5, 'light') },
 };
 
 /** 지연 단계(§F4) → 색. 팔레트를 따라가도록 함수로 제공한다. */

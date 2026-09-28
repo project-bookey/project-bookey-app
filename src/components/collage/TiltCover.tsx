@@ -224,9 +224,8 @@ export function TiltCover({
         ]}
       >
         {/*
-          안드로이드는 elevation 이 큰 형제를 위로 올려 그린다 — 프록시(불투명 사각형)가
-          표지·배지를 덮어버린다. elevation 0 인 래퍼로 한 겹 감싸 스택 순서 경쟁을
-          래퍼 안쪽으로 가둔다. 래퍼 자체는 문서 순서대로 표지 뒤에 남고 그림자는 유지된다.
+          리프트 프록시(불투명 사각형)는 표지·배지 뒤에 있어야 한다 — 래퍼로 한 겹 감싸 문서 순서대로
+          표지 뒤에 남긴다. 단(boxShadow)은 프록시 상자 바깥으로만 삐져나오므로 표지를 가리지 않는다.
         */}
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <Animated.View
