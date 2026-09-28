@@ -119,17 +119,20 @@ function ChatRow({ chat, confirming, onOpen, onDelete }: {
           </Text>
         </View>
       </Pressable>
+      {/* 오른쪽 메타 — 시간 위에 안읽음 배지를 얹은 묶음, 그 옆에 삭제. 셋을 세로로 쌓으면 행이 높고 답답하다. */}
       <View style={styles.meta}>
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-          {formatRelative(chat.lastMessageAt ?? chat.createdAt)}
-        </Text>
-        {chat.unreadCount > 0 ? (
-          <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-            <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
-              {chat.unreadCount}
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.metaStack}>
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+            {formatRelative(chat.lastMessageAt ?? chat.createdAt)}
+          </Text>
+          {chat.unreadCount > 0 ? (
+            <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+              <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
+                {chat.unreadCount}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <FootAction
           label={confirming ? '한 번 더' : '삭제'}
           onPress={onDelete}
@@ -151,7 +154,8 @@ const styles = StyleSheet.create({
     width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
-  meta: { alignItems: 'flex-end', gap: spacing.xs },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  metaStack: { alignItems: 'flex-end', gap: spacing.xs },
   badge: {
     minWidth: 20, height: 20, borderRadius: radius.sm, paddingHorizontal: 6,
     alignItems: 'center', justifyContent: 'center',
