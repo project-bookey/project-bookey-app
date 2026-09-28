@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { VerificationLevel } from '@/api/types';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { Card, Tag, formatRelative } from '@/components/ui';
+import { Card, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
@@ -85,7 +85,7 @@ export function ReviewCard({
         <View style={styles.footRight}>
           <Pressable onPress={onOpenBook} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
             accessibilityRole="button" accessibilityLabel={`${where} 상세`}>
-            <Text style={[typeScale.monoLabel, styles.footLabel, { color: colors.accent }]}>책 보기 →</Text>
+            <Text style={[typeScale.monoLabel, styles.footLabel, { color: colors.accent }]}>{linkLabel('책 보기')}</Text>
           </Pressable>
         </View>
       </View>

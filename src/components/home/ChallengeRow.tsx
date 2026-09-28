@@ -48,7 +48,7 @@ function ChallengeCard({ challenge, dataUpdatedAt }: { challenge: Challenge; dat
       </Text>
       <Text style={[styles.clock, { color: colors.accent }]}>{formatClock(remaining)}</Text>
       <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-        {challenge.running ? '▶ 진행 중' : '⏸ 일시정지'} ·{' '}
+        {challenge.running ? '진행 중' : '일시정지'} ·{' '}
         <Text style={styles.pages}>
           {challenge.currentPage}/{challenge.totalPages}
         </Text>

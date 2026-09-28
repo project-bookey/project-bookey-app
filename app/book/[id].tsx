@@ -18,9 +18,7 @@ import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/coll
 import type { BookBand, BookNote } from '@/components/collage';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { VERIFICATION_LABEL } from '@/components/review/verification';
-import {
-  Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, percent,
-} from '@/components/ui';
+import { Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
 import { getLagStyle, hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
@@ -204,7 +202,7 @@ export default function BookDetailScreen() {
                 ) : null}
               </View>
 
-              <Button label="▶ 독서 시작" onPress={() => router.push(`/timer?recordId=${rid}`)} />
+              <Button label={playLabel('독서 시작')} onPress={() => router.push(`/timer?recordId=${rid}`)} />
               {record.data.status !== 'FINISHED' ? (
                 <ConfirmButton
                   label="완독 처리"
@@ -479,7 +477,7 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
                 backgroundColor: colors.accent, opacity: add.isPending ? 0.6 : 1,
               }]}
             >
-              <Text style={[typeScale.label, { color: colors.onAccent }]}>▶ 읽기 시작</Text>
+              <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('읽기 시작')}</Text>
             </Pressable>
           </>
         ) : null}
@@ -811,18 +809,18 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
         <Pressable
           onPress={() => router.push({ pathname: '/post/new', params: { bookId: String(bookId) } })}
           accessibilityRole="button" accessibilityLabel="독후감 쓰기" hitSlop={8} style={styles.tabAction}>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>쓰기 →</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('쓰기')}</Text>
         </Pressable>
       )
     : tab === 'REVIEW'
     ? (rid != null && !done && !open ? (
         <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>쓰기 →</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('쓰기', 'action')}</Text>
         </Pressable>
       ) : null)
     : (rid != null && !quoteOpen ? (
         <Pressable onPress={() => setQuoteOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>오려두기 →</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('오려두기', 'action')}</Text>
         </Pressable>
       ) : null);
 

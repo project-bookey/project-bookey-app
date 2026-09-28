@@ -30,6 +30,21 @@ function useStyles() {
   return { styles, colors };
 }
 
+export type LinkKind = 'nav' | 'action';
+
+/**
+ * 링크 라벨 규칙의 단일 출처 — 화면 이동(nav)은 " ›" 를 달고, 제자리 동작(action: 더 보기·다시 시도·쓰기)은
+ * 글리프 없이 글자만. "→" 는 링크에 쓰지 않는다(기간·쪽수 같은 범위 구분에만). Button 라벨에도 글리프를 넣지 않는다.
+ */
+export function linkLabel(label: string, kind: LinkKind = 'nav'): string {
+  return kind === 'nav' ? `${label} ›` : label;
+}
+
+/** 재생·일시정지 CTA 의 ▶/⏸ — 읽기를 시작·재개하는 버튼에만 붙인다. 상태 표시("진행 중")에는 쓰지 않는다. */
+export function playLabel(label: string, glyph: '▶' | '⏸' = '▶'): string {
+  return `${glyph} ${label}`;
+}
+
 /** 카드 — 종이 한 장. 얇은 테두리와 깊은 그림자로 책상 위에 올라온 느낌을 준다. */
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const { styles } = useStyles();
@@ -290,9 +305,11 @@ const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
  * 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓히되,
  * 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다. `onPress` 가 없으면 글자만 같은 상자에 놓는다.
  */
-export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel }: {
+export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, kind }: {
   label: string;
   onPress?: () => void;
+  /** 링크 종류 — 주면 linkLabel 규칙(글리프·밑줄)을 따른다. 카운터('좋아요 9')는 비워 둔다. */
+  kind?: LinkKind;
   /** 켜짐(예: 좋아요) — 라벨이 악센트로, accessibilityState.selected 를 낸다. */
   selected?: boolean;
   tone?: 'accent' | 'muted' | 'faint' | 'danger';
@@ -305,9 +322,10 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
     : tone === 'faint' ? colors.textFaint
       : tone === 'danger' ? colors.danger
         : colors.textMuted;
+  const text = kind ? linkLabel(label, kind) : label;
 
   if (!onPress) {
-    return <Text style={[styles.footLabel, styles.footAction, { color }]}>{label}</Text>;
+    return <Text style={[styles.footLabel, styles.footAction, { color }]}>{text}</Text>;
   }
   return (
     <Pressable
@@ -318,7 +336,7 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
       accessibilityState={selected === undefined ? undefined : { selected }}
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Text style={[styles.footLabel, { color }]}>{label}</Text>
+      <Text style={[styles.footLabel, { color }]}>{text}</Text>
     </Pressable>
   );
 }

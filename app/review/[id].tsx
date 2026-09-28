@@ -7,7 +7,7 @@ import { bookApi, reviewApi } from '@/api/endpoints';
 import { reviewKey } from '@/api/reviewCache';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { ReviewCard } from '@/components/review/ReviewCard';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, linkLabel } from '@/components/ui';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 얌전하게(밑줄 상세와 같은 값). */
@@ -71,7 +71,7 @@ export default function ReviewDetailScreen() {
         description="잠시 후 다시 시도해 주세요."
         action={
           <Pressable onPress={() => review.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
           </Pressable>
         }
       />

@@ -192,7 +192,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
           <View style={styles.actions}>
             {shortage > 0 ? (
               <>
-                <Button label={`책갈피 ${shortage}개 더 구매하기 →`} onPress={() => router.push('/bookmarks')} />
+                <Button label={`책갈피 ${shortage}개 더 구매하기`} onPress={() => router.push('/bookmarks')} />
                 <Button label="책갈피로 자리 늘리기" variant="outline" disabled />
               </>
             ) : (
@@ -203,7 +203,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
                   loading={expand.isPending}
                   disabled={balance == null}
                 />
-                <Button label="책갈피 구매 →" variant="outline" onPress={() => router.push('/bookmarks')} />
+                <Button label="책갈피 구매" variant="outline" onPress={() => router.push('/bookmarks')} />
               </>
             )}
           </View>

@@ -82,7 +82,8 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
           <View style={styles.footRight}>
             {onOpenBook ? (
               <FootAction
-                label="책 보기 →"
+                label="책 보기"
+                kind="nav"
                 onPress={onOpenBook}
                 tone="accent"
                 accessibilityLabel={`${post.bookTitle ?? '책'} 상세`}

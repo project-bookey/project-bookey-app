@@ -10,7 +10,7 @@ import { Confetti } from '@/components/Confetti';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { useRemainingSec } from '@/components/home/ChallengeRow';
-import { formatClock } from '@/components/ui';
+import { formatClock, playLabel } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
@@ -158,7 +158,7 @@ export default function ChallengeScreen() {
               }]}
             >
               <Text style={[typeScale.label, { color: challenge.running ? colors.text : colors.onAccent }]}>
-                {challenge.running ? '⏸ 일시정지' : '▶ 재개'}
+                {challenge.running ? playLabel('일시정지', '⏸') : playLabel('재개')}
               </Text>
             </Pressable>
 

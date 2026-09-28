@@ -21,6 +21,7 @@ import { ScrapAuthor } from '@/components/home/ScrapAuthor';
 import { QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
+import { linkLabel } from '@/components/ui';
 
 /** 광장에서 받아 오는 밑줄 후보 수 — 이 안에서 '핫한 순'으로 다시 추린다. */
 const FEED_SIZE = 10;
@@ -287,7 +288,7 @@ export function HomeScraps() {
             accessibilityRole="button"
             accessibilityLabel="광장으로"
           >
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>광장 →</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('광장')}</Text>
           </Pressable>
         </View>
 

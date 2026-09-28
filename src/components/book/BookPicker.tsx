@@ -6,6 +6,7 @@ import { bookApi, libraryApi } from '@/api/endpoints';
 import { TiltCover } from '@/components/collage';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { sans } from '@/theme/tokens';
+import { linkLabel } from '@/components/ui';
 
 /** 책 검색 — 탐색 화면과 같은 디바운스·최소 글자 수. */
 const SEARCH_DEBOUNCE_MS = 400;
@@ -154,12 +155,12 @@ export function BookPicker({ picker, autoFocus }: {
       {/* 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패는 실패라고 말하고 다시 시도를 준다. */}
       {searchError ? (
         <Pressable onPress={retrySearch} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · 다시 시도 →</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · {linkLabel('다시 시도', 'action')}</Text>
         </Pressable>
       ) : null}
       {readingError ? (
         <Pressable onPress={retryReading} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>읽는 중인 책을 불러오지 못했어요 · 다시 시도 →</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>읽는 중인 책을 불러오지 못했어요 · {linkLabel('다시 시도', 'action')}</Text>
         </Pressable>
       ) : null}
 

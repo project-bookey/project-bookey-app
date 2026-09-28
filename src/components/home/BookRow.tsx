@@ -4,6 +4,7 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { TiltCover, useCoverEntrance } from '@/components/collage';
 import { useTheme } from '@/theme';
 import { hairline, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
+import { linkLabel } from '@/components/ui';
 
 export type RowBook = {
   key: string;
@@ -70,7 +71,7 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
         </View>
         {onPressAll && !empty ? (
           <Pressable onPress={onPressAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>전체보기 ›</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('전체보기')}</Text>
           </Pressable>
         ) : null}
       </View>

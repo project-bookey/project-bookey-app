@@ -14,9 +14,7 @@ import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { SocialCard } from '@/components/social/SocialCard';
 import { TourTarget } from '@/components/tour/TourTarget';
-import {
-  Card, Eyebrow, KeyValue, Rule, formatDuration,
-} from '@/components/ui';
+import { Card, Eyebrow, KeyValue, Rule, formatDuration, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
@@ -129,7 +127,7 @@ export default function ProfileScreen() {
                 <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followerCount ?? 0}</Text>
                 {' · '}팔로잉{' '}
                 <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
-                {' ›'}
+                {linkLabel('')}
               </Text>
             </Pressable>
           </View>
@@ -164,7 +162,7 @@ export default function ProfileScreen() {
             <MemoScrap rotate={-0.8} style={styles.walletMemo}>
               <View style={styles.walletHead}>
                 <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지갑</Text>
-                <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>교환·구독 →</Text>
+                <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('교환·구독')}</Text>
               </View>
               <View style={styles.walletRow}>
                 <WalletCell value={wallet.data?.bookmarkBalance ?? 0} label="책갈피" />
@@ -185,7 +183,7 @@ export default function ProfileScreen() {
             <StickyNote rotate={1.5} style={styles.visitNote}>
               <Text style={[typeScale.monoNumeral, styles.visitCount, { color: colors.onNote }]}>{visitCount}명</Text>
               <Text style={[typeScale.label, styles.visitText, { color: colors.onNote }]}>내 페이지에{'\n'}다녀갔어요</Text>
-              <Text style={[typeScale.monoEyebrow, styles.visitAction, { color: colors.onNote }]}>확인하기 →</Text>
+              <Text style={[typeScale.monoEyebrow, styles.visitAction, { color: colors.onNote }]}>{linkLabel('확인하기')}</Text>
             </StickyNote>
           </Pressable>
         </TourTarget>
@@ -202,7 +200,7 @@ export default function ProfileScreen() {
               accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
             >
               <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
-                {libraryTotal}권 · 전체보기 →
+                {libraryTotal}권 · {linkLabel('전체보기')}
               </Text>
             </Pressable>
           </View>
@@ -397,7 +395,7 @@ function LinkRow({ label, count, unit, onPress }: {
         {label}
       </Text>
       <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-        {count != null ? `${count}${unit} →` : '보기 →'}
+        {linkLabel(count != null ? `${count}${unit}` : '보기')}
       </Text>
     </Pressable>
   );

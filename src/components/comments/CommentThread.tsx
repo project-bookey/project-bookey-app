@@ -18,6 +18,7 @@ import { ReplyList } from './ReplyList';
 import { ThreadComposer } from './ThreadComposer';
 import { BODY_MAX, PAGE_SIZE } from './types';
 import type { CommentThreadAdapter, ReplyTarget, ThreadComment } from './types';
+import { linkLabel } from '@/components/ui';
 
 /**
  * 댓글 스레드 — 밑줄 상세와 리뷰 상세가 같이 쓰는 목록 + 입력 바.
@@ -233,7 +234,7 @@ export function CommentThread({
           ) : comments.hasNextPage ? (
             <Pressable onPress={() => comments.fetchNextPage()} accessibilityRole="button"
               accessibilityLabel="댓글 더 보기" hitSlop={8} style={styles.more}>
-              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>댓글 더 보기 →</Text>
+              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('댓글 더 보기', 'action')}</Text>
             </Pressable>
           ) : null
         }

@@ -28,6 +28,7 @@ import {
 import { PlaceMap } from "@/components/club/PlaceMap";
 import { Button, Card, Loading } from "@/components/ui";
 import { radius, spacing, typeScale, useTheme } from "@/theme";
+import { linkLabel } from '@/components/ui';
 
 const freshDate = () => {
   const value = new Date();
@@ -452,7 +453,7 @@ export default function ClubMeetingsScreen() {
                     ) : null}
                   </View>
                   <Text style={[typeScale.caption, { color: colors.accent }]}>
-                    자세히 보기 ›
+                    {linkLabel('자세히 보기')}
                   </Text>
                 </View>
               </Card>

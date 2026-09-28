@@ -5,6 +5,7 @@ import { MemoScrap } from '@/components/collage';
 import { useTheme } from '@/theme';
 import { mono, radius, serif, spacing, tiltFor, typeScale } from '@/theme/tokens';
 import { kstTime } from './dates';
+import { linkLabel } from '@/components/ui';
 
 /** 반응 4종 — 토론 글과 같은 종류·이름. */
 export const LOG_REACTIONS = [
@@ -84,7 +85,7 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
         <Text style={[styles.meta, { color: colors.mid }]}>
           {log.authorNickname}{myPage != null ? ` · 내 진도 ${myPage}쪽` : ''}
         </Text>
-        <Text style={[styles.revealHint, { color: colors.onMemoPad }]}>그래도 볼래요 →</Text>
+        <Text style={[styles.revealHint, { color: colors.onMemoPad }]}>{linkLabel('그래도 볼래요', 'action')}</Text>
       </Pressable>
     );
   }

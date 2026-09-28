@@ -119,7 +119,7 @@ export default function ProfilePhotoScreen() {
           hitSlop={8}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         >
-          <Text style={[styles.backLabel, { color: colors.accent }]}>‹</Text>
+          <Text style={[styles.backLabel, { color: colors.accent }]}>←</Text>
         </Pressable>
       ) : null}
       <View style={styles.body}>

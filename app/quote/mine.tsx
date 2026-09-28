@@ -8,7 +8,7 @@ import { myQuotesKey } from '@/api/quoteCache';
 import type { BookQuote } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
-import { Button, EmptyState, FootAction } from '@/components/ui';
+import { Button, EmptyState, FootAction, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
@@ -92,7 +92,7 @@ export default function MyQuotesScreen() {
                   accessibilityLabel="다시 시도"
                   style={styles.retry}
                 >
-                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
                 </Pressable>
               )}
             />

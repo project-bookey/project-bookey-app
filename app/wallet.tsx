@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { walletApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { Button, Card, Eyebrow, KeyValue, Rule, Tag } from '@/components/ui';
+import { Button, Card, Eyebrow, KeyValue, Rule, Tag, linkLabel } from '@/components/ui';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 
 /**
@@ -54,7 +54,7 @@ export default function WalletScreen() {
                   accessibilityLabel="지갑 다시 불러오기"
                   style={styles.retry}
                 >
-                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
                 </Pressable>
               </View>
             ) : (
@@ -70,7 +70,7 @@ export default function WalletScreen() {
               </View>
             )}
             <View style={styles.actions}>
-              <Button label="책갈피 구매 →" variant="outline" size="sm" onPress={() => router.push('/bookmarks')} />
+              <Button label="책갈피 구매" variant="outline" size="sm" onPress={() => router.push('/bookmarks')} />
             </View>
           </Card>
 
@@ -112,7 +112,7 @@ export default function WalletScreen() {
             </Text>
             <View style={styles.actions}>
               {subscribed ? (
-                <Button label="구독 안내 ›" variant="ghost" size="sm" onPress={() => router.push('/subscription')} />
+                <Button label="구독 안내" variant="ghost" size="sm" onPress={() => router.push('/subscription')} />
               ) : (
                 <Button label="구독하기" size="sm" onPress={() => router.push('/subscription')} />
               )}

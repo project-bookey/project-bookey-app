@@ -18,7 +18,7 @@ import { PostBody } from '@/components/post/PostBody';
 import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
 import { insertQuoteMarkers, parseQuoteIds } from '@/components/post/quoteMarkers';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { Card, EmptyState, Eyebrow, Field, Segmented } from '@/components/ui';
+import { Card, EmptyState, Eyebrow, Field, Segmented, linkLabel } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 글 하나에 엮을 수 있는 밑줄 수 — 서버 상한과 같은 값. */
@@ -91,7 +91,7 @@ export default function PostEditorScreen() {
                 accessibilityLabel="다시 시도"
                 style={styles.retry}
               >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
               </Pressable>
             )}
           />

@@ -7,7 +7,7 @@ import { flattenPosts } from '@/api/postCache';
 import type { Page, Post } from '@/api/types';
 import { PostCard } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
-import { EmptyState, FootAction } from '@/components/ui';
+import { EmptyState, FootAction, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 카드 교차 회전(도) — 광장 밑줄·완독 카드와 같은 값이라 화면을 옮겨도 결이 이어진다. */
@@ -116,7 +116,7 @@ export function PostList({
                 accessibilityLabel="다시 시도"
                 style={styles.retry}
               >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>다시 시도 →</Text>
+                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
               </Pressable>
             )}
           />

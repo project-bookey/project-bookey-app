@@ -16,6 +16,7 @@ import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
 import { LEGAL_DOCUMENTS, LEGAL_VERSION, LegalDocumentKey } from '@/legal/documents';
+import { linkLabel } from '@/components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -438,7 +439,7 @@ export default function LoginScreen() {
                       <Text style={styles.checkLabel}>{legalAgreed[key] ? '✓' : ''}</Text>
                     </View>
                     <Text style={styles.legalRowLabel}>{LEGAL_DOCUMENTS[key].title}</Text>
-                    <Text style={styles.legalView}>전문 보기 ›</Text>
+                    <Text style={styles.legalView}>{linkLabel('전문 보기')}</Text>
                   </Pressable>
                 ))}
                 <Text style={styles.legalHint}>각 문서를 끝까지 읽어야 동의할 수 있습니다.</Text>

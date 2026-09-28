@@ -7,6 +7,7 @@ import { spacing, typeScale, useTheme } from '@/theme';
 import { CommentRow } from './CommentRow';
 import { REPLY_PAGE_SIZE } from './types';
 import type { CommentThreadAdapter, ThreadComment } from './types';
+import { linkLabel } from '@/components/ui';
 
 /**
  * 한 댓글의 답글 목록 — 부모 줄이 펼쳐졌을 때만 그린다.
@@ -69,7 +70,7 @@ export function ReplyList({ adapter, parentId, confirmId, errorFor, onPressDelet
       ) : replies.hasNextPage ? (
         <Pressable onPress={() => replies.fetchNextPage()} hitSlop={8} accessibilityRole="button"
           accessibilityLabel="답글 더 보기" style={styles.more}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>답글 더 보기 →</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('답글 더 보기', 'action')}</Text>
         </Pressable>
       ) : null}
     </>
