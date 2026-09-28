@@ -221,10 +221,12 @@ const styles = StyleSheet.create({
   metaTap: { gap: 2 },
   metaTitle: { fontFamily: sans.semiBold },
   cover: { width: COVER_W, height: COVER_H, borderRadius: radius.sm, overflow: 'hidden' },
+  // 표지 모서리에 걸친 스티커 — 표지가 -4° 기울어 왼쪽 위 모서리가 더 나오므로, 360px 폭에서도
+  // 화면 왼끝에 닿지 않을 만큼만 내민다.
   rank: {
     position: 'absolute',
-    top: -10,
-    left: -8,
+    top: -8,
+    left: -4,
     width: 26,
     height: 26,
     borderRadius: radius.sm,
