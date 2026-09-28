@@ -143,7 +143,7 @@ function GridTile({ record, colors, mode, onPress }: {
       accessibilityRole="button"
       accessibilityLabel={record.book?.title ?? '책'}
     >
-      {/* 그림자는 바깥 프레임이, 클리핑은 안쪽 면이 맡는다 — 한 뷰에 겹치면 iOS 에서 그림자가 사라진다. */}
+      {/* 단(boxShadow)은 바깥 프레임이, 클리핑은 안쪽 면이 맡는다 — 역할을 나눠 두면 어느 플랫폼에서도 단이 잘리지 않는다. */}
       <View style={[styles.cover, { backgroundColor: colors.surfaceDeep }, coverShadow[mode].rest]}>
         <View style={[styles.coverInner, { borderColor: colors.line }]}>
           <View style={[StyleSheet.absoluteFill, abandoned && styles.dimmed]}>
