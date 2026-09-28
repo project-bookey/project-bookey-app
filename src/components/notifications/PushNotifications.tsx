@@ -51,7 +51,7 @@ export function PushNotifications() {
           name: 'Bookey 알림',
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 150, 250],
-          lightColor: '#70E0B5',
+          lightColor: '#3ddc97',
         });
       }
       const current = await Notifications.getPermissionsAsync();

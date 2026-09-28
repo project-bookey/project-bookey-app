@@ -20,7 +20,7 @@ export type ColorTokens = {
   line: string;
   /** 아웃라인 버튼 테두리 */
   lineStrong: string;
-  /** CTA·진행 바·링크·긍정 상태 — 틸 하나로 통일 */
+  /** CTA·진행 바·링크·긍정 상태 — 민트 하나로 통일(2026-09-28 세이지·주홍·형광펜 대조 후 유지 결정) */
   accent: string;
   /** 악센트 배경 위 텍스트 */
   onAccent: string;
@@ -135,9 +135,6 @@ export const lightColors: ColorTokens = {
   ink: '#1a1c18',
   onInk: '#faf8f4',
 };
-
-/** 브랜드 틸 그라데이션 — 무표지 도서 배경·로그인 배경 등 브랜드 표면 공용. 새 민트 기준 재조정. */
-export const brandGradientStops = ['#123528', '#16352a', '#0a1712'] as const;
 
 /**
  * 종이 겹침 — 블러 그림자 대신 밑에 깔린 종이의 단(하드 오프셋). 새 아키텍처의 `boxShadow` 라
