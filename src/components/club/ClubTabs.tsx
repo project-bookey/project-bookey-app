@@ -7,6 +7,8 @@ import { layout, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
 export type ClubTabKey = 'home' | 'chat' | 'meetings' | 'posts' | 'notebook';
+export const isClubTabKey = (v: unknown): v is ClubTabKey =>
+  v === 'home' || v === 'chat' || v === 'meetings' || v === 'posts' || v === 'notebook';
 
 const TABS: { key: ClubTabKey; label: string }[] = [
   { key: 'home', label: '홈' },
@@ -17,11 +19,17 @@ const TABS: { key: ClubTabKey; label: string }[] = [
 ];
 
 /**
- * 모임 탭 — 홈 · 채팅 · 약속 · 토론 · 노트. 모임 화면들 헤더 바로 아래에 같은 줄이 놓여 한 모임 안을 오가는 느낌을 준다.
+ * 모임 탭 — 홈 · 채팅 · 약속 · 토론 · 노트. 모임 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
+ * 단독 화면에서 쓰면 라우팅으로 옮긴다.
  * 활성 탭은 잉크 글자 + 2px 민트 표식(구역 네비와 같은 규칙). 홈으로는 navigate(스택에 있으면 되돌아감),
  * 하위 화면끼리는 replace 로 옮겨 뒤로 가기가 항상 모임 홈으로 떨어지게 한다.
  */
-export function ClubTabs({ clubId, active }: { clubId: number; active: ClubTabKey }) {
+export function ClubTabs({ clubId, active, onSelect }: {
+  clubId: number;
+  active: ClubTabKey;
+  /** 주면 화면 이동 대신 이 콜백으로 탭을 바꾼다(모임 홈의 in-place 탭). */
+  onSelect?: (key: ClubTabKey) => void;
+}) {
   const router = useRouter();
   const { colors } = useTheme();
   // 약속 화면은 host 파라미터를 읽으므로 모임 홈 캐시에서 내 역할을 꺼낸다(홈을 거쳐 왔으면 이미 있다).
@@ -40,13 +48,17 @@ export function ClubTabs({ clubId, active }: { clubId: number; active: ClubTabKe
   };
   const go = (key: ClubTabKey) => {
     if (key === active) return;
+    if (onSelect) {
+      onSelect(key);
+      return;
+    }
     if (key === 'home') router.navigate(hrefOf('home'));
     else if (active === 'home') router.push(hrefOf(key));
     else router.replace(hrefOf(key));
   };
 
   return (
-    <View style={[styles.bar, { borderBottomColor: colors.line }]} accessibilityRole="tablist">
+    <View style={[styles.bar, { borderTopColor: colors.line, borderBottomColor: colors.line }]} accessibilityRole="tablist">
       {TABS.map((t) => {
         const on = t.key === active;
         return (
@@ -71,8 +83,8 @@ const styles = StyleSheet.create({
   bar: {
     ...layout.content,
     flexDirection: 'row',
+    borderTopWidth: hairline,
     borderBottomWidth: hairline,
-    paddingHorizontal: spacing.sm,
   },
   tab: { flex: 1, alignItems: 'center', paddingTop: spacing.sm, gap: spacing.sm },
   marker: { alignSelf: 'stretch', height: 2 },

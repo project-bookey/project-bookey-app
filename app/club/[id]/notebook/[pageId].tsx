@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Menu, Undo2 } from 'lucide-react-native';
+import { Menu, Pen, Undo2 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList, Platform, Pressable, StyleSheet, Text, View,
@@ -48,7 +48,7 @@ const EXPORT = { width: 1080, height: 1440 };
  * 현재 페이지만 편집 상태(useNotePage)를 들고, 이웃 페이지는 읽기 전용으로 미리 그린다.
  */
 export default function ClubNotebookScreen() {
-  const { id, pageId: pageIdParam } = useLocalSearchParams<{ id: string; pageId: string }>();
+  const { id, pageId: pageIdParam, edit: editParam } = useLocalSearchParams<{ id: string; pageId: string; edit?: string }>();
   const clubId = Number(id);
   const router = useRouter();
   const qc = useQueryClient();
@@ -62,6 +62,9 @@ export default function ClubNotebookScreen() {
     [notebook.data],
   );
   const readOnly = notebook.data?.readOnly ?? false;
+  // 보기 모드가 기본 — 격자에서 누르면 크게 보고, '꾸미기' 를 누르거나 edit=1 로 들어오면 작성 공간이 된다.
+  const [editing, setEditing] = useState(editParam === '1');
+  const canEdit = editing && !readOnly;
 
   // 피드에서 고른 페이지로 연다 — 넘기기 전까지는 파라미터가, 넘긴 뒤엔 상태가 기준.
   const [pageIndex, setPageIndex] = useState<number | null>(null);
@@ -108,10 +111,10 @@ export default function ClubNotebookScreen() {
   });
   openEditorRef.current = inserts.openEditor;
 
-  // 끝난 모임은 보기만 — 도구를 쥘 수 없다.
+  // 보기 모드·끝난 모임에선 도구를 쥘 수 없다.
   useEffect(() => {
-    if (readOnly && tool !== 'hand') setTool('hand');
-  }, [readOnly, tool]);
+    if (!canEdit && tool !== 'hand') setTool('hand');
+  }, [canEdit, tool]);
   // 페이지가 바뀌면 선택을 푼다.
   useEffect(() => {
     selection.select(null);
@@ -142,6 +145,7 @@ export default function ClubNotebookScreen() {
       qc.setQueryData(clubNoteKeys.page(clubId, page.id), page);
       await qc.invalidateQueries({ queryKey: clubNoteKeys.list(clubId) });
       setPageIndex(Number.MAX_SAFE_INTEGER);
+      setEditing(true);
     },
     onError: (e) => notify(e instanceof ApiError ? e.message : '페이지를 만들지 못했어요'),
   });
@@ -183,7 +187,7 @@ export default function ClubNotebookScreen() {
 
   // ────────────────────────────── 렌더 ──────────────────────────────
 
-  const selecting = tool === 'select' && !readOnly;
+  const selecting = tool === 'select' && canEdit;
   const { preview, handlers } = selection;
   const renderElement = useCallback((el: PlacedElement, s: number) => (
     <EditableElementView key={el.id} element={applyPreview(el, preview, s)} scale={s} editable={selecting} handlers={handlers} />
@@ -204,7 +208,7 @@ export default function ClubNotebookScreen() {
               <PageTapLayer
                 active={tool === 'hand' || tool === 'select'}
                 onTap={() => { if (tool === 'select') selection.select(null); }}
-                onDoubleTap={() => { if (tool === 'hand' && !readOnly) setTool('select'); }}
+                onDoubleTap={() => { if (tool === 'hand' && canEdit) setTool('select'); }}
               />
             }
             renderElement={renderElement}
@@ -233,6 +237,7 @@ export default function ClubNotebookScreen() {
 
   const status = note.saving ? '저장 중' : note.dirty ? '저장 대기' : '저장됨';
   const editedBy = note.page?.updatedBy?.nickname ?? '알 수 없음';
+  const author = note.page?.createdBy?.nickname ?? editedBy;
 
   return (
     <PaperScreen>
@@ -240,11 +245,23 @@ export default function ClubNotebookScreen() {
         category="노트"
         onBack={async () => {
           await note.saveNow();
-          router.back();
+          if (editing) setEditing(false);
+          else router.back();
         }}
         right={
           <View style={styles.headerRight}>
-            {!readOnly ? (
+            {!readOnly && !editing && current ? (
+              <Pressable
+                onPress={() => setEditing(true)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="꾸미기"
+                style={({ pressed }) => [styles.iconButton, pressed ? pressedStyle : null]}
+              >
+                <ToolIcon icon={Pen} color={colors.text} />
+              </Pressable>
+            ) : null}
+            {canEdit ? (
               <Pressable
                 onPress={editor.undo}
                 disabled={!editor.canUndo}
@@ -294,7 +311,7 @@ export default function ClubNotebookScreen() {
             pages={pages}
             index={index}
             title={note.title}
-            readOnly={readOnly}
+            readOnly={!canEdit}
             onPrev={() => void goTo(index - 1)}
             onNext={() => void goTo(index + 1)}
             onAdd={() => void addPage()}
@@ -331,11 +348,13 @@ export default function ClubNotebookScreen() {
               </Pressable>
             ) : (
               <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-                {note.page ? `${editedBy}님이 ${formatRelative(note.page.updatedAt)} 수정 · ` : ''}{readOnly ? '보기 전용' : status}
+                {editing
+                  ? `${note.page ? `${editedBy}님이 ${formatRelative(note.page.updatedAt)} 수정 · ` : ''}${readOnly ? '보기 전용' : status}`
+                  : note.page ? `${author}님의 페이지 · ${formatRelative(note.page.updatedAt)} 수정` : ''}
               </Text>
             )}
           </View>
-          {!readOnly ? (
+          {canEdit ? (
             <NoteToolbar
               tool={tool}
               onTool={setTool}
@@ -354,7 +373,7 @@ export default function ClubNotebookScreen() {
       <PageMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
-        readOnly={readOnly}
+        readOnly={!canEdit}
         canDelete={note.page?.canDelete ?? false}
         paper={editor.doc.paper}
         onPaper={note.setPaper}

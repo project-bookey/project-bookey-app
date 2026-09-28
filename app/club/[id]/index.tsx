@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Settings } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -22,11 +22,17 @@ import type {
 } from "@/api/types";
 import {
   ClubTabs,
+  type ClubTabKey,
+  isClubTabKey,
   MemberDetail,
   MemberStrip,
   confirmAsync,
   notify,
 } from "@/components/club";
+import { NoteGrid } from "@/components/clubNote/NoteGrid";
+import { ClubChatBody } from "./chat";
+import { ClubMeetingsBody } from "./meetings";
+import { ClubPostsBody } from "./posts";
 import {
   LogScrap,
   ReadingNowCard,
@@ -69,8 +75,13 @@ export default function ClubHomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const clubId = Number(id);
+  // 탭은 화면 이동 없이 아래 영역만 바꾼다. 딥링크(?tab=)로 들어오면 그 탭으로 연다.
+  const [tab, setTab] = useState<ClubTabKey>(isClubTabKey(tabParam) ? tabParam : "home");
+  useEffect(() => {
+    if (isClubTabKey(tabParam)) setTab(tabParam);
+  }, [tabParam]);
   const today = todayKst();
   const [date, setDate] = useState(today);
   const [openReactions, setOpenReactions] = useState<number | null>(null);
@@ -273,7 +284,7 @@ export default function ClubHomeScreen() {
           ) : undefined
         }
       />
-      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.top}>
         <View style={styles.header}>
           <TiltCover
             uri={data.book?.coverUrl}
@@ -335,9 +346,15 @@ export default function ClubHomeScreen() {
           ) : null}
         </View>
 
-        {/* 모임 탭 — 함께 읽는 사람 아래에서 채팅·약속·토론·노트로 */}
-        <ClubTabs clubId={clubId} active="home" />
+      </View>
 
+      {/* 모임 탭 — 함께 읽는 사람 아래. 누르면 아래 영역만 바뀐다 */}
+      <ClubTabs clubId={clubId} active={tab} onSelect={setTab} />
+
+      <View style={styles.body}>
+        {tab === "home" ? (
+          <>
+        <ScrollView contentContainerStyle={styles.container}>
         {isToday ? (
           <ReadingNowCard
             readers={readingNow.data ?? []}
@@ -533,6 +550,13 @@ export default function ClubHomeScreen() {
           <Button label="한 조각 남기기" onPress={writeLog} />
         </LinearGradient>
       ) : null}
+          </>
+        ) : null}
+        {tab === "chat" ? <ClubChatBody /> : null}
+        {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} /> : null}
+        {tab === "posts" ? <ClubPostsBody /> : null}
+        {tab === "notebook" ? <NoteGrid clubId={clubId} /> : null}
+      </View>
     </PaperScreen>
   );
 }
@@ -725,6 +749,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  top: {
+    ...layout.content,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.xl,
+  },
+  body: { flex: 1 },
   header: { flexDirection: "row", gap: spacing.md },
   title: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
   headerTags: {
