@@ -118,6 +118,9 @@ export const rowOffsetY = [0, 10, 4, 14, 6, 12] as const;
 
 export const hairline = 1;
 
+/** 눌림 피드백 — 글자·행·아이콘 버튼이 눌린 동안 펼치는 한 가지 값. 제각각이던 0.7~0.75 를 여기로 모은다. */
+export const pressedStyle = { opacity: 0.72 } as const;
+
 /**
  * 선 아이콘 공통 획 — 끝(cap)과 모서리(join)를 각지게. 둥근 캡은 범용 아이콘 세트
  * 느낌이 나서 쓰지 않는다. react-native-svg 의 Path/Circle 에 그대로 펼친다.

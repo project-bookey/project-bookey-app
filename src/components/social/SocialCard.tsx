@@ -8,7 +8,7 @@ import { ApiError } from '@/api/client';
 import { followApi, profileApi, walletApi } from '@/api/endpoints';
 import { Button, Card, Eyebrow, KeyValue, Rule } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 /** 나의 소셜 (§14.3) — 팔로우 · 방문 기록 · 팔로우 코드. 지갑(잔액·교환·구독)은 app/wallet.tsx 로 옮겨 갔다. */
@@ -126,7 +126,8 @@ export function SocialCard() {
             hitSlop={8}
             style={({ pressed }) => [
               styles.copyButton,
-              { borderColor: colors.lineStrong, opacity: pressed ? 0.7 : 1 },
+              { borderColor: colors.lineStrong },
+              pressed && pressedStyle,
               !myCode.data?.code && styles.copyButtonDisabled,
             ]}
           >

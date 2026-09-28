@@ -19,7 +19,7 @@ import {
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
-import { hairline, iconStroke, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
 import { rowOffsetY, sans, tiltFor } from '@/theme/tokens';
 
 /** 아바타 지름(px) — 시안 A. 글줄 가운데에 앉히므로 이름·핸들·팔로우 세 줄 높이보다 조금 크다. */
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
   profileCount: { fontFamily: sans.semiBold },
   profileSocial: { alignSelf: 'flex-start' },
-  pressed: { opacity: 0.72 },
+  pressed: pressedStyle,
 
   scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
   walletPress: { flex: 1 },

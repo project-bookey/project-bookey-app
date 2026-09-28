@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 2탭 확인 버튼 — 1탭에 질문 + [확정][취소]로 전환되고, 확정 시 onConfirm을 실행한다.
@@ -43,7 +43,7 @@ export function ConfirmButton({ label, question, confirmLabel = '확정', tone =
           onPress={onConfirm}
           accessibilityRole="button"
           accessibilityLabel={confirmLabel}
-          style={[styles.button, { backgroundColor: confirmBg, opacity: pending ? 0.6 : 1 }]}
+          style={({ pressed }) => [styles.button, { backgroundColor: confirmBg, opacity: pending ? 0.6 : 1 }, pressed && !pending && pressedStyle]}
         >
           <Text style={[typeScale.label, { color: confirmFg }]}>
             {pending ? '처리 중…' : confirmLabel}
@@ -54,7 +54,7 @@ export function ConfirmButton({ label, question, confirmLabel = '확정', tone =
           onPress={() => setArming(false)}
           accessibilityRole="button"
           accessibilityLabel="취소"
-          style={[styles.button, { borderWidth: 1, borderColor: colors.lineStrong }]}
+          style={({ pressed }) => [styles.button, { borderWidth: 1, borderColor: colors.lineStrong }, pressed && !pending && pressedStyle]}
         >
           <Text style={[typeScale.label, { color: colors.textMuted }]}>취소</Text>
         </Pressable>
@@ -67,10 +67,11 @@ export function ConfirmButton({ label, question, confirmLabel = '확정', tone =
       onPress={() => setArming(true)}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={[
+      style={({ pressed }) => [
         styles.button,
         styles.idle,
         variant === 'outline' ? { borderWidth: 1, borderColor: colors.lineStrong } : null,
+        pressed && pressedStyle,
       ]}
     >
       <Text style={[typeScale.label, { color: variant === 'ghost' ? colors.textFaint : colors.text }]}>

@@ -9,7 +9,7 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 
@@ -211,5 +211,5 @@ const styles = StyleSheet.create({
   },
   counter: { marginTop: spacing.xs, textAlign: 'right' },
   error: { marginTop: spacing.sm, lineHeight: 18 },
-  pressed: { opacity: 0.72 },
+  pressed: pressedStyle,
 });

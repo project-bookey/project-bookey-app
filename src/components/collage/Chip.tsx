@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { hairline, radius, spacing, typeScale } from '@/theme/tokens';
+import { hairline, pressedStyle, radius, spacing, typeScale } from '@/theme/tokens';
 
 /** 네모 칩 — 탐색 무드 칩·광장 필터 칩 공용. 활성은 잉크로 찍은 도장처럼 반전한다. */
 export function Chip({ label, active = false, onPress, disabled = false, accessibilityLabel }: {
@@ -23,12 +23,13 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected: active, disabled: inert }}
-      style={[
+      style={({ pressed }) => [
         styles.chip,
         active
           ? { backgroundColor: colors.ink, borderColor: colors.ink }
           : { backgroundColor: 'transparent', borderColor: colors.line },
         disabled ? styles.disabled : null,
+        pressed && !inert && !active && pressedStyle,
       ]}
     >
       <Text style={[typeScale.monoLabel, { color: active ? colors.onInk : colors.textMuted }]}>

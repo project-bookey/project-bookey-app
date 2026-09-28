@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { attendanceApi } from '@/api/endpoints';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 export function AttendanceCard() {
   const { colors } = useTheme();
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: { opacity: 0.75 },
+  pressed: pressedStyle,
   expandButton: {
     width: '100%',
     minHeight: 36,

@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { walletApi } from '@/api/endpoints';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
-import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 구역 화면 공통 헤더 — 가운데 워드마크, 오른쪽에 책갈피 잔액·알림 종.
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   bookmarkCount: { ...typeScale.monoLabel, flex: 1, textAlign: 'right', fontSize: 11, lineHeight: 14 },
   plusButton: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.7 },
+  pressed: pressedStyle,
   wordmark: {
     position: 'absolute',
     left: 0,

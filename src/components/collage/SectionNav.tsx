@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
-import { hairline, iconStroke, layout, sans, spacing } from '@/theme/tokens';
+import { hairline, iconStroke, layout, pressedStyle, sans, spacing } from '@/theme/tokens';
 
 export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
@@ -209,6 +209,6 @@ const styles = StyleSheet.create({
     gap: 3,
     paddingHorizontal: 2,
   },
-  pressed: { opacity: 0.72 },
+  pressed: pressedStyle,
   label: { fontFamily: sans.semiBold, fontSize: 10, lineHeight: 13, textAlign: 'center' },
 });
