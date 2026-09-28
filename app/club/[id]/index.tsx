@@ -273,8 +273,6 @@ export default function ClubHomeScreen() {
           ) : undefined
         }
       />
-      <ClubTabs clubId={clubId} active="home" />
-
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <TiltCover
@@ -336,6 +334,9 @@ export default function ClubHomeScreen() {
             />
           ) : null}
         </View>
+
+        {/* 모임 탭 — 함께 읽는 사람 아래에서 채팅·약속·토론·노트로 */}
+        <ClubTabs clubId={clubId} active="home" />
 
         {isToday ? (
           <ReadingNowCard
