@@ -141,7 +141,7 @@ export default function ProfileScreen() {
               accessibilityLabel="설정"
               hitSlop={8}
               style={({ pressed }) => [
-                styles.settingsPill,
+                styles.settingsButton,
                 { borderColor: colors.line, backgroundColor: colors.surface },
                 pressed && styles.pressed,
               ]}
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
   nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
-  settingsPill: {
+  settingsButton: {
     height: 30,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: radius.sm,

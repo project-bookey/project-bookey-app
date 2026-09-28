@@ -184,7 +184,7 @@ export default function PlazaScreen() {
             accessibilityRole="button"
             accessibilityState={{ expanded: composing }}
             accessibilityLabel={composing ? '문장 오려두기 닫기' : '문장 오려두기'}
-            style={[styles.composePill, { borderColor: colors.accent }]}
+            style={[styles.composeButton, { borderColor: colors.accent }]}
           >
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
               {composing ? '닫기' : '+ 밑줄'}
@@ -197,7 +197,7 @@ export default function PlazaScreen() {
             onPress={() => router.push('/post/new')}
             accessibilityRole="button"
             accessibilityLabel="독후감 쓰기"
-            style={[styles.composePill, { borderColor: colors.accent }]}
+            style={[styles.composeButton, { borderColor: colors.accent }]}
           >
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 독후감</Text>
           </Pressable>
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
-  composePill: {
+  composeButton: {
     marginLeft: 'auto',
     borderWidth: hairline,
     borderRadius: radius.sm,

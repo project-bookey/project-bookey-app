@@ -114,8 +114,8 @@ export default function ClubCreateScreen() {
                   onPress={() => setBookId(record.book!.id)}
                   style={[
                     styles.bookRow,
-                    { borderBottomColor: colors.line, backgroundColor: colors.surface },
-                    selected && { backgroundColor: colors.accentSoft },
+                    { borderBottomColor: colors.line, backgroundColor: colors.surface, borderLeftColor: 'transparent' },
+                    selected && { backgroundColor: colors.surfaceRaised, borderLeftColor: colors.ink },
                   ]}
                 >
                   <TiltCover
@@ -226,12 +226,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     overflow: 'hidden',
   },
+  // 선택된 행은 잉크 띠 2px — 띠 자리는 항상 잡아 두어 글이 흔들리지 않는다.
   bookRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     padding: spacing.md,
     borderBottomWidth: hairline,
+    borderLeftWidth: 2,
   },
   bookMeta: { ...typeScale.caption, marginTop: 2 },
   radio: {

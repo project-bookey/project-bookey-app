@@ -31,7 +31,7 @@ const LABEL_CHARS = 60;
 /** 문장 찾기 디바운스 — 탐색 화면·책 고르기와 같은 값(한 글자마다 서버를 두드리지 않는다). */
 const SEARCH_DEBOUNCE_MS = 400;
 
-// 웹 전용: 브라우저 기본 포커스 링 제거 — 포커스는 pill 테두리로 그린다(탐색 화면과 같은 관례).
+// 웹 전용: 브라우저 기본 포커스 링 제거 — 포커스는 네모 테두리로 그린다(탐색 화면과 같은 관례).
 // RN 타입에 'none' 이 없어 캐스팅하지만 RNW 는 CSS outline-style 로 그대로 전달한다.
 const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
 
@@ -81,7 +81,7 @@ export function QuoteAttachSheet({ book, selectedIds, onPick, onClose, max }: {
     const timer = setTimeout(() => setDebounced(keyword.trim()), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [keyword]);
-  // 포커스 표시는 웹 기본 outline 대신 pill 테두리로 그린다.
+  // 포커스 표시는 웹 기본 outline 대신 네모 테두리로 그린다.
   const [focused, setFocused] = useState(false);
 
   // ── 범위별 목록 — 응답 모양이 갈려(광장은 PlazaItem) 질의를 셋으로 나누고 보고 있는 범위만 켠다 ──
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
   },
-  // 문장 찾기 입력 — 탐색 화면 검색바와 같은 pill(포커스는 테두리로).
+  // 문장 찾기 입력 — 탐색 화면 검색바와 같은 네모(포커스는 테두리로).
   search: {
     borderWidth: 1,
     borderRadius: radius.sm,

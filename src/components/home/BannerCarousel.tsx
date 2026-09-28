@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
-  dot: { width: 4, height: 4, borderRadius: radius.round },
+  dot: { width: 4, height: 4, borderRadius: radius.none },
   titleStrong: { fontFamily: sans.bold },
   subtitleStrong: { fontFamily: sans.semiBold },
 });

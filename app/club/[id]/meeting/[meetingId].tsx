@@ -110,7 +110,7 @@ export default function MeetingDetailScreen() {
       <SubHeader category="약속 상세" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={s.container}>
         <View>
-          <Text style={[s.eyebrow, { color: colors.accent }]}>
+          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>
             BOOKEY MEETING
           </Text>
           <Text style={[s.title, { color: colors.text }]}>{m.title}</Text>
@@ -250,7 +250,6 @@ export default function MeetingDetailScreen() {
 }
 const s = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.md, paddingBottom: 80 },
-  eyebrow: { fontSize: 11, fontWeight: "700", letterSpacing: 2 },
   title: { fontSize: 30, fontWeight: "800", marginTop: 4 },
   date: { ...typeScale.bodyStrong, textAlign: "center" },
   time: { fontSize: 38, fontWeight: "800", textAlign: "center", marginTop: 6 },

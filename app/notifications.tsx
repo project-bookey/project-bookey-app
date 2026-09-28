@@ -7,7 +7,7 @@ import type { Notification } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { formatRelative } from '@/components/ui';
 import { notificationTarget } from '@/lib/notificationTarget';
-import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 알림 목록 — 항목을 누르면 열람 처리하고, 알림이 가리키는 화면으로 간다. */
 export default function NotificationsScreen() {
@@ -70,5 +70,5 @@ const styles = StyleSheet.create({
   row: { padding: spacing.lg, gap: spacing.xs },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { ...typeScale.titleSerif, fontSize: 16, lineHeight: 22, flex: 1 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
+  dot: { width: 6, height: 6, borderRadius: radius.round },
 });

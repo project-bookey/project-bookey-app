@@ -57,7 +57,7 @@ export function ReadingNowCard({ readers, onJoin }: { readers: ReadingNow[]; onJ
   );
 }
 
-/** 요일 스트립 — 조각 수만큼 점(최대 3), 고른 날은 악센트 알약, 오늘 이후는 누를 수 없다. */
+/** 요일 스트립 — 조각 수만큼 점(최대 3), 고른 날은 잉크 반전 네모, 오늘 이후는 누를 수 없다. */
 export function WeekStrip({ days, selected, today, onSelect }: {
   days: ClubLogDayCount[];
   selected: string;

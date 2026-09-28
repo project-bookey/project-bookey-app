@@ -142,7 +142,7 @@ async function shareOnWeb(node: View, monday: string) {
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
   weekNav: { flexDirection: 'row', justifyContent: 'space-between' },
-  navLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 1.2 },
+  navLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
   cardWrap: { alignItems: 'center' },
   hint: { textAlign: 'center' },
 });

@@ -39,7 +39,7 @@ function BookmarkBalance() {
   const balance = data?.bookmarkBalance ?? 0;
 
   return (
-    <View style={[styles.bookmarkPill, { borderColor: colors.line, backgroundColor: colors.surface }]}>
+    <View style={[styles.bookmarkBadge, { borderColor: colors.line, backgroundColor: colors.surface }]}>
       <BookmarkGlyph color={colors.accent} />
       <Text
         numberOfLines={1}
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   side: { width: 118, height: 44, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   right: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.sm },
-  bookmarkPill: {
+  bookmarkBadge: {
     height: 32,
     minWidth: 74,
     maxWidth: 92,

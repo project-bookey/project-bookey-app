@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  weekNavLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 1.2 },
+  weekNavLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
   board: { flexDirection: "row", gap: spacing.lg, alignItems: "flex-start" },
   column: { flex: 1, gap: spacing.xl },
   checkpointHead: {

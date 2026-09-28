@@ -75,7 +75,8 @@ export default function SettingsScreen() {
                       styles.toneRow,
                       {
                         borderBottomColor: colors.line,
-                        backgroundColor: selected ? colors.accentSoft : colors.surface,
+                        backgroundColor: selected ? colors.surfaceRaised : colors.surface,
+                        borderLeftColor: selected ? colors.ink : 'transparent',
                       },
                     ]}
                     onPress={() => updateSettings.mutate({ notifyTone: tone.value })}
@@ -203,12 +204,14 @@ const styles = StyleSheet.create({
   block: { paddingHorizontal: spacing.lg },
   settings: { gap: spacing.lg },
   toneList: { marginTop: spacing.sm, borderWidth: hairline, borderRadius: radius.md, overflow: 'hidden' },
+  // 선택된 행은 잉크 띠 2px 로 짚는다 — 띠는 항상 자리를 차지해 선택이 바뀌어도 글이 흔들리지 않는다.
   toneRow: {
     flexDirection: 'row',
     gap: spacing.md,
     padding: spacing.md,
     alignItems: 'flex-start',
     borderBottomWidth: hairline,
+    borderLeftWidth: 2,
   },
   radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },

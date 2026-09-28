@@ -57,7 +57,7 @@ export function ReviewCard({
             <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
               {where} · {formatRelative(createdAt)}
             </Text>
-            {/* 검증 등급 — 밑줄 카드의 완독 마크와 같은 작은 pill. 완독 검증만 민트. */}
+            {/* 검증 등급 — 밑줄 카드의 완독 마크와 같은 작은 네모 태그. 완독 검증만 민트. */}
             <Text
               style={[typeScale.monoLabel, styles.verification, {
                 color: verified ? colors.accent : colors.textFaint,
