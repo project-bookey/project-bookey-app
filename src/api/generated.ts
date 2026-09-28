@@ -5,6 +5,41 @@
  */
 
 export interface paths {
+    "/api/v1/clubs/{clubId}/notebook/pages/{pageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 페이지 — 문서 포함 */
+        get: operations["page"];
+        /** 페이지 저장 — 전체 덮어쓰기. version 이 다르면 409 CLUB_NOTE_CONFLICT, 최신 페이지를 다시 받아 저장한다 */
+        put: operations["savePage"];
+        post?: never;
+        /** 페이지 지우기 — 만든 사람 또는 호스트·운영자 */
+        delete: operations["deletePage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/meetings/{meetingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["meetingDetail"];
+        put: operations["updateMeeting"];
+        post?: never;
+        delete: operations["cancelMeeting"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/banners/{id}": {
         parameters: {
             query?: never;
@@ -694,6 +729,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/notebook/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 페이지 만들기 — 마지막 뒤에 붙는다(모임당 30장). 다른 멤버에게 알림 */
+        post: operations["createPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/notebook/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 노트북 사진 올리기 — 응답 id·url 을 문서의 photo 요소에 넣어 저장해야 24시간 뒤 정리되지 않는다 */
+        post: operations["uploadImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/meetings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["meetings"];
+        put?: never;
+        post: operations["createMeeting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/meetings/{meetingId}/attendees/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["attend"];
+        delete: operations["unattend"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/logs": {
         parameters: {
             query?: never;
@@ -757,6 +858,102 @@ export interface paths {
         put?: never;
         /** 모임 종료 (호스트) */
         post: operations["end_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/chat/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unlockChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/chat/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["chatMessages"];
+        put?: never;
+        post: operations["sendChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/chat/gifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["giftChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/activity/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/activity/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["endActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/activity/cards/{cardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decorateActivityCard"];
         delete?: never;
         options?: never;
         head?: never;
@@ -919,6 +1116,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookmark-purchases/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 책갈피 단건 결제 검증 — 결제 승인 후 책갈피 적립 */
+        post: operations["verify_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookmark-purchases/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 책갈피 단건 결제 시작 — 결제 SDK/웹 위젯에 넘길 주문 계약 */
+        post: operations["checkout_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/social": {
         parameters: {
             query?: never;
@@ -928,7 +1159,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 소셜 로그인 (Apple/Google/Kakao) — 연동된 계정만, 신규 가입 불가 */
+        /** 소셜 로그인 (Apple/Google/Kakao) — 미가입 소셜 계정은 바로 가입 */
         post: operations["socialLogin"];
         delete?: never;
         options?: never;
@@ -1032,6 +1263,24 @@ export interface paths {
         put?: never;
         /** 가입 이메일 인증 코드 발급 (EMAIL_CODE 모드) */
         post: operations["requestEmailCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 오늘 출석 상태 */
+        get: operations["status"];
+        put?: never;
+        /** 오늘 출석체크 — KST 기준 하루 한 번 보상 */
+        post: operations["checkIn"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1345,7 +1594,8 @@ export interface paths {
         get: operations["me"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** 계정 영구 삭제 — 개인정보·로그인 수단 제거 및 계정 종료 */
+        delete: operations["deleteAccount"];
         options?: never;
         head?: never;
         /** 프로필 수정 */
@@ -2089,6 +2339,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/places/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["searchPlaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/places/geocode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["geocodePlace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/places/address-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["searchAddresses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/notebook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 노트북 — 페이지 목록(문서 없이 요약만)과 상한 정책. 끝난 모임은 readOnly */
+        get: operations["notebook"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/logs/week": {
         parameters: {
             query?: never;
@@ -2115,6 +2430,70 @@ export interface paths {
         };
         /** 요일 스트립 — 날짜마다 조각 수(최대 14일) */
         get: operations["days"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["chatState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/chat/gift-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["giftCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/activity/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["currentActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/activity/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activityCards"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2706,6 +3085,85 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SaveClubNotePageRequest: {
+            /** Format: int32 */
+            version: number;
+            title?: string;
+            document: {
+                [key: string]: unknown;
+            };
+        };
+        ClubNoteEditorView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+        };
+        ClubNotePageSummaryView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int32 */
+            seq: number;
+            title?: string;
+            /** Format: int32 */
+            version: number;
+            /** Format: int32 */
+            elementCount: number;
+            updatedBy?: components["schemas"]["ClubNoteEditorView"];
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpsertMeetingRequest: {
+            title: string;
+            description?: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt?: string;
+            placeName: string;
+            address: string;
+            /** Format: double */
+            latitude?: number;
+            /** Format: double */
+            longitude?: number;
+            mapUrl?: string;
+            /** Format: date-time */
+            responseDeadline?: string;
+        };
+        MeetingAttendeeView: {
+            /** Format: int64 */
+            userId?: number;
+            nickname?: string;
+            avatarUrl?: string;
+        };
+        MeetingView: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            clubId?: number;
+            title?: string;
+            description?: string;
+            /** Format: date-time */
+            startsAt?: string;
+            /** Format: date-time */
+            endsAt?: string;
+            placeName?: string;
+            address?: string;
+            /** Format: double */
+            latitude?: number;
+            /** Format: double */
+            longitude?: number;
+            mapUrl?: string;
+            /** Format: date-time */
+            responseDeadline?: string;
+            status?: string;
+            /** Format: int64 */
+            attendeeCount: number;
+            attending: boolean;
+            host: boolean;
+            attendeeNicknames: string[];
+            attendees: components["schemas"]["MeetingAttendeeView"][];
+        };
         BannerUpsertRequest: {
             /** @enum {string} */
             kind: "AD" | "NOTICE";
@@ -3415,6 +3873,39 @@ export interface components {
             /** @enum {string} */
             messageKey: "READ_TOGETHER" | "CHECKPOINT_SOON" | "WAITING";
         };
+        CreateClubNotePageRequest: {
+            title?: string;
+        };
+        ClubNotePageView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int32 */
+            seq: number;
+            title?: string;
+            /** Format: int32 */
+            version: number;
+            document: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            elementCount: number;
+            createdBy?: components["schemas"]["ClubNoteEditorView"];
+            updatedBy?: components["schemas"]["ClubNoteEditorView"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            canDelete: boolean;
+        };
+        ClubNoteImageView: {
+            /** Format: int64 */
+            id: number;
+            url: string;
+            /** Format: int32 */
+            width?: number;
+            /** Format: int32 */
+            height?: number;
+        };
         KickRequest: {
             /** Format: int64 */
             userId: number;
@@ -3423,6 +3914,55 @@ export interface components {
         JoinPublicRequest: {
             adoptTargetDate?: boolean;
             shareProgress?: boolean;
+        };
+        UnlockResult: {
+            unlocked: boolean;
+            /** Format: int32 */
+            bookmarkBalance: number;
+        };
+        SendChatRequest: {
+            body: string;
+        };
+        ChatMessageView: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            senderId?: number;
+            senderNickname?: string;
+            body?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            mine?: boolean;
+        };
+        GiftChatRequest: {
+            /** Format: int64 */
+            userId: number;
+        };
+        ActivitySessionView: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            meetingId?: number;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: int32 */
+            durationSec?: number;
+        };
+        ActivityCardView: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            sessionId?: number;
+            /** Format: int64 */
+            userId?: number;
+            nickname?: string;
+            /** Format: int32 */
+            durationSec: number;
+            caption?: string;
+            decorationsJson?: string;
+            photoUrl?: string;
         };
         JoinRequest: {
             code: string;
@@ -3450,18 +3990,6 @@ export interface components {
         };
         SendMessageRequest: {
             body: string;
-        };
-        ChatMessageView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int64 */
-            chatId: number;
-            /** Format: int64 */
-            senderId: number;
-            body: string;
-            mine: boolean;
-            /** Format: date-time */
-            createdAt: string;
         };
         CreateChallengeRequest: {
             /** Format: int64 */
@@ -3521,6 +4049,44 @@ export interface components {
             /** Format: int64 */
             likeCount: number;
         };
+        BookmarkPurchaseVerifyRequest: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            productId: string;
+            orderId: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int32 */
+            amountKrw: number;
+            paymentKey?: string;
+            receiptData?: string;
+            originalTransactionId?: string;
+        };
+        BookmarkPurchaseCheckoutRequest: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            /** Format: int32 */
+            quantity: number;
+        };
+        BookmarkPurchaseCheckoutView: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            productId: string;
+            orderId: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int32 */
+            bonusQuantity: number;
+            /** Format: int32 */
+            totalQuantity: number;
+            /** Format: int32 */
+            amountKrw: number;
+            customerKey: string;
+            checkoutUrl?: string;
+            tossClientKey?: string;
+            successUrl?: string;
+            failUrl?: string;
+        };
         SocialLoginRequest: {
             /** @enum {string} */
             provider: "APPLE" | "GOOGLE" | "KAKAO";
@@ -3562,6 +4128,28 @@ export interface components {
             /** Format: int64 */
             expiresInSec: number;
             devCode?: string;
+        };
+        AttendanceView: {
+            checkedInToday: boolean;
+            /** Format: int32 */
+            monthlyAttendanceDays: number;
+            /** Format: int32 */
+            monthlyMaxDays: number;
+            /** Format: int32 */
+            rewardEveryDays: number;
+            /** Format: int32 */
+            nextRewardDay?: number;
+            nextRewardType?: string;
+            /** Format: int32 */
+            rewardedPostcards: number;
+            /** Format: int32 */
+            rewardedStamps: number;
+            /** Format: int32 */
+            postcardBalance: number;
+            /** Format: int32 */
+            stampBalance: number;
+            /** Format: date */
+            attendanceDate?: string;
         };
         WalletAdjustRequest: {
             /** Format: int32 */
@@ -3962,7 +4550,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_WEEKLY_LOG";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -4153,6 +4741,51 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PlaceView: {
+            id?: string;
+            name?: string;
+            address?: string;
+            roadAddress?: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            phone?: string;
+            mapUrl?: string;
+        };
+        Coordinates: {
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+        };
+        AddressView: {
+            address?: string;
+            roadAddress?: string;
+            buildingName?: string;
+            zonecode?: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+        };
+        ClubNotePolicy: {
+            /** Format: int32 */
+            maxPages: number;
+            /** Format: int32 */
+            maxElements: number;
+            /** Format: int32 */
+            maxDocumentBytes: number;
+            /** Format: int32 */
+            maxImageBytes: number;
+        };
+        ClubNotebookView: {
+            /** Format: int64 */
+            clubId: number;
+            readOnly: boolean;
+            policy: components["schemas"]["ClubNotePolicy"];
+            pages: components["schemas"]["ClubNotePageSummaryView"][];
+        };
         ClubLogDayView: {
             /** Format: date */
             date: string;
@@ -4186,6 +4819,30 @@ export interface components {
             /** Format: int32 */
             logCount: number;
         };
+        ChatState: {
+            unlocked: boolean;
+            /** Format: int32 */
+            unlockCost: number;
+            /** Format: int32 */
+            bookmarkBalance: number;
+            /** Format: int64 */
+            unreadCount: number;
+            /** Format: int64 */
+            totalMessageCount: number;
+            /** Format: date-time */
+            lastActivityAt?: string;
+        };
+        ChatMessagesView: {
+            messages?: components["schemas"]["ChatMessageView"][];
+            /** Format: int64 */
+            nextBeforeId?: number;
+        };
+        ChatGiftCandidate: {
+            /** Format: int64 */
+            userId?: number;
+            nickname?: string;
+            unlocked: boolean;
+        };
         PageResponseClubPreview: {
             content?: components["schemas"]["ClubPreview"][];
             /** Format: int32 */
@@ -4209,11 +4866,6 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             hasNext?: boolean;
-        };
-        ChatMessagesView: {
-            messages: components["schemas"]["ChatMessageView"][];
-            /** Format: int64 */
-            nextBeforeId?: number;
         };
         PopularBookView: {
             book: components["schemas"]["BookSummary"];
@@ -4502,6 +5154,12 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaSaveClubNotePageRequest = components['schemas']['SaveClubNotePageRequest'];
+export type SchemaClubNoteEditorView = components['schemas']['ClubNoteEditorView'];
+export type SchemaClubNotePageSummaryView = components['schemas']['ClubNotePageSummaryView'];
+export type SchemaUpsertMeetingRequest = components['schemas']['UpsertMeetingRequest'];
+export type SchemaMeetingAttendeeView = components['schemas']['MeetingAttendeeView'];
+export type SchemaMeetingView = components['schemas']['MeetingView'];
 export type SchemaBannerUpsertRequest = components['schemas']['BannerUpsertRequest'];
 export type SchemaBannerAdminView = components['schemas']['BannerAdminView'];
 export type SchemaExchangeRequest = components['schemas']['ExchangeRequest'];
@@ -4558,19 +5216,30 @@ export type SchemaCreateClubPostRequest = components['schemas']['CreateClubPostR
 export type SchemaClubPostView = components['schemas']['ClubPostView'];
 export type SchemaReactionRequest = components['schemas']['ReactionRequest'];
 export type SchemaNudgeRequest = components['schemas']['NudgeRequest'];
+export type SchemaCreateClubNotePageRequest = components['schemas']['CreateClubNotePageRequest'];
+export type SchemaClubNotePageView = components['schemas']['ClubNotePageView'];
+export type SchemaClubNoteImageView = components['schemas']['ClubNoteImageView'];
 export type SchemaKickRequest = components['schemas']['KickRequest'];
 export type SchemaJoinPublicRequest = components['schemas']['JoinPublicRequest'];
+export type SchemaUnlockResult = components['schemas']['UnlockResult'];
+export type SchemaSendChatRequest = components['schemas']['SendChatRequest'];
+export type SchemaChatMessageView = components['schemas']['ChatMessageView'];
+export type SchemaGiftChatRequest = components['schemas']['GiftChatRequest'];
+export type SchemaActivitySessionView = components['schemas']['ActivitySessionView'];
+export type SchemaActivityCardView = components['schemas']['ActivityCardView'];
 export type SchemaJoinRequest = components['schemas']['JoinRequest'];
 export type SchemaOpenChatRequest = components['schemas']['OpenChatRequest'];
 export type SchemaChatSummaryView = components['schemas']['ChatSummaryView'];
 export type SchemaSendMessageRequest = components['schemas']['SendMessageRequest'];
-export type SchemaChatMessageView = components['schemas']['ChatMessageView'];
 export type SchemaCreateChallengeRequest = components['schemas']['CreateChallengeRequest'];
 export type SchemaChallengeView = components['schemas']['ChallengeView'];
 export type SchemaManualBookRequest = components['schemas']['ManualBookRequest'];
 export type SchemaPageSuggestionRequest = components['schemas']['PageSuggestionRequest'];
 export type SchemaPageSuggestionResponse = components['schemas']['PageSuggestionResponse'];
 export type SchemaBookLikeView = components['schemas']['BookLikeView'];
+export type SchemaBookmarkPurchaseVerifyRequest = components['schemas']['BookmarkPurchaseVerifyRequest'];
+export type SchemaBookmarkPurchaseCheckoutRequest = components['schemas']['BookmarkPurchaseCheckoutRequest'];
+export type SchemaBookmarkPurchaseCheckoutView = components['schemas']['BookmarkPurchaseCheckoutView'];
 export type SchemaSocialLoginRequest = components['schemas']['SocialLoginRequest'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaEmailSignupRequest = components['schemas']['EmailSignupRequest'];
@@ -4578,6 +5247,7 @@ export type SchemaRefreshRequest = components['schemas']['RefreshRequest'];
 export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
 export type SchemaEmailCodeRequest = components['schemas']['EmailCodeRequest'];
 export type SchemaEmailCodeResponse = components['schemas']['EmailCodeResponse'];
+export type SchemaAttendanceView = components['schemas']['AttendanceView'];
 export type SchemaWalletAdjustRequest = components['schemas']['WalletAdjustRequest'];
 export type SchemaSubscriptionGrantRequest = components['schemas']['SubscriptionGrantRequest'];
 export type SchemaSanctionRequest = components['schemas']['SanctionRequest'];
@@ -4634,13 +5304,20 @@ export type SchemaClubResultView = components['schemas']['ClubResultView'];
 export type SchemaReadingNowView = components['schemas']['ReadingNowView'];
 export type SchemaClubPreview = components['schemas']['ClubPreview'];
 export type SchemaPageResponseClubPostView = components['schemas']['PageResponseClubPostView'];
+export type SchemaPlaceView = components['schemas']['PlaceView'];
+export type SchemaCoordinates = components['schemas']['Coordinates'];
+export type SchemaAddressView = components['schemas']['AddressView'];
+export type SchemaClubNotePolicy = components['schemas']['ClubNotePolicy'];
+export type SchemaClubNotebookView = components['schemas']['ClubNotebookView'];
 export type SchemaClubLogDayView = components['schemas']['ClubLogDayView'];
 export type SchemaClubLogSummary = components['schemas']['ClubLogSummary'];
 export type SchemaClubLogWeekView = components['schemas']['ClubLogWeekView'];
 export type SchemaClubLogDayCount = components['schemas']['ClubLogDayCount'];
+export type SchemaChatState = components['schemas']['ChatState'];
+export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
+export type SchemaChatGiftCandidate = components['schemas']['ChatGiftCandidate'];
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
 export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
-export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
 export type SchemaPopularBookView = components['schemas']['PopularBookView'];
 export type SchemaBannerView = components['schemas']['BannerView'];
 export type SchemaSignupConfigResponse = components['schemas']['SignupConfigResponse'];
@@ -4663,6 +5340,148 @@ export type SchemaAuditRow = components['schemas']['AuditRow'];
 export type SchemaPageResponseAuditRow = components['schemas']['PageResponseAuditRow'];
 export type $defs = Record<string, never>;
 export interface operations {
+    page: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                pageId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubNotePageView"];
+                };
+            };
+        };
+    };
+    savePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                pageId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveClubNotePageRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubNotePageSummaryView"];
+                };
+            };
+        };
+    };
+    deletePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                pageId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    meetingDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingView"];
+                };
+            };
+        };
+    };
+    updateMeeting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertMeetingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingView"];
+                };
+            };
+        };
+    };
+    cancelMeeting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     update: {
         parameters: {
             query?: never;
@@ -5847,6 +6666,155 @@ export interface operations {
             };
         };
     };
+    createPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateClubNotePageRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubNotePageView"];
+                };
+            };
+        };
+    };
+    uploadImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubNoteImageView"];
+                };
+            };
+        };
+    };
+    meetings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingView"][];
+                };
+            };
+        };
+    };
+    createMeeting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertMeetingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingView"];
+                };
+            };
+        };
+    };
+    attend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingView"];
+                };
+            };
+        };
+    };
+    unattend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingView"];
+                };
+            };
+        };
+    };
     day: {
         parameters: {
             query?: {
@@ -5972,6 +6940,183 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    unlockChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnlockResult"];
+                };
+            };
+        };
+    };
+    chatMessages: {
+        parameters: {
+            query?: {
+                beforeId?: number;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatMessagesView"];
+                };
+            };
+        };
+    };
+    sendChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendChatRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatMessageView"];
+                };
+            };
+        };
+    };
+    giftChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GiftChatRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnlockResult"];
+                };
+            };
+        };
+    };
+    startActivity: {
+        parameters: {
+            query?: {
+                meetingId?: number;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivitySessionView"];
+                };
+            };
+        };
+    };
+    endActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivityCardView"];
+                };
+            };
+        };
+    };
+    decorateActivityCard: {
+        parameters: {
+            query?: {
+                caption?: string;
+                decorationsJson?: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+                cardId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivityCardView"];
+                };
             };
         };
     };
@@ -6259,6 +7404,54 @@ export interface operations {
             };
         };
     };
+    verify_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkPurchaseVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WalletView"];
+                };
+            };
+        };
+    };
+    checkout_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkPurchaseCheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookmarkPurchaseCheckoutView"];
+                };
+            };
+        };
+    };
     socialLogin: {
         parameters: {
             query?: never;
@@ -6417,6 +7610,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["EmailCodeResponse"];
+                };
+            };
+        };
+    };
+    status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttendanceView"];
+                };
+            };
+        };
+    };
+    checkIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttendanceView"];
                 };
             };
         };
@@ -6996,6 +8229,24 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["MeResponse"];
                 };
+            };
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8156,6 +9407,100 @@ export interface operations {
             };
         };
     };
+    searchPlaces: {
+        parameters: {
+            query: {
+                query: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlaceView"][];
+                };
+            };
+        };
+    };
+    geocodePlace: {
+        parameters: {
+            query: {
+                address: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Coordinates"];
+                };
+            };
+        };
+    };
+    searchAddresses: {
+        parameters: {
+            query: {
+                query: string;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AddressView"][];
+                };
+            };
+        };
+    };
+    notebook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubNotebookView"];
+                };
+            };
+        };
+    };
     week: {
         parameters: {
             query?: {
@@ -8201,6 +9546,94 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ClubLogDayCount"][];
+                };
+            };
+        };
+    };
+    chatState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatState"];
+                };
+            };
+        };
+    };
+    giftCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChatGiftCandidate"][];
+                };
+            };
+        };
+    };
+    currentActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivitySessionView"];
+                };
+            };
+        };
+    };
+    activityCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivityCardView"][];
                 };
             };
         };

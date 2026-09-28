@@ -45,6 +45,11 @@ import type {
   QuoteAgree,
   QuoteComment,
   ReadingNow,
+  ClubNotebook,
+  ClubNotePage,
+  ClubNotePageSummary,
+  ClubNoteImage,
+  SaveClubNotePage,
   ReadingRecord,
   ReadingStatus,
   Review,
@@ -416,6 +421,36 @@ export const clubApi = {
   /** 조각 남기기 — 멀티파트(file 선택 · body · anchorPage · spoilerLevel · readingSessionId). */
   createLog: (clubId: number, form: FormData) =>
     api<ClubPost>(`/api/v1/clubs/${clubId}/logs`, {
+      method: "POST",
+      body: form,
+    }),
+};
+
+/** 모임 노트북 — 모임당 한 권. 문서는 서버가 해석하지 않으므로 앱의 NoteDoc 을 그대로 실어 보낸다. */
+export const clubNoteApi = {
+  /** 페이지 목록(문서 없이 요약만)과 상한 정책. 끝난 모임은 readOnly. */
+  notebook: (clubId: number) =>
+    api<ClubNotebook>(`/api/v1/clubs/${clubId}/notebook`),
+  createPage: (clubId: number, title?: string) =>
+    api<ClubNotePage>(`/api/v1/clubs/${clubId}/notebook/pages`, {
+      method: "POST",
+      body: { title },
+    }),
+  page: (clubId: number, pageId: number) =>
+    api<ClubNotePage>(`/api/v1/clubs/${clubId}/notebook/pages/${pageId}`),
+  /** 전체 덮어쓰기. 409 CLUB_NOTE_CONFLICT 면 page() 로 최신을 받아 병합한 뒤 그 version 으로 다시 저장한다. 응답은 요약만. */
+  savePage: (clubId: number, pageId: number, body: SaveClubNotePage) =>
+    api<ClubNotePageSummary>(`/api/v1/clubs/${clubId}/notebook/pages/${pageId}`, {
+      method: "PUT",
+      body,
+    }),
+  deletePage: (clubId: number, pageId: number) =>
+    api<void>(`/api/v1/clubs/${clubId}/notebook/pages/${pageId}`, {
+      method: "DELETE",
+    }),
+  /** 멀티파트(file). 응답 id·url 을 photo 요소(imageId·url)에 넣고 저장해야 24시간 뒤 정리되지 않는다. */
+  uploadImage: (clubId: number, form: FormData) =>
+    api<ClubNoteImage>(`/api/v1/clubs/${clubId}/notebook/images`, {
       method: "POST",
       body: form,
     }),

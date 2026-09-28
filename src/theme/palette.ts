@@ -62,6 +62,8 @@ export type ColorTokens = {
   ink: string;
   /** 잉크 위 텍스트 */
   onInk: string;
+  /** 노트 펜 파랑 — 팔레트에 파랑이 없어 노트북 잉크 전용으로 둔다. 다크는 하늘, 라이트는 짙은 파랑. */
+  penBlue: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
@@ -99,6 +101,7 @@ export const darkColors: ColorTokens = {
   onMemoPad: '#2a2c27',
   ink: '#e8e6e1',
   onInk: '#0c0e0d',
+  penBlue: '#6fb1ff',
 };
 
 export const lightColors: ColorTokens = {
@@ -134,6 +137,7 @@ export const lightColors: ColorTokens = {
   onMemoPad: '#3b3d38',
   ink: '#1a1c18',
   onInk: '#faf8f4',
+  penBlue: '#1f5fbf',
 };
 
 /**
