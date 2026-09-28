@@ -29,16 +29,17 @@ const H = {
   /** 표지 스택 — 화면 좌측 약 25% 지점 */
   coverW: 138,
   coverLeftRatio: 96 / BASE_W,
-  coverTop: 22,
+  /** 뒤장 메모가 -15px·10° 로 위로 삐져나오므로, 스크롤 영역 위 끝에 잘리지 않을 만큼 내려 앉힌다 */
+  coverTop: 40,
   /** 뒤장(줄거리 메모장) 부채꼴 — 홈 히어로와 같은 값으로 펼친다 */
   stack: { x: 48, y: -15, rotate: 10, scale: 0.95 },
   /** 표제 — 좌하단에서 표지와 겹친다 */
-  titleTop: 150,
+  titleTop: 168,
   titleWRatio: 212 / BASE_W,
   /** 평점 스티키 칩 */
-  chipTop: 206,
+  chipTop: 224,
   /** 콜라주 판 기본 높이 */
-  height: 262,
+  height: 280,
 } as const;
 
 /** 본문 좌우 여백 — 히어로 표제도 같은 거터에 맞춰 앉힌다. */
