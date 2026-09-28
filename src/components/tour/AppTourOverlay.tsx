@@ -103,5 +103,5 @@ const styles = StyleSheet.create({
   title: { ...typeScale.titleSerif, fontSize: 20 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
   skip: { padding: spacing.sm },
-  next: { minWidth: 82, minHeight: 42, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  next: { minWidth: 82, minHeight: 42, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
 });

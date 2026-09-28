@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   ghost: { alignSelf: 'center', padding: spacing.sm },
   cta: {
     minHeight: 48,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

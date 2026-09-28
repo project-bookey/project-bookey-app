@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   },
   cta: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     backgroundColor: darkColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
   ctaDisabled: { opacity: 0.45 },
   ghost: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   check: {
     width: 20,
     height: 20,
-    borderRadius: 6,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     borderColor: darkColors.lineStrong,
     alignItems: 'center',
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   legalScrollHint: { ...typeScale.caption, color: darkColors.textFaint, textAlign: 'center' },
   legalAgree: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     backgroundColor: darkColors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   appleButton: { height: BUTTON_HEIGHT, width: '100%' },
   kakaoButton: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     backgroundColor: '#FEE500',
     alignItems: 'center',
     justifyContent: 'center',
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
   kakaoLabel: { ...typeScale.bodyStrong, color: '#191919' },
   googleButton: {
     minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     borderColor: darkColors.lineStrong,
     alignItems: 'center',

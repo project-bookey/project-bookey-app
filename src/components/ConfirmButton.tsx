@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
   },
   idle: { alignSelf: 'stretch' },

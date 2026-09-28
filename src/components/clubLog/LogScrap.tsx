@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   meta: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.4, marginTop: spacing.xs },
   revealHint: { ...typeScale.label, fontSize: 11, marginTop: spacing.sm },
   reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.md },
-  reaction: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  reaction: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
   lockShackle: {
     width: 12,
     height: 9,

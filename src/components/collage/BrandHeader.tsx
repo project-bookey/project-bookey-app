@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     height: 32,
     minWidth: 74,
     maxWidth: 92,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     flexDirection: 'row',
     alignItems: 'center',

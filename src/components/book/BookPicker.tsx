@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   // 책 검색 입력 — 쪽수 입력과 같은 재질, pill.
   searchInput: {
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontFamily: sans.regular,

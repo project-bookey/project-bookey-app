@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   composePill: {
     marginLeft: 'auto',
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   composer: { marginHorizontal: spacing.lg, gap: spacing.md },
   submit: {
     marginLeft: 'auto',
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
   },

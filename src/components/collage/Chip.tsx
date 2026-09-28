@@ -40,7 +40,7 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
 
 const styles = StyleSheet.create({
   chip: {
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

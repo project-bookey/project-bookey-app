@@ -211,9 +211,9 @@ const styles = StyleSheet.create({
   bookTitle: { ...typeScale.titleSerif, textAlign: 'center' },
   // 스톱워치 — 타이머와 같은 모노 대형 숫자.
   clock: { fontFamily: mono.semiBold, fontSize: 56, textAlign: 'center', letterSpacing: 1 },
-  gauge: { height: 6, borderRadius: radius.pill, overflow: 'hidden' },
+  gauge: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
   gaugeFill: { height: 6 },
-  cta: { paddingVertical: spacing.md, borderRadius: radius.pill, alignItems: 'center' },
+  cta: { paddingVertical: spacing.md, borderRadius: radius.sm, alignItems: 'center' },
   resultCard: { borderRadius: radius.md, borderWidth: hairline, padding: spacing.xl, gap: spacing.md },
   pageCard: { borderRadius: radius.md, borderWidth: hairline, padding: spacing.lg, gap: spacing.sm },
   pageRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   recordButton: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     marginLeft: 'auto',
   },
 });

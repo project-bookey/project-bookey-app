@@ -112,5 +112,5 @@ export function HeroPager({
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
-  dot: { width: 4, height: 4, borderRadius: radius.pill },
+  dot: { width: 4, height: 4, borderRadius: radius.round },
 });

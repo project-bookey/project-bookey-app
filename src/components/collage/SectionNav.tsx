@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   track: {
     ...layout.content,
     height: 62,
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     borderWidth: hairline,
     flexDirection: 'row',
     alignItems: 'center',
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     left: 4,
     top: 4,
     bottom: 4,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
   },
   tab: {
     flex: 1,

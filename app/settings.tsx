@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     borderBottomWidth: hairline,
   },
-  radio: { width: 16, height: 16, borderRadius: radius.pill, borderWidth: hairline, marginTop: 2 },
+  radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },
   switchRow: { paddingVertical: spacing.sm },
 });

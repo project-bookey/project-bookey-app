@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     minWidth: 92,
     minHeight: 42,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   day: {
     width: 28,
     height: 28,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',

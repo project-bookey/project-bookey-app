@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   radio: {
     width: 16,
     height: 16,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: hairline,
   },
   empty: { ...typeScale.caption, padding: spacing.lg },

@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   pageInput: { borderBottomWidth: hairline, paddingVertical: spacing.xs, fontFamily: mono.regular, fontSize: 15 },
   editActions: { flexDirection: 'row', gap: spacing.sm },
   reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  reaction: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  reaction: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
   ownerActions: { flexDirection: 'row', gap: spacing.sm },
   talks: { gap: spacing.sm },
   talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: 4 },

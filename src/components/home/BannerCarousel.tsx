@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.xs + 2,
     paddingVertical: 2,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     marginBottom: spacing.xs,
   },
   placeholder: {
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
-  dot: { width: 4, height: 4, borderRadius: radius.pill },
+  dot: { width: 4, height: 4, borderRadius: radius.round },
   titleStrong: { fontFamily: sans.bold },
   subtitleStrong: { fontFamily: sans.semiBold },
 });

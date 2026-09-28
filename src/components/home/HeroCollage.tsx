@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cta: {
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.lg + 2,
     paddingVertical: spacing.md - 2,
   },

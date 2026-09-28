@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 28,
     height: 28,
-    borderRadius: radius.pill,
+    borderRadius: radius.round,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
   },
   weekday: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 1 },
   dayNumber: { fontFamily: mono.semiBold, fontSize: 13 },
   dots: { flexDirection: 'row', gap: 2, height: 4 },
-  dot: { width: 4, height: 4, borderRadius: radius.pill },
+  dot: { width: 4, height: 4, borderRadius: radius.round },
   notePages: { fontFamily: mono.semiBold, fontSize: 24, marginTop: 4 },
 });

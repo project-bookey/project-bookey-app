@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   maskedLines: { gap: 6 },
-  maskedLine: { height: 9, borderRadius: radius.pill },
+  maskedLine: { height: 9, borderRadius: radius.sm },
   postFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   reactions: { flexDirection: 'row', gap: spacing.xs },
   reaction: {
     borderWidth: hairline,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 5,
   },
