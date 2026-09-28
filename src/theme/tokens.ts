@@ -118,6 +118,12 @@ export const rowOffsetY = [0, 10, 4, 14, 6, 12] as const;
 
 export const hairline = 1;
 
+/**
+ * 선 아이콘 공통 획 — 끝(cap)과 모서리(join)를 각지게. 둥근 캡은 범용 아이콘 세트
+ * 느낌이 나서 쓰지 않는다. react-native-svg 의 Path/Circle 에 그대로 펼친다.
+ */
+export const iconStroke = { strokeWidth: 2, strokeLinecap: 'square', strokeLinejoin: 'miter' } as const;
+
 export const statusLabel: Record<string, string> = {
   WANT_TO_READ: '읽고 싶은',
   READING: '읽는 중',

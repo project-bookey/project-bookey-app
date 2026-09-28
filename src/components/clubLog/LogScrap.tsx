@@ -54,10 +54,10 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
             style={[
               styles.reaction,
               { borderColor: colors.line, backgroundColor: colors.bg },
-              on && { backgroundColor: colors.accent, borderColor: colors.accent },
+              on && { backgroundColor: colors.ink, borderColor: colors.ink },
             ]}
           >
-            <Text style={[typeScale.monoLabel, { color: on ? colors.onAccent : colors.textMuted }]}>{label}</Text>
+            <Text style={[typeScale.monoLabel, { color: on ? colors.onInk : colors.textMuted }]}>{label}</Text>
           </Pressable>
         );
       })}

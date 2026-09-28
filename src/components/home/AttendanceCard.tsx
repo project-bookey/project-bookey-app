@@ -96,7 +96,8 @@ export function AttendanceCard() {
             {Array.from({ length: 7 }).map((_, index) => {
               const day = week * 7 + index + 1;
               const filled = day <= data.monthlyAttendanceDays;
-              const reward = day === 7 || day === 21 ? '💌' : day === 14 || day === 28 ? '✉️' : null;
+              // 보상 날짜는 숫자 대신 품목 이름을 적는다 — 이모지는 플랫폼마다 그림이 달라 쓰지 않는다.
+              const reward = day === 7 || day === 21 ? '엽서' : day === 14 || day === 28 ? '우표' : null;
               return (
                 <View
                   key={day}
@@ -114,7 +115,7 @@ export function AttendanceCard() {
             })}
           </View>
         ))}
-        <Text style={[typeScale.caption, { color: colors.textMuted }]}>7일 💌 엽서 · 14일 ✉️ 우표 · 21일 💌 엽서 · 28일 ✉️ 우표</Text>
+        <Text style={[typeScale.caption, { color: colors.textMuted }]}>7일·21일 엽서 · 14일·28일 우표</Text>
       </View>
       ) : null}
     </View>
@@ -166,5 +167,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayText: { fontSize: 10, lineHeight: 12 },
+  dayText: { fontSize: 10, lineHeight: 12, letterSpacing: -0.3 },
 });

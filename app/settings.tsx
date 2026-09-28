@@ -84,7 +84,7 @@ export default function SettingsScreen() {
                       style={[
                         styles.radio,
                         selected
-                          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+                          ? { backgroundColor: colors.ink, borderColor: colors.ink }
                           : { borderColor: colors.textFaint },
                       ]}
                     />

@@ -26,12 +26,12 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
       style={[
         styles.chip,
         active
-          ? { backgroundColor: colors.text, borderColor: colors.text }
+          ? { backgroundColor: colors.ink, borderColor: colors.ink }
           : { backgroundColor: 'transparent', borderColor: colors.line },
         disabled ? styles.disabled : null,
       ]}
     >
-      <Text style={[typeScale.monoLabel, { color: active ? colors.bg : colors.textMuted }]}>
+      <Text style={[typeScale.monoLabel, { color: active ? colors.onInk : colors.textMuted }]}>
         {label}
       </Text>
     </Pressable>

@@ -461,9 +461,9 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     segment: { flex: 1, paddingVertical: spacing.sm + 2, alignItems: 'center' },
     segmentDivider: { borderLeftWidth: hairline, borderLeftColor: colors.line },
-    segmentActive: { backgroundColor: colors.text },
+    segmentActive: { backgroundColor: colors.ink },
     segmentLabel: { ...typeScale.label, fontSize: 12, color: colors.textMuted },
-    segmentLabelActive: { color: colors.bg },
+    segmentLabelActive: { color: colors.onInk },
     toggleTrack: {
       width: 46,
       height: 26,

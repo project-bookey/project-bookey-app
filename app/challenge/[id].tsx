@@ -100,7 +100,7 @@ export default function ChallengeScreen() {
 
         {succeeded ? (
           <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <Text style={[typeScale.displaySerif, { color: colors.text, textAlign: 'center' }]}>완독! 🎉</Text>
+            <Text style={[typeScale.displaySerif, { color: colors.text, textAlign: 'center' }]}>완독!</Text>
             <Text style={[typeScale.body, { color: colors.textMuted, textAlign: 'center' }]}>
               {formatClock(usedSec)} 만에 {challenge.totalPages}쪽을 읽었어요.
             </Text>

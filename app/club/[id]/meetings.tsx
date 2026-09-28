@@ -27,7 +27,7 @@ import {
 } from "@/components/club/AddressSearchModal";
 import { PlaceMap } from "@/components/club/PlaceMap";
 import { Button, Card, Loading } from "@/components/ui";
-import { spacing, typeScale, useTheme } from "@/theme";
+import { radius, spacing, typeScale, useTheme } from "@/theme";
 
 const freshDate = () => {
   const value = new Date();
@@ -473,7 +473,7 @@ const s = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: radius.sm,
     padding: 12,
     marginTop: spacing.sm,
   },
@@ -482,7 +482,7 @@ const s = StyleSheet.create({
     gap: spacing.sm,
     marginVertical: spacing.sm,
   },
-  picker: { flex: 1, borderWidth: 1, borderRadius: 12, padding: 12, gap: 4 },
+  picker: { flex: 1, borderWidth: 1, borderRadius: radius.sm, padding: 12, gap: 4 },
   placeRow: { paddingVertical: spacing.sm, borderBottomWidth: 1, gap: 2 },
   actions: {
     flexDirection: "row",
@@ -496,7 +496,7 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
   },
   avatarStack: { flexDirection: "row", alignItems: "center", minHeight: 32 },
-  listAvatar: { width: 30, height: 30, borderRadius: 15, borderWidth: 2 },
+  listAvatar: { width: 30, height: 30, borderRadius: radius.round, borderWidth: 2 },
   avatarFallback: { alignItems: "center", justifyContent: "center" },
   avatarInitial: { fontSize: 12, fontWeight: "800" },
 });

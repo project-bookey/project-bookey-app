@@ -225,11 +225,11 @@ function PostCard({ post, colors, onReveal, onReact }: {
                   style={[
                     styles.reaction,
                     { borderColor: colors.line },
-                    on && { backgroundColor: colors.accent, borderColor: colors.accent },
+                    on && { backgroundColor: colors.ink, borderColor: colors.ink },
                   ]}
                 >
                   <Text
-                    style={[typeScale.monoLabel, { color: on ? colors.onAccent : colors.textMuted }]}
+                    style={[typeScale.monoLabel, { color: on ? colors.onInk : colors.textMuted }]}
                   >
                     {reactionLabel(kind)}
                   </Text>

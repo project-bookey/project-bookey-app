@@ -6,7 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { walletApi } from '@/api/endpoints';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 구역 화면 공통 헤더 — 가운데 워드마크, 오른쪽에 책갈피 잔액·알림 종.
@@ -66,7 +66,7 @@ function BookmarkBalance() {
 function BookmarkGlyph({ color }: { color: string }) {
   return (
     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 3h12v18l-6-4.5L6 21z" stroke={color} strokeWidth={2} strokeLinejoin="miter" strokeLinecap="square" />
+      <Path d="M6 3h12v18l-6-4.5L6 21z" stroke={color} {...iconStroke} />
     </Svg>
   );
 }

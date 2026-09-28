@@ -7,7 +7,7 @@ import { followApi } from '@/api/endpoints';
 import type { FollowUserView } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { EmptyState, Segmented, Tag, formatRelative } from '@/components/ui';
-import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받아오는 사람 수 — 목록 한 화면(약 12줄)보다 넉넉하게. */
 const PAGE_SIZE = 20;
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   head: { gap: spacing.md, marginBottom: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
   avatar: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 36, height: 36, borderRadius: radius.round,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },

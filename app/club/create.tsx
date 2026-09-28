@@ -138,7 +138,7 @@ export default function ClubCreateScreen() {
                     style={[
                       styles.radio,
                       { borderColor: colors.textFaint },
-                      selected && { backgroundColor: colors.accent, borderColor: colors.accent },
+                      selected && { backgroundColor: colors.ink, borderColor: colors.ink },
                     ]}
                   />
                 </Pressable>

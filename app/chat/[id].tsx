@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   sendButton: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 40, height: 40, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
 });

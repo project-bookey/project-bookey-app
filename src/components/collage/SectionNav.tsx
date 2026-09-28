@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
-import { hairline, layout, sans, spacing } from '@/theme/tokens';
+import { hairline, iconStroke, layout, sans, spacing } from '@/theme/tokens';
 
 export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
@@ -132,8 +132,7 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
 }
 
 function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
-  // 선 끝을 각지게 — 둥근 캡은 범용 아이콘 세트 느낌이 난다.
-  const stroke = { stroke: color, strokeWidth: 2, strokeLinecap: 'square' as const, strokeLinejoin: 'miter' as const };
+  const stroke = { stroke: color, ...iconStroke };
 
   switch (name) {
     case 'plaza':
