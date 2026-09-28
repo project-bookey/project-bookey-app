@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import type { Banner } from '@/api/types';
-import { darkColors, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 import { InlineMarkdownText } from './InlineMarkdownText';
 
 const CARD_H = 108;
@@ -17,7 +17,11 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const router = useRouter();
   const { colors } = useTheme();
   const [page, setPage] = useState(0);
-  const [width, setWidth] = useState(0);
+  // 카드 폭은 창 폭에서 바로 계산한다(홈 본문 최대 폭 − 좌우 여백). 웹에서 onLayout 이 첫 폭을
+  // 0 으로 주고 다시 안 불러 리스트가 영영 안 그려지던 결함 — 실측값이 오면 그 값을 우선한다.
+  const window = useWindowDimensions();
+  const [measured, setMeasured] = useState(0);
+  const width = measured > 0 ? measured : Math.min(window.width, layout.content.maxWidth) - spacing.lg * 2;
 
   if (banners.length === 0) {
     return (
@@ -37,11 +41,12 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   };
 
   return (
-    <View style={styles.wrap} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+    <View style={styles.wrap} onLayout={(e) => setMeasured(e.nativeEvent.layout.width)}>
       {width > 0 ? (
         <FlatList
           horizontal
           pagingEnabled
+          style={styles.list}
           showsHorizontalScrollIndicator={false}
           data={banners}
           keyExtractor={(b) => String(b.id)}
@@ -96,6 +101,8 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
 
 const styles = StyleSheet.create({
   wrap: { marginHorizontal: spacing.lg, gap: spacing.sm },
+  // 가로 리스트는 웹에서 높이가 0 으로 접힐 수 있다 — 카드 높이를 명시해 세 플랫폼이 같은 자리를 잡는다.
+  list: { height: CARD_H },
   card: { height: CARD_H, borderRadius: radius.md, overflow: 'hidden', justifyContent: 'flex-end' },
   cardBody: { padding: spacing.md, gap: 2 },
   tag: {
