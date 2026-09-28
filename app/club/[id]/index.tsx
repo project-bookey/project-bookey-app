@@ -30,6 +30,7 @@ import {
   notify,
 } from "@/components/club";
 import { NoteGrid } from "@/components/clubNote/NoteGrid";
+import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubChatBody } from "./chat";
 import { ClubMeetingsBody } from "./meetings";
 import { ClubPostsBody } from "./posts";
@@ -65,6 +66,8 @@ import {
 import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono, rowOffsetY } from "@/theme/tokens";
+
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "posts", "notebook"];
 
 /**
  * 모임 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
@@ -351,7 +354,7 @@ export default function ClubHomeScreen() {
       {/* 모임 탭 — 함께 읽는 사람 아래. 누르면 아래 영역만 바뀐다 */}
       <ClubTabs clubId={clubId} active={tab} onSelect={setTab} />
 
-      <View style={styles.body}>
+      <SwipeableTabs values={CLUB_TAB_VALUES} value={tab} onChange={setTab} style={styles.body}>
         {tab === "home" ? (
           <>
         <ScrollView contentContainerStyle={styles.container}>
@@ -556,7 +559,7 @@ export default function ClubHomeScreen() {
         {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} /> : null}
         {tab === "posts" ? <ClubPostsBody /> : null}
         {tab === "notebook" ? <NoteGrid clubId={clubId} /> : null}
-      </View>
+      </SwipeableTabs>
     </PaperScreen>
   );
 }

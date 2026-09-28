@@ -8,14 +8,15 @@ import { plazaApi, quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
-import { BrandHeader, Chip, FocusRing, PaperScreen, TiltCover } from '@/components/collage';
+import { BrandHeader, FocusRing, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
-import { Card, EmptyState, formatRelative } from '@/components/ui';
+import { Button, Card, EmptyState, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { TourTarget } from '@/components/tour/TourTarget';
+import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -38,6 +39,7 @@ const SCROLL_RETRY_MS = 320;
  * 그래서 탭 상태(tab)와 광장 피드 type 을 갈라 둔다.
  */
 type PlazaTab = PlazaItemType | 'POST';
+const PLAZA_TABS: readonly PlazaTab[] = ['POST', 'QUOTE', 'FINISH'];
 
 /**
  * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 독후감, 완독 자랑이 모이는 곳 (시안 2d).
@@ -173,10 +175,12 @@ export default function PlazaScreen() {
   const header = (
     <View style={styles.header}>
       <TourTarget id="plaza-actions" style={styles.chipRow}>
-        {/* 기본으로 열리는 칩이 맨 앞에 온다 — 독후감 · 밑줄 · 완독 자랑 순. */}
-        <Chip label="독후감" active={tab === 'POST'} onPress={() => switchTab('POST')} />
-        <Chip label="밑줄" active={tab === 'QUOTE'} onPress={() => switchTab('QUOTE')} />
-        <Chip label="완독 자랑" active={tab === 'FINISH'} onPress={() => switchTab('FINISH')} />
+        {/* 다른 구역 상단 탭과 같은 강조색 버튼 — 독후감 · 밑줄 · 완독 자랑 순. */}
+        <View style={styles.tabButtons}>
+          <Button label="독후감" size="sm" variant={tab === 'POST' ? 'primary' : 'outline'} style={{ flex: 1 }} onPress={() => switchTab('POST')} />
+          <Button label="밑줄" size="sm" variant={tab === 'QUOTE' ? 'primary' : 'outline'} style={{ flex: 1 }} onPress={() => switchTab('QUOTE')} />
+          <Button label="완독 자랑" size="sm" variant={tab === 'FINISH' ? 'primary' : 'outline'} style={{ flex: 1 }} onPress={() => switchTab('FINISH')} />
+        </View>
         {/* 쓰기는 밑줄·독후감 탭에만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
         {tab === 'QUOTE' ? (
           <Pressable
@@ -211,10 +215,11 @@ export default function PlazaScreen() {
   return (
     <PaperScreen withTopInset>
       <BrandHeader />
-      {tab === 'POST' ? (
-        <PostFeed ListHeaderComponent={header} />
-      ) : (
-        <FlatList
+      <SwipeableTabs values={PLAZA_TABS} value={tab} onChange={switchTab}>
+        {tab === 'POST' ? (
+          <PostFeed ListHeaderComponent={header} />
+        ) : (
+          <FlatList
           ref={listRef}
           data={items}
           keyExtractor={itemKey}
@@ -281,8 +286,9 @@ export default function PlazaScreen() {
               </View>
             ) : null
           }
-        />
-      )}
+          />
+        )}
+      </SwipeableTabs>
     </PaperScreen>
   );
 }
@@ -443,13 +449,12 @@ const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: 104, gap: spacing.lg },
   header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs },
   chipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
   },
+  tabButtons: { flexDirection: 'row', gap: spacing.xs },
   composeButton: {
-    marginLeft: 'auto',
+    alignSelf: 'flex-end',
     borderWidth: hairline,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,

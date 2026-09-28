@@ -123,7 +123,8 @@ const styles = StyleSheet.create({
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
   body: { padding: spacing.lg, paddingTop: spacing.md, gap: 4 },
-  manage: { position: 'absolute', top: BAND_H + spacing.md, right: spacing.lg },
+  // 본문 제목과 겹치지 않도록 관리 버튼은 이미지 띠의 오른쪽 아래에 둔다.
+  manage: { position: 'absolute', top: BAND_H - 40, right: spacing.lg },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
   nameWithManage: { paddingRight: 64 },
   book: { ...typeScale.caption },

@@ -24,7 +24,7 @@ const DURATIONS = [
 ] as const;
 
 /** 모임 만들기 (§12.1) — 책 선택 → 기간 → 체크포인트 → 공개 범위 */
-export default function ClubCreateScreen() {
+export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
@@ -75,11 +75,8 @@ export default function ClubCreateScreen() {
 
   const canSubmit = name.trim().length > 0 && bookId !== null;
 
-  return (
-    <PaperScreen>
-      <SubHeader category="모임 만들기" />
-
-      <ScrollView contentContainerStyle={styles.container}>
+  const content = (
+      <ScrollView contentContainerStyle={[styles.container, embedded && styles.embeddedContainer]}>
         <Field
           label="모임 이름"
           value={name}
@@ -206,8 +203,20 @@ export default function ClubCreateScreen() {
           onPress={() => create.mutate()}
         />
       </ScrollView>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <PaperScreen>
+      <SubHeader category="모임 만들기" />
+      {content}
     </PaperScreen>
   );
+}
+
+export default function ClubCreateScreen() {
+  return <ClubCreateContent />;
 }
 
 const styles = StyleSheet.create({
@@ -219,6 +228,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
+  embeddedContainer: { paddingTop: spacing.sm, paddingBottom: 104 },
   helper: { ...typeScale.caption, marginTop: spacing.sm },
   bookList: {
     marginTop: spacing.sm,

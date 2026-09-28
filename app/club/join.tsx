@@ -14,7 +14,7 @@ import { mono, sans } from '@/theme/tokens';
  * 코드로 참가 (§12.1).
  * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·토론은 참가 후에만 보인다.
  */
-export default function ClubJoinScreen() {
+export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
@@ -45,11 +45,8 @@ export default function ClubJoinScreen() {
 
   const errorStyle = [typeScale.caption, { color: colors.danger }];
 
-  return (
-    <PaperScreen>
-      <SubHeader category="코드로 참가" />
-
-      <ScrollView contentContainerStyle={styles.container}>
+  const content = (
+      <ScrollView contentContainerStyle={[styles.container, embedded && styles.embeddedContainer]}>
         <View>
           <Eyebrow>초대 코드</Eyebrow>
           <TextInput
@@ -155,8 +152,20 @@ export default function ClubJoinScreen() {
           onPress={() => join.mutate()}
         />
       </ScrollView>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <PaperScreen>
+      <SubHeader category="코드로 참가" />
+      {content}
     </PaperScreen>
   );
+}
+
+export default function ClubJoinScreen() {
+  return <ClubJoinContent />;
 }
 
 const styles = StyleSheet.create({
@@ -167,6 +176,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
+  embeddedContainer: { paddingTop: spacing.sm, paddingBottom: 104 },
   codeInput: {
     borderWidth: hairline,
     borderRadius: radius.md,
