@@ -7,6 +7,7 @@ import {
   Menu,
   MessageCircle,
   MessagesSquare,
+  NotebookPen,
   Settings,
   type LucideIcon,
 } from "lucide-react-native";
@@ -341,6 +342,19 @@ export default function ClubHomeScreen() {
               onPress={() => {
                 setMenuOpen(false);
                 router.push(`/club/${clubId}/posts`);
+              }}
+            />
+            <MenuItem
+              icon={NotebookPen}
+              label="노트"
+              description="함께 꾸미는 모임 노트"
+              colors={colors}
+              onPress={() => {
+                setMenuOpen(false);
+                router.push({
+                  pathname: "/club/[id]/notebook",
+                  params: { id: String(clubId) },
+                });
               }}
             />
             {isHost ? (
