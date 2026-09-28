@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
-import { hairline, layout, radius, spacing, typeScale } from '@/theme/tokens';
+import { hairline, layout, sans, spacing } from '@/theme/tokens';
 
 export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
@@ -28,6 +28,8 @@ let lastTabIndex = 0;
 /**
  * 네이티브 헤더가 없는 메인 화면의 하단 탭.
  * 각 화면이 PaperScreen 안에서 직접 렌더링하므로 세이프에어리어를 직접 처리한다.
+ * 종이 아래 끝에 붙은 평평한 바 — 떠 있는 알약이 아니라 괘선 하나로 화면과 나뉘고,
+ * 활성 구역은 잉크색 활자 위에 2px 민트 표식(탭 상단)으로만 짚는다.
  */
 export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?: (route: string) => void }) {
   const router = useRouter();
@@ -53,7 +55,7 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
     lastTabIndex = activeIndex;
   }, [activeIndex, translateX]);
 
-  const tabWidth = trackWidth > 0 ? (trackWidth - 8) / SECTIONS.length : 0;
+  const tabWidth = trackWidth > 0 ? trackWidth / SECTIONS.length : 0;
 
   return (
     <View
@@ -61,18 +63,13 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
         styles.bar,
         {
           paddingBottom: Math.max(insets.bottom, spacing.sm),
+          backgroundColor: colors.bg,
+          borderTopColor: colors.lineStrong,
         },
       ]}
     >
       <View
-        style={[
-          styles.track,
-          {
-            borderColor: colors.lineStrong,
-            backgroundColor: colors.surfaceRaised,
-            shadowColor: colors.text,
-          },
-        ]}
+        style={styles.track}
         onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
         accessibilityRole="tablist"
       >
@@ -80,7 +77,7 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
           <Animated.View
             pointerEvents="none"
             style={[
-              styles.indicator,
+              styles.marker,
               {
                 width: tabWidth,
                 backgroundColor: colors.accent,
@@ -114,14 +111,14 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
               hitSlop={6}
               style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
             >
-              <SectionIcon name={section.key} color={visuallySelected ? colors.onAccent : colors.textMuted} />
+              <SectionIcon name={section.key} color={visuallySelected ? colors.text : colors.textFaint} />
               <Text
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.75}
                 style={[
                   styles.label,
-                  { color: visuallySelected ? colors.onAccent : colors.textMuted },
+                  { color: visuallySelected ? colors.text : colors.textFaint },
                 ]}
               >
                 {section.label}
@@ -135,7 +132,8 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
 }
 
 function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
-  const stroke = { stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  // 선 끝을 각지게 — 둥근 캡은 범용 아이콘 세트 느낌이 난다.
+  const stroke = { stroke: color, strokeWidth: 2, strokeLinecap: 'square' as const, strokeLinejoin: 'miter' as const };
 
   switch (name) {
     case 'plaza':
@@ -188,39 +186,30 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 20,
-    paddingTop: spacing.xs,
-    paddingHorizontal: spacing.md,
+    borderTopWidth: hairline,
   },
   track: {
     ...layout.content,
-    height: 62,
-    borderRadius: radius.md,
-    borderWidth: hairline,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    overflow: 'hidden',
-    paddingHorizontal: 4,
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
   },
-  indicator: {
+  // 활성 표식 — 탭 상단에 붙는 2px 민트 선. 스프링으로 옆 탭까지 미끄러진다.
+  marker: {
     position: 'absolute',
-    left: 4,
-    top: 4,
-    bottom: 4,
-    borderRadius: radius.sm,
+    left: 0,
+    top: -hairline,
+    height: 2,
   },
   tab: {
     flex: 1,
     minWidth: 0,
-    height: 54,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
     paddingHorizontal: 2,
   },
   pressed: { opacity: 0.72 },
-  label: { fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center' },
+  label: { fontFamily: sans.semiBold, fontSize: 10, lineHeight: 13, textAlign: 'center' },
 });

@@ -83,10 +83,10 @@ export const typeScale = {
   titleSerif: { fontFamily: serif.bold, fontSize: 22, lineHeight: 30 },
   /** 인용문 */
   quote: { fontFamily: serif.regular, fontSize: 17, lineHeight: 28 },
-  /** 라벨 — 모노 */
-  monoLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 1.2 },
+  /** 라벨 — 모노. 한글은 자간을 벌리면 글자가 흩어져 보여 좁게 둔다. */
+  monoLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
   /** 아이브로우 — 모노 */
-  monoEyebrow: { fontFamily: mono.semiBold, fontSize: 10, letterSpacing: 2 },
+  monoEyebrow: { fontFamily: mono.semiBold, fontSize: 10, letterSpacing: 1 },
   /** 숫자 — 모노 */
   monoNumeral: { fontFamily: mono.semiBold, fontSize: 13 },
 } as const;
