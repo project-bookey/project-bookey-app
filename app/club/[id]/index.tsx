@@ -1,19 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  CalendarDays,
-  ChevronRight,
-  Menu,
-  MessageCircle,
-  MessagesSquare,
-  NotebookPen,
-  Settings,
-  type LucideIcon,
-} from "lucide-react-native";
+import { Settings } from "lucide-react-native";
 import { useState } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,6 +21,7 @@ import type {
   NudgeMessageKey,
 } from "@/api/types";
 import {
+  ClubTabs,
   MemberDetail,
   MemberStrip,
   confirmAsync,
@@ -66,14 +57,7 @@ import {
   percent,
 } from "@/components/ui";
 import type { ColorTokens } from "@/theme";
-import {
-  hairline,
-  layout,
-  radius,
-  spacing,
-  typeScale,
-  useTheme,
-} from "@/theme";
+import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono, rowOffsetY } from "@/theme/tokens";
 
 /**
@@ -93,7 +77,6 @@ export default function ClubHomeScreen() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [shareProgress, setShareProgress] = useState(true);
   const [adoptTarget, setAdoptTarget] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
   const monday = mondayOf(date);
 
   const club = useQuery({
@@ -277,101 +260,20 @@ export default function ClubHomeScreen() {
       <SubHeader
         category="모임"
         right={
-          <Pressable
-            onPress={() => setMenuOpen(true)}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="모임 메뉴 열기"
-            style={styles.menuButton}
-          >
-            <Menu size={25} color={colors.text} strokeWidth={1.8} />
-          </Pressable>
+          isHost ? (
+            <Pressable
+              onPress={() => router.push(`/club/${clubId}/settings`)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="모임 관리"
+              style={styles.menuButton}
+            >
+              <Settings size={22} color={colors.text} {...iconStroke} />
+            </Pressable>
+          ) : undefined
         }
       />
-      <Modal
-        visible={menuOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setMenuOpen(false)}
-      >
-        <Pressable
-          style={[styles.menuBackdrop, { backgroundColor: colors.scrimDim }]}
-          onPress={() => setMenuOpen(false)}
-        >
-          <View
-            style={[
-              styles.menuSheet,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.lineStrong,
-              },
-            ]}
-            onStartShouldSetResponder={() => true}
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-              모임 메뉴
-            </Text>
-            <MenuItem
-              icon={MessageCircle}
-              label="채팅"
-              description="멤버들과 이야기하기"
-              colors={colors}
-              onPress={() => {
-                setMenuOpen(false);
-                router.push(`/club/${clubId}/chat`);
-              }}
-            />
-            <MenuItem
-              icon={CalendarDays}
-              label="약속"
-              description="오프라인 만남 확인하기"
-              colors={colors}
-              onPress={() => {
-                setMenuOpen(false);
-                router.push({
-                  pathname: "/club/[id]/meetings",
-                  params: { id: String(clubId), host: isHost ? "1" : "0" },
-                });
-              }}
-            />
-            <MenuItem
-              icon={MessagesSquare}
-              label="토론"
-              description="책에 대한 생각 나누기"
-              colors={colors}
-              onPress={() => {
-                setMenuOpen(false);
-                router.push(`/club/${clubId}/posts`);
-              }}
-            />
-            <MenuItem
-              icon={NotebookPen}
-              label="노트"
-              description="함께 꾸미는 모임 노트"
-              colors={colors}
-              onPress={() => {
-                setMenuOpen(false);
-                router.push({
-                  pathname: "/club/[id]/notebook",
-                  params: { id: String(clubId) },
-                });
-              }}
-            />
-            {isHost ? (
-              <MenuItem
-                icon={Settings}
-                label="모임 관리"
-                description="정보·멤버·초대 설정"
-                colors={colors}
-                onPress={() => {
-                  setMenuOpen(false);
-                  router.push(`/club/${clubId}/settings`);
-                }}
-              />
-            ) : null}
-          </View>
-        </Pressable>
-      </Modal>
+      <ClubTabs clubId={clubId} active="home" />
 
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
@@ -634,42 +536,6 @@ export default function ClubHomeScreen() {
   );
 }
 
-function MenuItem({
-  icon: Icon,
-  label,
-  description,
-  onPress,
-  colors,
-}: {
-  icon: LucideIcon;
-  label: string;
-  description: string;
-  onPress: () => void;
-  colors: ColorTokens;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={[styles.menuItem, { borderBottomColor: colors.line }]}
-    >
-      <View style={styles.menuIcon}>
-        <Icon size={22} color={colors.textMuted} strokeWidth={1.8} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
-          {label}
-        </Text>
-        <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-          {description}
-        </Text>
-      </View>
-      <ChevronRight size={18} color={colors.textFaint} strokeWidth={1.8} />
-    </Pressable>
-  );
-}
-
 /** 08-31 → 8/31 */
 function compactDate(iso: string): string {
   const [, month, day] = iso.split("-");
@@ -858,27 +724,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  menuBackdrop: {
-    flex: 1,
-    alignItems: "flex-end",
-    paddingTop: 58,
-    paddingRight: spacing.md,
-  },
-  menuSheet: {
-    width: 280,
-    borderWidth: hairline,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: hairline,
-  },
-  menuIcon: { width: 34, alignItems: "center", justifyContent: "center" },
   header: { flexDirection: "row", gap: spacing.md },
   title: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
   headerTags: {

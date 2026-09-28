@@ -2,3 +2,5 @@
 export { ClubCard } from './ClubCard';
 export { MemberDetail, MemberStrip, NUDGES } from './MemberStrip';
 export { confirmAsync, notify } from './dialogs';
+export { ClubTabs } from './ClubTabs';
+export type { ClubTabKey } from './ClubTabs';

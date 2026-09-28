@@ -42,13 +42,13 @@ import { pressedStyle } from '@/theme/tokens';
 const EXPORT = { width: 1080, height: 1440 };
 
 /**
- * 모임 노트북 — 모임당 한 권, 멤버가 함께 꾸미는 페이지.
+ * 모임 노트북 페이지 편집 — 피드에서 고른 페이지를 열고, 보기 모드에선 스와이프로 이웃 페이지를 오간다.
  * 페이지는 세로 스크롤 없이 항상 화면 안에 통째로 들어온다(가용 폭·높이 중 작은 쪽에 3:4 로 맞춤).
  * 도구는 모드로 나뉜다 — 보기(스와이프로 페이지 넘김)·선택(요소 이동·크기·회전)·펜·지우개. 삽입 4종은 시트를 여는 동작이다.
  * 현재 페이지만 편집 상태(useNotePage)를 들고, 이웃 페이지는 읽기 전용으로 미리 그린다.
  */
 export default function ClubNotebookScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, pageId: pageIdParam } = useLocalSearchParams<{ id: string; pageId: string }>();
   const clubId = Number(id);
   const router = useRouter();
   const qc = useQueryClient();
@@ -63,8 +63,10 @@ export default function ClubNotebookScreen() {
   );
   const readOnly = notebook.data?.readOnly ?? false;
 
-  const [pageIndex, setPageIndex] = useState(0);
-  const index = Math.min(pageIndex, Math.max(pages.length - 1, 0));
+  // 피드에서 고른 페이지로 연다 — 넘기기 전까지는 파라미터가, 넘긴 뒤엔 상태가 기준.
+  const [pageIndex, setPageIndex] = useState<number | null>(null);
+  const paramIndex = pages.findIndex((p) => String(p.id) === pageIdParam);
+  const index = Math.min(pageIndex ?? Math.max(paramIndex, 0), Math.max(pages.length - 1, 0));
   const current: ClubNotePageSummary | null = pages[index] ?? null;
   const note = useNotePage({ clubId, pageId: current?.id ?? null });
   const { editor } = note;
@@ -152,7 +154,7 @@ export default function ClubNotebookScreen() {
     mutationFn: (pageId: number) => clubNoteApi.deletePage(clubId, pageId),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: clubNoteKeys.all(clubId) });
-      setPageIndex((i) => Math.max(0, i - 1));
+      setPageIndex((i) => Math.max(0, (i ?? index) - 1));
     },
     onError: (e) => notify(e instanceof ApiError ? e.message : '페이지를 지우지 못했어요'),
   });

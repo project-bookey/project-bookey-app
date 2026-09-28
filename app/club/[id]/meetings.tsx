@@ -20,6 +20,7 @@ import {
   type ClubMeetingInput,
   type ClubPlace,
 } from "@/api/endpoints";
+import { ClubTabs } from "@/components/club";
 import { PaperScreen, SubHeader } from "@/components/collage";
 import {
   AddressSearchModal,
@@ -177,6 +178,7 @@ export default function ClubMeetingsScreen() {
           ) : undefined
         }
       />
+      <ClubTabs clubId={clubId} active="meetings" />
       <AddressSearchModal
         clubId={clubId}
         visible={showAddress}

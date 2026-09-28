@@ -7,6 +7,7 @@ import {
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
+import { ClubTabs } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
   Button, Card, EmptyState, Loading, Numeral, Rule, Tag, formatRelative,
@@ -78,6 +79,7 @@ export default function ClubPostsScreen() {
   return (
     <PaperScreen>
       <SubHeader category="토론" />
+      <ClubTabs clubId={clubId} active="posts" />
 
       {/*
         오프셋을 주지 않는다. 기존 90 은 네이티브 헤더 높이를 상쇄하려던 값인데,
