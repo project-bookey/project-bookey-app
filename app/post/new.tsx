@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.lg,
   },
-  // 헤더 우측 제출 알약 — 광장 컴포저의 오려두기 알약과 같은 만듦새.
+  // 헤더 우측 제출 버튼 — 광장 컴포저의 오려두기 버튼과 같은 만듦새(네모).
   submit: { borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   error: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   // 본문 칸 — 오려두기의 문장 칸과 같은 활자(quote 토큰 15/25), 길게 쓰는 글이라 높이만 키운다.

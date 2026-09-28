@@ -76,7 +76,7 @@ export const typeScale = {
   /** 메타 정보 */
   caption: { fontFamily: sans.regular, fontSize: 12 },
   /** 아이브로우 — 주로 악센트 색으로 쓴다 */
-  overline: { fontFamily: sans.bold, fontSize: 11, letterSpacing: 1.5 },
+  overline: { fontFamily: sans.bold, fontSize: 11, letterSpacing: 0.8 },
   /** 히어로 표제 — 세리프 */
   displaySerif: { fontFamily: serif.extraBold, fontSize: 30, lineHeight: 40, letterSpacing: -0.5 },
   /** 화면·섹션 표제 — 세리프 */

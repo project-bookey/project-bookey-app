@@ -404,7 +404,7 @@ function Hero({ info, rating, loading, bound }: {
   );
 }
 
-/** 액션 바 — ♥ 좋아요(원형) + 서재에 없으면 담기 2종(아웃라인 pill · 주 CTA pill). */
+/** 액션 바 — ♥ 좋아요 + 서재에 없으면 담기 2종(아웃라인 · 주 CTA). 모두 네모 버튼. */
 function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
   bookId: number;
   liked: boolean;
@@ -464,7 +464,7 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
               onPress={() => add.mutate('WANT_TO_READ')}
               accessibilityRole="button"
               accessibilityLabel="읽고 싶은 책으로 담기"
-              style={[styles.pill, styles.pillOutline, {
+              style={[styles.actionButton, styles.actionOutline, {
                 borderColor: colors.lineStrong, opacity: add.isPending ? 0.6 : 1,
               }]}
             >
@@ -475,7 +475,7 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
               onPress={() => add.mutate('READING')}
               accessibilityRole="button"
               accessibilityLabel="읽기 시작"
-              style={[styles.pill, styles.pillPrimary, {
+              style={[styles.actionButton, styles.actionPrimary, {
                 backgroundColor: colors.accent, opacity: add.isPending ? 0.6 : 1,
               }]}
             >
@@ -943,15 +943,15 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
   },
   likeGlyph: { fontSize: 16, lineHeight: 20 },
-  pill: {
+  actionButton: {
     height: 46,
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
-  pillOutline: { borderWidth: hairline },
-  pillPrimary: { flex: 1 },
+  actionOutline: { borderWidth: hairline },
+  actionPrimary: { flex: 1 },
 
   statStrip: { flexDirection: 'row', gap: 18, borderTopWidth: hairline, paddingTop: spacing.lg },
   statCell: { gap: 3 },

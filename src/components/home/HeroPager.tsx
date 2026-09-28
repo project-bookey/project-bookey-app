@@ -93,7 +93,7 @@ export function HeroPager({
         />
       ) : null}
 
-      {/* 페이지 인디케이터 — 배너 캐러셀과 같은 도트(활성만 길게·민트). */}
+      {/* 페이지 표식 — 배너 캐러셀과 같은 네모 조각(활성만 길게·민트). 상태 점과 달리 원이 아니다. */}
       <View style={styles.dots}>
         {records.map((r, i) => (
           <View
@@ -112,5 +112,5 @@ export function HeroPager({
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.xs },
-  dot: { width: 4, height: 4, borderRadius: radius.round },
+  dot: { width: 4, height: 4, borderRadius: radius.none },
 });

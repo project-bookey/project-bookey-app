@@ -101,7 +101,7 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
 }
 
 /**
- * 책 고르기 — 검색 입력(pill) + 후보 표지 가로 스크롤(선택 테두리) + 안내/재시도 + 고른 책 한 줄.
+ * 책 고르기 — 검색 입력(네모) + 후보 표지 가로 스크롤(선택 테두리) + 안내/재시도 + 고른 책 한 줄.
  * 바깥 카드는 화면마다 달라서 여기서 그리지 않고, 조각 사이 간격도 감싸는 Card 의 gap 에 맡긴다
  * (그래서 QuoteDraftFields 처럼 조각들을 Fragment 로 그대로 내보낸다).
  */
@@ -175,7 +175,7 @@ export function BookPicker({ picker, autoFocus }: {
 const styles = StyleSheet.create({
   pickRow: { gap: spacing.sm, paddingVertical: 2 },
   pick: { borderWidth: 2, borderRadius: radius.sm, padding: 2 },
-  // 책 검색 입력 — 쪽수 입력과 같은 재질, pill.
+  // 책 검색 입력 — 쪽수 입력과 같은 재질, 네모.
   searchInput: {
     borderWidth: hairline,
     borderRadius: radius.sm,

@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   // 제목과 완독 마크 사이 — 4는 붙어 보인다는 피드백으로 8.
   whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
   where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, flexShrink: 1 },
-  // 완독 인증 마크 — 민트 테두리의 작은 pill.
+  // 완독 인증 마크 — 민트 테두리의 작은 네모 태그.
   finishedMark: {
     fontSize: 8,
     letterSpacing: 0.6,

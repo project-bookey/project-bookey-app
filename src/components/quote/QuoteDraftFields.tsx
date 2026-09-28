@@ -32,7 +32,7 @@ export function useQuoteDraft() {
  */
 export function QuoteDraftFields({ draft, trailing }: {
   draft: ReturnType<typeof useQuoteDraft>;
-  /** 메타 줄 오른쪽 끝에 붙일 것 — 광장은 여기에 오려두기 알약을 넘긴다. */
+  /** 메타 줄 오른쪽 끝에 붙일 것 — 광장은 여기에 오려두기 버튼을 넘긴다. */
   trailing?: ReactNode;
 }) {
   const { colors } = useTheme();

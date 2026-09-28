@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   bottom: { gap: spacing.sm },
   dots: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md },
-  dot: { height: 6, borderRadius: 3 },
+  dot: { height: 6, borderRadius: radius.none },
   cta: {
     minHeight: 48,
     borderRadius: radius.sm,
