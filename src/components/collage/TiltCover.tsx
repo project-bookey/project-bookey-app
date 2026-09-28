@@ -225,7 +225,7 @@ export function TiltCover({
       >
         {/*
           리프트 프록시(불투명 사각형)는 표지·배지 뒤에 있어야 한다 — 래퍼로 한 겹 감싸 문서 순서대로
-          표지 뒤에 남긴다. 단(boxShadow)은 프록시 상자 바깥으로만 삐져나오므로 표지를 가리지 않는다.
+          표지 뒤에 남긴다. 지금은 coverShadow 가 비어 있어 보이지 않지만, 다시 무언가를 깔면 여기서 뜬다.
         */}
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           <Animated.View

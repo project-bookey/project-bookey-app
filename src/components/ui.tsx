@@ -97,9 +97,7 @@ export function Button({
 }) {
   const { styles, colors } = useStyles();
   const isDisabled = disabled || loading;
-  // 눌림 — 종이 단(2px) 위에 놓인 버튼이 1px 옮겨 앉아 단이 1px 로 준다(물리적 눌림).
-  // 고스트는 단이 없어 흐려지기만 하고, 비활성은 아무 반응도 하지 않는다.
-  const plate = variant !== 'ghost' && !isDisabled;
+  // 눌림 — 앱의 다른 글자·아이콘 버튼과 같은 규칙으로 흐려진다(pressedStyle). 비활성은 반응하지 않는다.
   return (
     <Pressable
       accessibilityRole="button"
@@ -114,8 +112,7 @@ export function Button({
         variant === 'danger' && styles.buttonDanger,
         isDisabled && styles.buttonDisabled,
         style,
-        plate && styles.buttonPlate,
-        pressed && !isDisabled && (plate ? styles.buttonSat : pressedStyle),
+        pressed && !isDisabled && pressedStyle,
       ]}
     >
       {loading ? (
@@ -421,9 +418,6 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       borderColor: colors.danger,
     },
     buttonDisabled: { opacity: 0.35 },
-    // 종이 단 위에 놓인 버튼 — 평상시 2px 단, 눌리면 1px 옮겨 앉아 단이 1px 로 준다(2번 종이 겹침과 같은 언어).
-    buttonPlate: { boxShadow: `2px 2px 0 ${colors.lineStrong}` },
-    buttonSat: { transform: [{ translateX: 1 }, { translateY: 1 }], boxShadow: `1px 1px 0 ${colors.lineStrong}` },
     buttonLabel: { ...typeScale.label, color: colors.text },
     buttonLabelSm: { fontSize: 12 },
     buttonLabelPrimary: { color: colors.onAccent },

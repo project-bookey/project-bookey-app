@@ -6,7 +6,7 @@ import type { ClubLogWeek, ClubPost } from '@/api/types';
 import { DotGridBackground } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { useTheme } from '@/theme';
-import { mono, radius, serif } from '@/theme/tokens';
+import { hairline, mono, radius, serif } from '@/theme/tokens';
 import { weekTitle } from './dates';
 
 /** 카드 설계 폭 — 모든 치수는 이 폭 기준 값에 실제 폭 비율(u)을 곱한다. 9:16. */
@@ -149,6 +149,9 @@ function Scrap({ log, slot, u }: { log: ClubPost; slot: (typeof SLOTS)[number]; 
     paddingBottom: s(10),
     backgroundColor: colors.memoPad,
     borderRadius: s(radius.sm),
+    // 라이트에선 메모지 색이 종이 배경과 거의 같아 헤어라인으로 가장자리를 잡는다.
+    borderWidth: hairline,
+    borderColor: colors.lineStrong,
     transform: [{ rotate: `${slot.rotate}deg` }],
   };
   const day = weekdayOf(log.createdAt);

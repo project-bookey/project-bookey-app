@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ClubPost } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
 import { useTheme } from '@/theme';
-import { mono, radius, serif, spacing, tiltFor, typeScale } from '@/theme/tokens';
+import { hairline, mono, radius, serif, spacing, tiltFor, typeScale } from '@/theme/tokens';
 import { kstTime } from './dates';
 import { linkLabel } from '@/components/ui';
 
@@ -71,7 +71,7 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
         onPress={onReveal}
         accessibilityRole="button"
         accessibilityLabel={`${log.anchorPage ?? ''}쪽 조각, 눌러서 그래도 보기`}
-        style={[styles.polaroid, { backgroundColor: colors.memoPad, transform: [{ rotate }] }, cardShadow]}
+        style={[styles.polaroid, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong, transform: [{ rotate }] }, cardShadow]}
       >
         <View style={[styles.photo, styles.maskedPhoto, { backgroundColor: colors.surfaceRaised }]}>
           <LockGlyph color={colors.textMuted} />
@@ -117,7 +117,7 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
         onLongPress={onToggleReactions}
         accessibilityRole="button"
         accessibilityHint="눌러서 펼치기, 길게 눌러 반응 남기기"
-        style={[styles.polaroid, { backgroundColor: colors.memoPad, transform: [{ rotate }] }, cardShadow]}
+        style={[styles.polaroid, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong, transform: [{ rotate }] }, cardShadow]}
       >
         <View style={[styles.tape, { backgroundColor: colors.bookPage }]} />
         <Image source={{ uri: log.imageUrl }} style={styles.photo} resizeMode="cover" accessibilityIgnoresInvertColors />
@@ -140,10 +140,12 @@ function LockGlyph({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
+  // 라이트에선 메모지 색이 종이 배경과 거의 같아 헤어라인으로 가장자리를 잡는다.
   polaroid: {
     padding: spacing.sm,
     paddingBottom: spacing.md,
     borderRadius: radius.sm,
+    borderWidth: hairline,
   },
   tape: {
     position: 'absolute',

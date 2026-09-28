@@ -143,7 +143,7 @@ function GridTile({ record, colors, mode, onPress }: {
       accessibilityRole="button"
       accessibilityLabel={record.book?.title ?? '책'}
     >
-      {/* 단(boxShadow)은 바깥 프레임이, 클리핑은 안쪽 면이 맡는다 — 역할을 나눠 두면 어느 플랫폼에서도 단이 잘리지 않는다. */}
+      {/* 바깥 프레임(coverShadow 자리)과 안쪽 면(클리핑)을 나눠 둔다 — 나중에 무언가를 깔아도 잘리지 않는다. */}
       <View style={[styles.cover, { backgroundColor: colors.surfaceDeep }, coverShadow[mode].rest]}>
         <View style={[styles.coverInner, { borderColor: colors.line }]}>
           <View style={[StyleSheet.absoluteFill, abandoned && styles.dimmed]}>

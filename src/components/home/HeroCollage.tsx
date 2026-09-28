@@ -5,7 +5,7 @@ import type { SharedValue } from 'react-native-reanimated';
 
 import type { ReadingRecord } from '@/api/types';
 import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
-import { useTheme } from '@/theme';
+import { pressedStyle, useTheme } from '@/theme';
 import { radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
 import { playLabel } from '@/components/ui';
 
@@ -227,8 +227,7 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
             onPress={() => onContinue(record)}
             style={({ pressed }) => [
               styles.cta, cardShadow, { backgroundColor: colors.accent },
-              // 눌림 — 단(3px) 위에서 1px 옮겨 앉는다. Button 프리미티브와 같은 물리적 눌림.
-              pressed && { transform: [{ translateX: 1 }, { translateY: 1 }], boxShadow: `2px 2px 0 ${colors.lineStrong}` },
+              pressed && pressedStyle,
             ]}
             accessibilityRole="button"
             accessibilityLabel="이어서 읽기"
