@@ -26,6 +26,7 @@ import {
   isClubTabKey,
   MemberDetail,
   MemberStrip,
+  StatStrip,
   confirmAsync,
   notify,
 } from "@/components/club";
@@ -64,7 +65,7 @@ import {
 } from "@/components/ui";
 import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
-import { mono, sans } from "@/theme/tokens";
+import { mono } from "@/theme/tokens";
 
 /**
  * 모임 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
@@ -303,27 +304,20 @@ export default function ClubHomeScreen() {
               </Text>
             </View>
           </View>
-          <View
-            style={[
-              styles.strip,
-              { borderTopColor: colors.lineStrong, borderBottomColor: colors.line },
+          <StatStrip
+            cells={[
+              { label: "역할", value: isHost ? "호스트" : "멤버" },
+              {
+                label: "인원",
+                value: String(data.memberCount),
+                unit: ` / ${data.memberLimit}명`,
+              },
+              {
+                label: ended ? "상태" : "남은 날",
+                value: ended ? "종료" : `D-${Math.max(0, data.daysLeft)}`,
+              },
             ]}
-          >
-            <StripCell label="역할" value={isHost ? "호스트" : "멤버"} colors={colors} />
-            <StripCell
-              label="인원"
-              value={String(data.memberCount)}
-              unit={` / ${data.memberLimit}명`}
-              divider
-              colors={colors}
-            />
-            <StripCell
-              label={ended ? "상태" : "남은 날"}
-              value={ended ? "종료" : `D-${Math.max(0, data.daysLeft)}`}
-              divider
-              colors={colors}
-            />
-          </View>
+          />
         </View>
 
         {/* 함께 읽는 사람 — 서로의 진척을 먼저, 누르면 그 사람의 자세한 진척과 찌르기 */}
@@ -581,43 +575,6 @@ function bookLine(book?: { title?: string; author?: string } | null): string {
   return [book?.title, book?.author].filter(Boolean).join(" · ");
 }
 
-/** 숫자 띠 한 칸 — 모노 아이브로우 라벨 아래 모노 숫자, 단위는 산세리프로 작게. */
-function StripCell({
-  label,
-  value,
-  unit,
-  divider,
-  colors,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  /** 왼쪽에 세로 괘선을 긋는다(첫 칸 제외). */
-  divider?: boolean;
-  colors: ColorTokens;
-}) {
-  return (
-    <View
-      style={[
-        styles.stripCell,
-        divider && {
-          borderLeftWidth: hairline,
-          borderLeftColor: colors.line,
-          paddingLeft: spacing.md,
-        },
-      ]}
-    >
-      <Text style={[styles.stripLabel, { color: colors.textFaint }]}>{label}</Text>
-      <Text style={[styles.stripValue, { color: colors.text }]}>
-        {value}
-        {unit ? (
-          <Text style={[styles.stripUnit, { color: colors.textMuted }]}>{unit}</Text>
-        ) : null}
-      </Text>
-    </View>
-  );
-}
-
 /** 08-31 → 8/31 */
 function compactDate(iso: string): string {
   const [, month, day] = iso.split("-");
@@ -817,15 +774,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", gap: spacing.md },
   title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
   bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
-  strip: {
-    flexDirection: "row",
-    borderTopWidth: hairline,
-    borderBottomWidth: hairline,
-  },
-  stripCell: { flex: 1, paddingVertical: 10, gap: 2 },
-  stripLabel: { ...typeScale.monoEyebrow, fontSize: 9 },
-  stripValue: { fontFamily: mono.semiBold, fontSize: 17, lineHeight: 22 },
-  stripUnit: { fontFamily: sans.semiBold, fontSize: 11 },
   headerTags: {
     flexDirection: "row",
     gap: spacing.xs,

@@ -1,33 +1,26 @@
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import { ApiError } from '@/api/client';
+import { clubCommunityApi, type ClubMeeting, type ClubMeetingInput, type ClubPlace } from '@/api/endpoints';
+import { AddressSearchModal, type AddressSelection } from '@/components/club/AddressSearchModal';
 import {
-  Image,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import {
-  clubCommunityApi,
-  type ClubMeetingInput,
-  type ClubPlace,
-} from "@/api/endpoints";
-import {
-  AddressSearchModal,
-  type AddressSelection,
-} from "@/components/club/AddressSearchModal";
-import { PlaceMap } from "@/components/club/PlaceMap";
-import { Button, Card, Loading } from "@/components/ui";
-import { radius, spacing, typeScale, useTheme } from "@/theme";
-import { linkLabel } from '@/components/ui';
+  MEETING_STATE_LABEL,
+  formatPickDate,
+  formatPickTime,
+  meetingClock,
+  meetingDay,
+  meetingState,
+  meetingWeekday,
+} from '@/components/club/meetingTime';
+import { PlaceMap } from '@/components/club/PlaceMap';
+import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Button, EmptyState, Eyebrow, Field, Loading } from '@/components/ui';
+import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, mono, pressedStyle } from '@/theme/tokens';
 
 const freshDate = () => {
   const value = new Date();
@@ -36,68 +29,61 @@ const freshDate = () => {
   return value;
 };
 const emptyForm = () => ({
-  title: "",
-  description: "",
-  placeName: "",
-  address: "",
-  mapUrl: "",
+  title: '',
+  description: '',
+  placeName: '',
+  address: '',
+  mapUrl: '',
   latitude: undefined as number | undefined,
   longitude: undefined as number | undefined,
 });
 
+/**
+ * 약속 탭 — 모임 홈 '약속' 탭의 본문. 위는 괘선 머리줄(개수 · 호스트의 만들기), 아래는 약속을
+ * 활자·괘선 판면으로 한 줄씩(왼쪽 모노 날짜 칸, 오른쪽 명조 제목·장소·참여). 호스트가 '약속 만들기'를
+ * 누르면 목록 위에 새 약속 폼이 펼쳐진다.
+ */
 export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clubId = Number(id);
-  const router = useRouter(),
-    qc = useQueryClient();
+  const router = useRouter();
+  const qc = useQueryClient();
   const { colors } = useTheme();
-  const [open, setOpen] = useState(false),
-    [showDate, setShowDate] = useState(false),
-    [showTime, setShowTime] = useState(false),
-    [showAddress, setShowAddress] = useState(false);
-  const [date, setDate] = useState(freshDate),
-    [time, setTime] = useState(freshDate),
-    [form, setForm] = useState(emptyForm),
-    [placeQuery, setPlaceQuery] = useState(""),
-    [debouncedQuery, setDebouncedQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [showDate, setShowDate] = useState(false);
+  const [showTime, setShowTime] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
+  const [date, setDate] = useState(freshDate);
+  const [time, setTime] = useState(freshDate);
+  const [form, setForm] = useState(emptyForm);
+  const [placeQuery, setPlaceQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(placeQuery.trim()), 500);
     return () => clearTimeout(timer);
   }, [placeQuery]);
+
   const list = useQuery({
-    queryKey: ["clubMeetings", clubId],
+    queryKey: ['clubMeetings', clubId],
     queryFn: () => clubCommunityApi.meetings(clubId),
   });
   const places = useQuery({
-    queryKey: ["clubPlaces", clubId, debouncedQuery],
+    queryKey: ['clubPlaces', clubId, debouncedQuery],
     queryFn: () => clubCommunityApi.searchPlaces(clubId, debouncedQuery),
     enabled: debouncedQuery.length >= 2,
   });
-  const refresh = () =>
-    qc.invalidateQueries({ queryKey: ["clubMeetings", clubId] });
   const create = useMutation({
-    mutationFn: (body: ClubMeetingInput) =>
-      clubCommunityApi.createMeeting(clubId, body),
+    mutationFn: (body: ClubMeetingInput) => clubCommunityApi.createMeeting(clubId, body),
     onSuccess: () => {
       setOpen(false);
       setForm(emptyForm());
-      setPlaceQuery("");
+      setPlaceQuery('');
       setDate(freshDate());
       setTime(freshDate());
-      refresh();
+      qc.invalidateQueries({ queryKey: ['clubMeetings', clubId] });
     },
   });
-  const attend = useMutation({
-    mutationFn: ({ mid, on }: { mid: number; on: boolean }) =>
-      on
-        ? clubCommunityApi.unattend(clubId, mid)
-        : clubCommunityApi.attend(clubId, mid),
-    onSuccess: refresh,
-  });
-  const cancel = useMutation({
-    mutationFn: (mid: number) => clubCommunityApi.cancelMeeting(clubId, mid),
-    onSuccess: refresh,
-  });
+
   const selectPlace = (place: ClubPlace) => {
     setForm((f) => ({
       ...f,
@@ -105,10 +91,10 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
       address: place.roadAddress || place.address,
       latitude: place.latitude,
       longitude: place.longitude,
-      mapUrl: place.mapUrl ?? "",
+      mapUrl: place.mapUrl ?? '',
     }));
-    setPlaceQuery("");
-    setDebouncedQuery("");
+    setPlaceQuery('');
+    setDebouncedQuery('');
   };
   const selectAddress = (value: AddressSelection) => {
     setShowAddress(false);
@@ -116,127 +102,67 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
     setForm((f) => ({
       ...f,
       address,
-      placeName: value.buildingName || f.placeName || "약속 장소",
+      placeName: value.buildingName || f.placeName || '약속 장소',
       latitude: value.latitude,
       longitude: value.longitude,
     }));
-    setPlaceQuery("");
+    setPlaceQuery('');
   };
   const changeDate = (_: DateTimePickerEvent, value?: Date) => {
-    if (Platform.OS !== "ios") setShowDate(false);
+    if (Platform.OS !== 'ios') setShowDate(false);
     if (value) setDate(value);
   };
   const changeTime = (_: DateTimePickerEvent, value?: Date) => {
-    if (Platform.OS !== "ios") setShowTime(false);
+    if (Platform.OS !== 'ios') setShowTime(false);
     if (value) setTime(value);
   };
   const submit = () => {
     const startsAt = new Date(date);
     startsAt.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    create.mutate({
-      ...form,
-      mapUrl: form.mapUrl || undefined,
-      startsAt: startsAt.toISOString(),
-    });
+    create.mutate({ ...form, mapUrl: form.mapUrl || undefined, startsAt: startsAt.toISOString() });
   };
-  const openMap = (m: {
-    mapUrl?: string;
-    latitude?: number;
-    longitude?: number;
-    address: string;
-  }) => {
-    const query =
-      m.latitude != null && m.longitude != null
-        ? `${m.latitude},${m.longitude}`
-        : m.address;
-    void Linking.openURL(
-      m.mapUrl ?? `https://maps.google.com/?q=${encodeURIComponent(query)}`,
-    );
-  };
-  const canCreate = Boolean(
-    form.title.trim() &&
-      form.placeName.trim() &&
-      form.address.trim() &&
-      !create.isPending,
-  );
+  const canCreate = Boolean(form.title.trim() && form.placeName.trim() && form.address.trim() && !create.isPending);
+  const meetings = list.data ?? [];
+
   return (
-    <View style={{ flex: 1 }}>
-      {isHost ? (
-        <View style={s.toolbarRow}>
-          <Button
-            label={open ? "닫기" : "약속 만들기"}
-            size="sm"
-            variant="ghost"
-            onPress={() => setOpen((v) => !v)}
-          />
-        </View>
-      ) : null}
+    <View style={styles.fill}>
       <AddressSearchModal
         clubId={clubId}
         visible={showAddress}
         onClose={() => setShowAddress(false)}
         onSelect={selectAddress}
       />
-      <ScrollView
-        contentContainerStyle={s.container}
-        keyboardShouldPersistTaps="handled"
-      >
+      <View style={[styles.head, { borderBottomColor: colors.line }]}>
+        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>약속 · {meetings.length}개</Text>
+        {isHost ? (
+          <Button label={open ? '닫기' : '약속 만들기'} size="sm" variant="ghost" onPress={() => setOpen((v) => !v)} />
+        ) : null}
+      </View>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {open ? (
-          <Card>
-            <Text style={[s.heading, { color: colors.text }]}>새 약속</Text>
-            <TextInput
+          <View style={[styles.form, { borderColor: colors.lineStrong }]}>
+            <Eyebrow plain>새 약속</Eyebrow>
+            <Field
+              label="제목"
               value={form.title}
               onChangeText={(title) => setForm((f) => ({ ...f, title }))}
               placeholder="약속 제목"
-              placeholderTextColor={colors.textFaint}
-              style={[
-                s.input,
-                { color: colors.text, borderColor: colors.lineStrong },
-              ]}
             />
-            <View style={s.pickerRow}>
-              <Pressable
-                style={[s.picker, { borderColor: colors.lineStrong }]}
-                onPress={() => setShowDate(true)}
-              >
-                <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                  날짜
-                </Text>
-                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
-                  {date.toLocaleDateString("ko-KR")}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={[s.picker, { borderColor: colors.lineStrong }]}
-                onPress={() => setShowTime(true)}
-              >
-                <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                  시간
-                </Text>
-                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
-                  {time.toLocaleTimeString("ko-KR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </Text>
-              </Pressable>
+            <View style={styles.pickRow}>
+              <PickBox label="날짜" value={formatPickDate(date)} onPress={() => setShowDate(true)} />
+              <PickBox label="시간" value={formatPickTime(time)} onPress={() => setShowTime(true)} />
             </View>
             {showDate ? (
               <View>
                 <DateTimePicker
                   value={date}
                   mode="date"
-                  display={Platform.OS === "ios" ? "inline" : "calendar"}
+                  display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
                   minimumDate={new Date()}
                   onChange={changeDate}
                 />
-                {Platform.OS === "ios" ? (
-                  <Button
-                    label="날짜 선택 완료"
-                    size="sm"
-                    variant="ghost"
-                    onPress={() => setShowDate(false)}
-                  />
+                {Platform.OS === 'ios' ? (
+                  <Button label="날짜 선택 완료" size="sm" variant="ghost" onPress={() => setShowDate(false)} />
                 ) : null}
               </View>
             ) : null}
@@ -245,37 +171,24 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
                 <DateTimePicker
                   value={time}
                   mode="time"
-                  display={Platform.OS === "ios" ? "spinner" : "clock"}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
                   minuteInterval={5}
                   onChange={changeTime}
                 />
-                {Platform.OS === "ios" ? (
-                  <Button
-                    label="시간 선택 완료"
-                    size="sm"
-                    variant="ghost"
-                    onPress={() => setShowTime(false)}
-                  />
+                {Platform.OS === 'ios' ? (
+                  <Button label="시간 선택 완료" size="sm" variant="ghost" onPress={() => setShowTime(false)} />
                 ) : null}
               </View>
             ) : null}
-            <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
-              장소
-            </Text>
-            <Button
-              label="주소 검색"
-              variant="outline"
-              onPress={() => setShowAddress(true)}
-            />
-            <TextInput
+
+            <Eyebrow plain>장소</Eyebrow>
+            <Button label="주소 검색" variant="outline" onPress={() => setShowAddress(true)} />
+            <Field
+              label="장소명 검색"
               value={placeQuery}
               onChangeText={setPlaceQuery}
-              placeholder="또는 카페·서점 등 장소명 검색"
-              placeholderTextColor={colors.textFaint}
-              style={[
-                s.input,
-                { color: colors.text, borderColor: colors.lineStrong },
-              ]}
+              placeholder="또는 카페·서점 등 장소명"
+              hint="주소 검색이 어려우면 장소명으로 찾아요."
             />
             {places.isFetching ? (
               <Loading />
@@ -284,221 +197,191 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
                 <Pressable
                   key={p.id}
                   onPress={() => selectPlace(p)}
-                  style={[s.placeRow, { borderBottomColor: colors.line }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${p.name} 선택`}
+                  style={({ pressed }) => [styles.placeRow, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
                 >
-                  <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
-                    {p.name}
-                  </Text>
-                  <Text
-                    style={[typeScale.caption, { color: colors.textMuted }]}
-                  >
-                    {p.roadAddress || p.address}
-                  </Text>
+                  <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{p.name}</Text>
+                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>{p.roadAddress || p.address}</Text>
                 </Pressable>
               ))
             )}
             {form.address ? (
               <>
-                <TextInput
+                <Field
+                  label="장소명"
                   value={form.placeName}
-                  onChangeText={(placeName) =>
-                    setForm((f) => ({ ...f, placeName }))
-                  }
+                  onChangeText={(placeName) => setForm((f) => ({ ...f, placeName }))}
                   placeholder="장소명"
-                  placeholderTextColor={colors.textFaint}
-                  style={[
-                    s.input,
-                    { color: colors.text, borderColor: colors.lineStrong },
-                  ]}
                 />
-                <TextInput
+                <Field
+                  label="상세 주소"
                   value={form.address}
-                  onChangeText={(address) =>
-                    setForm((f) => ({ ...f, address }))
-                  }
+                  onChangeText={(address) => setForm((f) => ({ ...f, address }))}
                   placeholder="상세 주소"
-                  placeholderTextColor={colors.textFaint}
-                  style={[
-                    s.input,
-                    { color: colors.text, borderColor: colors.lineStrong },
-                  ]}
                 />
               </>
             ) : null}
-            {form.latitude != null ? (
-              <PlaceMap latitude={form.latitude} longitude={form.longitude} />
-            ) : null}
-            <TextInput
+            {form.latitude != null ? <PlaceMap latitude={form.latitude} longitude={form.longitude} /> : null}
+            <Field
+              label="설명 (선택)"
               value={form.description}
-              onChangeText={(description) =>
-                setForm((f) => ({ ...f, description }))
-              }
-              placeholder="설명 (선택)"
-              placeholderTextColor={colors.textFaint}
+              onChangeText={(description) => setForm((f) => ({ ...f, description }))}
+              placeholder="어디까지 읽고 올지, 준비할 것"
               multiline
-              style={[
-                s.input,
-                { color: colors.text, borderColor: colors.lineStrong },
-              ]}
             />
-            <Button
-              label={create.isPending ? "등록 중…" : "약속 열기"}
-              onPress={submit}
-              disabled={!canCreate}
-            />
+            <Button label="약속 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} />
             {!canCreate ? (
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                 제목과 주소 검색 후 장소명을 확인하면 열 수 있어요.
               </Text>
             ) : null}
             {create.error ? (
-              <Text style={{ color: colors.danger }}>
-                약속을 만들지 못했어요. 입력 내용을 확인해 주세요.
+              <Text style={[typeScale.caption, { color: colors.danger }]}>
+                {create.error instanceof ApiError ? create.error.message : '약속을 만들지 못했어요. 입력 내용을 확인해 주세요.'}
               </Text>
             ) : null}
-          </Card>
+          </View>
         ) : null}
+
         {list.isLoading ? (
           <Loading />
-        ) : (list.data ?? []).length === 0 ? (
-          <Text style={[typeScale.body, { color: colors.textMuted }]}>
-            아직 열린 약속이 없어요.
-          </Text>
+        ) : meetings.length === 0 ? (
+          <EmptyState
+            title="아직 약속이 없어요"
+            description={isHost ? '첫 약속을 열고 함께 읽을 날을 잡아 보세요.' : '호스트가 약속을 열면 여기에 보여요.'}
+          />
         ) : (
-          (list.data ?? []).map((m) => (
-            <Pressable
-              key={m.id}
-              onPress={() =>
-                router.push({
-                  pathname: "/club/[id]/meeting/[meetingId]",
-                  params: {
-                    id: String(clubId),
-                    meetingId: String(m.id),
-                    host: isHost ? "1" : "0",
-                  },
-                })
-              }
-            >
-              <Card>
-                <View style={s.head}>
-                  <Text style={[s.heading, { color: colors.text }]}>
-                    {m.title}
-                  </Text>
-                  <Text
-                    style={[
-                      typeScale.caption,
-                      {
-                        color:
-                          m.status === "OPEN" ? colors.accent : colors.danger,
-                      },
-                    ]}
-                  >
-                    {m.status === "OPEN" ? "모집 중" : "취소됨"}
-                  </Text>
-                </View>
-                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
-                  {new Date(m.startsAt).toLocaleString("ko-KR", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </Text>
-                <View style={s.listFooter}>
-                  <View style={s.avatarStack}>
-                    {(m.attendees ?? []).slice(0, 5).map((person, index) =>
-                      person.avatarUrl ? (
-                        <Image
-                          key={person.userId}
-                          source={{ uri: person.avatarUrl }}
-                          style={[
-                            s.listAvatar,
-                            {
-                              marginLeft: index ? -9 : 0,
-                              borderColor: colors.surface,
-                            },
-                          ]}
-                        />
-                      ) : (
-                        <View
-                          key={person.userId}
-                          style={[
-                            s.listAvatar,
-                            s.avatarFallback,
-                            {
-                              marginLeft: index ? -9 : 0,
-                              borderColor: colors.surface,
-                              backgroundColor: colors.accentSoft,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[s.avatarInitial, { color: colors.accent }]}
-                          >
-                            {person.nickname.trim().charAt(0) || "·"}
-                          </Text>
-                        </View>
-                      ),
-                    )}
-                    {(m.attendees ?? []).length > 5 ? (
-                      <Text
-                        style={[typeScale.caption, { color: colors.textMuted }]}
-                      >
-                        +{(m.attendees ?? []).length - 5}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <Text style={[typeScale.caption, { color: colors.accent }]}>
-                    {linkLabel('자세히 보기')}
-                  </Text>
-                </View>
-              </Card>
-            </Pressable>
-          ))
+          <View>
+            {meetings.map((m) => (
+              <MeetingRow
+                key={m.id}
+                meeting={m}
+                onPress={() =>
+                  router.push({
+                    pathname: '/club/[id]/meeting/[meetingId]',
+                    params: { id: String(clubId), meetingId: String(m.id), host: isHost ? '1' : '0' },
+                  })
+                }
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
     </View>
   );
 }
-const s = StyleSheet.create({
-  toolbarRow: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: spacing.lg, paddingTop: spacing.xs },
-  container: { padding: spacing.lg, gap: spacing.md },
-  heading: { ...typeScale.bodyStrong },
+
+/** 날짜·시간 고르기 칸 — Field 입력과 같은 종이 상자, 값은 모노. */
+function PickBox({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label} ${value}`}
+      style={({ pressed }) => [
+        styles.pick,
+        { backgroundColor: colors.surface, borderColor: colors.line },
+        pressed ? pressedStyle : null,
+      ]}
+    >
+      <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[styles.pickValue, { color: colors.text }]}>{value}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * 약속 한 줄 — 왼쪽 모노 날짜 칸(10.1 / 목 19:30), 오른쪽 명조 제목 · 장소 · 참여자 아바타.
+ * 지난 약속·취소는 글자를 죽인다. 줄 전체가 상세로 가는 링크라 별도 '자세히 보기'는 없다.
+ */
+function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: () => void }) {
+  const { colors } = useTheme();
+  const state = meetingState(m);
+  const dim = state !== 'open';
+  const attendees = m.attendees ?? [];
+  const stateColor = state === 'cancelled' ? colors.danger : state === 'past' ? colors.textFaint : colors.text;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${m.title} 약속 상세`}
+      style={({ pressed }) => [styles.row, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
+    >
+      <View style={styles.dateCell}>
+        <Text style={[styles.dateDay, { color: dim ? colors.textFaint : colors.text }]}>{meetingDay(m.startsAt)}</Text>
+        <Text style={[styles.dateSub, { color: colors.textFaint }]}>
+          {meetingWeekday(m.startsAt)} {meetingClock(m.startsAt)}
+        </Text>
+      </View>
+      <View style={styles.rowBody}>
+        <View style={styles.rowHead}>
+          <Text numberOfLines={1} style={[styles.rowTitle, { color: dim ? colors.textMuted : colors.text }]}>
+            {m.title}
+          </Text>
+          <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{MEETING_STATE_LABEL[state]}</Text>
+        </View>
+        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>{m.placeName}</Text>
+        <View style={styles.people}>
+          {attendees.length > 0 ? (
+            <View style={styles.avatars}>
+              {attendees.slice(0, 4).map((p, i) => (
+                <View key={p.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -6, borderColor: colors.bg }]}>
+                  <QuoteAvatar uri={p.avatarUrl} nickname={p.nickname} size={20} />
+                </View>
+              ))}
+            </View>
+          ) : null}
+          <Text style={[styles.peopleText, { color: colors.textFaint }]}>
+            {attendees.length > 0 ? `${m.attendeeCount}명 참여` : '아직 참여자 없음'}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
   head: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.md,
+    ...layout.content,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 40,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: hairline,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: radius.sm,
-    padding: 12,
-    marginTop: spacing.sm,
+  container: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
+  form: { marginTop: spacing.lg, borderWidth: hairline, borderRadius: radius.sm, padding: spacing.lg, gap: spacing.sm },
+  pickRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+  pick: {
+    flex: 1,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    gap: 4,
   },
-  pickerRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginVertical: spacing.sm,
-  },
-  picker: { flex: 1, borderWidth: 1, borderRadius: radius.sm, padding: 12, gap: 4 },
-  placeRow: { paddingVertical: spacing.sm, borderBottomWidth: 1, gap: 2 },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  listFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: spacing.sm,
-  },
-  avatarStack: { flexDirection: "row", alignItems: "center", minHeight: 32 },
-  listAvatar: { width: 30, height: 30, borderRadius: radius.round, borderWidth: 2 },
-  avatarFallback: { alignItems: "center", justifyContent: "center" },
-  avatarInitial: { fontSize: 12, fontWeight: "800" },
+  pickValue: { fontFamily: mono.semiBold, fontSize: 15 },
+  placeRow: { paddingVertical: spacing.sm, gap: 2, borderBottomWidth: hairline },
+  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
+  dateCell: { width: 58, gap: 2, paddingTop: 2 },
+  dateDay: { fontFamily: mono.semiBold, fontSize: 18, lineHeight: 22 },
+  dateSub: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.3 },
+  rowBody: { flex: 1, gap: 3 },
+  rowHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: spacing.sm },
+  rowTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23, flexShrink: 1 },
+  people: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
+  avatars: { flexDirection: 'row' },
+  avatarWrap: { borderRadius: radius.round, borderWidth: 2 },
+  peopleText: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 0.3 },
 });
 
 /** 딥링크 호환 — 약속은 이제 모임 홈의 탭이다. */
 export default function ClubMeetingsRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <Redirect href={{ pathname: "/club/[id]", params: { id, tab: "meetings" } }} />;
+  return <Redirect href={{ pathname: '/club/[id]', params: { id, tab: 'meetings' } }} />;
 }
