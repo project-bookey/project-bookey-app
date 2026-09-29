@@ -70,7 +70,7 @@ export function ClubTabs({ clubId, active, onSelect }: {
             accessibilityState={{ selected: on }}
             style={({ pressed }) => [styles.tab, pressed && !on ? pressedStyle : null]}
           >
-            <Text style={[typeScale.label, { color: on ? colors.ink : colors.textMuted }]}>{t.label}</Text>
+            <Text style={[styles.label, { color: on ? colors.ink : colors.textMuted }]}>{t.label}</Text>
             <View style={[styles.marker, { backgroundColor: on ? colors.accent : 'transparent' }]} />
           </Pressable>
         );
@@ -87,5 +87,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
   },
   tab: { flex: 1, alignItems: 'center', paddingTop: spacing.sm, gap: spacing.sm },
+  // 활자·괘선 판면 — 탭 글자도 모노로(한글 자간은 1 이하).
+  label: { ...typeScale.monoLabel, fontSize: 12, letterSpacing: 1 },
   marker: { alignSelf: 'stretch', height: 2 },
 });

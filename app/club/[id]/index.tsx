@@ -64,7 +64,7 @@ import {
 } from "@/components/ui";
 import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
-import { mono, rowOffsetY } from "@/theme/tokens";
+import { mono, sans } from "@/theme/tokens";
 
 /**
  * 모임 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
@@ -241,14 +241,13 @@ export default function ClubHomeScreen() {
       },
     });
 
+  // 활자·괘선 판면 — 조각을 기울이거나 지그재그로 흩뜨리지 않고 줄을 맞춰 붙인다.
   const renderScrap = ({ log, index }: { log: ClubPost; index: number }) => (
-    <View
-      key={log.id}
-      style={{ marginTop: rowOffsetY[index % rowOffsetY.length] }}
-    >
+    <View key={log.id}>
       <LogScrap
         log={log}
         index={index}
+        flat
         myPage={me?.currentPage}
         selected={openReactions === log.id}
         onOpen={() =>
@@ -285,30 +284,45 @@ export default function ClubHomeScreen() {
         }
       />
       <View style={styles.top}>
-        <View style={styles.header}>
-          <TiltCover
-            uri={data.book?.coverUrl}
-            title={data.book?.title}
-            width={58}
-            tilt={0}
-            entering={false}
-          />
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              {data.name}
-            </Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              {data.book?.title}
-            </Text>
-            <View style={styles.headerTags}>
-              <Tag label={isHost ? "호스트" : "멤버"} />
-              <Tag label={`${data.memberCount}/${data.memberLimit}명`} />
-              {ended ? (
-                <Tag label="종료" />
-              ) : (
-                <Tag label={`D-${Math.max(0, data.daysLeft)}`} />
-              )}
+        {/* 머리 — 큰 명조 이름과 모노 책 줄, 태그 상자 대신 괘선 사이 숫자 띠(활자·괘선 판면) */}
+        <View style={{ gap: spacing.md }}>
+          <View style={styles.header}>
+            <TiltCover
+              uri={data.book?.coverUrl}
+              title={data.book?.title}
+              width={58}
+              tilt={0}
+              entering={false}
+            />
+            <View style={{ flex: 1, gap: 6, justifyContent: "center" }}>
+              <Text style={[styles.title, { color: colors.text }]}>
+                {data.name}
+              </Text>
+              <Text style={[styles.bookLine, { color: colors.textMuted }]}>
+                {bookLine(data.book)}
+              </Text>
             </View>
+          </View>
+          <View
+            style={[
+              styles.strip,
+              { borderTopColor: colors.lineStrong, borderBottomColor: colors.line },
+            ]}
+          >
+            <StripCell label="역할" value={isHost ? "호스트" : "멤버"} colors={colors} />
+            <StripCell
+              label="인원"
+              value={String(data.memberCount)}
+              unit={` / ${data.memberLimit}명`}
+              divider
+              colors={colors}
+            />
+            <StripCell
+              label={ended ? "상태" : "남은 날"}
+              value={ended ? "종료" : `D-${Math.max(0, data.daysLeft)}`}
+              divider
+              colors={colors}
+            />
           </View>
         </View>
 
@@ -435,11 +449,11 @@ export default function ClubHomeScreen() {
           {day.isLoading ? (
             <Loading />
           ) : logs.length === 0 ? (
-            <MemoScrap rotate={-1}>
+            <MemoScrap variant="ruled">
               <Text
                 style={[
                   typeScale.quote,
-                  { color: colors.text, fontSize: 15, lineHeight: 24 },
+                  { color: colors.text, fontSize: 16, lineHeight: 26 },
                 ]}
               >
                 {isToday
@@ -464,6 +478,7 @@ export default function ClubHomeScreen() {
                   <SummaryNote
                     summary={summary}
                     label={isToday ? "오늘 함께" : "이날 함께"}
+                    variant="ruled"
                   />
                 ) : null}
                 {right.map(renderScrap)}
@@ -561,6 +576,48 @@ export default function ClubHomeScreen() {
   );
 }
 
+/** '사피엔스 · 유발 하라리' — 저자가 없으면 제목만. */
+function bookLine(book?: { title?: string; author?: string } | null): string {
+  return [book?.title, book?.author].filter(Boolean).join(" · ");
+}
+
+/** 숫자 띠 한 칸 — 모노 아이브로우 라벨 아래 모노 숫자, 단위는 산세리프로 작게. */
+function StripCell({
+  label,
+  value,
+  unit,
+  divider,
+  colors,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  /** 왼쪽에 세로 괘선을 긋는다(첫 칸 제외). */
+  divider?: boolean;
+  colors: ColorTokens;
+}) {
+  return (
+    <View
+      style={[
+        styles.stripCell,
+        divider && {
+          borderLeftWidth: hairline,
+          borderLeftColor: colors.line,
+          paddingLeft: spacing.md,
+        },
+      ]}
+    >
+      <Text style={[styles.stripLabel, { color: colors.textFaint }]}>{label}</Text>
+      <Text style={[styles.stripValue, { color: colors.text }]}>
+        {value}
+        {unit ? (
+          <Text style={[styles.stripUnit, { color: colors.textMuted }]}>{unit}</Text>
+        ) : null}
+      </Text>
+    </View>
+  );
+}
+
 /** 08-31 → 8/31 */
 function compactDate(iso: string): string {
   const [, month, day] = iso.split("-");
@@ -604,8 +661,8 @@ function PublicClubPreview({
             <Text style={[styles.title, { color: colors.text }]}>
               {club.name}
             </Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              {club.book?.title}
+            <Text style={[styles.bookLine, { color: colors.textMuted }]}>
+              {bookLine(club.book)}
             </Text>
             <View style={styles.headerTags}>
               <Tag label={`${club.memberCount}/${club.memberLimit}명`} />
@@ -758,7 +815,17 @@ const styles = StyleSheet.create({
   },
   body: { flex: 1 },
   header: { flexDirection: "row", gap: spacing.md },
-  title: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
+  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
+  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  strip: {
+    flexDirection: "row",
+    borderTopWidth: hairline,
+    borderBottomWidth: hairline,
+  },
+  stripCell: { flex: 1, paddingVertical: 10, gap: 2 },
+  stripLabel: { ...typeScale.monoEyebrow, fontSize: 9 },
+  stripValue: { fontFamily: mono.semiBold, fontSize: 17, lineHeight: 22 },
+  stripUnit: { fontFamily: sans.semiBold, fontSize: 11 },
   headerTags: {
     flexDirection: "row",
     gap: spacing.xs,
