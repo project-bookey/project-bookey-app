@@ -5,40 +5,33 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubCommunityApi } from '@/api/endpoints';
-import { confirmAsync, notify } from '@/components/club';
+import { StatStrip, confirmAsync, notify } from '@/components/club';
 import {
-  MEETING_STATE_LABEL,
+  meetingClock,
   meetingClock12,
-  meetingDateLine,
   meetingDateLong,
+  meetingDay,
   meetingState,
+  meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Button, Card, EmptyState, Eyebrow, Loading, formatClock, linkLabel } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
-import { mono, sans } from '@/theme/tokens';
+import { sans } from '@/theme/tokens';
 
 /**
  * 약속 상세 — 예전 골격(굵은 제목 · 큰 민트 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
- * 이번 라운드의 수정만 이식했다: 글꼴은 토큰(Pretendard ExtraBold)으로, 지도는 헤어라인 틀 + 잉크 점,
- * 참여자는 표준 아바타, 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
- *
- * 시안 비교용 임시 스위치: `?v=a` 는 예전에 가깝게(모임 약속 아이브로우 · 산세리프 타이머),
- * 기본(B)은 이번 활자 요소를 섞는다(상태 아이브로우 · 모노 날짜 줄 · 카드 안 아이브로우 · 명조 설명 · 모노 타이머).
+ * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
+ * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
+ * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
  */
 export default function MeetingDetailScreen() {
-  const { id, meetingId, host, v } = useLocalSearchParams<{
-    id: string;
-    meetingId: string;
-    host?: string;
-    v?: string;
-  }>();
+  const { id, meetingId, host } = useLocalSearchParams<{ id: string; meetingId: string; host?: string }>();
   const clubId = Number(id);
   const mid = Number(meetingId);
   const isHost = host === '1';
-  const mix = v !== 'a';
   const router = useRouter();
   const qc = useQueryClient();
   const { colors } = useTheme();
@@ -114,7 +107,6 @@ export default function MeetingDetailScreen() {
   }
 
   const state = meetingState(m);
-  const stateColor = state === 'cancelled' ? colors.danger : state === 'past' ? colors.textFaint : colors.accent;
   const statusLine =
     state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 약속이에요' : '취소된 약속입니다';
   const attendees = m.attendees ?? [];
@@ -127,25 +119,26 @@ export default function MeetingDetailScreen() {
     const q = m.latitude != null && m.longitude != null ? `${m.latitude},${m.longitude}` : m.address;
     void Linking.openURL(m.mapUrl ?? `https://maps.google.com/?q=${encodeURIComponent(q)}`);
   };
-  const heading = (label: string) =>
-    mix ? <Eyebrow plain>{label}</Eyebrow> : <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{label}</Text>;
+  const heading = (label: string) => <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{label}</Text>;
 
   return (
     <PaperScreen>
       <SubHeader category="약속 상세" />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={{ gap: 4 }}>
-          {mix ? (
-            <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{MEETING_STATE_LABEL[state]}</Text>
-          ) : (
-            <Eyebrow>모임 약속</Eyebrow>
-          )}
+          <Eyebrow>모임 약속</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>{m.title}</Text>
-          {mix ? (
-            <Text style={[styles.dateLine, { color: colors.textMuted }]}>{meetingDateLine(m.startsAt, m.endsAt)}</Text>
-          ) : null}
           <Text style={[typeScale.body, { color: colors.textMuted }]}>{statusLine}</Text>
         </View>
+
+        {/* 숫자 띠 — 모임 홈과 같은 공용 StatStrip(날짜 · 시간 · 참여) */}
+        <StatStrip
+          cells={[
+            { label: '날짜', value: meetingDay(m.startsAt), unit: ` ${meetingWeekday(m.startsAt)}` },
+            { label: '시간', value: meetingClock(m.startsAt) },
+            { label: '참여', value: String(m.attendeeCount), unit: '명' },
+          ]}
+        />
 
         {/* 날짜 카드 — 예전처럼 가운데 큰 민트 시간 */}
         <Card style={{ alignItems: 'center', gap: 6 }}>
@@ -157,8 +150,7 @@ export default function MeetingDetailScreen() {
         </Card>
 
         <Card style={{ gap: spacing.sm }}>
-          {mix ? heading('장소') : null}
-          <Text style={[mix ? styles.placeSerif : typeScale.bodyStrong, { color: colors.text }]}>{m.placeName}</Text>
+          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{m.placeName}</Text>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>{m.address}</Text>
           {m.latitude != null ? <PlaceMap latitude={m.latitude} longitude={m.longitude} /> : null}
           <Button label="지도 앱에서 보기" variant="outline" onPress={openMap} />
@@ -166,8 +158,7 @@ export default function MeetingDetailScreen() {
 
         {m.description ? (
           <Card style={{ gap: spacing.sm }}>
-            {mix ? heading('설명') : null}
-            <Text style={[mix ? styles.descSerif : typeScale.body, { color: colors.text }]}>{m.description}</Text>
+            <Text style={[typeScale.body, { color: colors.text }]}>{m.description}</Text>
           </Card>
         ) : null}
 
@@ -201,7 +192,7 @@ export default function MeetingDetailScreen() {
 
         <Card style={{ gap: spacing.sm }}>
           {heading('함께 독서')}
-          <Text style={[mix ? styles.timerMono : styles.timerSans, { color: running ? colors.text : colors.textFaint }]}>
+          <Text style={[styles.timer, { color: running ? colors.text : colors.textFaint }]}>
             {formatClock(elapsed)}
           </Text>
           <Text style={[typeScale.caption, { color: colors.textMuted, textAlign: 'center' }]}>
@@ -239,10 +230,7 @@ const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl * 2 },
   // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 Pretendard ExtraBold 토큰으로.
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
-  dateLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
-  placeSerif: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 25 },
-  descSerif: { ...typeScale.quote, fontSize: 15, lineHeight: 24 },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,19 +238,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: hairline,
   },
-  timerSans: {
+  timer: {
     fontFamily: sans.extraBold,
     fontSize: 48,
     lineHeight: 56,
     letterSpacing: -1,
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
-    marginVertical: spacing.sm,
-  },
-  timerMono: {
-    fontFamily: mono.semiBold,
-    fontSize: 40,
-    lineHeight: 48,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
     marginVertical: spacing.sm,
