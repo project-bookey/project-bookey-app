@@ -2,15 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
+import { StatStrip } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Card, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, formatDuration, percent,
+  Button, EmptyState, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, formatDuration, linkLabel, percent,
 } from '@/components/ui';
-import { layout, spacing, typeScale, useTheme } from '@/theme';
-import { serif } from '@/theme/tokens';
+import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { mono, serif } from '@/theme/tokens';
 
-/** 모임 결산 (§12.5) */
+/** 모임 결산 (§12.5) — 활자·괘선 판면: 명조 이름 · 숫자 띠 · 괘선 단(진행률 표, 베스트 인용). */
 export default function ClubResultScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,7 +36,11 @@ export default function ClubResultScreen() {
     return (
       <PaperScreen>
         <SubHeader category="결산" />
-        <Text style={[styles.error, { color: colors.danger }]}>결산을 불러오지 못했습니다.</Text>
+        <EmptyState
+          title="결산을 불러오지 못했어요"
+          description={result.error instanceof ApiError ? result.error.message : '모임이 끝나면 결산이 만들어져요.'}
+          action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => result.refetch()} />}
+        />
       </PaperScreen>
     );
   }
@@ -46,58 +52,63 @@ export default function ClubResultScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <TiltCover uri={data.book?.coverUrl} title={data.book?.title} width={56} tilt={0} entering={false} />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, gap: 4 }}>
             <Eyebrow>모임 결산</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>{data.book?.title}</Text>
+            <Text style={[styles.bookLine, { color: colors.textMuted }]}>
+              {[data.book?.title, data.book?.author].filter(Boolean).join(' · ')}
+            </Text>
           </View>
         </View>
 
-        <Card>
-          <View style={styles.bigStat}>
-            <Numeral style={[styles.bigNumber, { color: colors.text }]}>
-              {Math.round(data.finishRate * 100)}%
-            </Numeral>
-            <Text style={[typeScale.label, { color: colors.textMuted }]}>완독률</Text>
-          </View>
-          <ProgressBar value={data.finishRate} height={6} />
-          <Rule />
-          <KeyValue label="참여 인원" value={`${data.memberCount}명`} />
-          <KeyValue label="완독" value={`${data.finishedCount}명`} />
+        <View style={{ gap: spacing.md }}>
+          <StatStrip
+            cells={[
+              { label: '완독률', value: `${Math.round(data.finishRate * 100)}%` },
+              { label: '완독', value: String(data.finishedCount), unit: ` / ${data.memberCount}명` },
+              { label: '참여', value: String(data.memberCount), unit: '명' },
+            ]}
+          />
+          <ProgressBar value={data.finishRate} height={4} />
           <KeyValue label="총 독서시간" value={formatDuration(data.totalDurationSec)} />
           {data.topDiscussant ? (
-            <KeyValue label="최다 토론" value={data.topDiscussant} />
+            <>
+              <Rule />
+              <KeyValue label="최다 토론" value={data.topDiscussant} />
+            </>
           ) : null}
-        </Card>
+        </View>
 
-        <View>
+        <View style={[styles.section, { borderTopColor: colors.line }]}>
           <Eyebrow>최종 진행률</Eyebrow>
-          <Card style={{ marginTop: spacing.sm, gap: spacing.md }}>
+          <View>
             {data.members.map((member) => (
-              <View key={member.clubMemberId} style={{ gap: 5 }}>
-                <View style={styles.memberRow}>
-                  <Text style={[typeScale.label, { color: colors.text }]}>{member.nickname}</Text>
-                  <Numeral style={[styles.memberValue, { color: colors.textMuted }]}>
-                    {member.shareProgress ? percent(member.completionRate) : '비공개'}
-                  </Numeral>
+              <View key={member.clubMemberId} style={[styles.memberRow, { borderBottomColor: colors.line }]}>
+                <Text numberOfLines={1} style={[typeScale.label, styles.memberName, { color: colors.text }]}>
+                  {member.nickname}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <ProgressBar value={member.shareProgress ? member.completionRate : 0} height={3} />
                 </View>
-                <ProgressBar value={member.completionRate} height={4} />
+                <Numeral style={[styles.memberValue, { color: member.shareProgress ? colors.text : colors.textFaint }]}>
+                  {member.shareProgress ? percent(member.completionRate) : '비공개'}
+                </Numeral>
               </View>
             ))}
-          </Card>
+          </View>
         </View>
 
         {data.bestQuotes.length > 0 ? (
-          <View>
+          <View style={[styles.section, { borderTopColor: colors.line }]}>
             <Eyebrow>베스트 인용</Eyebrow>
-            <Card style={{ marginTop: spacing.sm, gap: spacing.md }}>
+            <View style={{ gap: spacing.md }}>
               {data.bestQuotes.map((quote, index) => (
                 <View key={index} style={styles.quote}>
-                  <View style={[styles.quoteBar, { backgroundColor: colors.accent }]} />
-                  <Text style={[styles.quoteText, { color: colors.textMuted }]}>{quote}</Text>
+                  <View style={[styles.quoteBar, { backgroundColor: colors.ink }]} />
+                  <Text style={[styles.quoteText, { color: colors.text }]}>{quote}</Text>
                 </View>
               ))}
-            </Card>
+            </View>
           </View>
         ) : null}
       </ScrollView>
@@ -108,13 +119,19 @@ export default function ClubResultScreen() {
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   header: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  title: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27, marginTop: 4 },
-  bigStat: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, marginBottom: spacing.md },
-  bigNumber: { fontSize: 44, letterSpacing: -1 },
-  memberRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  memberValue: { fontSize: 12 },
+  title: { ...typeScale.titleSerif, fontSize: 24, lineHeight: 32 },
+  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  section: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderBottomWidth: hairline,
+  },
+  memberName: { width: 84 },
+  memberValue: { fontFamily: mono.semiBold, fontSize: 13, width: 52, textAlign: 'right' },
   quote: { flexDirection: 'row', gap: spacing.md },
   quoteBar: { width: 2 },
   quoteText: { fontFamily: serif.regular, fontSize: 15, lineHeight: 25, flex: 1 },
-  error: { ...typeScale.body, padding: spacing.lg },
 });
