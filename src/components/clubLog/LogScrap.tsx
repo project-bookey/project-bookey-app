@@ -19,9 +19,11 @@ export const LOG_REACTIONS = [
  * 읽기로그 조각 하나 — 사진 조각은 폴라로이드, 글만 남긴 조각은 메모 조각, 가려진 조각은 빗금 폴라로이드.
  * 기울기는 목록 순서(index)로 정해 다시 그려도 조각이 튀지 않는다.
  */
-export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactions, onReveal, onReact }: {
+export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactions, onReveal, onReact, flat }: {
   log: ClubPost;
   index: number;
+  /** 활자·괘선 판면 — 기울이지 않고, 글 조각은 괘선 한 겹의 평평한 메모로. */
+  flat?: boolean;
   /** 뷰어의 현재 쪽 — 가려진 조각에 '내 진도'를 함께 적는다. */
   myPage?: number | null;
   /** 반응 줄이 열려 있는지(길게 눌러 연다). */
@@ -34,7 +36,7 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
   onReact: (kind: string) => void;
 }) {
   const { colors, cardShadow } = useTheme();
-  const rotate = `${tiltFor(index)}deg`;
+  const rotate = `${flat ? 0 : tiltFor(index)}deg`;
   const meta = `${log.authorNickname} · ${kstTime(log.createdAt)}${log.anchorPage != null ? ` · ${log.anchorPage}쪽` : ''}`;
   const tail = [
     log.reactionCount > 0 ? `반응 ${log.reactionCount}` : null,
@@ -99,8 +101,8 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
           accessibilityRole="button"
           accessibilityHint="눌러서 펼치기, 길게 눌러 반응 남기기"
         >
-          <MemoScrap rotate={tiltFor(index) / 2}>
-            <Text style={[typeScale.quote, { color: colors.text, fontSize: 15, lineHeight: 24 }]}>{log.body}</Text>
+          <MemoScrap rotate={tiltFor(index) / 2} variant={flat ? 'ruled' : 'scrap'}>
+            <Text style={[typeScale.quote, { color: colors.text }, flat ? styles.quoteFlat : styles.quoteScrap]}>{log.body}</Text>
             <Text style={[styles.meta, { color: colors.textFaint, marginTop: spacing.sm }]}>{meta}{reactionTotal}</Text>
           </MemoScrap>
         </Pressable>
@@ -158,6 +160,8 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '4deg' }],
   },
   photo: { width: '100%', aspectRatio: 1, borderRadius: 1 },
+  quoteScrap: { fontSize: 15, lineHeight: 24 },
+  quoteFlat: { fontSize: 16, lineHeight: 26 },
   maskedPhoto: { alignItems: 'center', justifyContent: 'center', gap: 6 },
   maskedTitle: { fontFamily: mono.semiBold, fontSize: 11 },
   caption: { fontFamily: serif.regular, fontSize: 13, lineHeight: 18, marginTop: spacing.sm },

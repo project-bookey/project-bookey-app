@@ -97,22 +97,34 @@ export function WeekStrip({ days, selected, today, onSelect }: {
   );
 }
 
-/** 오늘 합산 스티키 — '오늘 함께 212쪽 · 3명이 3시간 10분'. 읽은 기록이 없으면 조각 수만. */
-export function SummaryNote({ summary, label, rotate = -2 }: {
+/**
+ * 오늘 합산 — '오늘 함께 212쪽 · 3명이 3시간 10분'. 읽은 기록이 없으면 조각 수만.
+ * 기본은 민트 스티키, `ruled` 는 활자·괘선 판면용으로 잉크 괘선 아래 숫자만 세운다.
+ */
+export function SummaryNote({ summary, label, rotate = -2, variant = 'sticky' }: {
   summary: ClubLogSummary;
   label: string;
   rotate?: number;
+  variant?: 'sticky' | 'ruled';
 }) {
   const { colors } = useTheme();
+  const detail = summary.readerCount > 0
+    ? `${summary.readerCount}명이 ${formatDuration(summary.durationSec)}`
+    : `조각 ${summary.logCount}개`;
+  if (variant === 'ruled') {
+    return (
+      <View style={[styles.ruledNote, { borderTopColor: colors.ink }]}>
+        <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{label}</Text>
+        <Text style={[styles.notePages, { color: colors.text }]}>{summary.pagesRead}쪽</Text>
+        <Text style={[typeScale.caption, { color: colors.textMuted, fontSize: 11, lineHeight: 15 }]}>{detail}</Text>
+      </View>
+    );
+  }
   return (
     <StickyNote rotate={rotate}>
       <Text style={[typeScale.monoEyebrow, { color: colors.onNote }]}>{label}</Text>
       <Text style={[styles.notePages, { color: colors.onNote }]}>{summary.pagesRead}쪽</Text>
-      <Text style={[typeScale.caption, { color: colors.onNote, fontSize: 11, lineHeight: 15 }]}>
-        {summary.readerCount > 0
-          ? `${summary.readerCount}명이 ${formatDuration(summary.durationSec)}`
-          : `조각 ${summary.logCount}개`}
-      </Text>
+      <Text style={[typeScale.caption, { color: colors.onNote, fontSize: 11, lineHeight: 15 }]}>{detail}</Text>
     </StickyNote>
   );
 }
@@ -151,4 +163,5 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', gap: 2, height: 4 },
   dot: { width: 4, height: 4, borderRadius: radius.round },
   notePages: { fontFamily: mono.semiBold, fontSize: 24, marginTop: 4 },
+  ruledNote: { borderTopWidth: 2, paddingTop: spacing.sm, gap: 2 },
 });
