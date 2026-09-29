@@ -7,6 +7,7 @@ import { followApi } from '@/api/endpoints';
 import type { FollowUserView } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { EmptyState, Segmented, Tag, formatRelative } from '@/components/ui';
+import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받아오는 사람 수 — 목록 한 화면(약 12줄)보다 넉넉하게. */
@@ -17,6 +18,7 @@ const BOXES: { value: Box; label: string }[] = [
   { value: 'FOLLOWING', label: '팔로잉' },
   { value: 'FOLLOWER', label: '팔로워' },
 ];
+const BOX_VALUES: readonly Box[] = ['FOLLOWING', 'FOLLOWER'];
 
 /**
  * 팔로우 목록 (§14.3) — 검색이 없으므로 사람에게 닿는 길은 피드·엽서·이 목록뿐이다.
@@ -43,6 +45,7 @@ export default function FollowsScreen() {
   return (
     <PaperScreen>
       <SubHeader category="팔로우" onBack={() => router.back()} />
+      <SwipeableTabs values={BOX_VALUES} value={box} onChange={setBox}>
       <FlatList
         data={items}
         keyExtractor={(user) => String(user.userId)}
@@ -88,6 +91,7 @@ export default function FollowsScreen() {
           ) : null
         }
       />
+      </SwipeableTabs>
     </PaperScreen>
   );
 }

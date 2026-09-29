@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
@@ -8,11 +8,18 @@ import { ClubCard } from '@/components/club';
 import { BrandHeader, PaperScreen } from '@/components/collage';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { TourTarget } from '@/components/tour/TourTarget';
+import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { layout, spacing } from '@/theme';
+import { ClubCreateContent } from '../club/create';
+import { ClubJoinContent } from '../club/join';
+
+type ClubView = 'list' | 'join' | 'create';
+const CLUB_VIEWS: readonly ClubView[] = ['list', 'join', 'create'];
 
 /** 구역 4. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12). 광장 칩이 아니라 상단 구역 탭으로 들어온다. */
 export default function ClubsScreen() {
   const router = useRouter();
+  const [view, setView] = useState<ClubView>('list');
   const clubs = useQuery({ queryKey: ['clubs'], queryFn: clubApi.myClubs });
   const { refetch } = clubs;
   const items = (clubs.data?.content ?? []).filter(Boolean);
@@ -29,21 +36,35 @@ export default function ClubsScreen() {
 
       <TourTarget id="club-actions" style={styles.actions}>
         <Button
-          label="코드로 참가"
-          variant="outline"
+          label="내 모임"
+          size="sm"
+          variant={view === 'list' ? 'primary' : 'outline'}
           style={{ flex: 1 }}
-          onPress={() => router.push('/club/join')}
+          onPress={() => setView('list')}
+        />
+        <Button
+          label="코드로 참가"
+          size="sm"
+          variant={view === 'join' ? 'primary' : 'outline'}
+          style={{ flex: 1 }}
+          onPress={() => setView('join')}
         />
         <Button
           label="모임 만들기"
+          size="sm"
+          variant={view === 'create' ? 'primary' : 'outline'}
           style={{ flex: 1 }}
-          onPress={() => router.push('/club/create')}
+          onPress={() => setView('create')}
         />
       </TourTarget>
 
-      {clubs.isLoading ? <Loading /> : null}
+      <SwipeableTabs values={CLUB_VIEWS} value={view} onChange={setView}>
+        {view === 'join' ? <ClubJoinContent embedded /> : null}
+        {view === 'create' ? <ClubCreateContent embedded /> : null}
 
-      <FlatList
+        {view === 'list' && clubs.isLoading ? <Loading /> : null}
+
+        {view === 'list' ? <FlatList
         data={items}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
@@ -65,13 +86,14 @@ export default function ClubsScreen() {
             onManage={item.myRole === 'HOST' ? () => router.push(`/club/${item.id}/settings`) : undefined}
           />
         )}
-      />
+        /> : null}
+      </SwipeableTabs>
     </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  actions: { ...layout.content, flexDirection: 'row', gap: spacing.sm, padding: spacing.lg },
+  actions: { ...layout.content, flexDirection: 'row', gap: spacing.xs, padding: spacing.lg },
   // 카드 목록 — 구분선 대신 간격으로 띄운다.
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104, gap: spacing.md },
 });

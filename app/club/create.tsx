@@ -25,7 +25,7 @@ const DURATIONS = [
 ] as const;
 
 /** 모임 만들기 (§12.1) — 책 선택 → 기간 → 체크포인트 → 공개 범위 */
-export default function ClubCreateScreen() {
+export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
@@ -76,11 +76,8 @@ export default function ClubCreateScreen() {
 
   const canSubmit = name.trim().length > 0 && bookId !== null;
 
-  return (
-    <PaperScreen>
-      <SubHeader category="모임 만들기" />
-
-      <ScrollView contentContainerStyle={styles.container}>
+  const content = (
+      <ScrollView contentContainerStyle={[styles.container, embedded && styles.embeddedContainer]}>
         <Field
           label="모임 이름"
           value={name}
@@ -212,12 +209,26 @@ export default function ClubCreateScreen() {
           onPress={() => create.mutate()}
         />
       </ScrollView>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <PaperScreen>
+      <SubHeader category="모임 만들기" />
+      {content}
     </PaperScreen>
   );
 }
 
+export default function ClubCreateScreen() {
+  return <ClubCreateContent />;
+}
+
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
+  // 모임 탭 안에 끼워 넣을 때(embedded) — 자체 머리가 없으니 위는 좁게, 아래는 하단 바 높이만큼 비운다
+  embeddedContainer: { paddingTop: spacing.sm, paddingBottom: 104 },
   helper: { ...typeScale.caption, marginTop: spacing.sm },
   options: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
   bookList: {
