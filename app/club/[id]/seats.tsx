@@ -7,9 +7,9 @@ import { ApiError } from '@/api/client';
 import { clubApi, walletApi } from '@/api/endpoints';
 import type { ClubHome, ClubSeatPolicy, WalletView } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { Button, Card, EmptyState, Eyebrow, KeyValue, Loading, Rule, Segmented, Tag } from '@/components/ui';
+import { Button, EmptyState, Eyebrow, KeyValue, Loading, Rule, Segmented, linkLabel } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 자리 늘리기 — 모임 홈의 '자리 늘리기'로 들어온다(호스트 전용).
@@ -45,7 +45,11 @@ export default function ClubSeatsScreen() {
     return (
       <PaperScreen>
         <SubHeader category="자리 늘리기" />
-        <Text style={[styles.error, { color: colors.danger }]}>모임을 불러오지 못했습니다.</Text>
+        <EmptyState
+          title="모임을 불러오지 못했어요"
+          description={club.error instanceof ApiError ? club.error.message : undefined}
+          action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => club.refetch()} />}
+        />
       </PaperScreen>
     );
   }
@@ -138,17 +142,18 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
       <SubHeader category="자리 늘리기" />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.block}>
-          <Card style={styles.hero}>
-            <Tag label={club.name} fg={colors.accent} bg={colors.accentSoft} />
+          {/* 머리 — 카드 없이 명조 표제와 자리 격자(활자·괘선 언어) */}
+          <View style={styles.hero}>
+            <Eyebrow plain>{club.name}</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>자리를 열고{'\n'}한 명 더 초대해요</Text>
             <Text style={[typeScale.body, { color: colors.textMuted }]}>
               모임은 {policy.freeLimit}명까지 무료예요. 책갈피로 자리를 늘리면 최대 {policy.maxLimit}명까지 함께 읽을 수 있어요.
             </Text>
             <SeatGrid club={club} targetLimit={targetLimit} maxLimit={policy.maxLimit} colors={colors} />
-          </Card>
+          </View>
 
-          <Card>
-            <Eyebrow plain>늘릴 인원</Eyebrow>
+          <View style={[styles.section, { borderTopColor: colors.line }]}>
+            <Eyebrow>늘릴 인원</Eyebrow>
             <View style={{ marginTop: spacing.md }}>
               <Segmented options={options} value={target} onChange={setTarget} />
             </View>
@@ -158,7 +163,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
               <KeyValue
                 label="필요한 책갈피"
                 value={
-                  <Text style={{ color: colors.accent }}>
+                  <Text style={{ color: colors.text }}>
                     {cost}개{' '}
                     <Text style={{ color: colors.textFaint }}>({policy.costPerSeat} × {added}자리)</Text>
                   </Text>
@@ -181,7 +186,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
               늘린 자리는 이 모임에만 적용되고, 모임이 끝나면 사라져요.
             </Text>
-          </Card>
+          </View>
 
           {error ? (
             <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
@@ -213,7 +218,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
   );
 }
 
-/** 자리 격자 — 지금 멤버(이니셜) · 이번에 열 자리(악센트 점선 +) · 그 너머 자리(흐린 점선). */
+/** 자리 격자 — 지금 멤버(이니셜, 나는 잉크 테두리) · 이번에 열 자리(잉크 점선 +) · 그 너머 자리(흐린 점선). */
 function SeatGrid({ club, targetLimit, maxLimit, colors }: {
   club: ClubHome;
   targetLimit: number;
@@ -232,19 +237,19 @@ function SeatGrid({ club, targetLimit, maxLimit, colors }: {
               style={[
                 styles.seat,
                 member
-                  ? { backgroundColor: colors.surfaceRaised, borderColor: member.isMe ? colors.accent : colors.lineStrong }
+                  ? { backgroundColor: colors.surfaceRaised, borderColor: member.isMe ? colors.ink : colors.lineStrong }
                   : isOpen
                     ? { borderColor: colors.lineStrong }
-                    : { borderStyle: 'dashed', borderColor: isNew ? colors.accent : colors.line },
+                    : { borderStyle: 'dashed', borderColor: isNew ? colors.ink : colors.line },
               ]}
             >
               {member ? (
                 <Text style={[typeScale.label, { color: colors.text }]}>{member.nickname.slice(0, 1)}</Text>
               ) : isNew ? (
-                <Text style={[typeScale.label, { color: colors.accent }]}>+</Text>
+                <Text style={[typeScale.label, { color: colors.text }]}>+</Text>
               ) : null}
             </View>
-            <Text style={[typeScale.monoLabel, { color: isNew ? colors.accent : colors.textFaint }]}>{i + 1}</Text>
+            <Text style={[typeScale.monoLabel, { color: isNew ? colors.text : colors.textFaint }]}>{i + 1}</Text>
           </View>
         );
       })}
@@ -254,9 +259,10 @@ function SeatGrid({ club, targetLimit, maxLimit, colors }: {
 
 const styles = StyleSheet.create({
   container: { ...layout.content, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.xl },
-  block: { paddingHorizontal: spacing.lg, gap: spacing.lg },
-  hero: { gap: spacing.md },
-  title: { ...typeScale.title, lineHeight: 30 },
+  block: { paddingHorizontal: spacing.lg, gap: spacing.xl },
+  hero: { gap: spacing.md, paddingTop: spacing.sm },
+  title: { ...typeScale.titleSerif, fontSize: 24, lineHeight: 32 },
+  section: { borderTopWidth: hairline, paddingTop: spacing.lg },
   hint: { marginTop: spacing.sm },
   actions: { gap: spacing.sm },
   seatGrid: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs },
@@ -269,5 +275,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  error: { ...typeScale.body, padding: spacing.lg },
 });

@@ -7,9 +7,9 @@ import { ApiError } from '@/api/client';
 import { clubCommunityApi } from '@/api/endpoints';
 import { StatStrip, confirmAsync, notify } from '@/components/club';
 import {
-  MEETING_STATE_LABEL,
   meetingClock,
-  meetingDateLine,
+  meetingClock12,
+  meetingDateLong,
   meetingDay,
   meetingState,
   meetingWeekday,
@@ -17,13 +17,15 @@ import {
 import { PlaceMap } from '@/components/club/PlaceMap';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { Button, EmptyState, Eyebrow, FootAction, Loading, formatClock, linkLabel } from '@/components/ui';
-import { layout, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, mono } from '@/theme/tokens';
+import { Button, Card, EmptyState, Eyebrow, Loading, formatClock, linkLabel } from '@/components/ui';
+import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { sans } from '@/theme/tokens';
 
 /**
- * 약속 상세 — 활자·괘선 판면. 상태 아이브로우 · 큰 명조 제목 · 모노 날짜 줄 · 숫자 띠(날짜·시간·참여) 아래로
- * 장소(지도) · 설명 · 참여자 · 함께 독서 순. 호스트의 '약속 취소'는 맨 아래 위험 톤 글자 링크.
+ * 약속 상세 — 예전 골격(굵은 제목 · 큰 민트 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
+ * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
+ * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
+ * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
  */
 export default function MeetingDetailScreen() {
   const { id, meetingId, host } = useLocalSearchParams<{ id: string; meetingId: string; host?: string }>();
@@ -85,7 +87,7 @@ export default function MeetingDetailScreen() {
   if (meeting.isLoading || current.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="약속" />
+        <SubHeader category="약속 상세" />
         <Loading />
       </PaperScreen>
     );
@@ -94,7 +96,7 @@ export default function MeetingDetailScreen() {
   if (!m) {
     return (
       <PaperScreen>
-        <SubHeader category="약속" />
+        <SubHeader category="약속 상세" />
         <EmptyState
           title="약속을 불러오지 못했어요"
           description={meeting.error instanceof ApiError ? meeting.error.message : undefined}
@@ -105,8 +107,8 @@ export default function MeetingDetailScreen() {
   }
 
   const state = meetingState(m);
-  // 상태는 링크·CTA 가 아니라 잉크로 — 목록의 상태 글자와 같은 색 규칙.
-  const stateColor = state === 'cancelled' ? colors.danger : state === 'past' ? colors.textFaint : colors.text;
+  const statusLine =
+    state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 약속이에요' : '취소된 약속입니다';
   const attendees = m.attendees ?? [];
   const running = current.data?.meetingId === mid;
   const otherRunning = Boolean(current.data && !running);
@@ -117,17 +119,19 @@ export default function MeetingDetailScreen() {
     const q = m.latitude != null && m.longitude != null ? `${m.latitude},${m.longitude}` : m.address;
     void Linking.openURL(m.mapUrl ?? `https://maps.google.com/?q=${encodeURIComponent(q)}`);
   };
+  const heading = (label: string) => <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{label}</Text>;
 
   return (
     <PaperScreen>
-      <SubHeader category="약속" />
+      <SubHeader category="약속 상세" />
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={{ gap: spacing.sm }}>
-          <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{MEETING_STATE_LABEL[state]}</Text>
+        <View style={{ gap: 4 }}>
+          <Eyebrow>모임 약속</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>{m.title}</Text>
-          <Text style={[styles.dateLine, { color: colors.textMuted }]}>{meetingDateLine(m.startsAt, m.endsAt)}</Text>
+          <Text style={[typeScale.body, { color: colors.textMuted }]}>{statusLine}</Text>
         </View>
 
+        {/* 숫자 띠 — 모임 홈과 같은 공용 StatStrip(날짜 · 시간 · 참여) */}
         <StatStrip
           cells={[
             { label: '날짜', value: meetingDay(m.startsAt), unit: ` ${meetingWeekday(m.startsAt)}` },
@@ -136,36 +140,42 @@ export default function MeetingDetailScreen() {
           ]}
         />
 
-        <View style={styles.section}>
-          <Eyebrow>장소</Eyebrow>
-          <Text style={[styles.place, { color: colors.text }]}>{m.placeName}</Text>
-          <Text style={[typeScale.caption, { color: colors.textMuted }]}>{m.address}</Text>
+        {/* 날짜 카드 — 예전처럼 가운데 큰 민트 시간 */}
+        <Card style={{ alignItems: 'center', gap: 6 }}>
+          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{meetingDateLong(m.startsAt)}</Text>
+          <Text style={[styles.time, { color: colors.accent }]}>{meetingClock12(m.startsAt)}</Text>
+          {m.endsAt ? (
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>{meetingClock12(m.endsAt)}까지</Text>
+          ) : null}
+        </Card>
+
+        <Card style={{ gap: spacing.sm }}>
+          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{m.placeName}</Text>
+          <Text style={[typeScale.body, { color: colors.textMuted }]}>{m.address}</Text>
           {m.latitude != null ? <PlaceMap latitude={m.latitude} longitude={m.longitude} /> : null}
-          <View style={styles.link}>
-            <FootAction label="지도 앱에서 열기" kind="nav" tone="accent" onPress={openMap} />
-          </View>
-        </View>
+          <Button label="지도 앱에서 보기" variant="outline" onPress={openMap} />
+        </Card>
 
         {m.description ? (
-          <View style={styles.section}>
-            <Eyebrow>설명</Eyebrow>
-            <Text style={[typeScale.quote, { color: colors.text, fontSize: 15, lineHeight: 24 }]}>{m.description}</Text>
-          </View>
+          <Card style={{ gap: spacing.sm }}>
+            <Text style={[typeScale.body, { color: colors.text }]}>{m.description}</Text>
+          </Card>
         ) : null}
 
-        <View style={styles.section}>
-          <Eyebrow>참여자 {m.attendeeCount}명</Eyebrow>
+        <Card style={{ gap: spacing.sm }}>
+          {heading(`참여자 ${m.attendeeCount}명`)}
           {attendees.length > 0 ? (
             <View>
               {attendees.map((person) => (
                 <View key={person.userId} style={[styles.personRow, { borderBottomColor: colors.line }]}>
-                  <QuoteAvatar uri={person.avatarUrl} nickname={person.nickname} size={30} />
-                  <Text style={[typeScale.label, { color: colors.text }]}>{person.nickname}</Text>
+                  <QuoteAvatar uri={person.avatarUrl} nickname={person.nickname} size={34} />
+                  <Text style={[typeScale.body, { color: colors.text, flex: 1 }]}>{person.nickname}</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>참여</Text>
                 </View>
               ))}
             </View>
           ) : (
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
               아직 참여자가 없어요. 첫 참여자가 되어 보세요.
             </Text>
           )}
@@ -175,14 +185,16 @@ export default function MeetingDetailScreen() {
               variant={m.attending ? 'outline' : 'primary'}
               onPress={() => attend.mutate()}
               loading={attend.isPending}
-              style={{ marginTop: spacing.sm }}
+              style={{ marginTop: spacing.xs }}
             />
           ) : null}
-        </View>
+        </Card>
 
-        <View style={styles.section}>
-          <Eyebrow>함께 독서</Eyebrow>
-          <Text style={[styles.timer, { color: running ? colors.text : colors.textFaint }]}>{formatClock(elapsed)}</Text>
+        <Card style={{ gap: spacing.sm }}>
+          {heading('함께 독서')}
+          <Text style={[styles.timer, { color: running ? colors.text : colors.textFaint }]}>
+            {formatClock(elapsed)}
+          </Text>
           <Text style={[typeScale.caption, { color: colors.textMuted, textAlign: 'center' }]}>
             {otherRunning
               ? '다른 약속에서 독서를 실행 중이에요.'
@@ -197,19 +209,17 @@ export default function MeetingDetailScreen() {
             onPress={() => (running ? end.mutate() : start.mutate())}
             loading={start.isPending || end.isPending}
           />
-        </View>
+        </Card>
 
         {isHost && state === 'open' ? (
-          <View style={styles.footer}>
-            <FootAction
-              label="약속 취소"
-              kind="action"
-              tone="danger"
-              onPress={async () => {
-                if (await confirmAsync('이 약속을 취소할까요? 참여자에게도 취소로 보여요.', '약속 취소')) cancel.mutate();
-              }}
-            />
-          </View>
+          <Button
+            label="약속 취소"
+            variant="ghost"
+            loading={cancel.isPending}
+            onPress={async () => {
+              if (await confirmAsync('이 약속을 취소할까요? 참여자에게도 취소로 보여요.', '약속 취소')) cancel.mutate();
+            }}
+          />
         ) : null}
       </ScrollView>
     </PaperScreen>
@@ -217,12 +227,10 @@ export default function MeetingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl * 2 },
-  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
-  dateLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
-  section: { gap: spacing.sm },
-  place: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
-  link: { flexDirection: 'row' },
+  container: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl * 2 },
+  // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 Pretendard ExtraBold 토큰으로.
+  title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
+  time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -231,12 +239,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
   },
   timer: {
-    fontFamily: mono.semiBold,
-    fontSize: 40,
-    lineHeight: 48,
+    fontFamily: sans.extraBold,
+    fontSize: 48,
+    lineHeight: 56,
+    letterSpacing: -1,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
     marginVertical: spacing.sm,
   },
-  footer: { alignItems: 'center', paddingTop: spacing.sm },
 });

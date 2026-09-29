@@ -7,8 +7,9 @@ import { ApiError } from '@/api/client';
 import { clubApi, libraryApi } from '@/api/endpoints';
 import type { ReadingRecord } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
-import { Button, Card, Eyebrow, Field, Rule, Segmented, Toggle } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, Eyebrow, Field, Loading, Rule, Segmented, Toggle } from '@/components/ui';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { pressedStyle } from '@/theme/tokens';
 
 /** 무료 정원은 3명까지 — 더 필요하면 만든 뒤 모임 홈에서 책갈피로 자리를 늘린다(서버가 같은 상한을 검사한다). */
 const MEMBER_LIMITS = [
@@ -101,7 +102,8 @@ export default function ClubCreateScreen() {
             내 서재의 책 중에서 고릅니다.
           </Text>
           <View style={[styles.bookList, { borderColor: colors.line }]}>
-            {candidates.length === 0 ? (
+            {library.isLoading ? <Loading /> : null}
+            {!library.isLoading && candidates.length === 0 ? (
               <Text style={[styles.empty, { color: colors.textFaint }]}>
                 서재가 비어 있어요. 먼저 책을 검색해 담아주세요.
               </Text>
@@ -112,10 +114,13 @@ export default function ClubCreateScreen() {
                 <Pressable
                   key={record.book!.id}
                   onPress={() => setBookId(record.book!.id)}
-                  style={[
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  style={({ pressed }) => [
                     styles.bookRow,
                     { borderBottomColor: colors.line, backgroundColor: colors.surface, borderLeftColor: 'transparent' },
                     selected && { backgroundColor: colors.surfaceRaised, borderLeftColor: colors.ink },
+                    pressed ? pressedStyle : null,
                   ]}
                 >
                   <TiltCover
@@ -175,7 +180,8 @@ export default function ClubCreateScreen() {
           </Text>
         </View>
 
-        <Card style={{ gap: spacing.md }}>
+        {/* 옵션 — 카드 대신 위 괘선 한 줄로 나눈다 */}
+        <View style={[styles.options, { borderTopColor: colors.line }]}>
           <Toggle
             label="주차별 체크포인트 자동 생성"
             description="총 페이지를 주차 수로 균등 분배해 목표를 만듭니다."
@@ -193,7 +199,7 @@ export default function ClubCreateScreen() {
             value={isPublic}
             onChange={setIsPublic}
           />
-        </Card>
+        </View>
 
         {error ? (
           <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text>
@@ -211,15 +217,9 @@ export default function ClubCreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-    paddingBottom: spacing.xxl,
-    maxWidth: 520,
-    width: '100%',
-    alignSelf: 'center',
-  },
+  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
   helper: { ...typeScale.caption, marginTop: spacing.sm },
+  options: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
   bookList: {
     marginTop: spacing.sm,
     borderWidth: hairline,

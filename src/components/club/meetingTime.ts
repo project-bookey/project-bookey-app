@@ -45,6 +45,23 @@ export function meetingDateLine(startsAt: string, endsAt?: string): string {
   return `${p.year}.${p.month}.${p.day} ${p.weekday} · ${time}`;
 }
 
+/** '2026년 10월 1일 목요일' — 약속 상세의 날짜 카드. */
+export function meetingDateLong(iso: string): string {
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: KST,
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date(iso));
+}
+
+/** '오후 7:30' — 약속 상세의 큰 시간. */
+export function meetingClock12(iso: string): string {
+  return new Intl.DateTimeFormat('ko-KR', { timeZone: KST, hour: 'numeric', minute: '2-digit', hour12: true })
+    .format(new Date(iso));
+}
+
 /** 새 약속 폼의 날짜 칸 — '2026.10.1 목'. */
 export function formatPickDate(date: Date): string {
   const p = parts(date);

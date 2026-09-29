@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -8,10 +8,11 @@ import { clubApi } from '@/api/endpoints';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
 import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import {
-  Button, Card, Eyebrow, Field, FootAction, KeyValue, Loading, Rule, Segmented, Tag, Toggle,
+  Button, EmptyState, Eyebrow, Field, FootAction, KeyValue, Loading, Rule, Segmented, Tag, Toggle, linkLabel,
 } from '@/components/ui';
-import { layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 const VISIBILITIES: { value: ClubVisibility; label: string; description: string }[] = [
@@ -49,7 +50,11 @@ export default function ClubSettingsScreen() {
     return (
       <PaperScreen>
         <SubHeader category="모임 설정" />
-        <Text style={[styles.error, { color: colors.danger }]}>모임을 불러오지 못했습니다.</Text>
+        <EmptyState
+          title="모임을 불러오지 못했어요"
+          description={club.error instanceof ApiError ? club.error.message : undefined}
+          action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => club.refetch()} />}
+        />
       </PaperScreen>
     );
   }
@@ -132,19 +137,21 @@ function SettingsForm({ club }: { club: ClubHome }) {
     <PaperScreen>
       <SubHeader category="모임 설정" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        {/* 머리 — 모임 홈과 같은 활자·괘선 언어: 명조 이름 + 모노 책·저자 줄 */}
         <View style={styles.header}>
           <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={44} tilt={0} entering={false} />
-          <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flex: 1, gap: 4 }}>
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{club.name}</Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]} numberOfLines={1}>
-              {club.book?.title}
+            <Text style={[styles.bookLine, { color: colors.textMuted }]} numberOfLines={1}>
+              {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
             </Text>
+            {ended ? (
+              <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>종료된 모임</Text>
+            ) : null}
           </View>
-          {ended ? <Tag label="종료" /> : <Tag label="호스트" />}
         </View>
 
-        <Card style={{ gap: spacing.md }}>
-          <Eyebrow plain>기본 정보</Eyebrow>
+        <Section title="기본 정보">
           <Field label="모임 이름" value={name} onChangeText={setName} maxLength={60} placeholder="예: 회사 독서 모임" />
           <Field
             label="소개"
@@ -165,10 +172,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
                 { onSuccess: () => notify('저장했어요.') },
               )}
           />
-        </Card>
+        </Section>
 
-        <Card style={{ gap: spacing.sm }}>
-          <Eyebrow plain>공개 범위</Eyebrow>
+        <Section title="공개 범위" gap={spacing.sm}>
           <Segmented
             options={VISIBILITIES.map((v) => ({ value: v.value, label: v.label }))}
             value={club.visibility}
@@ -177,10 +183,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
           <Text style={[typeScale.caption, { color: colors.textFaint }]}>
             {VISIBILITIES.find((v) => v.value === club.visibility)?.description}
           </Text>
-        </Card>
+        </Section>
 
-        <Card style={{ gap: spacing.md }}>
-          <Eyebrow plain>기간 · 찌르기</Eyebrow>
+        <Section title="기간 · 찌르기">
           <KeyValue label="시작일" value={club.startsAt} />
           <Rule />
           <View style={styles.inlineField}>
@@ -210,10 +215,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
             value={club.allowNudge}
             onChange={(allowNudge) => update.mutate({ allowNudge })}
           />
-        </Card>
+        </Section>
 
-        <Card style={{ gap: spacing.md }}>
-          <Eyebrow plain>초대 · 자리</Eyebrow>
+        <Section title="초대 · 자리">
           <View style={styles.rowBetween}>
             <View>
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
@@ -241,10 +245,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
               <Button label="자리 늘리기" size="sm" variant="outline" onPress={() => router.push(`/club/${clubId}/seats`)} />
             ) : null}
           </View>
-        </Card>
+        </Section>
 
-        <Card style={{ gap: spacing.sm }}>
-          <Eyebrow plain>멤버</Eyebrow>
+        <Section title="멤버" gap={spacing.sm}>
           {others.length === 0 ? (
             <Text style={[typeScale.caption, { color: colors.textFaint }]}>
               아직 나뿐이에요. 초대 코드를 공유해 보세요.
@@ -254,6 +257,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
             <View key={member.clubMemberId}>
               {index > 0 ? <Rule /> : null}
               <View style={styles.memberRow}>
+                <QuoteAvatar uri={member.avatarUrl} nickname={member.nickname} size={28} />
                 <Text style={[typeScale.label, { color: colors.text, flex: 1 }]} numberOfLines={1}>
                   {member.nickname}
                 </Text>
@@ -303,7 +307,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
               ) : null}
             </View>
           ))}
-        </Card>
+        </Section>
 
         {!ended ? (
           <View style={{ gap: spacing.sm }}>
@@ -326,16 +330,28 @@ function SettingsForm({ club }: { club: ClubHome }) {
   );
 }
 
+/** 설정 한 단 — 카드 대신 위 괘선 한 줄과 악센트 아이브로우로 나눈다. */
+function Section({ title, children, gap = spacing.md }: { title: string; children: ReactNode; gap?: number }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.section, { borderTopColor: colors.line, gap }]}>
+      <Eyebrow>{title}</Eyebrow>
+      {children}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
+  container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  title: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 25 },
+  title: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 30 },
+  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  section: { borderTopWidth: hairline, paddingTop: spacing.lg },
   inlineField: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 5, marginTop: 2 },
+  code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
   kickForm: { gap: spacing.sm, paddingBottom: spacing.sm },
   rowButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
-  error: { ...typeScale.body, padding: spacing.lg },
 });

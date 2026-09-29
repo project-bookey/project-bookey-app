@@ -3,16 +3,23 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { clubApi } from '@/api/endpoints';
 import { ApiError } from '@/api/client';
+import { clubApi } from '@/api/endpoints';
+import { StatStrip } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
-import { Button, Card, Eyebrow, KeyValue, Rule, Toggle } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, Eyebrow, Rule, Toggle } from '@/components/ui';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, sans } from '@/theme/tokens';
+
+/** 시작~끝 일수 — '30일'. */
+function daysBetween(startsAt: string, endsAt: string): number {
+  return Math.max(0, Math.round((Date.parse(endsAt) - Date.parse(startsAt)) / 86400000));
+}
 
 /**
  * 코드로 참가 (§12.1).
  * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·토론은 참가 후에만 보인다.
+ * 미리보기는 모임 홈과 같은 활자·괘선 언어(명조 이름 · 모노 책 줄 · 숫자 띠).
  */
 export default function ClubJoinScreen() {
   const router = useRouter();
@@ -44,12 +51,13 @@ export default function ClubJoinScreen() {
   });
 
   const errorStyle = [typeScale.caption, { color: colors.danger }];
+  const club = preview.data;
 
   return (
     <PaperScreen>
       <SubHeader category="코드로 참가" />
 
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View>
           <Eyebrow>초대 코드</Eyebrow>
           <TextInput
@@ -65,7 +73,7 @@ export default function ClubJoinScreen() {
             maxLength={8}
             style={[
               styles.codeInput,
-              { borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text },
+              { borderColor: colors.line, backgroundColor: colors.surface, color: colors.text },
             ]}
           />
           <Text style={[styles.hint, { color: colors.textFaint }]}>
@@ -77,52 +85,39 @@ export default function ClubJoinScreen() {
           <Text style={errorStyle}>유효하지 않은 초대 코드입니다.</Text>
         ) : null}
 
-        {preview.data ? (
-          <Card style={{ gap: spacing.md }}>
+        {club ? (
+          <View style={[styles.section, { borderTopColor: colors.line }]}>
             <View style={styles.previewHead}>
-              <TiltCover
-                uri={preview.data.book?.coverUrl}
-                title={preview.data.book?.title}
-                width={52}
-                tilt={0}
-                entering={false}
-              />
-              <View style={{ flex: 1, gap: 3 }}>
-                <Text style={[styles.clubName, { color: colors.text }]}>{preview.data.name}</Text>
-                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                  {preview.data.book?.title}
+              <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={52} tilt={0} entering={false} />
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={[styles.clubName, { color: colors.text }]}>{club.name}</Text>
+                <Text style={[styles.bookLine, { color: colors.textMuted }]}>
+                  {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
                 </Text>
-                {preview.data.description ? (
-                  <Text numberOfLines={2} style={[styles.clubDesc, { color: colors.textFaint }]}>
-                    {preview.data.description}
+                {club.description ? (
+                  <Text numberOfLines={2} style={[typeScale.caption, { color: colors.textFaint }]}>
+                    {club.description}
                   </Text>
                 ) : null}
               </View>
             </View>
-
-            <Rule />
-            <KeyValue label="호스트" value={preview.data.hostNickname ?? '—'} />
-            <KeyValue
-              label="인원"
-              value={`${preview.data.memberCount} / ${preview.data.memberLimit}`}
+            <StatStrip
+              cells={[
+                { label: '호스트', value: club.hostNickname ?? '—' },
+                { label: '인원', value: String(club.memberCount), unit: ` / ${club.memberLimit}명` },
+                { label: '기간', value: String(daysBetween(club.startsAt, club.endsAt)), unit: '일' },
+              ]}
             />
-            <KeyValue
-              label="기간"
-              value={`${preview.data.startsAt} → ${preview.data.endsAt}`}
-            />
-
-            {preview.data.alreadyMember ? (
-              <Text style={[typeScale.caption, { color: colors.accent }]}>
-                이미 참가 중인 모임입니다.
-              </Text>
-            ) : preview.data.joinBlockedReason ? (
-              <Text style={errorStyle}>{preview.data.joinBlockedReason}</Text>
+            {club.alreadyMember ? (
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가 중인 모임입니다.</Text>
+            ) : club.joinBlockedReason ? (
+              <Text style={errorStyle}>{club.joinBlockedReason}</Text>
             ) : null}
-          </Card>
+          </View>
         ) : null}
 
-        {preview.data?.joinable ? (
-          <Card style={{ gap: spacing.md }}>
+        {club?.joinable ? (
+          <View style={[styles.section, { borderTopColor: colors.line }]}>
             <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
             <Text style={[styles.consentText, { color: colors.textMuted }]}>
               · 이 책이 내 서재에 자동으로 등록됩니다{'\n'}
@@ -139,18 +134,18 @@ export default function ClubJoinScreen() {
             />
             <Toggle
               label="모임 목표일을 내 목표로"
-              description={`${preview.data.endsAt}을 내 완독 목표일로 삼습니다.`}
+              description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
               value={adoptTarget}
               onChange={setAdoptTarget}
             />
-          </Card>
+          </View>
         ) : null}
 
         {error ? <Text style={errorStyle}>{error}</Text> : null}
 
         <Button
           label="참가하기"
-          disabled={!preview.data?.joinable}
+          disabled={!club?.joinable}
           loading={join.isPending}
           onPress={() => join.mutate()}
         />
@@ -160,27 +155,23 @@ export default function ClubJoinScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-    maxWidth: 520,
-    width: '100%',
-    alignSelf: 'center',
-  },
+  container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
+  // 코드 입력 — Field 와 같은 종이 상자, 글자는 모노 크게(한글이 아니라 자간 1 로 숨을 준다)
   codeInput: {
     borderWidth: hairline,
     borderRadius: radius.md,
     fontFamily: mono.semiBold,
-    fontSize: 30,
-    letterSpacing: 8,
+    fontSize: 28,
+    letterSpacing: 1,
     textAlign: 'center',
     paddingVertical: spacing.lg,
     marginTop: spacing.sm,
   },
   hint: { ...typeScale.caption, marginTop: spacing.sm },
+  section: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
   previewHead: { flexDirection: 'row', gap: spacing.md },
-  clubName: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
-  clubDesc: { ...typeScale.caption, marginTop: 2, lineHeight: 16 },
+  clubName: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 30 },
+  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   consentText: { ...typeScale.body, lineHeight: 22 },
   bold: { fontFamily: sans.semiBold },
 });

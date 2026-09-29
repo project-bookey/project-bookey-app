@@ -7,12 +7,11 @@ import {
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
-import {
-  Button, Card, EmptyState, Loading, Numeral, Rule, Tag, formatRelative,
-} from '@/components/ui';
+import { Chip } from '@/components/collage';
+import { Button, EmptyState, Loading, Numeral, Tag, formatRelative, linkLabel } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { mono, serif } from '@/theme/tokens';
+import { mono, pressedStyle, serif } from '@/theme/tokens';
 
 const TYPE_LABEL: Record<string, string> = {
   DISCUSSION: '토론',
@@ -23,7 +22,8 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 /**
- * 모임 토론 (§12.3).
+ * 모임 토론 (§12.3) — 모임 홈 '토론' 탭의 본문. 괘선 머리줄(내 진도까지 칩 · 개수) 아래 글을
+ * 카드 없이 괘선으로 나눠 한 편씩(작성자 · 종류 · 쪽 · 시각, 명조 본문, 잉크 반응 칩, 한 마디).
  *
  * 스포일러 가드는 서버가 강제한다 — 내 진도보다 앞선 글은 본문 없이(masked=true) 내려온다.
  * 여기서는 그 사실을 사용자에게 설명하고, "그래도 볼래요"를 눌렀을 때만 서버에 해제를 요청한다.
@@ -76,7 +76,6 @@ export function ClubPostsBody() {
 
   return (
     <>
-
       {/*
         오프셋을 주지 않는다. 기존 90 은 네이티브 헤더 높이를 상쇄하려던 값인데,
         헤더를 끄면서 KAV 의 frame.y 가 이미 SubHeader 를 포함하게 됐다. 그대로 두면
@@ -86,25 +85,16 @@ export function ClubPostsBody() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={[styles.filterBar, { borderBottomColor: colors.line }]}>
-          <Pressable
-            style={styles.filterToggle}
+        <View style={[styles.head, { borderBottomColor: colors.line }]}>
+          <Chip
+            label="내 진도까지"
+            active={onlyMyRange}
             onPress={() => setOnlyMyRange((prev) => !prev)}
-          >
-            <View
-              style={[
-                styles.checkbox,
-                { borderColor: colors.textFaint },
-                onlyMyRange && { backgroundColor: colors.accent, borderColor: colors.accent },
-              ]}
-            >
-              {onlyMyRange ? (
-                <Text style={[styles.checkboxMark, { color: colors.onAccent }]}>✓</Text>
-              ) : null}
-            </View>
-            <Text style={[typeScale.label, { color: colors.text }]}>내 진도까지만 보기</Text>
-          </Pressable>
-          <Numeral style={[styles.myPage, { color: colors.textFaint }]}>{myPage}쪽</Numeral>
+            accessibilityLabel={onlyMyRange ? '내 진도까지만 보기 켜짐' : '내 진도까지만 보기 꺼짐'}
+          />
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+            토론 · {items.length}개 · 내 진도 {myPage}쪽
+          </Text>
         </View>
 
         {posts.isLoading ? <Loading /> : null}
@@ -122,7 +112,7 @@ export function ClubPostsBody() {
           ) : null}
 
           {items.map((post) => (
-            <PostCard
+            <PostEntry
               key={post.id}
               post={post}
               colors={colors}
@@ -132,30 +122,33 @@ export function ClubPostsBody() {
           ))}
         </ScrollView>
 
-        <View style={[styles.composer, { backgroundColor: colors.surface }]}>
-          <Rule />
-          <View style={styles.composerRow}>
-            <TextInput
-              value={body}
-              onChangeText={setBody}
-              placeholder="이 책에 대해 이야기해요"
-              placeholderTextColor={colors.textFaint}
-              style={[styles.composerInput, { color: colors.text }]}
-              multiline
-            />
-          </View>
+        {/* 컴포저 — 종이 상자 + 헤어라인(채팅 입력과 같은 언어), 기준 쪽은 모노 밑줄 입력 */}
+        <View style={[styles.composer, { borderTopColor: colors.line, backgroundColor: colors.bg }]}>
+          <TextInput
+            value={body}
+            onChangeText={setBody}
+            placeholder="이 책에 대해 이야기해요"
+            placeholderTextColor={colors.textFaint}
+            style={[
+              styles.composerInput,
+              { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line },
+            ]}
+            multiline
+          />
           <View style={styles.composerFooter}>
             <View style={styles.anchorField}>
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>기준 쪽</Text>
+              <Text style={[typeScale.monoEyebrow, styles.anchorLabel, { color: colors.textMuted }]}>기준 쪽</Text>
               <TextInput
                 value={anchorPage}
                 onChangeText={(t) => setAnchorPage(t.replace(/[^0-9]/g, ''))}
                 placeholder={String(myPage)}
                 placeholderTextColor={colors.textFaint}
                 keyboardType="number-pad"
-                style={[styles.anchorInput, { borderBottomColor: colors.line, color: colors.text }]}
+                style={[styles.anchorInput, { borderBottomColor: colors.lineStrong, color: colors.text }]}
               />
-              <Text style={[typeScale.caption, { color: colors.textFaint }]}>비우면 전체 공개</Text>
+              <Text numberOfLines={1} style={[typeScale.caption, styles.anchorHint, { color: colors.textFaint }]}>
+                비우면 전체 공개
+              </Text>
             </View>
             <Button
               label="올리기"
@@ -171,29 +164,30 @@ export function ClubPostsBody() {
   );
 }
 
-function PostCard({ post, colors, onReveal, onReact }: {
+/** 글 한 편 — 괘선으로만 나눈다. 가려진 글은 점선 상자, 반응은 잉크 반전 칩. */
+function PostEntry({ post, colors, onReveal, onReact }: {
   post: ClubPost;
   colors: ColorTokens;
   onReveal: () => void;
   onReact: (kind: string) => void;
 }) {
   return (
-    <Card style={styles.post}>
+    <View style={[styles.post, { borderBottomColor: colors.line }]}>
       <View style={styles.postHead}>
         <Text style={[typeScale.label, { color: colors.text }]}>{post.authorNickname}</Text>
         <Tag label={TYPE_LABEL[post.type] ?? post.type} />
         {post.anchorPage != null ? (
-          <Numeral style={[styles.anchorBadge, { color: colors.accent }]}>p.{post.anchorPage}</Numeral>
+          <Numeral style={[styles.anchor, { color: colors.textMuted }]}>p.{post.anchorPage}</Numeral>
         ) : null}
-        <Text style={[typeScale.caption, styles.time, { color: colors.textFaint }]}>
-          {formatRelative(post.createdAt)}
-        </Text>
+        <Text style={[styles.time, { color: colors.textFaint }]}>{formatRelative(post.createdAt)}</Text>
       </View>
 
       {post.masked ? (
         <Pressable
-          style={[styles.masked, { borderColor: colors.line, backgroundColor: colors.surfaceDeep }]}
           onPress={onReveal}
+          accessibilityRole="button"
+          accessibilityLabel="가려진 글, 눌러서 그래도 보기"
+          style={({ pressed }) => [styles.masked, { borderColor: colors.lineStrong }, pressed ? pressedStyle : null]}
         >
           <View style={styles.maskedLines}>
             <View style={[styles.maskedLine, { width: '92%', backgroundColor: colors.line }]} />
@@ -205,7 +199,7 @@ function PostCard({ post, colors, onReveal, onReact }: {
               ? `${post.anchorPage}쪽 기준 글입니다`
               : '완독자에게만 보이는 글입니다'}
           </Text>
-          <Text style={[typeScale.label, { color: colors.accent }]}>그래도 볼래요</Text>
+          <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel('그래도 볼래요', 'action')}</Text>
         </Pressable>
       ) : (
         <Text style={[styles.body, { color: colors.text }]}>{post.body}</Text>
@@ -220,10 +214,13 @@ function PostCard({ post, colors, onReveal, onReact }: {
                 <Pressable
                   key={kind}
                   onPress={() => onReact(kind)}
-                  style={[
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  style={({ pressed }) => [
                     styles.reaction,
                     { borderColor: colors.line },
                     on && { backgroundColor: colors.ink, borderColor: colors.ink },
+                    pressed ? pressedStyle : null,
                   ]}
                 >
                   <Text
@@ -236,8 +233,8 @@ function PostCard({ post, colors, onReveal, onReact }: {
             })}
           </View>
           {post.commentCount > 0 ? (
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-              댓글 {post.commentCount}
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+              한 마디 {post.commentCount}
             </Text>
           ) : null}
         </View>
@@ -257,7 +254,7 @@ function PostCard({ post, colors, onReveal, onReact }: {
           ))}
         </View>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
@@ -271,37 +268,27 @@ function reactionLabel(kind: string): string {
 }
 
 const styles = StyleSheet.create({
-  filterBar: {
+  head: {
     ...layout.content,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 40,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.xs,
     borderBottomWidth: hairline,
   },
-  filterToggle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  checkbox: {
-    width: 17,
-    height: 17,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxMark: { fontFamily: mono.semiBold, fontSize: 11 },
-  myPage: { fontSize: 12 },
-  list: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl },
-  post: { gap: spacing.sm },
+  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  post: { paddingVertical: spacing.lg, gap: spacing.sm, borderBottomWidth: hairline },
   postHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  anchorBadge: { fontSize: 11 },
-  time: { marginLeft: 'auto' },
+  anchor: { fontSize: 11 },
+  time: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 0.3, marginLeft: 'auto' },
   // 토론 본문은 인용 활자로 — 종이 위 손글씨 톤을 유지한다.
   body: { fontFamily: serif.regular, fontSize: 15, lineHeight: 25 },
   masked: {
-    borderWidth: hairline,
+    borderWidth: 1,
     borderStyle: 'dashed',
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     padding: spacing.md,
     gap: spacing.sm,
   },
@@ -327,29 +314,40 @@ const styles = StyleSheet.create({
   },
   comment: { gap: 2 },
   commentBody: { ...typeScale.caption, lineHeight: 17 },
-  composer: { ...layout.content },
-  composerRow: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  composer: {
+    ...layout.content,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+    borderTopWidth: hairline,
+  },
   composerInput: {
-    minHeight: 44,
+    minHeight: 48,
     maxHeight: 120,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderWidth: hairline,
+    borderRadius: radius.sm,
     fontFamily: serif.regular,
     fontSize: 15,
+    lineHeight: 22,
     textAlignVertical: 'top',
   },
   composerFooter: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
     gap: spacing.md,
   },
   anchorField: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
+  anchorLabel: { flexShrink: 0 },
+  anchorHint: { flexShrink: 1 },
   anchorInput: {
     borderBottomWidth: hairline,
     fontFamily: mono.semiBold,
     fontSize: 14,
-    minWidth: 44,
+    width: 56,
     paddingVertical: 2,
     textAlign: 'center',
   },
