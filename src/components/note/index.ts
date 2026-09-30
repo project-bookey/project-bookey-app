@@ -1,4 +1,4 @@
-/** 노트 캔버스 엔진 배럴 — 노트 모드 독후감(여러 페이지·노트 종류·대형노트 줌)과 옛 모임 노트북이 같이 쓴다. */
+/** 노트 캔버스 엔진 배럴 — 노트 모드 독후감(여러 페이지·노트 종류·대형노트 줌)이 쓴다. */
 export { NoteCanvas, scaleFor, pageHeightFor } from './NoteCanvas';
 export { InkLayer } from './InkLayer';
 export type { LiveStroke } from './InkLayer';
@@ -8,7 +8,6 @@ export { quoteMetaOf } from './elements/QuoteElement';
 export { STICKER_PACK, EMOJI_STICKERS, findPackSticker } from './stickerPack';
 export type { PackSticker } from './stickerPack';
 export * from './noteDoc';
-export { mergeDocs, changedIds, PAPER_TOUCH_KEY } from './noteMerge';
 export {
   pointsToPath, farEnough, simplifyRdp, strokeHit, strokeBounds, distToSegmentSq, handleDelta, clamp,
 } from './noteGeometry';

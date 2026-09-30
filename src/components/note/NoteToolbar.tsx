@@ -14,8 +14,8 @@ import type { PenState } from './useInkGesture';
 
 export type NoteTool = 'hand' | 'select' | 'pen' | 'eraser';
 export type InsertKind = 'text' | 'sticker' | 'photo' | 'speech' | 'quote';
-/** 옛 모임 노트북의 삽입 4종 — inserts 를 생략하면 이 줄을 그린다. */
-export const DEFAULT_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech'];
+/** 삽입 기본 줄 — inserts 를 생략하면 이 순서로 그린다. */
+export const DEFAULT_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech', 'quote'];
 
 const TOOLS: { key: NoteTool; icon: LucideIcon; label: string }[] = [
   { key: 'hand', icon: Hand, label: '보기' },

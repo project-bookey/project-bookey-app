@@ -10,7 +10,7 @@ const Q = { pad: 28, bar: 4, barGap: 22, text: 36, meta: 22, metaGap: 18 };
 /** 메타 한 줄 — 쪽·책 제목·저자 중 있는 것만 ' · ' 로 잇는다. 하나도 없으면 null. */
 export function quoteMetaOf(element: Pick<QuoteEl, 'page' | 'bookTitle' | 'author'>): string | null {
   const parts = [
-    element.page != null ? `p.${element.page}` : null,
+    element.page != null ? `${element.page}쪽` : null,
     element.bookTitle ?? null,
     element.author ?? null,
   ].filter((v): v is string => !!v && v.length > 0);

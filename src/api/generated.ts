@@ -5,25 +5,6 @@
  */
 
 export interface paths {
-    "/api/v1/clubs/{clubId}/notebook/pages/{pageId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 페이지 — 문서 포함 */
-        get: operations["page"];
-        /** 페이지 저장 — 전체 덮어쓰기. version 이 다르면 409 CLUB_NOTE_CONFLICT, 최신 페이지를 다시 받아 저장한다 */
-        put: operations["savePage"];
-        post?: never;
-        /** 페이지 지우기 — 만든 사람 또는 호스트·운영자 */
-        delete: operations["deletePage"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/clubs/{clubId}/meetings/{meetingId}": {
         parameters: {
             query?: never;
@@ -723,40 +704,6 @@ export interface paths {
         put?: never;
         /** 찌르기 — 프리셋 문구만, 대상당 24h 1회 · 하루 3회 */
         post: operations["nudge"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clubs/{clubId}/notebook/pages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 페이지 만들기 — 마지막 뒤에 붙는다(모임당 30장). 다른 멤버에게 알림 */
-        post: operations["createPage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clubs/{clubId}/notebook/images": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 노트북 사진 올리기 — 응답 id·url 을 문서의 photo 요소에 넣어 저장해야 24시간 뒤 정리되지 않는다 */
-        post: operations["uploadImage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2117,6 +2064,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/posts/clubs/{clubId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 모임 독후감 목록 — 그 모임 활성 멤버만, 최신순 */
+        get: operations["listByClub"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/postcards/sent": {
         parameters: {
             query?: never;
@@ -2379,23 +2343,6 @@ export interface paths {
             cookie?: never;
         };
         get: operations["searchAddresses"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/clubs/{clubId}/notebook": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 노트북 — 페이지 목록(문서 없이 요약만)과 상한 정책. 끝난 모임은 readOnly */
-        get: operations["notebook"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3085,34 +3032,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        SaveClubNotePageRequest: {
-            /** Format: int32 */
-            version: number;
-            title?: string;
-            document: {
-                [key: string]: unknown;
-            };
-        };
-        ClubNoteEditorView: {
-            /** Format: int64 */
-            userId: number;
-            nickname: string;
-            avatarUrl?: string;
-        };
-        ClubNotePageSummaryView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int32 */
-            seq: number;
-            title?: string;
-            /** Format: int32 */
-            version: number;
-            /** Format: int32 */
-            elementCount: number;
-            updatedBy?: components["schemas"]["ClubNoteEditorView"];
-            /** Format: date-time */
-            updatedAt: string;
-        };
         UpsertMeetingRequest: {
             title: string;
             description?: string;
@@ -3454,10 +3373,24 @@ export interface components {
             title: string;
             bodyMd: string;
             /** @enum {string} */
-            visibility: "PUBLIC" | "LINK" | "PRIVATE";
+            visibility: "PUBLIC" | "LINK" | "PRIVATE" | "CLUB";
             tags: string[];
             imageIds: number[];
             quoteIds: number[];
+            /**
+             * @description 생략하면 TEXT
+             * @enum {string}
+             */
+            format?: "TEXT" | "NOTE";
+            /** @description NOTE 전용 캔버스 문서 — pages 배열 1~6장, 1MB 이하 */
+            document?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Format: int64
+             * @description 모임 안에서 쓸 때 그 모임 id — 활성 멤버·진행 중 모임만
+             */
+            clubId?: number;
         };
         PostImageView: {
             /** Format: int64 */
@@ -3475,7 +3408,7 @@ export interface components {
             title: string;
             bodyMd: string;
             /** @enum {string} */
-            visibility: "PUBLIC" | "LINK" | "PRIVATE";
+            visibility: "PUBLIC" | "LINK" | "PRIVATE" | "CLUB";
             tags: string[];
             /** Format: int64 */
             bookId?: number;
@@ -3501,6 +3434,15 @@ export interface components {
             mine: boolean;
             /** Format: date-time */
             createdAt: string;
+            /** @enum {string} */
+            format: "TEXT" | "NOTE";
+            /** @description NOTE 글의 캔버스 문서 — TEXT 는 null */
+            document?: {
+                [key: string]: unknown;
+            };
+            /** Format: int64 */
+            clubId?: number;
+            clubName?: string;
         };
         PostLikeView: {
             liked: boolean;
@@ -3873,39 +3815,6 @@ export interface components {
             /** @enum {string} */
             messageKey: "READ_TOGETHER" | "CHECKPOINT_SOON" | "WAITING";
         };
-        CreateClubNotePageRequest: {
-            title?: string;
-        };
-        ClubNotePageView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int32 */
-            seq: number;
-            title?: string;
-            /** Format: int32 */
-            version: number;
-            document: {
-                [key: string]: unknown;
-            };
-            /** Format: int32 */
-            elementCount: number;
-            createdBy?: components["schemas"]["ClubNoteEditorView"];
-            updatedBy?: components["schemas"]["ClubNoteEditorView"];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-            canDelete: boolean;
-        };
-        ClubNoteImageView: {
-            /** Format: int64 */
-            id: number;
-            url: string;
-            /** Format: int32 */
-            width?: number;
-            /** Format: int32 */
-            height?: number;
-        };
         KickRequest: {
             /** Format: int64 */
             userId: number;
@@ -4248,11 +4157,15 @@ export interface components {
             /** @description 생략하면 유지, 빈 목록이면 비움 */
             tags?: string[];
             /** @enum {string} */
-            visibility?: "PUBLIC" | "LINK" | "PRIVATE";
+            visibility?: "PUBLIC" | "LINK" | "PRIVATE" | "CLUB";
             /** @description 생략하면 유지, 빈 목록이면 사진을 전부 뗌 */
             imageIds?: number[];
             /** @description 생략하면 유지, 빈 목록이면 밑줄 연결을 전부 지움 */
             quoteIds?: number[];
+            /** @description 생략하면 유지 — NOTE 글만, 문서 전체를 덮어쓴다 */
+            document?: {
+                [key: string]: unknown;
+            };
         };
         NotificationSettingsRequest: {
             /** @enum {string} */
@@ -4769,23 +4682,6 @@ export interface components {
             /** Format: double */
             longitude: number;
         };
-        ClubNotePolicy: {
-            /** Format: int32 */
-            maxPages: number;
-            /** Format: int32 */
-            maxElements: number;
-            /** Format: int32 */
-            maxDocumentBytes: number;
-            /** Format: int32 */
-            maxImageBytes: number;
-        };
-        ClubNotebookView: {
-            /** Format: int64 */
-            clubId: number;
-            readOnly: boolean;
-            policy: components["schemas"]["ClubNotePolicy"];
-            pages: components["schemas"]["ClubNotePageSummaryView"][];
-        };
         ClubLogDayView: {
             /** Format: date */
             date: string;
@@ -5154,9 +5050,6 @@ export interface components {
     headers: never;
     pathItems: never;
 }
-export type SchemaSaveClubNotePageRequest = components['schemas']['SaveClubNotePageRequest'];
-export type SchemaClubNoteEditorView = components['schemas']['ClubNoteEditorView'];
-export type SchemaClubNotePageSummaryView = components['schemas']['ClubNotePageSummaryView'];
 export type SchemaUpsertMeetingRequest = components['schemas']['UpsertMeetingRequest'];
 export type SchemaMeetingAttendeeView = components['schemas']['MeetingAttendeeView'];
 export type SchemaMeetingView = components['schemas']['MeetingView'];
@@ -5216,9 +5109,6 @@ export type SchemaCreateClubPostRequest = components['schemas']['CreateClubPostR
 export type SchemaClubPostView = components['schemas']['ClubPostView'];
 export type SchemaReactionRequest = components['schemas']['ReactionRequest'];
 export type SchemaNudgeRequest = components['schemas']['NudgeRequest'];
-export type SchemaCreateClubNotePageRequest = components['schemas']['CreateClubNotePageRequest'];
-export type SchemaClubNotePageView = components['schemas']['ClubNotePageView'];
-export type SchemaClubNoteImageView = components['schemas']['ClubNoteImageView'];
 export type SchemaKickRequest = components['schemas']['KickRequest'];
 export type SchemaJoinPublicRequest = components['schemas']['JoinPublicRequest'];
 export type SchemaUnlockResult = components['schemas']['UnlockResult'];
@@ -5307,8 +5197,6 @@ export type SchemaPageResponseClubPostView = components['schemas']['PageResponse
 export type SchemaPlaceView = components['schemas']['PlaceView'];
 export type SchemaCoordinates = components['schemas']['Coordinates'];
 export type SchemaAddressView = components['schemas']['AddressView'];
-export type SchemaClubNotePolicy = components['schemas']['ClubNotePolicy'];
-export type SchemaClubNotebookView = components['schemas']['ClubNotebookView'];
 export type SchemaClubLogDayView = components['schemas']['ClubLogDayView'];
 export type SchemaClubLogSummary = components['schemas']['ClubLogSummary'];
 export type SchemaClubLogWeekView = components['schemas']['ClubLogWeekView'];
@@ -5340,77 +5228,6 @@ export type SchemaAuditRow = components['schemas']['AuditRow'];
 export type SchemaPageResponseAuditRow = components['schemas']['PageResponseAuditRow'];
 export type $defs = Record<string, never>;
 export interface operations {
-    page: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-                pageId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClubNotePageView"];
-                };
-            };
-        };
-    };
-    savePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-                pageId: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveClubNotePageRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClubNotePageSummaryView"];
-                };
-            };
-        };
-    };
-    deletePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-                pageId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     meetingDetail: {
         parameters: {
             query?: never;
@@ -6662,61 +6479,6 @@ export interface operations {
                     "*/*": {
                         [key: string]: number;
                     };
-                };
-            };
-        };
-    };
-    createPage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["CreateClubNotePageRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClubNotePageView"];
-                };
-            };
-        };
-    };
-    uploadImage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    file: string;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClubNoteImageView"];
                 };
             };
         };
@@ -9096,6 +8858,31 @@ export interface operations {
             };
         };
     };
+    listByClub: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
     sent: {
         parameters: {
             query?: {
@@ -9475,28 +9262,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AddressView"][];
-                };
-            };
-        };
-    };
-    notebook: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ClubNotebookView"];
                 };
             };
         };

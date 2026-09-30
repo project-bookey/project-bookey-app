@@ -5,7 +5,6 @@
  * - `PostNoteDoc`: 노트 모드 독후감 하나 = 노트 종류(kind) + 페이지 1~6장. 서버(`posts.document`)는 이 JSON 을
  *   해석하지 않고 그대로 저장·반환한다(pages 길이·직렬화 크기만 검사). 경계에서 `parsePostNoteDoc` 로 좁힌다.
  * - `NoteDoc`: 캔버스가 그리는 단위 — 페이지 한 장. 노트 문서의 페이지는 `pageDocOf` 로 이 모양이 된다(종이·크기는 kind 에서).
- *   옛 모임 노트북(`ClubNotePageView.document`)도 이 모양이라 `parseDoc` 는 그대로 남는다(그 화면을 걷어낼 때까지).
  * 그래서 CLAUDE.md 의 "서버 응답 필드를 손으로 쓰지 않는다" 규칙에서 이 파일만 예외다 — 서버 타입은 불투명 JSON 이고,
  * 경계에서 여기 타입으로 좁힌다. 모르는 요소는 버리되 절대 throw 하지 않는다.
  *
@@ -32,10 +31,7 @@ const CANVAS_BY_KIND: Record<NoteKind, CanvasSize> = {
 };
 /** 종류별 논리 캔버스 크기. */
 export const canvasFor = (kind: NoteKind): CanvasSize => CANVAS_BY_KIND[kind];
-/**
- * 기본(격자·줄노트) 캔버스 — 옛 모임 노트북 화면이 쓰는 값. 새 코드는 `canvasFor(kind)`·`canvasOf(doc)` 를 쓴다.
- * 페이지 비율 3:4 — PNG 는 1080×1440 으로 뽑는다.
- */
+/** 기본(격자·줄노트) 캔버스 — canvas 를 안 넘긴 곳의 기본값. 새 코드는 `canvasFor(kind)`·`canvasOf(doc)` 를 쓴다. 비율 3:4. */
 export const CANVAS = CANVAS_BY_KIND.grid;
 /** 대형노트는 격자노트와 같은 도트 종이를 넓게 편 것이다. */
 export const paperFor = (kind: NoteKind): NotePaper => (kind === 'lined' ? 'lined' : 'grid');
@@ -122,14 +118,10 @@ export type NoteElement = TextElement | StickerElement | PhotoElement | SpeechEl
 export type PlacedElement = Exclude<NoteElement, InkElement>;
 
 /**
- * 캔버스가 그리는 페이지 한 장. kind 가 있으면 캔버스 크기를 정한다(없으면 격자 크기 — 옛 모임 노트북).
+ * 캔버스가 그리는 페이지 한 장. kind 가 있으면 캔버스 크기를 정한다(없으면 격자 크기).
  * type 별칭이어야 한다(인터페이스 X) — 생성 타입 `{ [key: string]: unknown }` 에 그대로 대입되게.
  */
 export type NoteDoc = { v: typeof DOC_VERSION; paper: NotePaper; elements: NoteElement[]; kind?: NoteKind };
-
-export function emptyDoc(): NoteDoc {
-  return { v: DOC_VERSION, paper: 'plain', elements: [] };
-}
 
 /** 페이지 문서의 논리 캔버스 크기. */
 export const canvasOf = (doc: Pick<NoteDoc, 'kind'>): CanvasSize => canvasFor(doc.kind ?? 'grid');
@@ -271,19 +263,6 @@ function parseElements(raw: unknown): NoteElement[] {
     }
   }
   return elements;
-}
-
-/**
- * 서버에서 온 불투명 JSON 을 페이지 문서로 좁힌다(옛 모임 노트북).
- * 어떤 입력에도 throw 하지 않는다 — 다른 버전의 앱이 저장한 문서도 열려야 한다.
- */
-export function parseDoc(raw: unknown): NoteDoc {
-  if (!isRecord(raw)) return emptyDoc();
-  return {
-    v: DOC_VERSION,
-    paper: oneOf(raw.paper, NOTE_PAPERS) ? raw.paper : 'plain',
-    elements: parseElements(raw.elements),
-  };
 }
 
 // ────────────────────────────── 노트 모드 독후감 문서 ──────────────────────────────
