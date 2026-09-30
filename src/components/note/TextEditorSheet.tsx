@@ -49,7 +49,8 @@ export function TextEditorSheet({ element, members, onPatch, onClose }: {
     <NoteSheet visible={element !== null} title={isSpeech ? '말풍선' : '텍스트'} onClose={onClose}>
       {element ? (
         <>
-          {element.type === 'speech' ? (
+          {/* 화자 고르기는 고를 사람이 둘 이상일 때만(모임 독후감) — 혼자면 늘 나. */}
+          {element.type === 'speech' && members.length > 1 ? (
             <MemberPickerRow
               members={members}
               selectedUserId={element.userId}

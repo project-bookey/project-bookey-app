@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import type { PlacedElement } from './noteDoc';
 import { PhotoElement } from './elements/PhotoElement';
+import { QuoteElement } from './elements/QuoteElement';
 import { SpeechElement } from './elements/SpeechElement';
 import { StickerElement } from './elements/StickerElement';
 import { TextElement } from './elements/TextElement';
@@ -18,6 +19,8 @@ export function renderElementBody(element: PlacedElement, scale: number): ReactN
       return <PhotoElement element={element} scale={scale} />;
     case 'speech':
       return <SpeechElement element={element} scale={scale} />;
+    case 'quote':
+      return <QuoteElement element={element} scale={scale} />;
     default:
       return null;
   }

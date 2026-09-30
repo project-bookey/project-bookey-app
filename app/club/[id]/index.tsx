@@ -23,14 +23,14 @@ import type {
 import {
   ClubTabs,
   type ClubTabKey,
-  isClubTabKey,
+  clubTabOf,
   MemberDetail,
   MemberStrip,
   StatStrip,
   confirmAsync,
   notify,
 } from "@/components/club";
-import { NoteGrid } from "@/components/clubNote/NoteGrid";
+import { ClubPostGrid } from "@/components/club/ClubPostGrid";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubChatBody } from "./chat";
 import { ClubMeetingsBody } from "./meetings";
@@ -68,7 +68,7 @@ import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono } from "@/theme/tokens";
 
-const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "posts", "notebook"];
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "posts", "reviews"];
 
 /**
  * 모임 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
@@ -82,9 +82,11 @@ export default function ClubHomeScreen() {
   const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const clubId = Number(id);
   // 탭은 화면 이동 없이 아래 영역만 바꾼다. 딥링크(?tab=)로 들어오면 그 탭으로 연다.
-  const [tab, setTab] = useState<ClubTabKey>(isClubTabKey(tabParam) ? tabParam : "home");
+  // 옛 노트 탭 링크(?tab=notebook)는 독후감 탭으로 연다.
+  const [tab, setTab] = useState<ClubTabKey>(clubTabOf(tabParam) ?? "home");
   useEffect(() => {
-    if (isClubTabKey(tabParam)) setTab(tabParam);
+    const next = clubTabOf(tabParam);
+    if (next) setTab(next);
   }, [tabParam]);
   const today = todayKst();
   const [date, setDate] = useState(today);
@@ -567,7 +569,7 @@ export default function ClubHomeScreen() {
         {tab === "chat" ? <ClubChatBody /> : null}
         {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} /> : null}
         {tab === "posts" ? <ClubPostsBody /> : null}
-        {tab === "notebook" ? <NoteGrid clubId={clubId} /> : null}
+        {tab === "reviews" ? <ClubPostGrid clubId={clubId} ended={ended} /> : null}
       </SwipeableTabs>
     </PaperScreen>
   );

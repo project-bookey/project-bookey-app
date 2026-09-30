@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
-import { CANVAS, penColorOf, type InkElement, type PenColor } from './noteDoc';
+import { CANVAS, penColorOf, type CanvasSize, type InkElement, type PenColor } from './noteDoc';
 import { pointsToPath, type Point } from './noteGeometry';
 
 /** 그리는 중인 획 — 아직 문서에 들어가기 전. */
@@ -28,12 +28,14 @@ function groupStrokes(strokes: readonly InkElement[]): Group[] {
  * 잉크 층 — Svg 하나에 viewBox 를 논리 캔버스로 잡아 scale 을 신경 쓰지 않는다.
  * 사용자 손글씨라 둥근 캡을 쓴다(각진 캡은 크롬 아이콘 규칙이지 잉크 규칙이 아니다).
  * 항상 요소 위에 그려진다 — 사진에 동그라미 치고 글에 밑줄 긋는 주석 느낌이 의도다.
+ * canvas 는 문서의 논리 크기(대형노트 2000×2666) — 생략하면 격자 크기.
  */
-export const InkLayer = memo(function InkLayer({ strokes, width, height, live }: {
+export const InkLayer = memo(function InkLayer({ strokes, width, height, live, canvas = CANVAS }: {
   strokes: readonly InkElement[];
   width: number;
   height: number;
   live?: LiveStroke | null;
+  canvas?: CanvasSize;
 }) {
   const { colors } = useTheme();
   const pen = penColorOf(colors);
@@ -43,7 +45,7 @@ export const InkLayer = memo(function InkLayer({ strokes, width, height, live }:
       style={StyleSheet.absoluteFill}
       width={width}
       height={height}
-      viewBox={`0 0 ${CANVAS.w} ${CANVAS.h}`}
+      viewBox={`0 0 ${canvas.w} ${canvas.h}`}
       pointerEvents="none"
     >
       {groups.map((g) => (

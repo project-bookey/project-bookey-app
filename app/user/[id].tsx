@@ -149,8 +149,9 @@ export default function UserProfileScreen() {
         renderItem={({ item }) => (
           <Card>
             <Text style={[styles.postTitle, { color: colors.text }]}>{item.title}</Text>
+            {/* 글이 없는 노트 독후감은 발췌가 비어 있다 — 그땐 노트라는 것만 밝힌다. */}
             <Text style={[typeScale.body, { color: colors.textMuted }]} numberOfLines={3}>
-              {item.excerpt}
+              {item.excerpt.length > 0 ? item.excerpt : item.format === 'NOTE' ? '노트로 꾸민 독후감' : ''}
             </Text>
             <View style={styles.postFoot}>
               {item.bookTitle ? (

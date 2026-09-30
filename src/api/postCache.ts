@@ -3,9 +3,9 @@ import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import type { Page, Post } from '@/api/types';
 
 /**
- * 독후감 캐시 — 같은 글이 다섯 곳에 산다.
+ * 독후감 캐시 — 같은 글이 여러 곳에 산다.
  *
- * 광장 독후감 무한 피드 · 홈 스포트라이트 · 책별 목록 · 내 독후감(무한 목록과 최신 한 건) · 상세.
+ * 광장 독후감 무한 피드 · 홈 스포트라이트 · 책별 목록 · 내 독후감(무한 목록과 최신 한 건) · 모임 독후감 · 상세.
  * 좋아요·댓글 수가 바뀌면 다섯 곳을 한 번에 손봐야 화면끼리 어긋나지 않는다.
  * 키와 패치를 여기 한 곳에 둔다(밑줄의 quoteCache 와 같은 꼴).
  */
@@ -18,6 +18,8 @@ export const bookPostsKey = (bookId: number) => ['posts', 'book', bookId] as con
 export const myPostsKey = ['posts', 'mine'] as const;
 /** 내 최신 독후감 한 건(프로필) — Page 하나. */
 export const MY_POSTS_LATEST_KEY = ['posts', 'mine', 'latest'] as const;
+/** 모임 독후감 무한 목록(모임 홈 독후감 탭). ['posts'] 접두사라 invalidatePostLists 에 같이 걸린다. */
+export const clubPostsKey = (clubId: number) => ['posts', 'club', clubId] as const;
 export const postKey = (postId: number) => ['post', postId] as const;
 
 export type PostListCache = InfiniteData<Page<Post>>;
@@ -75,6 +77,7 @@ export function patchPostEverywhere(queryClient: QueryClient, postId: number, pa
   queryClient.setQueryData<PostListCache>(postFeedKey, patchInfinite);
   queryClient.setQueryData<Page<Post>>(POST_HOME_KEY, (old) => (old ? patchPage(old) : old));
   queryClient.setQueriesData<PostListCache>({ queryKey: ['posts', 'book'] }, patchInfinite);
+  queryClient.setQueriesData<PostListCache>({ queryKey: ['posts', 'club'] }, patchInfinite);
   // 내 독후감은 무한 목록(myPostsKey)과 최신 한 건(MY_POSTS_LATEST_KEY)이 같은 접두사라
   // 한 번에 걸린다 — 'pages' 유무로 InfiniteData / Page 를 가른다.
   queryClient.setQueriesData<PostListCache | Page<Post>>({ queryKey: ['posts', 'mine'] }, (old) =>

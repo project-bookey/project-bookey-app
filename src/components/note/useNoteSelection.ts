@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ElementHandlers } from './EditableElementView';
 import type { NoteTool } from './NoteToolbar';
 import { applyPreview, settle, type Delta, type Preview } from './editing';
-import { bringToFront, removeElements, replaceElement, type PlacedElement } from './noteDoc';
+import { bringToFront, canvasOf, removeElements, replaceElement, type PlacedElement } from './noteDoc';
 import type { NoteEditor } from './useNoteEditor';
 
 /**
@@ -39,7 +39,9 @@ export function useNoteSelection({ editor, scaleRef, tool, onEdit }: {
     editor.apply((doc) => {
       const el = doc.elements.find((e) => e.id === id);
       if (!el || el.type === 'ink') return doc;
-      return replaceElement(doc, settle(applyPreview(el, { id, ...delta }, scaleRef.current)));
+      // 노트 종류마다 캔버스 크기가 달라(대형노트) 클램프도 그 문서의 캔버스로 한다.
+      const canvas = canvasOf(doc);
+      return replaceElement(doc, settle(applyPreview(el, { id, ...delta }, scaleRef.current, canvas), canvas));
     });
     setPreview(null);
   }, [editor, scaleRef]);

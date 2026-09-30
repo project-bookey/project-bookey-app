@@ -84,7 +84,8 @@ export function PostScrap({ post, rotate, variant, onPress }: {
           {post.title}
         </Text>
         {/* 홈은 글 상자가 한 줄이라 제목만 선다 — 발췌를 그리면 제목을 밀어낸다. */}
-        {EXCERPT_LINES[variant] > 0 ? (
+        {/* 글이 없는 노트 독후감은 발췌가 비어 있다 — 그땐 제목만 선다. */}
+        {EXCERPT_LINES[variant] > 0 && post.excerpt.length > 0 ? (
           <Text
             numberOfLines={EXCERPT_LINES[variant]}
             style={[styles.excerpt, { color: colors.textMuted }]}

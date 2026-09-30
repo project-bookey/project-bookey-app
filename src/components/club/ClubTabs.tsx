@@ -6,20 +6,23 @@ import { clubApi } from '@/api/endpoints';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
-export type ClubTabKey = 'home' | 'chat' | 'meetings' | 'posts' | 'notebook';
+export type ClubTabKey = 'home' | 'chat' | 'meetings' | 'posts' | 'reviews';
 export const isClubTabKey = (v: unknown): v is ClubTabKey =>
-  v === 'home' || v === 'chat' || v === 'meetings' || v === 'posts' || v === 'notebook';
+  v === 'home' || v === 'chat' || v === 'meetings' || v === 'posts' || v === 'reviews';
+/** ?tab= 값 → 탭. 옛 노트 탭(notebook)은 그 자리를 이은 독후감 탭으로. 모르는 값이면 null. */
+export const clubTabOf = (v: unknown): ClubTabKey | null =>
+  v === 'notebook' ? 'reviews' : isClubTabKey(v) ? v : null;
 
 const TABS: { key: ClubTabKey; label: string }[] = [
   { key: 'home', label: '홈' },
   { key: 'chat', label: '채팅' },
   { key: 'meetings', label: '약속' },
   { key: 'posts', label: '토론' },
-  { key: 'notebook', label: '노트' },
+  { key: 'reviews', label: '독후감' },
 ];
 
 /**
- * 모임 탭 — 홈 · 채팅 · 약속 · 토론 · 노트. 모임 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
+ * 모임 탭 — 홈 · 채팅 · 약속 · 토론 · 독후감. 모임 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
  * 단독 화면에서 쓰면 라우팅으로 옮긴다.
  * 활성 탭은 잉크 글자 + 2px 민트 표식(구역 네비와 같은 규칙). 홈으로는 navigate(스택에 있으면 되돌아감),
  * 하위 화면끼리는 replace 로 옮겨 뒤로 가기가 항상 모임 홈으로 떨어지게 한다.
@@ -43,7 +46,7 @@ export function ClubTabs({ clubId, active, onSelect }: {
       case 'chat': return `/club/${clubId}/chat`;
       case 'meetings': return { pathname: '/club/[id]/meetings', params: { id, host: isHost ? '1' : '0' } };
       case 'posts': return `/club/${clubId}/posts`;
-      case 'notebook': return { pathname: '/club/[id]/notebook', params: { id } };
+      case 'reviews': return { pathname: '/club/[id]', params: { id, tab: 'reviews' } };
     }
   };
   const go = (key: ClubTabKey) => {
@@ -52,7 +55,8 @@ export function ClubTabs({ clubId, active, onSelect }: {
       onSelect(key);
       return;
     }
-    if (key === 'home') router.navigate(hrefOf('home'));
+    // 독후감 탭은 모임 홈 안의 탭이라 홈과 같이 navigate 로 되돌아간다.
+    if (key === 'home' || key === 'reviews') router.navigate(hrefOf(key));
     else if (active === 'home') router.push(hrefOf(key));
     else router.replace(hrefOf(key));
   };
