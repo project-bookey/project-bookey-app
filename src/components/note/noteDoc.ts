@@ -8,7 +8,7 @@
  * 그래서 CLAUDE.md 의 "서버 응답 필드를 손으로 쓰지 않는다" 규칙에서 이 파일만 예외다 — 서버 타입은 불투명 JSON 이고,
  * 경계에서 여기 타입으로 좁힌다. 모르는 요소는 버리되 절대 throw 하지 않는다.
  *
- * 좌표는 논리 단위다 — 격자·줄노트 1000×1333, 대형노트 2000×2666(같은 3:4, 넓이 4배). 화면엔 scale 을 곱해 그린다.
+ * 좌표는 논리 단위다 — 격자·줄노트 1000×1333, 대형노트 5000×5000(격자 한 쪽 폭의 다섯 배, 넓이 약 19쪽). 화면엔 scale 을 곱해 그린다.
  * x·y 는 회전 전 박스의 좌상단, rot 는 도(deg). 높이는 저장하지 않는다 — 텍스트·말풍선·문장 조각은 레이아웃이 정하고 사진만 h 를 가진다.
  * 색은 토큰 이름(PenColor)으로 저장한다 — 다크·라이트 어느 쪽에서 봐도 보이게 렌더 시점에 `penColorOf` 로 푼다.
  */
@@ -18,7 +18,7 @@ export const DOC_VERSION = 1 as const;
 
 // ────────────────────────────── 노트 종류·캔버스 ──────────────────────────────
 
-/** 노트 종류 — 격자노트 · 줄노트 · 대형노트(큰 도트 종이, 줌으로 쓴다). */
+/** 노트 종류 — 격자노트 · 줄노트 · 대형노트(아주 넓은 도트 종이 — 일부를 확대해 쓰고 줄여서 전체를 본다). */
 export type NoteKind = 'grid' | 'lined' | 'large';
 export const NOTE_KINDS: readonly NoteKind[] = ['grid', 'lined', 'large'];
 /** 논리 캔버스 크기. */
@@ -27,11 +27,14 @@ export type CanvasSize = { readonly w: number; readonly h: number };
 const CANVAS_BY_KIND: Record<NoteKind, CanvasSize> = {
   grid: { w: 1000, h: 1333 },
   lined: { w: 1000, h: 1333 },
-  large: { w: 2000, h: 2666 },
+  large: { w: 5000, h: 5000 },
 };
 /** 종류별 논리 캔버스 크기. */
 export const canvasFor = (kind: NoteKind): CanvasSize => CANVAS_BY_KIND[kind];
-/** 기본(격자·줄노트) 캔버스 — canvas 를 안 넘긴 곳의 기본값. 새 코드는 `canvasFor(kind)`·`canvasOf(doc)` 를 쓴다. 비율 3:4. */
+/**
+ * 기본(격자·줄노트) 캔버스 — canvas 를 안 넘긴 곳의 기본값. 새 코드는 `canvasFor(kind)`·`canvasOf(doc)` 를 쓴다. 비율 3:4.
+ * 줌의 '100%' 도 이 크기가 기준이다 — 대형노트도 100% 에선 글씨·펜 굵기가 격자노트와 같게 보인다.
+ */
 export const CANVAS = CANVAS_BY_KIND.grid;
 /** 대형노트는 격자노트와 같은 도트 종이를 넓게 편 것이다. */
 export const paperFor = (kind: NoteKind): NotePaper => (kind === 'lined' ? 'lined' : 'grid');
@@ -438,6 +441,42 @@ export function removeElements(doc: NoteDoc, ids: ReadonlySet<string>): NoteDoc 
 /** 맨 앞으로 — z 를 최댓값+1 로. */
 export function bringToFront(doc: NoteDoc, id: string): NoteDoc {
   return patchElement(doc, id, { z: nextZ(doc) });
+}
+
+/** 논리 사각형. */
+export type NoteRect = { x: number; y: number; w: number; h: number };
+/**
+ * 캔버스 창 — 그려진 캔버스(px) 안에서 실제로 그릴 구역. 줌 무대가 보이는 구역에 여유를 붙여 넘긴다.
+ * SVG 층(종이·잉크)은 이 구역만 그린다 — 대형노트를 통째로 SVG 한 장에 그리면 네이티브(안드로이드)가
+ * 캔버스 크기만 한 비트맵을 잡아 메모리가 터진다. 없으면 캔버스 전체.
+ */
+export type CanvasWindow = NoteRect;
+
+/**
+ * 페이지에 올린 것들이 차지한 범위(논리 좌표) — 비었으면 null. 대형노트를 열 때 어디를 보여 줄지 정하는 데 쓴다.
+ * 텍스트·말풍선·문장 조각은 높이를 저장하지 않으므로 폭의 절반으로(스티커는 정사각형으로) 어림한다(보여 줄 자리만 정하면 되니 충분하다).
+ */
+export function contentBounds(doc: Pick<NoteDoc, 'elements'>): NoteRect | null {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const take = (x0: number, y0: number, x1: number, y1: number) => {
+    if (x0 < minX) minX = x0;
+    if (y0 < minY) minY = y0;
+    if (x1 > maxX) maxX = x1;
+    if (y1 > maxY) maxY = y1;
+  };
+  for (const e of doc.elements) {
+    if (e.type === 'ink') {
+      for (const [x, y] of e.points) take(x, y, x, y);
+    } else {
+      const h = e.type === 'photo' ? e.h : e.type === 'sticker' ? e.w : e.w / 2;
+      take(e.x, e.y, e.x + e.w, e.y + h);
+    }
+  }
+  if (!Number.isFinite(minX)) return null;
+  return { x: minX, y: minY, w: Math.max(maxX - minX, 1), h: Math.max(maxY - minY, 1) };
 }
 
 /** 렌더 순서 — z 오름차순, 같으면 id 로 안정 정렬. */

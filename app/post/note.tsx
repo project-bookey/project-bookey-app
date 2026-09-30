@@ -15,10 +15,10 @@ import { useBookPicker, type PickedBook } from '@/components/book/BookPicker';
 import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
-  NOTE_DOC_MAX_BYTES, NOTE_KINDS, NoteCanvas, ZoomControls, ZoomStage, applyPreview, emptyPostNoteDoc, imageIdsOf,
+  NOTE_DOC_MAX_BYTES, NOTE_KINDS, NoteCanvas, ZoomControls, ZoomStage, applyPreview, contentBounds, emptyPostNoteDoc, imageIdsOf,
   plainTextOf, postNoteDocBytes, quoteIdsOf, serializePostNoteDoc, useInkGesture, useNoteInserts, useNotePhotos,
   useNoteSelection, useNoteZoom, usePostNoteEditor,
-  type LiveStroke, type NoteKind, type NoteSpeaker, type PenState, type PlacedElement, type PostNoteDoc,
+  type LiveStroke, type NoteKind, type NoteSpeaker, type PenState, type PlacedElement, type PostNoteDoc, type ZoomHome,
 } from '@/components/note';
 import { EditableElementView } from '@/components/note/EditableElementView';
 import { InkGestureLayer } from '@/components/note/InkGestureLayer';
@@ -147,7 +147,9 @@ function Shell({ category, children }: { category: string; children: ReactNode }
 
 /**
  * 편집기 본체 — 페이지는 가로 페이저로 넘기고(이웃은 읽기 전용 미리보기), 지금 페이지만 편집 층을 얹는다.
- * 도구는 보기(스와이프로 넘김)·선택·펜·지우개, 삽입은 텍스트·스티커·사진·말풍선·문장. 대형노트는 줌 무대 위에서.
+ * 도구는 보기(스와이프로 넘김)·선택·펜·지우개, 삽입은 텍스트·스티커·사진·말풍선·문장. 지금 페이지는 줌 무대 위에 —
+ * 어느 노트든 핀치·휠·버튼으로 줄이고 키운다. 대형노트는 아주 넓은 종이라 100%(격자노트와 같은 글씨 크기)로 한 구역을
+ * 보며 시작하고, 손 도구로 끌어 옮기거나 '전체'로 줄여 종이 전체를 본다.
  */
 function NoteEditor({ post, initial, initialBook, clubId }: {
   post?: Post;
@@ -188,17 +190,27 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
   const onLayout = (e: LayoutChangeEvent) =>
     setStage({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const stageWidth = stage?.w ?? 0;
-  // 좌우 여백을 뺀 폭, 높이에서 역산한 폭, 콘텐츠 최대 폭 중 가장 작은 값 — 페이지가 화면을 넘지 않는다.
-  const pageWidth = stage
-    ? Math.max(0, Math.floor(Math.min(
-        stage.w - spacing.lg * 2,
-        (stage.h - spacing.md * 2) * (pe.canvas.w / pe.canvas.h),
-        layout.content.maxWidth - spacing.lg * 2,
-      )))
-    : 0;
+  const stageHeight = stage?.h ?? 0;
 
-  // 대형노트 줌 — 격자·줄노트면 늘 맞춤(통과). 확대 중 손 도구는 종이를 끈다.
-  const zoom = useNoteZoom({ kind: pe.kind, baseWidth: pageWidth, panEnabled: tool === 'hand' });
+  // 처음 모습 — 대형노트는 붙인 것들의 가운데(비었으면 종이 한가운데)를 100% 로, 격자·줄노트는 종이 전체.
+  const docRef = useRef(editor.doc);
+  docRef.current = editor.doc;
+  const home = useCallback((): ZoomHome => {
+    if (pe.kind !== 'large') return { fit: true };
+    const b = contentBounds(docRef.current);
+    return { center: b ? [b.x + b.w / 2, b.y + b.h / 2] : [pe.canvas.w / 2, pe.canvas.h / 2] };
+  }, [pe.kind, pe.canvas]);
+  // 줌 무대 = 페이지 칸 전체. 맞춤은 좌우·위아래 여백과 콘텐츠 최대 폭 안에서. 확대 중 손 도구는 종이를 끈다.
+  const zoom = useNoteZoom({
+    kind: pe.kind,
+    viewport: { w: stageWidth, h: stageHeight },
+    fitInset: { x: spacing.lg, y: spacing.lg },
+    maxFitWidth: layout.content.maxWidth - spacing.lg * 2,
+    alignTop: true,
+    panEnabled: tool === 'hand',
+    home,
+  });
+  const pageWidth = zoom.fitWidth;
   const scale = zoom.scale;
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
@@ -254,12 +266,14 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
   // ────────────────────────────── 페이지 ──────────────────────────────
 
   const { select } = selection;
-  const { fit } = zoom;
-  // 페이지가 바뀌면 선택을 풀고 맞춤으로.
+  const { goHome } = zoom;
+  // 페이지가 바뀌면 선택을 풀고 처음 모습으로. goHome 은 뷰포트가 바뀌면 새로 만들어지지만 그땐 줌이 스스로 처음 모습을 얹는다.
+  const goHomeRef = useRef(goHome);
+  goHomeRef.current = goHome;
   useEffect(() => {
     select(null);
-    fit();
-  }, [pe.pageId, select, fit]);
+    goHomeRef.current();
+  }, [pe.pageId, select]);
 
   useEffect(() => {
     if (stageWidth > 0) listRef.current?.scrollToIndex({ index: pe.pageIndex, animated: true });
@@ -386,13 +400,14 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
 
   const selected = selection.selected;
   const renderPage = ({ index: i }: { item: string; index: number }) => (
-    <View style={[styles.slide, { width: stageWidth }]}>
+    <View style={[styles.slide, { width: stageWidth, height: stageHeight }]}>
       {i === pe.pageIndex ? (
         <ZoomStage zoom={zoom} controls={false}>
-          {(w) => (
+          {(w, win) => (
             <NoteCanvas
               doc={editor.doc}
               width={w}
+              window={win}
               live={live}
               underlay={
                 <PageTapLayer
@@ -487,7 +502,7 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
             pagingEnabled
             keyExtractor={(pageId) => pageId}
             renderItem={renderPage}
-            extraData={[editor.doc, pe.pageIndex, tool, live, preview, pendingHere, zoom.zoom, selected]}
+            extraData={[editor.doc, pe.pageIndex, tool, live, preview, pendingHere, zoom.scale, zoom.window, selected]}
             getItemLayout={(_, i) => ({ length: stageWidth, offset: stageWidth * i, index: i })}
             initialScrollIndex={pe.pageIndex}
             scrollEnabled={tool === 'hand' && !zoom.isZoomed}
@@ -565,7 +580,8 @@ const styles = StyleSheet.create({
   next: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.sm },
   stage: { flex: 1 },
   list: { flex: 1 },
-  slide: { alignItems: 'center', justifyContent: 'flex-start', paddingTop: spacing.sm, paddingBottom: spacing.md },
+  // 이웃 페이지 미리보기가 줌 무대의 맞춤 모습(위쪽 여유 PAN_PAD = lg)과 같은 자리에 서게.
+  slide: { alignItems: 'center', justifyContent: 'flex-start', paddingTop: spacing.lg },
   zoomControls: { position: 'absolute', right: spacing.lg, bottom: spacing.sm },
   retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

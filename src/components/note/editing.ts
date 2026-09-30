@@ -2,7 +2,7 @@
  * 선택 도구의 미리보기 변환 — 드래그·핀치·회전·모서리 핸들이 진행 중일 때 문서는 그대로 두고
  * 선택된 요소에만 임시 델타를 얹어 그린다. 손을 떼면 델타를 문서에 적용(commit)하고 비운다.
  * 델타는 항상 "현재 문서의 요소" 기준이라 중간에 한 제스처가 먼저 끝나 커밋돼도 이어서 쌓을 수 있다.
- * 캔버스 크기는 노트 종류마다 다르다(대형노트 2000 폭) — 생략하면 격자 크기.
+ * 캔버스 크기는 노트 종류마다 다르다(대형노트 5000 폭) — 생략하면 격자 크기.
  */
 import { CANVAS, MIN_ELEMENT_W, maxElementW, type CanvasSize, type PlacedElement } from './noteDoc';
 import { clamp } from './noteGeometry';

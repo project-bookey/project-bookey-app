@@ -55,7 +55,7 @@ const UPLOAD_NOTICE = '사진을 올리지 못했어요';
  *
  * 여러 페이지 노트: pageId(지금 페이지)와 applyTo(페이지 id 로 바꾸기)를 주면, 올라가는 사이 페이지를 넘겨도
  * 사진은 고를 때의 페이지에 붙는다. 없으면 완료 시점의 apply(지금 문서)에 붙인다.
- * canvas 는 문서의 논리 크기(가운데 자리 계산용), getAnchor 는 확대 중인 대형노트의 보이는 가운데.
+ * canvas 는 문서의 논리 크기(가운데 자리 계산용), getAnchor 는 줌 무대에서 지금 보이는 가운데.
  * limit 을 주면 붙인 장수(count)+올라가는 장수가 max 에 닿았을 때 더 고르지 않는다.
  */
 export function useNotePhotos({ upload, apply, applyTo, pageId, canvas = CANVAS, getAnchor, limit, onInserted }: {

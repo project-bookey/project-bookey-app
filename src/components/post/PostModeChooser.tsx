@@ -18,7 +18,7 @@ const MODES: { value: Mode; label: string; caption: string }[] = [
 const KINDS: { value: NoteKind; label: string; caption: string }[] = [
   { value: 'grid', label: '격자노트', caption: '도트 격자 종이 — 자유롭게 붙이고 그려요' },
   { value: 'lined', label: '줄노트', caption: '줄 친 종이 — 글을 길게 쓰기 좋아요' },
-  { value: 'large', label: '대형노트', caption: '큰 종이 — 줄여서 전체를 보고 키워서 써요' },
+  { value: 'large', label: '대형노트', caption: '아주 넓은 종이 — 한 구역씩 끌어 가며 쓰고, 줄여서 전체를 봐요' },
 ];
 
 /**
