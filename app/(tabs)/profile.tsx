@@ -8,7 +8,7 @@ import { libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { ReadingRecord } from '@/api/types';
 import {
-  BrandHeader, MemoScrap, PaperScreen, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
+  MemoScrap, PaperScreen, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
@@ -73,8 +73,7 @@ export default function ProfileScreen() {
   const heatDaily = (stats.data?.daily ?? []).slice(-HEATMAP_DAYS);
 
   return (
-    <PaperScreen withTopInset>
-      <BrandHeader />
+    <PaperScreen>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.profileRow}>
           <Pressable

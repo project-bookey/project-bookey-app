@@ -46,7 +46,7 @@ export type BookSummary = Schemas['BookSummary'];
 export type BookDetail = Schemas['BookDetail'];
 export type BookLikeView = Schemas['BookLikeView'];
 export type Progress = Schemas['ProgressView'];
-export type ReadingRecord = Schemas['ReadingRecordView'];
+export type ReadingRecord = Schemas['ReadingRecordView'] & { commitment?: string };
 export type LibrarySummary = Schemas['LibrarySummary'];
 export type ReadingStatus = NonNullable<ReadingRecord['status']>;
 

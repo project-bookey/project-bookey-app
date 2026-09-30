@@ -13,7 +13,13 @@ const SEARCH_DEBOUNCE_MS = 400;
 const SEARCH_MIN_CHARS = 2;
 
 /** 고른 책 — 내 서재 기록에서 왔으면 recordId 도 함께 담는다. */
-export type PickedBook = { bookId: number; title: string; coverUrl?: string; recordId?: number };
+export type PickedBook = {
+  bookId: number;
+  title: string;
+  coverUrl?: string;
+  recordId?: number;
+  shelfStatus?: 'READING' | 'FINISHED';
+};
 
 /**
  * 책 고르기 상태 — 읽는 중인 책 빠른 선택 + 검색 후보 + 선택.
@@ -40,9 +46,22 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
     queryKey: ['library', 'READING'],
     queryFn: () => libraryApi.list('READING'),
   });
-  const quickPicks: PickedBook[] = (reading.data?.content ?? [])
+  const finished = useQuery({
+    queryKey: ['library', 'FINISHED'],
+    queryFn: () => libraryApi.list('FINISHED'),
+  });
+  const readingPicks: PickedBook[] = (reading.data?.content ?? [])
     .filter((r) => r.book?.id != null)
-    .map((r) => ({ bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id }));
+    .map((r) => ({
+      bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id, shelfStatus: 'READING',
+    }));
+  const readingIds = new Set(readingPicks.map((book) => book.bookId));
+  const finishedPicks: PickedBook[] = (finished.data?.content ?? [])
+    .filter((r) => r.book?.id != null && !readingIds.has(r.book.id))
+    .map((r) => ({
+      bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id, shelfStatus: 'FINISHED',
+    }));
+  const quickPicks = [...readingPicks, ...finishedPicks];
 
   // 어떤 책이든 검색해서 고를 수 있다 — 읽는 중이 아니어도 된다(서버는 bookId 만으로 받는다).
   const [keyword, setKeyword] = useState('');
@@ -82,9 +101,9 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
   // 후보 행 아래 한 줄 안내 — 상태마다 다른 말을 한다.
   const hint = searching
     ? search.isLoading ? '찾는 중…' : search.isError ? null : candidates.length === 0 ? '검색 결과가 없어요.' : null
-    : reading.isLoading ? '읽는 중인 책을 찾는 중입니다.'
-      : reading.isError ? null
-        : candidates.length === 0 ? '읽는 중인 책이 없어요 — 위에서 책을 검색해 고르세요.' : null;
+    : reading.isLoading || finished.isLoading ? '내 서재의 책을 찾는 중입니다.'
+      : reading.isError || finished.isError ? null
+        : candidates.length === 0 ? '읽는 중이거나 완독한 책이 없어요 — 위에서 책을 검색해 고르세요.' : null;
 
   return {
     keyword,
@@ -95,9 +114,9 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
     searching,
     hint,
     searchError: searching && search.isError,
-    readingError: !searching && reading.isError,
+    readingError: !searching && (reading.isError || finished.isError),
     retrySearch: () => { search.refetch(); },
-    retryReading: () => { reading.refetch(); },
+    retryReading: () => { reading.refetch(); finished.refetch(); },
   };
 }
 
@@ -144,7 +163,16 @@ export function BookPicker({ picker, autoFocus }: {
                 accessibilityLabel={candidate.title}
                 style={[styles.pick, { borderColor: isPicked ? colors.accent : 'transparent' }]}
               >
-                <TiltCover uri={candidate.coverUrl} title={candidate.title} width={52} tilt={0} entering={false} />
+                <TiltCover
+                  uri={candidate.coverUrl}
+                  title={candidate.title}
+                  width={52}
+                  tilt={0}
+                  entering={false}
+                  bound={candidate.shelfStatus ? {
+                    band: { title: candidate.shelfStatus === 'READING' ? '읽는 중' : '완독' },
+                  } : undefined}
+                />
               </Pressable>
             );
           })}
@@ -160,7 +188,7 @@ export function BookPicker({ picker, autoFocus }: {
       ) : null}
       {readingError ? (
         <Pressable onPress={retryReading} hitSlop={8} accessibilityRole="button">
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>읽는 중인 책을 불러오지 못했어요 · {linkLabel('다시 시도', 'action')}</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>내 서재의 책을 불러오지 못했어요 · {linkLabel('다시 시도', 'action')}</Text>
         </Pressable>
       ) : null}
 

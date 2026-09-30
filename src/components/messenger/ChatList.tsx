@@ -78,6 +78,7 @@ export function ChatList() {
       ListEmptyComponent={
         list.isLoading ? null : (
           <EmptyState
+            illustration
             title="아직 채팅이 없어요"
             description="엽서에 답장이 오가면 서로 팔로우되고, 그때 채팅이 열립니다."
           />

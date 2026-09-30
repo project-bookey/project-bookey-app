@@ -218,8 +218,8 @@ export function PostMarkdown({ md }: { md: string }) {
 
 const styles = StyleSheet.create({
   root: { gap: spacing.md },
-  // 본문 — 인용 토큰을 15/26 으로 줄인 명조.
-  body: { ...typeScale.quote, fontSize: 15, lineHeight: 26 },
+  // 긴 독후감도 작은 화면에서 편하게 읽히도록 기본 인용 토큰보다 한 단계 크게 둔다.
+  body: { ...typeScale.quote, fontSize: 17, lineHeight: 29 },
   paragraph: { gap: spacing.sm },
   heading: { marginTop: spacing.lg },
   strong: { fontFamily: serif.bold },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   listRow: { flexDirection: 'row', alignItems: 'flex-start' },
   listItem: { flex: 1, gap: spacing.xs },
   // 들여쓰기 16 — 두 자리 번호는 오른쪽 여백만큼 자연히 넓어진다.
-  marker: { minWidth: 16, paddingRight: spacing.xs, lineHeight: 26 },
+  marker: { minWidth: 16, paddingRight: spacing.xs, lineHeight: 29 },
   code: { fontFamily: mono.regular, fontSize: 13 },
   codeBlock: {
     borderWidth: hairline,

@@ -253,11 +253,12 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
             { right: memoRight, top: Math.round(G.memoTop * k), width: memoW },
           ]}
         >
-          {/* 고정 카피 — 데이터 연동 없음(책상에 붙여둔 지난 주의 쪽지) */}
           <MemoScrap rotate={3} style={styles.memo}>
-            <Text style={[styles.memoQuote, { color: colors.text }]}>{'“여기서 멈추면\n영영 안 읽음”'}</Text>
+            <Text numberOfLines={4} style={[styles.memoQuote, { color: colors.text }]}>
+              {`“${record.commitment ?? '이번에는 끝까지 읽기'}”`}
+            </Text>
             <Text style={[typeScale.monoEyebrow, styles.memoSign, { color: colors.textFaint }]}>
-              — 지난 주의 나
+              — 읽기 시작한 나
             </Text>
           </MemoScrap>
         </View>

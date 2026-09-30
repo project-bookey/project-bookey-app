@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Trash2 } from 'lucide-react-native';
 
 import { notificationApi } from '@/api/endpoints';
-import type { Notification } from '@/api/types';
+import type { Notification, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { formatRelative } from '@/components/ui';
 import { notificationTarget } from '@/lib/notificationTarget';
@@ -18,6 +20,23 @@ export default function NotificationsScreen() {
   const open = useMutation({
     mutationFn: (id: number) => notificationApi.open(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+  const remove = useMutation({
+    mutationFn: (id: number) => notificationApi.remove(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
+      const previous = queryClient.getQueryData<Page<Notification>>(['notifications']);
+      queryClient.setQueryData<Page<Notification>>(['notifications'], (current) => current ? {
+        ...current,
+        content: current.content.filter((item) => item.id !== id),
+        totalElements: Math.max(0, (current.totalElements ?? current.content.length) - 1),
+      } : current);
+      return { previous };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previous) queryClient.setQueryData(['notifications'], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const tap = (item: Notification) => {
@@ -47,16 +66,37 @@ export default function NotificationsScreen() {
             <View style={{ height: hairline, backgroundColor: colors.line }} />
           )}
           renderItem={({ item }) => (
-            <Pressable onPress={() => tap(item)} style={styles.row}>
-              <View style={styles.rowHead}>
-                {!item.openedAt ? <View style={[styles.dot, { backgroundColor: colors.accent }]} /> : null}
-                <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
-                <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-                  {formatRelative(item.sentAt ?? item.scheduledAt)}
-                </Text>
-              </View>
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>{item.body}</Text>
-            </Pressable>
+            <Swipeable
+              overshootRight={false}
+              rightThreshold={44}
+              renderRightActions={() => (
+                <View style={styles.deleteTray}>
+                  <Pressable
+                    onPress={() => remove.mutate(item.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.title} 알림 삭제`}
+                    style={({ pressed }) => [
+                      styles.deleteAction,
+                      { backgroundColor: colors.danger },
+                      pressed ? { opacity: 0.72 } : null,
+                    ]}
+                  >
+                    <Trash2 size={27} strokeWidth={2.2} color="#fff" />
+                  </Pressable>
+                </View>
+              )}
+            >
+              <Pressable onPress={() => tap(item)} style={[styles.row, { backgroundColor: colors.bg }]}>
+                <View style={styles.rowHead}>
+                  {!item.openedAt ? <View style={[styles.dot, { backgroundColor: colors.accent }]} /> : null}
+                  <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+                    {formatRelative(item.sentAt ?? item.scheduledAt)}
+                  </Text>
+                </View>
+                <Text style={[styles.body, { color: colors.textMuted }]}>{item.body}</Text>
+              </Pressable>
+            </Swipeable>
           )}
         />
       )}
@@ -67,8 +107,11 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { ...layout.content, paddingBottom: spacing.xxl },
-  row: { padding: spacing.lg, gap: spacing.xs },
+  row: { padding: spacing.lg, gap: spacing.sm, minHeight: 86 },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  title: { ...typeScale.titleSerif, fontSize: 16, lineHeight: 22, flex: 1 },
+  title: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 25, flex: 1 },
+  body: { ...typeScale.body, fontSize: 15, lineHeight: 22 },
   dot: { width: 6, height: 6, borderRadius: radius.round },
+  deleteTray: { width: 84, alignItems: 'center', justifyContent: 'center' },
+  deleteAction: { width: 62, height: 62, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

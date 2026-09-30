@@ -8,7 +8,7 @@ import { plazaApi, quoteApi } from '@/api/endpoints';
 import { invalidateQuoteLists, plazaFeedKey, quoteKey } from '@/api/quoteCache';
 import type { PlazaItem, PlazaItemType } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
-import { BrandHeader, FocusRing, PaperScreen, TiltCover } from '@/components/collage';
+import { FocusRing, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
@@ -17,6 +17,7 @@ import { Button, Card, EmptyState, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
+import { CapsuleTabs } from '@/components/CapsuleTabs';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -176,11 +177,15 @@ export default function PlazaScreen() {
     <View style={styles.header}>
       <TourTarget id="plaza-actions" style={styles.chipRow}>
         {/* 다른 구역 상단 탭과 같은 강조색 버튼 — 독후감 · 밑줄 · 완독 자랑 순. */}
-        <View style={styles.tabButtons}>
-          <Button label="독후감" size="sm" variant={tab === 'POST' ? 'primary' : 'outline'} style={{ flex: 1 }} onPress={() => switchTab('POST')} />
-          <Button label="밑줄" size="sm" variant={tab === 'QUOTE' ? 'primary' : 'outline'} style={{ flex: 1 }} onPress={() => switchTab('QUOTE')} />
-          <Button label="완독 자랑" size="sm" variant={tab === 'FINISH' ? 'primary' : 'outline'} style={{ flex: 1 }} onPress={() => switchTab('FINISH')} />
-        </View>
+        <CapsuleTabs
+          items={[
+            { value: 'POST', label: '독후감' },
+            { value: 'QUOTE', label: '밑줄' },
+            { value: 'FINISH', label: '완독 자랑' },
+          ]}
+          value={tab}
+          onChange={switchTab}
+        />
         {/* 쓰기는 밑줄·독후감 탭에만 — 완독 자랑은 읽기 기록에서 자동으로 오른다. */}
         {tab === 'QUOTE' ? (
           <Pressable
@@ -213,8 +218,7 @@ export default function PlazaScreen() {
   );
 
   return (
-    <PaperScreen withTopInset>
-      <BrandHeader />
+    <PaperScreen>
       <SwipeableTabs values={PLAZA_TABS} value={tab} onChange={switchTab}>
         {tab === 'POST' ? (
           <PostFeed ListHeaderComponent={header} />
@@ -274,9 +278,9 @@ export default function PlazaScreen() {
             ) : feed.isError ? (
               <EmptyState title="광장을 불러오지 못했습니다" description="잠시 후 다시 시도해 주세요." />
             ) : tab === 'QUOTE' ? (
-              <EmptyState title="아직 밑줄이 없습니다" description="첫 문장을 오려 붙여보세요." />
+              <EmptyState illustration title="아직 밑줄이 없습니다" description="첫 문장을 오려 붙여보세요." />
             ) : (
-              <EmptyState title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
+              <EmptyState illustration title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
             )
           }
           ListFooterComponent={
@@ -452,7 +456,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.lg,
   },
-  tabButtons: { flexDirection: 'row', gap: spacing.xs },
   composeButton: {
     alignSelf: 'flex-end',
     borderWidth: hairline,

@@ -40,6 +40,7 @@ export default function TimerScreen() {
 
   const [elapsed, setElapsed] = useState(0);
   const [endPage, setEndPage] = useState('');
+  const [totalPagesInput, setTotalPagesInput] = useState('');
   const [memo, setMemo] = useState('');
   const [endError, setEndError] = useState<string | null>(null);
 
@@ -51,6 +52,15 @@ export default function TimerScreen() {
 
   const session = current.data?.readingRecordId === id ? current.data : null;
   const startedAt = session ? new Date(session.startedAt).getTime() : null;
+
+  // 한 사용자에게 열린 타이머는 하나뿐이다. 다른 책의 타이머가 살아 있다면
+  // 새 시작 버튼을 보여 충돌시키지 말고, 종료할 수 있도록 그 타이머로 복원한다.
+  useEffect(() => {
+    const activeRecordId = current.data?.readingRecordId;
+    if (activeRecordId != null && activeRecordId !== id) {
+      router.replace({ pathname: '/timer', params: { recordId: String(activeRecordId) } });
+    }
+  }, [current.data?.readingRecordId, id, router]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -93,6 +103,33 @@ export default function TimerScreen() {
       totalMs.current = 0;
       interactions.current = 0;
       queryClient.invalidateQueries({ queryKey: ['session', 'current'] });
+    },
+    onError: async (error) => {
+      if (!(error instanceof ApiError) || error.status !== 409) return;
+      const active = await queryClient.fetchQuery({
+        queryKey: ['session', 'current'],
+        queryFn: sessionApi.current,
+      });
+      if (active?.readingRecordId != null) {
+        router.replace({ pathname: '/timer', params: { recordId: String(active.readingRecordId) } });
+      }
+    },
+  });
+
+  const saveTotalPages = useMutation({
+    mutationFn: async () => {
+      const total = Number(totalPagesInput);
+      const updated = await libraryApi.updateGoal(id, { totalPagesOverride: total });
+      // 총쪽수를 모를 때 잘못 들어간 과대 진척값은 새 범위 안으로 되돌린다.
+      if (updated.progress.currentPage > total) {
+        return libraryApi.updateProgress(id, total);
+      }
+      return updated;
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['library', 'record', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['library'] });
+      setTotalPagesInput('');
     },
   });
 
@@ -159,6 +196,24 @@ export default function TimerScreen() {
 
   const progress = record.data?.progress;
   const running = Boolean(session);
+  const totalPages = progress?.totalPages ?? 0;
+  const typedPage = Number(endPage);
+  const displayPage = running && Number.isFinite(typedPage) && endPage.length > 0
+    ? Math.max(0, totalPages > 0 ? Math.min(typedPage, totalPages) : typedPage)
+    : progress?.currentPage ?? 0;
+  const displayRate = totalPages > 0
+    ? Math.min(1, displayPage / totalPages)
+    : progress?.completionRate;
+  const startPage = session?.startPage ?? progress?.currentPage ?? 0;
+  const pageError = running && endPage.length > 0
+    ? typedPage < startPage
+      ? `시작 쪽수(${startPage}쪽)보다 작게 기록할 수 없습니다.`
+      : totalPages > 0 && typedPage > totalPages
+        ? `전체 ${totalPages}쪽을 넘을 수 없습니다.`
+        : typedPage > 20_000
+          ? '쪽수는 20,000 이하로 입력해 주세요.'
+          : null
+    : null;
 
   return (
     <PaperScreen>
@@ -187,9 +242,9 @@ export default function TimerScreen() {
               {record.data?.book?.title}
             </Text>
             <Text style={[styles.bookMeta, { color: colors.textMuted }]}>
-              {progress?.currentPage}
-              {progress && progress.totalPages > 0 ? ` / ${progress.totalPages}쪽` : '쪽'}
-              {progress?.completionRate != null ? ` · ${percent(progress.completionRate)}` : ''}
+              {displayPage}
+              {totalPages > 0 ? ` / ${totalPages}쪽` : '쪽'}
+              {displayRate != null ? ` · ${percent(displayRate)}` : ''}
             </Text>
           </View>
         </View>
@@ -201,7 +256,45 @@ export default function TimerScreen() {
           </Text>
         </View>
 
-        <ProgressBar value={progress?.completionRate} height={4} />
+        <View style={styles.progressBlock}>
+          <View style={styles.progressHead}>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>현재 진척</Text>
+            <Text style={[styles.progressPercent, { color: colors.accent }]}>
+              {displayRate != null ? percent(displayRate) : '총쪽수 미등록'}
+            </Text>
+          </View>
+          <ProgressBar value={displayRate} height={6} />
+        </View>
+
+        {progress && totalPages === 0 ? (
+          <View style={[styles.totalPagesCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+            <View style={styles.totalPagesCopy}>
+              <Text style={[typeScale.bodyStrong, { color: colors.text }]}>총쪽수를 알려주세요</Text>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>등록하면 진척률과 완독 검증에 사용됩니다.</Text>
+            </View>
+            <View style={styles.totalPagesRow}>
+              <TextInput
+                value={totalPagesInput}
+                onChangeText={(text) => setTotalPagesInput(text.replace(/[^0-9]/g, ''))}
+                keyboardType="number-pad"
+                maxLength={5}
+                placeholder="예: 320"
+                placeholderTextColor={colors.textFaint}
+                accessibilityLabel="책 총쪽수"
+                style={[styles.totalPagesInput, { color: colors.text, borderColor: colors.lineStrong }]}
+              />
+              <Button
+                label="등록"
+                onPress={() => saveTotalPages.mutate()}
+                loading={saveTotalPages.isPending}
+                disabled={Number(totalPagesInput) < 1 || Number(totalPagesInput) > 20_000}
+              />
+            </View>
+            {saveTotalPages.isError ? (
+              <Text style={[styles.pageError, { color: colors.danger }]}>총쪽수를 저장하지 못했습니다.</Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {running ? (
           <View style={styles.endForm}>
@@ -217,6 +310,7 @@ export default function TimerScreen() {
                   setEndPage(text.replace(/[^0-9]/g, ''));
                 }}
                 keyboardType="number-pad"
+                maxLength={5}
                 inputAccessoryViewID={Platform.OS === 'ios' ? PAGE_INPUT_ACCESSORY_ID : undefined}
                 onSubmitEditing={Keyboard.dismiss}
                 style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
@@ -227,6 +321,7 @@ export default function TimerScreen() {
                 {progress && progress.totalPages > 0 ? `/ ${progress.totalPages}쪽` : '쪽'}
               </Text>
             </View>
+            {pageError ? <Text style={[styles.pageError, { color: colors.danger }]}>{pageError}</Text> : null}
             <TextInput
               value={memo}
               onChangeText={setMemo}
@@ -245,7 +340,7 @@ export default function TimerScreen() {
                 end.mutate();
               }}
               loading={end.isPending}
-              disabled={!session || end.isPending}
+              disabled={!session || end.isPending || Boolean(pageError)}
             />
             {endError ? (
               <Text style={[styles.error, { color: colors.danger }]}>{endError}</Text>
@@ -258,6 +353,11 @@ export default function TimerScreen() {
               onPress={() => start.mutate()}
               loading={start.isPending}
             />
+            {start.isError ? (
+              <Text style={[styles.error, { color: colors.danger }]}>
+                {start.error instanceof ApiError ? start.error.message : '독서를 시작하지 못했습니다.'}
+              </Text>
+            ) : null}
             <Text style={[styles.hint, { color: colors.textFaint }]}>
               누적 {formatDuration(progress?.totalDurationSec ?? 0)} 읽었습니다.
             </Text>
@@ -289,6 +389,21 @@ const styles = StyleSheet.create({
   bookRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   bookTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
   bookMeta: { ...typeScale.caption, marginTop: 3 },
+  progressBlock: { gap: spacing.sm },
+  progressHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
+  progressPercent: { ...typeScale.monoNumeral, fontSize: 16 },
+  totalPagesCard: { borderWidth: hairline, borderRadius: radius.md, padding: spacing.md, gap: spacing.md },
+  totalPagesCopy: { gap: spacing.xs },
+  totalPagesRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
+  totalPagesInput: {
+    flex: 1,
+    minWidth: 0,
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    fontFamily: mono.semiBold,
+    fontSize: 18,
+  },
   clockBox: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
   // 경과 시간 — 화면의 주인공. 모노 숫자를 크게 앉힌다.
   clock: { fontFamily: mono.semiBold, fontSize: 58, letterSpacing: 2 },
@@ -306,6 +421,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   pageSuffix: { fontFamily: mono.regular, fontSize: 15, flexShrink: 0 },
+  pageError: { ...typeScale.caption, lineHeight: 18 },
   memoInput: {
     borderWidth: hairline,
     borderRadius: radius.md,

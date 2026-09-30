@@ -116,7 +116,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
                   style={({ pressed }) => [
                     styles.bookRow,
                     { borderBottomColor: colors.line, backgroundColor: colors.surface, borderLeftColor: 'transparent' },
-                    selected && { backgroundColor: colors.surfaceRaised, borderLeftColor: colors.ink },
+                    selected && { backgroundColor: colors.accentSoft, borderLeftColor: colors.accent },
                     pressed ? pressedStyle : null,
                   ]}
                 >
@@ -140,7 +140,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
                     style={[
                       styles.radio,
                       { borderColor: colors.textFaint },
-                      selected && { backgroundColor: colors.ink, borderColor: colors.ink },
+                      selected && { backgroundColor: colors.accent, borderColor: colors.accent },
                     ]}
                   />
                 </Pressable>

@@ -1,6 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 import {
-  ActivityIndicator, Pressable, StyleSheet, Text, TextInput, TextInputProps,
+  ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, TextInputProps,
   View, ViewStyle,
 } from 'react-native';
 
@@ -250,14 +250,23 @@ export function Toggle({ value, onChange, label, description }: {
   );
 }
 
-export function EmptyState({ title, description, action }: {
+export function EmptyState({ title, description, action, illustration = false }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  illustration?: boolean;
 }) {
   const { styles } = useStyles();
   return (
     <View style={styles.empty}>
+      {illustration ? (
+        <Image
+          source={require('../../assets/illustrations/book-lover.png')}
+          resizeMode="contain"
+          accessibilityLabel="책을 읽는 사람"
+          style={styles.emptyIllustration}
+        />
+      ) : null}
       <View style={styles.emptyRule} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {description ? <Text style={styles.emptyDescription}>{description}</Text> : null}
@@ -464,9 +473,9 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     segment: { flex: 1, paddingVertical: spacing.sm + 2, alignItems: 'center' },
     segmentDivider: { borderLeftWidth: hairline, borderLeftColor: colors.line },
-    segmentActive: { backgroundColor: colors.ink },
+    segmentActive: { backgroundColor: colors.accent },
     segmentLabel: { ...typeScale.label, fontSize: 12, color: colors.textMuted },
-    segmentLabelActive: { color: colors.onInk },
+    segmentLabelActive: { color: colors.onAccent },
     toggleTrack: {
       width: 46,
       height: 26,
@@ -489,6 +498,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     toggleLabel: { ...typeScale.label, color: colors.text },
     toggleDescription: { ...typeScale.caption, color: colors.textFaint, lineHeight: 16 },
     empty: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl },
+    emptyIllustration: { width: 184, height: 143, marginBottom: spacing.lg },
     emptyRule: { width: 28, height: 2, backgroundColor: colors.accent, marginBottom: spacing.lg },
     emptyTitle: { ...typeScale.titleSerif, fontSize: 18, color: colors.text, textAlign: 'center' },
     emptyDescription: {

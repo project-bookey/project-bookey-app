@@ -187,6 +187,7 @@ export const libraryApi = {
     status?: ReadingStatus;
     targetFinishDate?: string;
     totalPagesOverride?: number;
+    commitment?: string;
   }) => api<ReadingRecord>("/api/v1/library", { method: "POST", body }),
   updateGoal: (
     recordId: number,
@@ -769,6 +770,8 @@ export const notificationApi = {
     api<Page<Notification>>("/api/v1/notifications", { query: { size: 50 } }),
   open: (id: number) =>
     api<void>(`/api/v1/notifications/${id}/open`, { method: "POST" }),
+  remove: (id: number) =>
+    api<void>(`/api/v1/notifications/${id}`, { method: "DELETE" }),
   updateSettings: (body: Record<string, unknown>) =>
     api<void>("/api/v1/notifications/settings", { method: "PATCH", body }),
 };

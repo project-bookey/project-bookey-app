@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Eye, Heart, Pencil, Trash2 } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
@@ -77,9 +78,10 @@ export default function PostDetailScreen() {
       })}
       accessibilityRole="button"
       accessibilityLabel="독후감 고치기"
-      style={styles.edit}
+      hitSlop={8}
+      style={({ pressed }) => [styles.edit, pressed ? pressedStyle : null]}
     >
-      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>고치기</Text>
+      <Pencil size={24} strokeWidth={2.2} color={colors.accent} />
     </Pressable>
   ) : undefined;
 
@@ -202,7 +204,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
             {post.authorNickname}
           </Text>
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-            {formatRelative(post.publishedAt ?? post.createdAt)} · 조회 {post.viewCount}
+            {formatRelative(post.publishedAt ?? post.createdAt)}
           </Text>
         </View>
         {/* 모임만 글은 누가 보든 밝힌다(보는 사람도 그 모임 멤버다). 비공개·링크는 본인에게만. */}
@@ -269,8 +271,14 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
 
       {/* ⑥ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글은 없다(§14.1) */}
       <View style={styles.footRow}>
-        <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
-        <FootAction label={`조회 ${post.viewCount}`} />
+        <DetailIconAction
+          icon="heart"
+          count={post.likeCount}
+          active={post.likedByMe}
+          onPress={onLike}
+          accessibilityLabel={`좋아요 ${post.likeCount}`}
+        />
+        <DetailIconAction icon="eye" count={post.viewCount} accessibilityLabel={`조회 ${post.viewCount}`} />
         {onTogglePostcard ? (
           <FootAction
             label="엽서 보내기"
@@ -281,11 +289,11 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         ) : null}
         {onDelete ? (
           <View style={styles.footRight}>
-            <FootAction
-              label={confirming ? '한 번 더' : '삭제'}
+            <DetailIconAction
+              icon="trash"
               onPress={onDelete}
-              tone={confirming ? 'danger' : 'faint'}
-              accessibilityLabel={confirming ? '삭제 확인' : '삭제'}
+              danger={confirming}
+              accessibilityLabel={confirming ? '삭제 확인, 한 번 더 누르기' : '삭제'}
             />
           </View>
         ) : null}
@@ -304,27 +312,70 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   );
 }
 
+function DetailIconAction({ icon, count, active = false, danger = false, onPress, accessibilityLabel }: {
+  icon: 'heart' | 'eye' | 'trash';
+  count?: number;
+  active?: boolean;
+  danger?: boolean;
+  onPress?: () => void;
+  accessibilityLabel: string;
+}) {
+  const { colors } = useTheme();
+  const color = danger ? colors.danger : active ? colors.accent : colors.textMuted;
+  const glyph = icon === 'heart'
+    ? <Heart size={24} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />
+    : icon === 'eye'
+      ? <Eye size={25} strokeWidth={2.1} color={color} />
+      : <Trash2 size={24} strokeWidth={2.1} color={color} />;
+  const content = (
+    <>
+      {glyph}
+      {count !== undefined ? <Text style={[styles.actionCount, { color }]}>{count}</Text> : null}
+    </>
+  );
+
+  if (!onPress) {
+    return <View accessible accessibilityLabel={accessibilityLabel} style={styles.iconAction}>{content}</View>;
+  }
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={icon === 'heart' ? { selected: active } : undefined}
+      accessibilityLabel={accessibilityLabel}
+      hitSlop={10}
+      style={({ pressed }) => [
+        styles.iconAction,
+        danger ? { backgroundColor: colors.dangerSoft } : null,
+        pressed ? pressedStyle : null,
+      ]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   screenBody: { padding: spacing.lg, paddingBottom: spacing.xxl },
   skeleton: { height: 240, borderRadius: radius.md },
   // 헤더 우측 슬롯 — 웹은 hitSlop 을 무시하므로 여백으로 44px 상자를 만든다.
-  edit: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
+  edit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   article: { gap: spacing.lg },
   // 기울인 표지가 왼쪽·위로 삐져나오는 만큼 숨을 둔다.
   hero: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg, paddingLeft: spacing.xs, paddingTop: spacing.xs },
   heroText: { flex: 1, gap: spacing.xs },
-  title: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 30 },
+  title: { ...typeScale.displaySerif, fontSize: 30, lineHeight: 38 },
   // 모노 한 줄 — 10px 활자라 글자 상자만으로는 손가락이 닿지 않는다. 여백으로 36px 까지 넓히고
   // 같은 만큼 음수 마진으로 되돌려 히어로의 리듬은 그대로 둔다(푸터 액션과 같은 규율).
   bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.md, marginVertical: -spacing.sm },
-  bookLinkText: { fontSize: 10, letterSpacing: 0.6 },
+  bookLinkText: { fontSize: 13, letterSpacing: 0.4 },
 
   byline: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   bylineText: { flex: 1 },
   // 바이라인 조판은 홈 '오늘의 글'(ScrapAuthor)·광장 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
-  nickname: { lineHeight: 20 },
-  meta: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
+  nickname: { fontSize: 17, lineHeight: 23 },
+  meta: { fontSize: 12, letterSpacing: 0.3, lineHeight: 17, marginTop: 2 },
 
   // 기울인 인화지 모서리가 잘리지 않게 사방으로 숨을 둔다.
   photos: { gap: spacing.md, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
@@ -334,6 +385,17 @@ const styles = StyleSheet.create({
 
   clubLink: { alignSelf: 'flex-start', paddingVertical: spacing.xs, marginVertical: -spacing.xs },
 
-  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
   footRight: { marginLeft: 'auto' },
+  iconAction: {
+    minWidth: 44,
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.round,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionCount: { ...typeScale.monoNumeral, fontSize: 14 },
 });

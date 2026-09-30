@@ -1,11 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Eye, Heart } from 'lucide-react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { pressedStyle } from '@/theme/tokens';
 import { NoteThumb } from './NoteThumb';
 import { isNotePost, noteDocOf } from './postFormat';
 
@@ -87,8 +89,14 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
         </Pressable>
 
         <View style={styles.footRow}>
-          <FootAction label={`좋아요 ${post.likeCount}`} onPress={onLike} selected={post.likedByMe} />
-          <FootAction label={`조회 ${post.viewCount}`} />
+          <CardIconAction
+            icon="heart"
+            count={post.likeCount}
+            active={post.likedByMe}
+            onPress={onLike}
+            accessibilityLabel={`좋아요 ${post.likeCount}`}
+          />
+          <CardIconAction icon="eye" count={post.viewCount} accessibilityLabel={`조회 ${post.viewCount}`} />
           {/* 엮은 밑줄은 세기만 한다 — 펼쳐 보는 것은 상세의 몫이다. */}
           {post.quotes.length > 0 ? <FootAction label={`밑줄 ${post.quotes.length}`} /> : null}
           <View style={styles.footRight}>
@@ -106,6 +114,39 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
         </View>
       </View>
     </Card>
+  );
+}
+
+function CardIconAction({ icon, count, active = false, onPress, accessibilityLabel }: {
+  icon: 'heart' | 'eye';
+  count: number;
+  active?: boolean;
+  onPress?: () => void;
+  accessibilityLabel: string;
+}) {
+  const { colors } = useTheme();
+  const color = active ? colors.accent : colors.textMuted;
+  const glyph = icon === 'heart'
+    ? <Heart size={22} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />
+    : <Eye size={23} strokeWidth={2.1} color={color} />;
+  const content = (
+    <>
+      {glyph}
+      <Text style={[styles.actionCount, { color }]}>{count}</Text>
+    </>
+  );
+  if (!onPress) return <View accessible accessibilityLabel={accessibilityLabel} style={styles.iconAction}>{content}</View>;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={accessibilityLabel}
+      hitSlop={8}
+      style={({ pressed }) => [styles.iconAction, pressed ? pressedStyle : null]}
+    >
+      {content}
+    </Pressable>
   );
 }
 
@@ -228,16 +269,16 @@ const styles = StyleSheet.create({
   plainHeadText: { flex: 1, gap: spacing.xs },
   noteHead: { alignItems: 'flex-start' },
 
-  title: { fontSize: 20, lineHeight: 27 },
+  title: { fontSize: 23, lineHeight: 31 },
   below: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  excerpt: { fontSize: 14, lineHeight: 22 },
+  excerpt: { fontSize: 16, lineHeight: 25 },
   pad: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
 
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
-  nickname: { lineHeight: 20 },
-  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
+  nickname: { fontSize: 16, lineHeight: 22 },
+  where: { fontSize: 12, letterSpacing: 0.3, lineHeight: 17, marginTop: 2 },
 
   // 좋아요·조회·밑줄·책 보기 — 댓글은 없다(§14.1). 숫자가 커지면 한 줄에 못 담는다.
   // Card 가 overflow:hidden 이라 넘치면 소리 없이 잘리므로, 넘칠 때만 다음 줄로 내린다.
@@ -250,4 +291,14 @@ const styles = StyleSheet.create({
     rowGap: spacing.xl,
   },
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  iconAction: {
+    minHeight: 40,
+    minWidth: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginVertical: -4,
+  },
+  actionCount: { ...typeScale.monoNumeral, fontSize: 13 },
 });

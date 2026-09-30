@@ -3,7 +3,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Fragment, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  LayoutChangeEvent, Linking, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  KeyboardAvoidingView, LayoutChangeEvent, Linking, Modal, PanResponder, Platform, Pressable,
+  ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
 
@@ -29,17 +30,17 @@ const H = {
   /** 표지 스택 — 화면 좌측 약 25% 지점 */
   coverW: 138,
   coverLeftRatio: 96 / BASE_W,
-  /** 뒤장 메모가 -15px·10° 로 위로 삐져나오므로, 스크롤 영역 위 끝에 잘리지 않을 만큼 내려 앉힌다 */
-  coverTop: 40,
+  /** 표지는 상단에 붙여 아래의 제목 영역과 시각적으로 분리한다. */
+  coverTop: 22,
   /** 뒤장(줄거리 메모장) 부채꼴 — 홈 히어로와 같은 값으로 펼친다 */
   stack: { x: 48, y: -15, rotate: 10, scale: 0.95 },
-  /** 표제 — 좌하단에서 표지와 겹친다 */
-  titleTop: 168,
-  titleWRatio: 212 / BASE_W,
+  /** 표제 — 표지 아래에서 본문 폭을 넉넉히 사용한다. */
+  titleTop: 252,
+  titleWRatio: 342 / BASE_W,
   /** 평점 스티키 칩 */
-  chipTop: 224,
+  chipTop: 326,
   /** 콜라주 판 기본 높이 */
-  height: 280,
+  height: 352,
 } as const;
 
 /** 본문 좌우 여백 — 히어로 표제도 같은 거터에 맞춰 앉힌다. */
@@ -51,6 +52,14 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 function groupNumber(value: number): string {
   return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
+const VERIFICATION_FLAG_LABEL: Record<string, string> = {
+  instant_finish: '독서시간이 너무 짧아 완독 기록을 확인하기 어려워요',
+  abnormal_speed: '짧은 시간에 기록된 쪽수가 너무 많아요',
+  bulk_finish: '하루 동안 완독 처리된 책이 너무 많아요',
+  idle_timer: '타이머 실행 중 앱 사용 기록이 부족해요',
+  suspect_idle: '장시간 활동 없이 타이머가 실행됐어요',
+};
 
 type RatingPick = { average: number; count: number; verified: boolean };
 
@@ -145,15 +154,21 @@ export default function BookDetailScreen() {
       <SubHeader category={headerCategory(info)} />
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Hero info={info} rating={rating} loading={book.isLoading} bound={bound} />
+        <Hero
+          info={info}
+          rating={rating}
+          loading={book.isLoading}
+          bound={bound}
+          bookId={bookId}
+          liked={book.data?.liked ?? false}
+          likeCount={book.data?.likeCount ?? 0}
+        />
 
         <View style={styles.sections}>
           {book.data ? (
             <View style={styles.headBlock}>
               <ActionBar
                 bookId={bookId}
-                liked={book.data.liked}
-                likeCount={book.data.likeCount}
                 hasRecord={rid != null}
                 colors={colors}
                 onAdded={setAddedRid}
@@ -252,7 +267,19 @@ export default function BookDetailScreen() {
               </View>
               {verification.data.flags.length > 0 ? (
                 <Text style={[typeScale.caption, { color: colors.warn }]}>
-                  신호: {verification.data.flags.join(', ')}
+                  {verification.data.flags
+                    .map((flag) => VERIFICATION_FLAG_LABEL[flag] ?? '독서 기록을 추가로 확인해야 해요')
+                    .join(', ')}{' '}
+                  <Text
+                    accessibilityRole="link"
+                    onPress={() => Linking.openURL(
+                      'mailto:support@bookey.site?subject=%EC%99%84%EB%8F%85%20%EA%B8%B0%EB%A1%9D%20%EC%A6%9D%EB%AA%85%20%EB%AC%B8%EC%9D%98',
+                    ).catch(() => {})}
+                    style={{ color: colors.accent, textDecorationLine: 'underline' }}
+                  >
+                    관리자에게 문의하기
+                  </Text>
+                  를 통해 완독 기록을 증명해 주세요.
                 </Text>
               ) : null}
             </Card>
@@ -299,13 +326,16 @@ export default function BookDetailScreen() {
  * 히어로 콜라주 — 표지 스택·겹쳐 앉은 세리프 표제·평점 스티키 칩.
  * 서브 화면이라 패럴랙스는 없다(정적 콜라주). 입장 정착 애니는 표지에만 건다.
  */
-function Hero({ info, rating, loading, bound }: {
+function Hero({ info, rating, loading, bound, bookId, liked, likeCount }: {
   info?: BookSummary;
   rating: RatingPick | null;
   /** 로딩 중에는 같은 높이의 빈 판만 그린다 — 도착할 때 아래 섹션이 튀지 않는다. */
   loading?: boolean;
   /** 장정본 표지 — 띠지(내 기록)와 뒤장 메모장(줄거리). */
   bound?: { band?: BookBand; backNote?: BookNote };
+  bookId: number;
+  liked: boolean;
+  likeCount: number;
 }) {
   const { colors } = useTheme();
   const window = useWindowDimensions();
@@ -333,7 +363,7 @@ function Hero({ info, rating, loading, bound }: {
     .filter(Boolean)
     .join(' · ');
 
-  // 표제는 표지 위로 겹쳐 앉는다 — 밝은 표지 사진 위에서도 읽히도록 배경색 후광을 깐다.
+  // 표제의 은은한 후광은 배경 패턴 위에서도 글자 윤곽을 또렷하게 유지한다.
   const halo = {
     textShadowColor: colors.bg,
     textShadowOffset: { width: 0, height: 0 },
@@ -364,20 +394,28 @@ function Hero({ info, rating, loading, bound }: {
         />
       </View>
 
-      {/* ② 표제 — 표지 좌하단에 겹쳐 앉는다 */}
+      {/* ② 표제 — 표지 아래에서 가로 폭을 넉넉히 쓴다 */}
       <View
         style={[
           styles.layer,
-          { left: GUTTER, top: titleTop, width: Math.round(clamp(W * H.titleWRatio, 190, 268)), zIndex: 2 },
+          { left: GUTTER, top: titleTop, width: Math.round(clamp(W * H.titleWRatio, 280, W - GUTTER * 2)), zIndex: 2 },
         ]}
         onLayout={(e) => {
           const next = Math.round(e.nativeEvent.layout.height);
           if (next > 0 && next !== titleH) setTitleH(next);
         }}
       >
-        <Text numberOfLines={2} style={[styles.heroTitle, halo, { color: colors.text }]}>
-          {info?.title ?? '제목 미상'}
-        </Text>
+        <View style={styles.heroTitleRow}>
+          <Text
+            numberOfLines={2}
+            lineBreakStrategyIOS="hangul-word"
+            textBreakStrategy="balanced"
+            style={[styles.heroTitle, halo, { color: colors.text }]}
+          >
+            {info?.title ?? '제목 미상'}
+          </Text>
+          <BookLikeButton bookId={bookId} liked={liked} likeCount={likeCount} colors={colors} />
+        </View>
         <Text numberOfLines={1} style={[typeScale.caption, styles.heroCaption, halo, { color: colors.textMuted }]}>
           {caption}
         </Text>
@@ -403,17 +441,13 @@ function Hero({ info, rating, loading, bound }: {
   );
 }
 
-/** 액션 바 — ♥ 좋아요 + 서재에 없으면 담기 2종(아웃라인 · 주 CTA). 모두 네모 버튼. */
-function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
+function BookLikeButton({ bookId, liked, likeCount, colors }: {
   bookId: number;
   liked: boolean;
   likeCount: number;
-  hasRecord: boolean;
   colors: ColorTokens;
-  onAdded: (recordId: number) => void;
 }) {
   const queryClient = useQueryClient();
-
   const like = useMutation({
     mutationFn: () => bookApi.like(bookId),
     onSuccess: (res) => {
@@ -422,45 +456,64 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
       );
     },
   });
+  return (
+    <Pressable
+      disabled={like.isPending}
+      onPress={() => like.mutate()}
+      accessibilityRole="button"
+      accessibilityLabel="좋아요"
+      style={[
+        styles.likeButton,
+        liked
+          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+          : { borderColor: colors.lineStrong },
+        { opacity: like.isPending ? 0.6 : 1 },
+      ]}
+    >
+      <Text style={[styles.likeGlyph, { color: liked ? colors.onAccent : colors.textMuted }]}>
+        {liked ? '♥' : '♡'}
+      </Text>
+      <Text style={[typeScale.monoNumeral, { color: liked ? colors.onAccent : colors.textMuted }]}>
+        {groupNumber(likeCount)}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** 액션 바 — 서재에 없으면 담기 2종(아웃라인 · 주 CTA). */
+function ActionBar({ bookId, hasRecord, colors, onAdded }: {
+  bookId: number;
+  hasRecord: boolean;
+  colors: ColorTokens;
+  onAdded: (recordId: number) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [commitmentOpen, setCommitmentOpen] = useState(false);
+  const [commitment, setCommitment] = useState('');
+
   const add = useMutation({
-    mutationFn: (status: ReadingStatus) => libraryApi.add({ bookId, status }),
+    mutationFn: ({ status, commitment }: { status: ReadingStatus; commitment?: string }) =>
+      libraryApi.add({ bookId, status, commitment }),
     onSuccess: (record) => {
       queryClient.invalidateQueries({ queryKey: ['library'] });
+      setCommitmentOpen(false);
+      setCommitment('');
       onAdded(record.id);
     },
   });
-  const failed =
-    (like.isError && !like.isPending) || (add.isError && !add.isPending);
+  const failed = add.isError && !add.isPending;
+
+  if (hasRecord && !failed) return null;
 
   return (
+    <>
     <View style={styles.actionBarWrap}>
       <View style={styles.actionBar}>
-        <Pressable
-          disabled={like.isPending}
-          onPress={() => like.mutate()}
-          accessibilityRole="button"
-          accessibilityLabel="좋아요"
-          style={[
-            styles.likeButton,
-            liked
-              ? { backgroundColor: colors.accent, borderColor: colors.accent }
-              : { borderColor: colors.lineStrong },
-            { opacity: like.isPending ? 0.6 : 1 },
-          ]}
-        >
-          <Text style={[styles.likeGlyph, { color: liked ? colors.onAccent : colors.textMuted }]}>
-            {liked ? '♥' : '♡'}
-          </Text>
-          <Text style={[typeScale.monoNumeral, { color: liked ? colors.onAccent : colors.textMuted }]}>
-            {groupNumber(likeCount)}
-          </Text>
-        </Pressable>
-
         {!hasRecord ? (
           <>
             <Pressable
               disabled={add.isPending}
-              onPress={() => add.mutate('WANT_TO_READ')}
+              onPress={() => add.mutate({ status: 'WANT_TO_READ' })}
               accessibilityRole="button"
               accessibilityLabel="읽고 싶은 책으로 담기"
               style={[styles.actionButton, styles.actionOutline, {
@@ -471,7 +524,7 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
             </Pressable>
             <Pressable
               disabled={add.isPending}
-              onPress={() => add.mutate('READING')}
+              onPress={() => setCommitmentOpen(true)}
               accessibilityRole="button"
               accessibilityLabel="읽기 시작"
               style={[styles.actionButton, styles.actionPrimary, {
@@ -489,6 +542,46 @@ function ActionBar({ bookId, liked, likeCount, hasRecord, colors, onAdded }: {
         </Text>
       ) : null}
     </View>
+      <Modal
+        visible={commitmentOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCommitmentOpen(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.commitmentBackdrop}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setCommitmentOpen(false)} />
+          <View style={[styles.commitmentDialog, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]}>
+            <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentTitle, { color: colors.text }]}>
+              완독을 위한 다짐을 입력해 주세요.
+            </Text>
+            <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentDescription, { color: colors.textMuted }]}>홈 화면의 책 옆 메모에 표시됩니다.</Text>
+            <TextInput
+              autoFocus
+              value={commitment}
+              onChangeText={setCommitment}
+              maxLength={200}
+              multiline
+              maxFontSizeMultiplier={1.15}
+              placeholder="예: 매일 10쪽씩 끝까지 읽기"
+              placeholderTextColor={colors.textFaint}
+              style={[styles.commitmentInput, { color: colors.text, borderColor: colors.lineStrong }]}
+            />
+            <View style={styles.commitmentActions}>
+              <Button label="취소" variant="ghost" onPress={() => setCommitmentOpen(false)} />
+              <Button
+                label="읽기 시작"
+                loading={add.isPending}
+                disabled={!commitment.trim() || add.isPending}
+                onPress={() => add.mutate({ status: 'READING', commitment: commitment.trim() })}
+              />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }
 
@@ -910,12 +1003,14 @@ const styles = StyleSheet.create({
   layer: { position: 'absolute' },
   // 시안 27px 세리프 — 두 줄까지만 두고 살짝 기울여 종이에 앉힌 인상을 준다.
   heroTitle: {
+    flex: 1,
     fontFamily: serif.extraBold,
     fontSize: 27,
     lineHeight: 31,
-    letterSpacing: -0.5,
+    letterSpacing: -1.1,
     transform: [{ rotate: '-1.5deg' }],
   },
+  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heroCaption: { marginTop: spacing.sm },
   ratingNote: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
 
@@ -951,6 +1046,26 @@ const styles = StyleSheet.create({
   },
   actionOutline: { borderWidth: hairline },
   actionPrimary: { flex: 1 },
+  commitmentBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+    backgroundColor: 'rgba(0,0,0,0.62)',
+  },
+  commitmentDialog: { borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
+  commitmentTitle: { fontFamily: serif.extraBold, fontSize: 19, lineHeight: 25, letterSpacing: -0.5 },
+  commitmentDescription: { ...typeScale.caption, fontSize: 14, lineHeight: 20, marginBottom: spacing.xs },
+  commitmentInput: {
+    minHeight: 78,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontFamily: serif.regular,
+    fontSize: 17,
+    lineHeight: 24,
+    textAlignVertical: 'top',
+  },
+  commitmentActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
 
   statStrip: { flexDirection: 'row', gap: 18, borderTopWidth: hairline, paddingTop: spacing.lg },
   statCell: { gap: 3 },

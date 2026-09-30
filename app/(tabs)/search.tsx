@@ -8,7 +8,7 @@ import {
 
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
-import { BrandHeader, Chip, MemoScrap, PaperScreen, TiltCover } from '@/components/collage';
+import { Chip, MemoScrap, PaperScreen, TiltCover } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -98,8 +98,7 @@ export default function SearchScreen() {
   const todayPick = recommendedList.length > 0 ? recommendedList[todaySeed % recommendedList.length] : null;
 
   return (
-    <PaperScreen withTopInset>
-      <BrandHeader />
+    <PaperScreen>
       <View style={styles.searchBarWrap}>
         <View
           style={[

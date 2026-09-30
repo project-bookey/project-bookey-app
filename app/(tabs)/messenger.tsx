@@ -1,11 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { BrandHeader, PaperScreen } from '@/components/collage';
+import { PaperScreen } from '@/components/collage';
 import { ChatList } from '@/components/messenger/ChatList';
 import { PostcardList } from '@/components/messenger/PostcardList';
-import { Button } from '@/components/ui';
+import { CapsuleTabs } from '@/components/CapsuleTabs';
 import { layout, spacing } from '@/theme';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
@@ -36,19 +36,9 @@ export default function MessengerScreen() {
   }, [params.pane]);
 
   return (
-    <PaperScreen withTopInset>
-      <BrandHeader />
+    <PaperScreen>
       <TourTarget id="messenger-panes" style={styles.panes}>
-        {PANES.map((item) => (
-          <Button
-            key={item.value}
-            label={item.label}
-            size="sm"
-            variant={pane === item.value ? 'primary' : 'outline'}
-            style={{ flex: 1 }}
-            onPress={() => setPane(item.value)}
-          />
-        ))}
+        <CapsuleTabs items={PANES} value={pane} onChange={setPane} />
       </TourTarget>
       <SwipeableTabs values={PANE_VALUES} value={pane} onChange={setPane}>
         {pane === 'chats' ? <ChatList /> : <PostcardList box={pane === 'inbox' ? 'INBOX' : 'SENT'} />}
@@ -60,8 +50,6 @@ export default function MessengerScreen() {
 const styles = StyleSheet.create({
   panes: {
     ...layout.content,
-    flexDirection: 'row',
-    gap: spacing.xs,
     padding: spacing.lg,
   },
 });

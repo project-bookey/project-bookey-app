@@ -5,8 +5,9 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import { ClubCard } from '@/components/club';
-import { BrandHeader, PaperScreen } from '@/components/collage';
-import { Button, EmptyState, Loading } from '@/components/ui';
+import { PaperScreen } from '@/components/collage';
+import { EmptyState, Loading } from '@/components/ui';
+import { CapsuleTabs } from '@/components/CapsuleTabs';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { layout, spacing } from '@/theme';
@@ -31,30 +32,17 @@ export default function ClubsScreen() {
   );
 
   return (
-    <PaperScreen withTopInset>
-      <BrandHeader />
+    <PaperScreen>
 
       <TourTarget id="club-actions" style={styles.actions}>
-        <Button
-          label="내 모임"
-          size="sm"
-          variant={view === 'list' ? 'primary' : 'outline'}
-          style={{ flex: 1 }}
-          onPress={() => setView('list')}
-        />
-        <Button
-          label="코드로 참가"
-          size="sm"
-          variant={view === 'join' ? 'primary' : 'outline'}
-          style={{ flex: 1 }}
-          onPress={() => setView('join')}
-        />
-        <Button
-          label="모임 만들기"
-          size="sm"
-          variant={view === 'create' ? 'primary' : 'outline'}
-          style={{ flex: 1 }}
-          onPress={() => setView('create')}
+        <CapsuleTabs
+          items={[
+            { value: 'list', label: '내 모임' },
+            { value: 'join', label: '코드로 참가' },
+            { value: 'create', label: '모임 만들기' },
+          ]}
+          value={view}
+          onChange={setView}
         />
       </TourTarget>
 
@@ -73,6 +61,7 @@ export default function ClubsScreen() {
         ListEmptyComponent={
           clubs.isLoading ? null : (
             <EmptyState
+              illustration
               title="참가 중인 모임이 없어요"
               description={'같은 책을 함께 읽으면 완독률이 올라갑니다.\n초대 코드를 받았다면 코드로 참가하세요.'}
             />
@@ -93,7 +82,7 @@ export default function ClubsScreen() {
 }
 
 const styles = StyleSheet.create({
-  actions: { ...layout.content, flexDirection: 'row', gap: spacing.xs, padding: spacing.lg },
+  actions: { ...layout.content, padding: spacing.lg },
   // 카드 목록 — 구분선 대신 간격으로 띄운다.
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104, gap: spacing.md },
 });
