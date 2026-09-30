@@ -8,8 +8,10 @@ import { postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { NoteViewer } from '@/components/post/NoteViewer';
 import { PostBody, usedQuoteIds } from '@/components/post/PostBody';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
+import { isNotePost, noteDocOf } from '@/components/post/postFormat';
 import { useLikePost } from '@/components/post/useLikePost';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
@@ -17,10 +19,11 @@ import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { EmptyState, Eyebrow, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { pressedStyle } from '@/theme/tokens';
 
 /**
  * 독후감 상세 — 광장 독후감 카드·책 상세·내 독후감에서 들어온다.
- * 글 한 편(표지·제목·바이라인·사진·본문·엮은 밑줄·액션 행)만 펼친다.
+ * 글 한 편(표지·제목·바이라인·사진·본문·엮은 밑줄·액션 행)만 펼친다. 노트 독후감은 사진·본문 자리에 페이지 넘김 뷰어가 선다.
  * 댓글은 없다 — 독후감의 상호작용은 좋아요와 엽서뿐이다(§14.1, v1.2 확정).
  */
 export default function PostDetailScreen() {
@@ -65,10 +68,13 @@ export default function PostDetailScreen() {
     arm('post');
   };
 
-  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다.
+  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다. 노트는 노트 편집기로.
   const editAction = post.data?.mine ? (
     <Pressable
-      onPress={() => router.push({ pathname: '/post/new', params: { id: String(postId) } })}
+      onPress={() => router.push({
+        pathname: post.data && isNotePost(post.data) ? '/post/note' : '/post/new',
+        params: { id: String(postId) },
+      })}
       accessibilityRole="button"
       accessibilityLabel="독후감 고치기"
       style={styles.edit}
@@ -153,6 +159,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   const { colors } = useTheme();
   const hasBook = post.bookId != null;
   const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
+  const note = isNotePost(post);
+  const noteDoc = useMemo(() => (note ? noteDocOf(post) : null), [note, post]);
 
   // 본문 표시가 소비하지 않은 밑줄만 아래에 모은다 — 표시로 넣은 것을 두 번 보여주지 않는다.
   const leftoverQuotes = useMemo(() => {
@@ -197,11 +205,26 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
             {formatRelative(post.publishedAt ?? post.createdAt)} · 조회 {post.viewCount}
           </Text>
         </View>
-        {post.mine && visibilityLabel ? <Tag label={visibilityLabel} /> : null}
+        {/* 모임만 글은 누가 보든 밝힌다(보는 사람도 그 모임 멤버다). 비공개·링크는 본인에게만. */}
+        {visibilityLabel && (post.mine || post.visibility === 'CLUB') ? <Tag label={visibilityLabel} /> : null}
       </View>
 
+      {/* 모임 독후감이면 어느 모임의 글인지 — 누르면 그 모임의 독후감 탭으로 */}
+      {post.clubId != null && post.clubName ? (
+        <Pressable
+          onPress={() => router.push({ pathname: '/club/[id]', params: { id: String(post.clubId), tab: 'reviews' } })}
+          accessibilityRole="button"
+          accessibilityLabel={`${post.clubName} 모임 독후감`}
+          style={({ pressed }) => [styles.clubLink, pressed ? pressedStyle : null]}
+        >
+          <Tag label={`모임 · ${post.clubName}`} />
+        </Pressable>
+      ) : null}
+
+      {noteDoc ? <NoteViewer doc={noteDoc} /> : null}
+
       {/* ③ 사진 — 인화지를 가로로 늘어놓는다. 번갈아 살짝 기울여 붙인 티를 낸다 */}
-      {post.images.length > 0 ? (
+      {!note && post.images.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photos}>
           {post.images.map((image, i) => (
             <Image
@@ -219,14 +242,16 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
       ) : null}
 
       {/* ④ 본문 — 표시가 있는 자리에 오려둔 문장이 들어간다 */}
-      <PostBody
-        md={post.bodyMd}
-        quotes={post.quotes}
-        onPressQuote={(quoteId) => router.push(`/quote/${quoteId}`)}
-      />
+      {!note ? (
+        <PostBody
+          md={post.bodyMd}
+          quotes={post.quotes}
+          onPressQuote={(quoteId) => router.push(`/quote/${quoteId}`)}
+        />
+      ) : null}
 
-      {/* ⑤ 본문에 넣지 않은 밑줄 — 표시 없이 엮기만 하던 옛 글을 위해 남긴다 */}
-      {leftoverQuotes.length > 0 ? (
+      {/* ⑤ 본문에 넣지 않은 밑줄 — 표시 없이 엮기만 하던 옛 글을 위해 남긴다. 노트는 문장 조각이 페이지 안에 있다 */}
+      {!note && leftoverQuotes.length > 0 ? (
         <View style={styles.quotes}>
           <Eyebrow plain>오려둔 문장 {leftoverQuotes.length}</Eyebrow>
           {leftoverQuotes.map((quote, i) => (
@@ -306,6 +331,8 @@ const styles = StyleSheet.create({
   photo: { width: PHOTO, height: PHOTO, borderRadius: radius.sm, borderWidth: hairline },
 
   quotes: { gap: spacing.md },
+
+  clubLink: { alignSelf: 'flex-start', paddingVertical: spacing.xs, marginVertical: -spacing.xs },
 
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   footRight: { marginLeft: 'auto' },

@@ -6,12 +6,16 @@ import { TiltCover } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { NoteThumb } from './NoteThumb';
+import { isNotePost, noteDocOf } from './postFormat';
 
 /** 포스터 사진 높이(px) — 카드 머리를 채우고 그 위에 표제까지 얹는다. */
 const POSTER_H = 208;
 
 /** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. 상세 바이라인도 같이 쓴다. */
-export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크' } as const;
+export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '모임만' } as const;
+/** 노트 카드 썸네일 폭(px). */
+const NOTE_THUMB_W = 96;
 
 /**
  * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다(밑줄의 QuoteCard 와 같은 꼴).
@@ -22,6 +26,7 @@ export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크' } as cons
  *
  * 사진이 없는 글은 포스터 자리를 검은 판으로 남기지 않는다 — 표지를 세운 짧은
  * 머리판으로 갈아 끼워 카드 키를 줄인다(아래 PosterHead 참고).
+ * 노트 독후감은 포스터·발췌 대신 1쪽 썸네일을 세운 머리판(NoteHead)이다 — 노트는 그림이 곧 글이라서.
  *
  * 본문 행만 눌러 상세로 가고 푸터는 그 형제다 — 웹에서 버튼 안에 버튼이 들어가면 안 되기 때문이다.
  * 삭제는 여기 없다(상세에서만) — 목록에서 실수로 지우는 일을 만들지 않는다.
@@ -45,13 +50,20 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="독후감 상세">
-        <PosterHead post={post} />
-
-        <View style={styles.below}>
-          <Text numberOfLines={3} style={[typeScale.body, styles.excerpt, { color: colors.textMuted }]}>
-            {post.excerpt}
-          </Text>
-        </View>
+        {isNotePost(post) ? (
+          <NoteHead post={post} />
+        ) : (
+          <>
+            <PosterHead post={post} />
+            {post.excerpt.length > 0 ? (
+              <View style={styles.below}>
+                <Text numberOfLines={3} style={[typeScale.body, styles.excerpt, { color: colors.textMuted }]}>
+                  {post.excerpt}
+                </Text>
+              </View>
+            ) : null}
+          </>
+        )}
       </Pressable>
 
       {/* 카드가 사진을 물고 있어 패딩이 0 이다 — 활자 쪽만 제 여백을 갖는다. */}
@@ -94,6 +106,26 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
         </View>
       </View>
     </Card>
+  );
+}
+
+/** 노트 독후감 머리 — 1쪽 썸네일 옆에 책 이름·표제·쪽수. 사진 없는 글의 머리판과 같은 판 위에 선다. */
+function NoteHead({ post }: { post: Post }) {
+  const { colors } = useTheme();
+  const pages = noteDocOf(post).pages.length;
+  return (
+    <View style={[styles.plainHead, styles.noteHead, { backgroundColor: colors.surfaceRaised, borderBottomColor: colors.lineStrong }]}>
+      <NoteThumb post={post} width={NOTE_THUMB_W} />
+      <View style={styles.plainHeadText}>
+        <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.accent }]}>
+          {post.bookTitle ?? '책 없음'}
+        </Text>
+        <Text numberOfLines={3} style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>
+          {post.title}
+        </Text>
+        <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.textFaint }]}>노트 · {pages}쪽</Text>
+      </View>
+    </View>
   );
 }
 
@@ -194,6 +226,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
   },
   plainHeadText: { flex: 1, gap: spacing.xs },
+  noteHead: { alignItems: 'flex-start' },
 
   title: { fontSize: 20, lineHeight: 27 },
   below: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },

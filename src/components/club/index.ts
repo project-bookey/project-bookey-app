@@ -2,7 +2,7 @@
 export { ClubCard } from './ClubCard';
 export { MemberDetail, MemberStrip, NUDGES } from './MemberStrip';
 export { confirmAsync, notify } from './dialogs';
-export { ClubTabs, isClubTabKey } from './ClubTabs';
+export { ClubTabs, clubTabOf, isClubTabKey } from './ClubTabs';
 export { StatStrip } from './StatStrip';
 export type { StatCell } from './StatStrip';
 export type { ClubTabKey } from './ClubTabs';
