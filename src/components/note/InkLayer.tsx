@@ -1,9 +1,8 @@
 import { memo, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
-import { CANVAS, penColorOf, type CanvasSize, type InkElement, type PenColor } from './noteDoc';
+import { CANVAS, penColorOf, type CanvasSize, type CanvasWindow, type InkElement, type PenColor } from './noteDoc';
 import { pointsToPath, type Point } from './noteGeometry';
 
 /** 그리는 중인 획 — 아직 문서에 들어가기 전. */
@@ -28,24 +27,28 @@ function groupStrokes(strokes: readonly InkElement[]): Group[] {
  * 잉크 층 — Svg 하나에 viewBox 를 논리 캔버스로 잡아 scale 을 신경 쓰지 않는다.
  * 사용자 손글씨라 둥근 캡을 쓴다(각진 캡은 크롬 아이콘 규칙이지 잉크 규칙이 아니다).
  * 항상 요소 위에 그려진다 — 사진에 동그라미 치고 글에 밑줄 긋는 주석 느낌이 의도다.
- * canvas 는 문서의 논리 크기(대형노트 2000×2666) — 생략하면 격자 크기.
+ * canvas 는 문서의 논리 크기(대형노트 5000×5000) — 생략하면 격자 크기.
+ * window(px) 를 주면 그 구역 크기의 SVG 에 viewBox 를 그 구역의 논리 좌표로 잡아 그린다 — 큰 종이를 통째로 SVG 로 만들지 않는다.
  */
-export const InkLayer = memo(function InkLayer({ strokes, width, height, live, canvas = CANVAS }: {
+export const InkLayer = memo(function InkLayer({ strokes, width, height, live, canvas = CANVAS, window }: {
   strokes: readonly InkElement[];
   width: number;
   height: number;
   live?: LiveStroke | null;
   canvas?: CanvasSize;
+  window?: CanvasWindow;
 }) {
   const { colors } = useTheme();
   const pen = penColorOf(colors);
   const groups = useMemo(() => groupStrokes(strokes), [strokes]);
+  const win = window ?? { x: 0, y: 0, w: width, h: height };
+  const scale = width / canvas.w;
   return (
     <Svg
-      style={StyleSheet.absoluteFill}
-      width={width}
-      height={height}
-      viewBox={`0 0 ${canvas.w} ${canvas.h}`}
+      style={{ position: 'absolute', left: win.x, top: win.y }}
+      width={win.w}
+      height={win.h}
+      viewBox={`${win.x / scale} ${win.y / scale} ${win.w / scale} ${win.h / scale}`}
       pointerEvents="none"
     >
       {groups.map((g) => (

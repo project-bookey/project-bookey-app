@@ -6,9 +6,11 @@ import { hairline } from '@/theme/tokens';
 import { InkLayer, type LiveStroke } from './InkLayer';
 import { NoteElementView } from './NoteElementView';
 import { NotePaper } from './NotePaper';
-import { canvasFor, canvasOf, isInk, isPlaced, sortByZ, type NoteDoc, type NoteKind, type PlacedElement } from './noteDoc';
+import {
+  canvasFor, canvasOf, isInk, isPlaced, sortByZ, type CanvasWindow, type NoteDoc, type NoteKind, type PlacedElement,
+} from './noteDoc';
 
-/** 페이지 폭(px) → 논리 단위 배율. 높이는 3:4 로 따라온다. 대형노트는 논리 폭이 2000 이라 같은 폭에서 배율이 절반이다. */
+/** 페이지 폭(px) → 논리 단위 배율. 높이는 캔버스 비율로 따라온다. 대형노트는 논리 폭이 5000 이라 같은 폭에서 배율이 1/5 이다. */
 export const scaleFor = (width: number, kind: NoteKind = 'grid') => width / canvasFor(kind).w;
 /** 페이지 폭(px) → 페이지 높이(px). */
 export const pageHeightFor = (width: number, kind: NoteKind = 'grid') => {
@@ -21,11 +23,13 @@ export const pageHeightFor = (width: number, kind: NoteKind = 'grid') => {
  * captureRef 가 가리키는 안쪽 뷰가 PNG 로 찍히는 범위다. 편집 층(잉크 제스처·선택 프레임·업로드 중 사진)은
  * children 으로 받아 **캡처 뷰의 형제**로 얹는다 — 캡처 직전에 무엇을 숨길 필요가 없다.
  * renderElement 를 주면 요소를 그 함수로 그린다(선택 도구의 제스처 뷰). 없으면 읽기 전용 뷰.
- * 논리 캔버스 크기는 문서의 kind 가 정한다(canvasOf) — 대형노트는 2000×2666.
+ * 논리 캔버스 크기는 문서의 kind 가 정한다(canvasOf) — 대형노트는 5000×5000.
+ * window(px) 를 주면 SVG 층(종이·잉크)은 그 구역만 그린다 — 줌 무대가 보이는 구역을 넘긴다. 요소(뷰)는 늘 전부 그린다.
  */
-export function NoteCanvas({ doc, width, live, captureRef, underlay, renderElement, children }: {
+export function NoteCanvas({ doc, width, window, live, captureRef, underlay, renderElement, children }: {
   doc: NoteDoc;
   width: number;
+  window?: CanvasWindow;
   live?: LiveStroke | null;
   captureRef?: RefObject<View | null>;
   /** 종이 바로 위, 요소 아래에 깔리는 층(바탕 탭). */
@@ -48,10 +52,10 @@ export function NoteCanvas({ doc, width, live, captureRef, underlay, renderEleme
         testID="note-page"
         style={[styles.page, { width, height, backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}
       >
-        <NotePaper paper={doc.paper} width={width} height={height} canvas={canvas} />
+        <NotePaper paper={doc.paper} width={width} height={height} canvas={canvas} window={window} />
         {underlay}
         {placed.map((e) => (renderElement ? renderElement(e, scale) : <NoteElementView key={e.id} element={e} scale={scale} />))}
-        <InkLayer strokes={strokes} width={width} height={height} live={live} canvas={canvas} />
+        <InkLayer strokes={strokes} width={width} height={height} live={live} canvas={canvas} window={window} />
       </View>
       {children}
     </View>

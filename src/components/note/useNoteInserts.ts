@@ -18,7 +18,7 @@ export type NoteSpeaker = { userId: number; nickname: string; avatarUrl?: string
 /** 삽입 기준점(논리 좌표) — 주면 그 자리를 가운데로 넣고, 없거나 null 이면 캔버스 가운데쯤. */
 export type AnchorFn = () => Point | null;
 
-/** 기준점 → 캔버스 안의 가운데 좌표. 대형노트를 확대해 둔 상태면 ZoomStage 의 보이는 가운데를 넘긴다. */
+/** 기준점 → 캔버스 안의 가운데 좌표. 화면은 줌 무대에서 지금 보이는 가운데를 넘긴다. */
 export function anchorOf(doc: NoteDoc, getAnchor?: AnchorFn): Point {
   const canvas = canvasOf(doc);
   return getAnchor?.() ?? [canvas.w / 2, canvas.h / 2];
@@ -27,7 +27,7 @@ export function anchorOf(doc: NoteDoc, getAnchor?: AnchorFn): Point {
 /**
  * 삽입 동작과 편집 시트 상태 — 텍스트·말풍선은 빈 요소를 넣고 바로 시트를 연다(넣기+타이핑이 되돌리기 한 건).
  * 스티커는 시트에서 고르면 가운데에 붙인다. 사진은 useNotePhotos 가, 문장 조각은 pickQuote 가 맡는다.
- * 넣는 자리는 문서의 캔버스(노트 종류) 가운데거나, getAnchor 가 준 자리(확대 중인 대형노트의 보이는 가운데)다.
+ * 넣는 자리는 문서의 캔버스(노트 종류) 가운데거나, getAnchor 가 준 자리(줌 무대에서 지금 보이는 가운데)다.
  */
 export function useNoteInserts({ editor, me, setTool, select, pickPhoto, openQuotes, getAnchor }: {
   editor: NoteEditor;

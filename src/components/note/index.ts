@@ -1,4 +1,4 @@
-/** 노트 캔버스 엔진 배럴 — 노트 모드 독후감(여러 페이지·노트 종류·대형노트 줌)이 쓴다. */
+/** 노트 캔버스 엔진 배럴 — 노트 모드 독후감(여러 페이지·노트 종류·줌)이 쓴다. */
 export { NoteCanvas, scaleFor, pageHeightFor } from './NoteCanvas';
 export { InkLayer } from './InkLayer';
 export type { LiveStroke } from './InkLayer';
@@ -25,5 +25,5 @@ export { useInkGesture } from './useInkGesture';
 export type { InkTool, PenState } from './useInkGesture';
 export { applyPreview, settle, IDLE_DELTA } from './editing';
 export type { Delta, Preview } from './editing';
-export { ZoomStage, ZoomControls, useNoteZoom, ZOOM_MIN, ZOOM_MAX } from './ZoomStage';
-export type { NoteZoom } from './ZoomStage';
+export { ZoomStage, ZoomControls, useNoteZoom, ZOOM_MAX } from './ZoomStage';
+export type { NoteZoom, ZoomHome } from './ZoomStage';
