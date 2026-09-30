@@ -84,7 +84,7 @@ export type ClubNotePage = Schemas['ClubNotePageView'];
 export type ClubNoteEditor = Schemas['ClubNoteEditorView'];
 export type ClubNoteImage = Schemas['ClubNoteImageView'];
 export type SaveClubNotePage = Schemas['SaveClubNotePageRequest'];
-/** 서버는 페이지 문서를 해석하지 않아 { [key: string]: unknown } 으로 온다 — 앱의 NoteDoc(clubNote/noteDoc.ts)으로 경계에서 좁힌다. */
+/** 서버는 페이지 문서를 해석하지 않아 { [key: string]: unknown } 으로 온다 — 앱의 NoteDoc(note/noteDoc.ts)으로 경계에서 좁힌다. */
 export type ClubNoteDocument = ClubNotePage['document'];
 
 export type ClubVisibility = NonNullable<ClubHome['visibility']>;

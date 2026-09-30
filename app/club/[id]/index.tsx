@@ -30,7 +30,7 @@ import {
   confirmAsync,
   notify,
 } from "@/components/club";
-import { NoteGrid } from "@/components/clubNote/NoteGrid";
+import { NoteGrid } from "@/components/note/NoteGrid";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubChatBody } from "./chat";
 import { ClubMeetingsBody } from "./meetings";

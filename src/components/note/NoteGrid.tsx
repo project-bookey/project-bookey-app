@@ -11,8 +11,8 @@ import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
-import { NoteCanvas } from './NoteCanvas';
-import { CANVAS, parseDoc } from './noteDoc';
+import { NoteCanvas, pageHeightFor } from './NoteCanvas';
+import { parseDoc } from './noteDoc';
 import { clubNoteKeys, useNotebook, useNotePageQuery } from './queries';
 
 const COLUMNS = 3;
@@ -106,7 +106,7 @@ function NoteGridCell({ clubId, summary, width, onPress }: {
   const doc = useMemo(() => (page.data ? parseDoc(page.data.document) : null), [page.data]);
   const author = page.data?.createdBy ?? summary.updatedBy ?? null;
   const title = summary.title && summary.title.length > 0 ? summary.title : `${summary.seq}쪽`;
-  const height = Math.round((width * CANVAS.h) / CANVAS.w);
+  const height = pageHeightFor(width);
   return (
     <Pressable
       onPress={onPress}

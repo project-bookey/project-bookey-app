@@ -1,5 +1,5 @@
 import {
-  Eraser, Hand, Image as ImageIcon, MessageSquare, MousePointer2, Pen, Sticker, Type, type LucideIcon,
+  Eraser, Hand, Image as ImageIcon, MessageSquare, MousePointer2, Pen, Quote, Sticker, Type, type LucideIcon,
 } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,9 @@ import { PEN_WIDTHS, type PenWidth } from './noteDoc';
 import type { PenState } from './useInkGesture';
 
 export type NoteTool = 'hand' | 'select' | 'pen' | 'eraser';
-export type InsertKind = 'text' | 'sticker' | 'photo' | 'speech';
+export type InsertKind = 'text' | 'sticker' | 'photo' | 'speech' | 'quote';
+/** 옛 모임 노트북의 삽입 4종 — inserts 를 생략하면 이 줄을 그린다. */
+export const DEFAULT_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech'];
 
 const TOOLS: { key: NoteTool; icon: LucideIcon; label: string }[] = [
   { key: 'hand', icon: Hand, label: '보기' },
@@ -26,19 +28,23 @@ const INSERTS: { key: InsertKind; icon: LucideIcon; label: string }[] = [
   { key: 'sticker', icon: Sticker, label: '스티커' },
   { key: 'photo', icon: ImageIcon, label: '사진' },
   { key: 'speech', icon: MessageSquare, label: '말풍선' },
+  { key: 'quote', icon: Quote, label: '문장' },
 ];
 
 /**
- * 하단 도구 줄 — 왼쪽 네 개는 모드(보기·선택·펜·지우개), 오른쪽 네 개는 삽입 동작(시트를 연다).
+ * 하단 도구 줄 — 왼쪽 네 개는 모드(보기·선택·펜·지우개), 오른쪽은 삽입 동작(시트를 연다). 삽입 종류는 inserts 로 고른다
+ * (독후감 노트는 텍스트·스티커·사진·문장 조각처럼).
  * 활성 모드는 잉크로 찍은 도장처럼 반전한다. 펜·지우개일 땐 위에 펜 줄(색·굵기)이 하나 더 뜬다.
  */
-export function NoteToolbar({ tool, onTool, pen, onPen, onInsert, photoDisabled = false }: {
+export function NoteToolbar({ tool, onTool, pen, onPen, onInsert, photoDisabled = false, inserts = DEFAULT_INSERTS }: {
   tool: NoteTool;
   onTool: (tool: NoteTool) => void;
   pen: PenState;
   onPen: (patch: Partial<PenState>) => void;
   onInsert: (kind: InsertKind) => void;
   photoDisabled?: boolean;
+  /** 보일 삽입 종류와 순서. */
+  inserts?: readonly InsertKind[];
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -50,7 +56,7 @@ export function NoteToolbar({ tool, onTool, pen, onPen, onInsert, photoDisabled 
           <ToolButton key={t.key} icon={t.icon} label={t.label} active={tool === t.key} onPress={() => onTool(t.key)} />
         ))}
         <View style={[styles.rule, { backgroundColor: colors.line }]} />
-        {INSERTS.map((i) => (
+        {inserts.map((k) => INSERTS.find((i) => i.key === k)!).map((i) => (
           <ToolButton
             key={i.key}
             icon={i.icon}

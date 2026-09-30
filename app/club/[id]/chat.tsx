@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { ApiError } from '@/api/client';
 import { clubCommunityApi, type ClubChatMessage } from '@/api/endpoints';
 import { kstTime } from '@/components/clubLog';
-import { NoteSheet } from '@/components/clubNote/NoteSheet';
+import { NoteSheet } from '@/components/note/NoteSheet';
 import { Button, Card, EmptyState, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';

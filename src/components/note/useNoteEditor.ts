@@ -9,11 +9,17 @@ const UNDO_LIMIT = 30;
 /** 같은 batch 키로 연달아 apply 하면 되돌리기 한 건으로 묶인다(타이핑 한 세션, 지우개 드래그 한 번). */
 export type ApplyOptions = { batch?: string };
 
+/** 페이지 하나의 편집 상태 — 여러 페이지 노트가 페이지를 넘길 때 되돌리기 스택째 맡겨 두고 되찾는다. */
+export type NoteEditorState = { doc: NoteDoc; undo: NoteDoc[] };
+
 /**
  * 페이지 문서 편집 상태 — 서버와 무관한 순수 편집기. 문서·되돌리기 스택·"내가 건드린 요소 id" 를 든다.
  * touched 는 409 병합 때 내 변경을 가려내는 근거라 서버와 맞출 때(clearTouched)만 비운다.
+ * onChange 는 사용자 편집(apply·undo·undoable replace)마다 불린다 — reset·load(페이지 넘김)에는 불리지 않는다.
  */
-export function useNoteEditor(initial: NoteDoc) {
+export function useNoteEditor(initial: NoteDoc, options?: { onChange?: () => void }) {
+  const onChangeRef = useRef(options?.onChange);
+  onChangeRef.current = options?.onChange;
   const [doc, setDoc] = useState(initial);
   const docRef = useRef(initial);
   const undoRef = useRef<NoteDoc[]>([]);
@@ -30,6 +36,7 @@ export function useNoteEditor(initial: NoteDoc) {
     docRef.current = next;
     setDoc(next);
     setRev((r) => r + 1);
+    onChangeRef.current?.();
   }, []);
 
   const pushUndo = (snapshot: NoteDoc) => {
@@ -75,6 +82,7 @@ export function useNoteEditor(initial: NoteDoc) {
     docRef.current = next;
     setDoc(next);
     setRev((r) => r + 1);
+    if (opts?.undoable) onChangeRef.current?.();
   }, []);
 
   const clearTouched = useCallback(() => {
@@ -92,7 +100,21 @@ export function useNoteEditor(initial: NoteDoc) {
     setRev((r) => r + 1);
   }, []);
 
-  return { doc, docRef, rev, apply, endBatch, undo, canUndo, replace, reset, touchedRef, clearTouched };
+  /** 지금 페이지의 문서와 되돌리기 스택 — 다른 페이지로 넘기기 전에 맡겨 둔다. */
+  const snapshot = useCallback((): NoteEditorState => ({ doc: docRef.current, undo: [...undoRef.current] }), []);
+
+  /** 맡겨 둔 페이지 상태를 되찾는다 — 되돌리기 스택까지 그대로. touched 는 비운다(서버 병합과 무관한 흐름). */
+  const load = useCallback((state: NoteEditorState) => {
+    batchRef.current = null;
+    undoRef.current = [...state.undo];
+    touchedRef.current.clear();
+    setCanUndo(state.undo.length > 0);
+    docRef.current = state.doc;
+    setDoc(state.doc);
+    setRev((r) => r + 1);
+  }, []);
+
+  return { doc, docRef, rev, apply, endBatch, undo, canUndo, replace, reset, touchedRef, clearTouched, snapshot, load };
 }
 
 export type NoteEditor = ReturnType<typeof useNoteEditor>;
