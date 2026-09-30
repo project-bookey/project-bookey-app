@@ -237,10 +237,28 @@ export function useNoteZoom({ kind, viewport, fitInset = { x: 0, y: 0 }, maxFitW
     }
   }, [enabled, commit, viewAt, workScale, fitScale, vw, vh, fit]);
 
-  // 종류·뷰포트 크기가 바뀌면(첫 배치·회전·창 크기) 처음 모습으로 — 그리기 전에 얹어 한 번 튀지 않게.
+  /** 처음 모습을 얹은 노트 종류 — 이 종류로 한 번 얹은 뒤엔 뷰포트 크기가 바뀌어도 보던 자리를 지킨다. */
+  const homedKindRef = useRef<NoteKind | null>(null);
+  /** 직전 맞춤 배율 — 크기가 바뀔 때 '맞춤 상태였는지' 가린다. */
+  const prevFitRef = useRef(fitScale);
+
+  // 첫 배치·종류가 바뀔 때는 처음 모습으로. 그 뒤 뷰포트 크기만 바뀌면(도구를 바꿔 펜 색 줄이 생기고 사라질 때,
+  // 회전·창 크기) 보던 자리를 지킨다 — 뷰포트 왼쪽 위의 논리 점과 배율을 그대로 둔다(맞춤이었으면 새 맞춤으로).
+  // 그리기 전에 얹어 한 번 튀지 않게 layout effect 로.
   useLayoutEffect(() => {
-    goHome();
-    // goHome 은 뷰포트가 바뀔 때마다 새로 만들어진다 — 종류·크기가 바뀔 때만 부른다.
+    const prevFit = prevFitRef.current;
+    prevFitRef.current = fitScale;
+    if (!enabled) return;
+    if (homedKindRef.current !== kind) {
+      homedKindRef.current = kind;
+      goHome();
+      return;
+    }
+    const cur = current();
+    const wasFit = cur.s <= prevFit * (1 + 1e-3);
+    const s = wasFit ? fitScale : Math.min(Math.max(cur.s, fitScale), maxScale);
+    commit(viewAt(s, -cur.x / cur.s, -cur.y / cur.s, 0, 0));
+    // 종류·크기가 바뀔 때만 — 콜백들은 크기가 바뀌면 새로 만들어지므로 deps 에 넣지 않는다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, vw, vh]);
 
