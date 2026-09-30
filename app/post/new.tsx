@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import {
@@ -15,39 +15,42 @@ import type { PickedBook } from '@/components/book/BookPicker';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
+import { PostModeChooser } from '@/components/post/PostModeChooser';
+import {
+  POST_QUOTE_MAX, POST_TITLE_MAX, defaultVisibility, isNotePost, visibilityCaption, visibilityOptions,
+} from '@/components/post/postFormat';
 import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
 import { insertQuoteMarkers, parseQuoteIds } from '@/components/post/quoteMarkers';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
 import { Card, EmptyState, Eyebrow, Field, Segmented, linkLabel } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 글 하나에 엮을 수 있는 밑줄 수 — 서버 상한과 같은 값. */
-const POST_QUOTE_MAX = 10;
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
-const TITLE_MAX = 300;
+const TITLE_MAX = POST_TITLE_MAX;
 /** 하단 '오려둔 문장' 띠의 대략 높이(36px 터치 상자 + 위아래 여백) — 본문 아래 여백을 이만큼 더 준다. */
 const QUOTE_BAR_HEIGHT = 60;
 
-const VISIBILITY_CAPTION: Record<PostVisibility, string> = {
-  PUBLIC: '광장·책 상세에 실립니다',
-  PRIVATE: '나만 봅니다',
-  LINK: '링크로만 볼 수 있어요',
-};
-
 /**
- * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글), 상세 `고치기`(`id`)에서 들어온다.
+ * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글), 모임 독후감 탭(`clubId`),
+ * 상세 `고치기`(`id`)에서 들어온다.
+ * 새 글은 먼저 모드를 고른다(PostModeChooser) — 글로 쓰기는 `format=TEXT` 로 이 화면의 폼을, 노트로 꾸미기는 `/post/note` 를 연다.
+ * 고칠 글이 노트면 노트 편집기로 넘긴다.
  *
  * 폼 상태는 안쪽 PostForm 이 마운트될 때 한 번에 시드한다 — 그래서 이 바깥 화면은 고칠 글·책을 먼저 받아
  * 오고 나서야 폼을 세운다(useBookPicker 의 initial 도 마운트 때 한 번만 읽힌다). 로딩·404·남의 글은 여기서 거른다.
  */
 export default function PostEditorScreen() {
-  const { id, bookId } = useLocalSearchParams<{ id?: string; bookId?: string }>();
+  const { id, bookId, clubId, format } = useLocalSearchParams<{
+    id?: string; bookId?: string; clubId?: string; format?: string;
+  }>();
   const { colors } = useTheme();
   const postId = id ? Number(id) : NaN;
   const editing = Number.isFinite(postId);
   const bookParam = bookId ? Number(bookId) : NaN;
   const fromBook = !editing && Number.isFinite(bookParam);
   const category = editing ? '독후감 고치기' : '독후감 쓰기';
+  const clubParam = clubId ? Number(clubId) : NaN;
+  const choosing = !editing && format !== 'TEXT';
 
   // 꺼진 쿼리에도 키는 있어야 한다 — NaN 을 키에 넣으면 서로 다른 화면이 한 자리를 나눠 쓰게 되므로 자리 키를 둔다.
   const post = useQuery({
@@ -59,8 +62,18 @@ export default function PostEditorScreen() {
   const book = useQuery({
     queryKey: fromBook ? ['book', bookParam] : ['book', 'pending'],
     queryFn: () => bookApi.detail(bookParam),
-    enabled: fromBook,
+    enabled: fromBook && !choosing,
   });
+
+  // 모드부터 — 책·모임 파라미터는 고른 화면으로 그대로 넘긴다.
+  if (choosing) {
+    return (
+      <PostModeChooser
+        bookId={Number.isFinite(bookParam) ? bookParam : undefined}
+        clubId={Number.isFinite(clubParam) ? clubParam : undefined}
+      />
+    );
+  }
 
   if ((editing && post.isLoading) || (fromBook && book.isLoading)) {
     return (
@@ -99,6 +112,9 @@ export default function PostEditorScreen() {
       </Shell>
     );
   }
+  if (loaded && isNotePost(loaded)) {
+    return <Redirect href={{ pathname: '/post/note', params: { id: String(loaded.id) } }} />;
+  }
   if (loaded && !loaded.mine) {
     return (
       <Shell category={category}>
@@ -121,7 +137,12 @@ export default function PostEditorScreen() {
         }
       : undefined;
 
-  return <PostForm key={editing ? `edit-${postId}` : 'new'} post={loaded} initialBook={initialBook} />;
+  // 모임 글인지 — 고치기는 글의 모임(바꿀 수 없다), 새 글은 파라미터.
+  const formClubId = loaded ? loaded.clubId : Number.isFinite(clubParam) ? clubParam : undefined;
+
+  return (
+    <PostForm key={editing ? `edit-${postId}` : 'new'} post={loaded} initialBook={initialBook} clubId={formClubId} />
+  );
 }
 
 /** 폼 앞뒤의 셸 — 로딩·빈 상태도 같은 헤더 아래 놓인다. */
@@ -134,8 +155,11 @@ function Shell({ category, children }: { category: string; children: ReactNode }
   );
 }
 
-/** 폼 본체 — `post` 가 있으면 고치기. 시드는 마운트 때 한 번(부모가 key 로 다시 세운다). */
-function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook | null }) {
+/**
+ * 폼 본체 — `post` 가 있으면 고치기. 시드는 마운트 때 한 번(부모가 key 로 다시 세운다).
+ * clubId 가 있으면 모임 독후감 — 공개 범위가 모임만·광장에도 둘이 되고, 새 글은 clubId 를 싣는다.
+ */
+function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: PickedBook | null; clubId?: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
@@ -151,7 +175,8 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
   const [seed] = useState(() => seedBody(post?.bodyMd ?? '', post?.quotes ?? []));
   const [bodyMd, setBodyMd] = useState(seed.text);
   const [mode, setMode] = useState<'WRITE' | 'PREVIEW'>('WRITE');
-  const [visibility, setVisibility] = useState<PostVisibility>(post?.visibility ?? 'PUBLIC');
+  const inClub = clubId != null;
+  const [visibility, setVisibility] = useState<PostVisibility>(post?.visibility ?? defaultVisibility(inClub));
   // 아는 밑줄 보관함 — 본문 표시가 가리키는 조각을 미리보기에서 그리려면 id 말고 객체가 있어야 한다.
   // 첨부 자체는 본문 표시에서 파생하므로 여기서 빼지 않는다. 책과 무관하다(책을 바꿔도 남는다).
   const [quotes, setQuotes] = useState<BookQuote[]>(post?.quotes ?? []);
@@ -212,7 +237,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
       };
       return editing
         ? postApi.update(post.id, base)
-        : postApi.create({ ...base, readingRecordId: book?.recordId });
+        : postApi.create({ ...base, readingRecordId: book?.recordId, format: 'TEXT', clubId });
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(postKey(saved.id), saved);
@@ -231,12 +256,7 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
     ? submit.error instanceof ApiError ? submit.error.message : '올리지 못했어요 · 다시 시도'
     : null;
 
-  const visibilityOptions: { value: PostVisibility; label: string }[] = [
-    { value: 'PUBLIC', label: '공개' },
-    { value: 'PRIVATE', label: '비공개' },
-    // 링크 공개는 앱에서 새로 고르지 않는다 — 이미 링크 공개인 글을 고칠 때만 그대로 둘 수 있게 보인다.
-    ...(editing && post.visibility === 'LINK' ? [{ value: 'LINK' as const, label: '링크' }] : []),
-  ];
+  const visibilityChoices = visibilityOptions(inClub, post?.visibility);
 
   const submitLabel = editing ? '저장' : '올리기';
   const submitPill = (
@@ -377,8 +397,8 @@ function PostForm({ post, initialBook }: { post?: Post; initialBook?: PickedBook
           {/* ⑤ 공개 범위 */}
           <View style={styles.section}>
             <Eyebrow>공개 범위</Eyebrow>
-            <Segmented options={visibilityOptions} value={visibility} onChange={setVisibility} />
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>{VISIBILITY_CAPTION[visibility]}</Text>
+            <Segmented options={visibilityChoices} value={visibility} onChange={setVisibility} />
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>{visibilityCaption(visibility, inClub)}</Text>
           </View>
         </ScrollView>
 
