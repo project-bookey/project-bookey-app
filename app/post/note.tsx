@@ -3,7 +3,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Menu, Undo2 } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  FlatList, Pressable, StyleSheet, Text, View,
+  FlatList, Platform, Pressable, StyleSheet, Text, View,
   type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent,
 } from 'react-native';
 
@@ -270,6 +270,20 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
     const next = Math.round(e.nativeEvent.contentOffset.x / stageWidth);
     if (next !== pe.pageIndex) pe.goTo(next);
   };
+  // 웹(react-native-web)은 onMomentumScrollEnd 를 내지 않는다 — 스크롤이 멈추면(잠깐 조용하면) 같은 계산을 한다.
+  // goTo 는 범위 밖·같은 페이지를 스스로 거르므로 늦게 불려도 안전하다.
+  const webSettle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (webSettle.current) clearTimeout(webSettle.current);
+  }, []);
+  const { goTo } = pe;
+  const onWebScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    if (webSettle.current) clearTimeout(webSettle.current);
+    webSettle.current = setTimeout(() => {
+      if (stageWidth > 0) goTo(Math.round(x / stageWidth));
+    }, 150);
+  };
 
   const addPage = () => {
     if (!pe.addPage()) notify('노트는 6페이지까지예요.');
@@ -319,7 +333,10 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
       invalidatePostLists(queryClient);
       pe.markClean();
       setPublishOpen(false);
-      router.replace(`/post/${saved.id}`);
+      // 고치기는 상세에서 들어왔다 — 텍스트 모드처럼 되돌아가 상세가 두 겹 쌓이지 않게 한다.
+      if (!editingPost) router.replace(`/post/${saved.id}`);
+      else if (router.canGoBack()) router.back();
+      else router.replace(`/post/${saved.id}`);
     },
   });
 
@@ -364,8 +381,8 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
   const selecting = tool === 'select';
   const { preview, handlers } = selection;
   const renderElement = useCallback((el: PlacedElement, s: number) => (
-    <EditableElementView key={el.id} element={applyPreview(el, preview, s)} scale={s} editable={selecting} handlers={handlers} />
-  ), [preview, selecting, handlers]);
+    <EditableElementView key={el.id} element={applyPreview(el, preview, s, pe.canvas)} scale={s} editable={selecting} handlers={handlers} />
+  ), [preview, selecting, handlers, pe.canvas]);
 
   const selected = selection.selected;
   const renderPage = ({ index: i }: { item: string; index: number }) => (
@@ -394,7 +411,7 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
               <PendingPhotos items={pendingHere} scale={scale} onRetry={photos.retry} onRemove={photos.remove} />
               {selected ? (
                 <SelectionFrame
-                  element={applyPreview(selected, preview, scale)}
+                  element={applyPreview(selected, preview, scale, pe.canvas)}
                   scale={scale}
                   height={selection.selectedHeight}
                   onPreview={handlers.onPreview}
@@ -475,6 +492,8 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
             initialScrollIndex={pe.pageIndex}
             scrollEnabled={tool === 'hand' && !zoom.isZoomed}
             onMomentumScrollEnd={onSwipeEnd}
+            onScroll={Platform.OS === 'web' ? onWebScroll : undefined}
+            scrollEventThrottle={Platform.OS === 'web' ? 32 : undefined}
             showsHorizontalScrollIndicator={false}
             windowSize={3}
             initialNumToRender={1}
