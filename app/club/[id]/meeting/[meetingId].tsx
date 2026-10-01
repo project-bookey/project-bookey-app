@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubCommunityApi } from '@/api/endpoints';
+import { clubApi, clubCommunityApi } from '@/api/endpoints';
 import { StatStrip, confirmAsync, notify } from '@/components/club';
 import {
   meetingClock,
@@ -26,6 +26,7 @@ import { sans } from '@/theme/tokens';
  * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
  * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
+ * 함께 독서를 끝내면 소감은 독후감으로 남긴다 — 클럽과 클럽 책을 싣고 독후감 쓰기(모드 고르기)로 간다.
  */
 export default function MeetingDetailScreen() {
   const { id, meetingId, host } = useLocalSearchParams<{ id: string; meetingId: string; host?: string }>();
@@ -45,6 +46,8 @@ export default function MeetingDetailScreen() {
     queryKey: ['clubActivity', clubId, 'current'],
     queryFn: () => clubCommunityApi.currentActivity(clubId),
   });
+  // 클럽 홈과 같은 키 — 독서를 끝낸 뒤 독후감에 클럽 책을 미리 골라 두려고 쓴다.
+  const club = useQuery({ queryKey: ['club', clubId], queryFn: () => clubApi.home(clubId) });
   useEffect(() => {
     if (!current.data) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -79,7 +82,12 @@ export default function MeetingDetailScreen() {
     mutationFn: () => clubCommunityApi.endActivity(clubId),
     onSuccess: (card) => {
       qc.invalidateQueries({ queryKey: ['clubActivity', clubId] });
-      router.push({ pathname: '/club/[id]/activity', params: { id: String(clubId), cardId: String(card.id) } });
+      notify(`함께 독서 ${formatClock(card.durationSec)}를 기록했어요. 독후감으로 소감을 남겨 보세요.`);
+      const bookId = club.data?.book?.id;
+      router.push({
+        pathname: '/post/new',
+        params: { clubId: String(clubId), ...(bookId != null ? { bookId: String(bookId) } : {}) },
+      });
     },
     onError: fail('독서를 끝내지 못했어요.'),
   });
@@ -200,7 +208,7 @@ export default function MeetingDetailScreen() {
               ? '다른 모임에서 독서를 실행 중이에요.'
               : running
                 ? '이 모임의 독서 시간을 기록하고 있어요.'
-                : '모임 현장에서 독서 실행을 눌러 기록을 남겨 보세요.'}
+                : '모임 현장에서 독서 실행을 누르고, 끝나면 독후감으로 소감을 남겨 보세요.'}
           </Text>
           <Button
             label={running ? '독서 종료' : '독서 실행'}

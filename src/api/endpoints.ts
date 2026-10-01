@@ -743,13 +743,6 @@ export const clubCommunityApi = {
     api<ClubActivityCard>(`/api/v1/clubs/${clubId}/activity/end`, {
       method: "POST",
     }),
-  activityCards: (clubId: number) =>
-    api<ClubActivityCard[]>(`/api/v1/clubs/${clubId}/activity/cards`),
-  decorateActivityCard: (clubId: number, cardId: number, body: FormData) =>
-    api<ClubActivityCard>(`/api/v1/clubs/${clubId}/activity/cards/${cardId}`, {
-      method: "POST",
-      body,
-    }),
 };
 
 export const profileApi = {
