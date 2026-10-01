@@ -293,6 +293,11 @@ function parseElements(raw: unknown): NoteElement[] {
   return elements;
 }
 
+/** 서버·다른 기기에서 온 요소 하나를 좁힌다 — 모르는·깨진 요소면 null. 모임 노트 연산(noteOps)이 쓴다. */
+export const parseNoteElement = parseElement;
+/** 요소 배열을 좁힌다 — 모르는·깨진 요소는 버린다. */
+export const parseNoteElements = parseElements;
+
 // ────────────────────────────── 노트 모드 독후감 문서 ──────────────────────────────
 
 /** 노트 한 권의 페이지 상한 — 서버 검사(pages 1~6)와 같은 값. */

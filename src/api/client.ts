@@ -49,6 +49,24 @@ function resolveBaseUrl(): string {
 
 export const API_BASE_URL = resolveBaseUrl();
 
+/** 웹소켓 주소 — API 베이스 URL 의 http(s) 를 ws(s) 로 바꿔 경로를 붙인다. */
+export function wsUrlOf(path: string): string {
+  return API_BASE_URL.replace(/^http/, 'ws') + path;
+}
+
+/**
+ * 지금 액세스 토큰 — 웹소켓은 첫 메시지로 토큰을 보내 인증한다(브라우저 웹소켓은 헤더를 못 붙인다).
+ * refresh 가 true 면 갱신부터 한다 — 서버가 만료 토큰이라고 연결을 끊은 뒤 다시 붙을 때.
+ */
+export async function currentAccessToken(refresh = false): Promise<string | null> {
+  if (refresh) {
+    refreshing = refreshing ?? refreshAccessToken();
+    await refreshing;
+    refreshing = null;
+  }
+  return (await getTokens())?.accessToken ?? null;
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,

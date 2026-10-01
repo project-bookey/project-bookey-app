@@ -83,6 +83,13 @@ export type ClubPostType = NonNullable<ClubPost['type']>;
 export type NudgeMessageKey = NonNullable<Schemas['NudgeRequest']['messageKey']>;
 /** 함께 독서 기록 카드 — 스탑워치를 끝낼 때 생기고, 독후감 노트에 스티커로 붙인다. */
 export type ActivityCard = Schemas['ActivityCardView'];
+/**
+ * 모임 공유 노트 — 모임 하나에 대형노트 한 권, 멤버가 함께 꾸민다. 아직 아무도 쓰지 않았으면 id 가 없고 version 0.
+ * document 는 { [key: string]: unknown } 으로 온다 — 앱의 NoteDoc(note/noteDoc.ts)으로 경계에서 좁힌다.
+ */
+export type MeetingNote = Schemas['MeetingNoteView'];
+export type MeetingNoteImage = Schemas['MeetingNoteImageView'];
+export type MeetingNoteOpsResult = Schemas['MeetingNoteOpsResult'];
 
 // ── 알림 · 리뷰 ──────────────────────────────────────────
 export type Notification = Schemas['NotificationView'];

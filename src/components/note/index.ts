@@ -13,6 +13,10 @@ export {
 } from './noteGeometry';
 export type { Point } from './noteGeometry';
 export { useNoteEditor } from './useNoteEditor';
+export {
+  applyOps, diffOps, emptyMeetingNoteDoc, parseMeetingNoteDoc, parseOps, serializeOps,
+} from './noteOps';
+export type { NoteOp } from './noteOps';
 export type { ApplyOptions, NoteEditor, NoteEditorState } from './useNoteEditor';
 export { usePostNoteEditor } from './usePostNoteEditor';
 export type { PostNoteEditor } from './usePostNoteEditor';
