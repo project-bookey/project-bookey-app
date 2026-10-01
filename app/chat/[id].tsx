@@ -5,6 +5,7 @@ import {
   ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable,
   Image, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
@@ -26,6 +27,7 @@ export default function ChatRoomScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const chatId = Number(id);
   const [draft, setDraft] = useState('');
@@ -218,7 +220,14 @@ export default function ChatRoomScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.inputRow, { borderTopColor: colors.line, backgroundColor: colors.bg }]}>
+        <View style={[
+          styles.inputRow,
+          {
+            borderTopColor: colors.line,
+            backgroundColor: colors.bg,
+            paddingBottom: Math.max(insets.bottom, spacing.md),
+          },
+        ]}>
           <Pressable
             onPress={() => setStickersOpen((open) => !open)}
             accessibilityRole="button"
