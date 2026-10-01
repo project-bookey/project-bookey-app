@@ -31,7 +31,7 @@ const MOOD_QUERIES: ReadonlyArray<{ label: string; query: string }> = [
   { label: '비 오는 날', query: '고전' },
 ];
 
-/** 도서 검색 — 디바운스 실시간 검색 + 초기 탐색 행 + 3상태 담기 (검색 리디자인 스펙) */
+/** 도서 검색 — 메인 pager와 분리된 디바운스 실시간 검색 + 초기 탐색 행 + 3상태 담기. */
 export default function SearchScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
