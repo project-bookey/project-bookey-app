@@ -95,7 +95,7 @@ export default function HomeScreen() {
             서가↔탐색을 오갈 때마다 스택에 같은 구역이 쌓여 뒤로 가기가 길어진다. */}
         <TourTarget id="home-search">
           <Pressable
-            onPress={() => router.navigate('/search')}
+            onPress={() => router.navigate('/book-search')}
             style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
             accessibilityRole="button"
             accessibilityLabel="책 검색"
@@ -207,7 +207,7 @@ export default function HomeScreen() {
             }))}
             onPressBook={openBook}
             onPressAll={() => router.push('/library')}
-            onPressEmpty={() => router.navigate('/search')}
+            onPressEmpty={() => router.navigate('/book-search')}
           />
         </HomeSection>
 

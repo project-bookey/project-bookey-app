@@ -33,7 +33,14 @@ let lastTabIndex = 0;
  * 화면 위에 떠 있는 유리 아일랜드. iOS 26에서는 네이티브 Liquid Glass를 쓰고,
  * 그 외 환경에서는 BlurView + 반투명 면으로 같은 형태와 대비를 유지한다.
  */
-export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?: (route: string) => void }) {
+export function SectionNav({
+  active, onSelect, pagerPosition, pagerOffset,
+}: {
+  active: SectionKey;
+  onSelect?: (route: string) => void;
+  pagerPosition?: Animated.Value;
+  pagerOffset?: Animated.Value;
+}) {
   const router = useRouter();
   const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -44,18 +51,23 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
   }, [active]);
   const [visualIndex, setVisualIndex] = useState(activeIndex);
   const translateX = useRef(new Animated.Value(lastTabIndex)).current;
+  const liveTranslateX = pagerPosition && pagerOffset
+    ? Animated.add(pagerPosition, pagerOffset)
+    : translateX;
 
   useEffect(() => {
     setVisualIndex(activeIndex);
-    Animated.spring(translateX, {
-      toValue: activeIndex,
-      useNativeDriver: true,
-      stiffness: 260,
-      damping: 28,
-      mass: 0.8,
-    }).start();
+    if (!pagerPosition) {
+      Animated.spring(translateX, {
+        toValue: activeIndex,
+        useNativeDriver: true,
+        stiffness: 260,
+        damping: 28,
+        mass: 0.8,
+      }).start();
+    }
     lastTabIndex = activeIndex;
-  }, [activeIndex, translateX]);
+  }, [activeIndex, pagerPosition, translateX]);
 
   const tabWidth = trackWidth > 0 ? (trackWidth - 8) / SECTIONS.length : 0;
   const nativeGlass = Platform.OS === 'ios' && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
@@ -76,7 +88,7 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
               borderColor: mode === 'dark' ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.92)',
               transform: [{
                 translateX: Animated.add(
-                  Animated.multiply(translateX, tabWidth),
+                  Animated.multiply(liveTranslateX, tabWidth),
                   Math.max((tabWidth - 44) / 2, 0),
                 ),
               }],
@@ -93,13 +105,15 @@ export function SectionNav({ active, onSelect }: { active: SectionKey; onSelect?
             onPress={() => {
               if (selected) return;
               setVisualIndex(index);
-              Animated.spring(translateX, {
-                toValue: index,
-                useNativeDriver: true,
-                stiffness: 320,
-                damping: 32,
-                mass: 0.7,
-              }).start();
+              if (!pagerPosition) {
+                Animated.spring(translateX, {
+                  toValue: index,
+                  useNativeDriver: true,
+                  stiffness: 320,
+                  damping: 32,
+                  mass: 0.7,
+                }).start();
+              }
               lastTabIndex = index;
               if (onSelect) onSelect(section.route);
               else router.replace(section.path);

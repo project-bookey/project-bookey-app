@@ -213,7 +213,7 @@ export default function ProfileScreen() {
           ) : shelf.length === 0 ? (
             <View style={styles.shelfList}>
               <Pressable
-                onPress={() => router.navigate('/search')}
+                onPress={() => router.navigate('/book-search')}
                 accessibilityRole="button"
                 accessibilityLabel="책 추가"
               >

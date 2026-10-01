@@ -95,12 +95,12 @@ export default function LibraryScreen() {
         }
         ListFooterComponent={
           !list.isLoading && records.length === 0 ? (
-            <EmptyNote status={status} onSearch={() => router.navigate('/search')} />
+            <EmptyNote status={status} onSearch={() => router.navigate('/book-search')} />
           ) : null
         }
         renderItem={({ item }) => {
           if (item.kind === 'add') {
-            return <AddTile colors={colors} onPress={() => router.navigate('/search')} />;
+            return <AddTile colors={colors} onPress={() => router.navigate('/book-search')} />;
           }
           if (item.kind === 'skeleton') {
             return (
