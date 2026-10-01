@@ -875,22 +875,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/clubs/{clubId}/activity/cards/{cardId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["decorateActivityCard"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/clubs/join": {
         parameters: {
             query?: never;
@@ -2417,22 +2401,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/clubs/{clubId}/activity/cards": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["activityCards"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/clubs/public": {
         parameters: {
             query?: never;
@@ -2459,6 +2427,23 @@ export interface paths {
         };
         /** 초대 코드로 모임 미리보기 — 참가 전 확인용 */
         get: operations["preview_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/activity-cards/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 함께 독서 기록 카드 — 모든 클럽, 최근 50장(노트 스티커용) */
+        get: operations["myActivityCards"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2944,6 +2929,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/{notificationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 내 알림 삭제 */
+        delete: operations["delete_12"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/me": {
         parameters: {
             query?: never;
@@ -2972,7 +2974,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 채팅방 삭제 — 참가자만, 메시지도 함께 삭제된다 */
-        delete: operations["delete_12"];
+        delete: operations["delete_13"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3518,6 +3520,7 @@ export interface components {
             /** Format: int32 */
             totalPagesOverride?: number;
             reread?: boolean;
+            commitment?: string;
         };
         BookSummary: {
             /** Format: int64 */
@@ -3578,6 +3581,7 @@ export interface components {
             /** Format: int32 */
             rating?: number;
             abandonReason?: string;
+            commitment?: string;
         };
         FinishRequest: {
             /** Format: int32 */
@@ -3823,15 +3827,14 @@ export interface components {
             /** Format: int64 */
             id?: number;
             /** Format: int64 */
-            sessionId?: number;
-            /** Format: int64 */
-            userId?: number;
+            clubId?: number;
+            clubName?: string;
+            meetingTitle?: string;
             nickname?: string;
             /** Format: int32 */
             durationSec: number;
-            caption?: string;
-            decorationsJson?: string;
-            photoUrl?: string;
+            /** Format: date-time */
+            endedAt?: string;
         };
         JoinRequest: {
             code: string;
@@ -6810,39 +6813,6 @@ export interface operations {
             };
         };
     };
-    decorateActivityCard: {
-        parameters: {
-            query?: {
-                caption?: string;
-                decorationsJson?: string;
-            };
-            header?: never;
-            path: {
-                clubId: number;
-                cardId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    file?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ActivityCardView"];
-                };
-            };
-        };
-    };
     join: {
         parameters: {
             query?: never;
@@ -9342,28 +9312,6 @@ export interface operations {
             };
         };
     };
-    activityCards: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                clubId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ActivityCardView"][];
-                };
-            };
-        };
-    };
     publicClubs: {
         parameters: {
             query?: {
@@ -9405,6 +9353,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ClubPreview"];
+                };
+            };
+        };
+    };
+    myActivityCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ActivityCardView"][];
                 };
             };
         };
@@ -10056,6 +10024,26 @@ export interface operations {
             };
         };
     };
+    delete_12: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     leave: {
         parameters: {
             query?: never;
@@ -10076,7 +10064,7 @@ export interface operations {
             };
         };
     };
-    delete_12: {
+    delete_13: {
         parameters: {
             query?: never;
             header?: never;

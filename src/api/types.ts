@@ -81,6 +81,8 @@ export type ClubStatus = NonNullable<ClubHome['status']>;
 export type ClubRole = NonNullable<ClubHome['myRole']>;
 export type ClubPostType = NonNullable<ClubPost['type']>;
 export type NudgeMessageKey = NonNullable<Schemas['NudgeRequest']['messageKey']>;
+/** 함께 독서 기록 카드 — 스탑워치를 끝낼 때 생기고, 독후감 노트에 스티커로 붙인다. */
+export type ActivityCard = Schemas['ActivityCardView'];
 
 // ── 알림 · 리뷰 ──────────────────────────────────────────
 export type Notification = Schemas['NotificationView'];
