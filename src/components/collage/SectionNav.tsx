@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
-import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Animated, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -51,13 +53,34 @@ export function SectionNav({
     return index < 0 ? SECTIONS.findIndex((section) => section.key === 'shelf') : index;
   }, [active]);
   const [visualIndex, setVisualIndex] = useState(activeIndex);
+  const visualIndexRef = useRef(activeIndex);
+  const requestedIndexRef = useRef(activeIndex);
+  const trackRef = useRef<View>(null);
+  const trackLeft = useRef(0);
+  const trackWidthRef = useRef(0);
+  const draggedIndex = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const dragFrame = useRef<number | null>(null);
+  const nextDragPosition = useRef(activeIndex);
   const translateX = useRef(new Animated.Value(lastTabIndex)).current;
-  const liveTranslateX = pagerPosition && pagerOffset
+  const pagerTranslateX = pagerPosition && pagerOffset
     ? Animated.add(pagerPosition, pagerOffset)
     : translateX;
+  const dragPosition = useRef(new Animated.Value(activeIndex)).current;
+  const dragBlend = useRef(new Animated.Value(0)).current;
+  const dragStretch = useRef(new Animated.Value(1)).current;
+  const liveTranslateX = Animated.add(
+    Animated.multiply(pagerTranslateX, Animated.add(1, Animated.multiply(dragBlend, -1))),
+    Animated.multiply(dragPosition, dragBlend),
+  );
 
   useEffect(() => {
-    setVisualIndex(activeIndex);
+    if (!isDragging.current) {
+      setVisualIndex(activeIndex);
+      visualIndexRef.current = activeIndex;
+      requestedIndexRef.current = activeIndex;
+      dragPosition.setValue(activeIndex);
+    }
     if (!pagerPosition) {
       Animated.spring(translateX, {
         toValue: activeIndex,
@@ -68,15 +91,131 @@ export function SectionNav({
       }).start();
     }
     lastTabIndex = activeIndex;
-  }, [activeIndex, pagerPosition, translateX]);
+  }, [activeIndex, dragPosition, pagerPosition, translateX]);
 
   const tabWidth = trackWidth > 0 ? (trackWidth - 8) / SECTIONS.length : 0;
   const nativeGlass = Platform.OS === 'ios' && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
 
+  const selectIndex = (index: number) => {
+    const section = SECTIONS[index];
+    if (!section || index === requestedIndexRef.current) return;
+    requestedIndexRef.current = index;
+    visualIndexRef.current = index;
+    setVisualIndex(index);
+    if (!pagerPosition) {
+      Animated.spring(translateX, {
+        toValue: index,
+        useNativeDriver: true,
+        stiffness: 320,
+        damping: 32,
+        mass: 0.7,
+      }).start();
+    }
+    lastTabIndex = index;
+    if (onSelect) onSelect(section.route);
+    else router.replace(section.path);
+  };
+
+  const measureTrack = () => {
+    trackRef.current?.measureInWindow((x, _y, width) => {
+      trackLeft.current = x + 4;
+      trackWidthRef.current = Math.max(width - 8, 0);
+    });
+  };
+
+  const scrubTo = (event: GestureResponderEvent) => {
+    const width = trackWidthRef.current;
+    if (width <= 0) return;
+    const relativeX = Math.max(0, Math.min(event.nativeEvent.pageX - trackLeft.current, width - 1));
+    const continuousIndex = Math.max(
+      0,
+      Math.min((relativeX / width) * SECTIONS.length - 0.5, SECTIONS.length - 1),
+    );
+    nextDragPosition.current = continuousIndex;
+    if (dragFrame.current === null) {
+      dragFrame.current = requestAnimationFrame(() => {
+        dragFrame.current = null;
+        dragPosition.setValue(nextDragPosition.current);
+      });
+    }
+    const index = Math.max(0, Math.min(Math.floor((relativeX / width) * SECTIONS.length), SECTIONS.length - 1));
+    if (draggedIndex.current === index) return;
+    draggedIndex.current = index;
+    visualIndexRef.current = index;
+    setVisualIndex(index);
+  };
+  const scrubResponder = PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_event, gesture) => (
+      Math.abs(gesture.dx) > 5 && Math.abs(gesture.dx) > Math.abs(gesture.dy)
+    ),
+    onPanResponderGrant: (event) => {
+      measureTrack();
+      isDragging.current = true;
+      draggedIndex.current = null;
+      dragPosition.setValue(visualIndexRef.current);
+      dragBlend.setValue(1);
+      Animated.spring(dragStretch, {
+        toValue: 1.16,
+        useNativeDriver: true,
+        stiffness: 420,
+        damping: 32,
+        mass: 0.55,
+      }).start();
+      scrubTo(event);
+    },
+    onPanResponderMove: scrubTo,
+    onPanResponderRelease: () => {
+      const destination = draggedIndex.current ?? visualIndexRef.current;
+      if (dragFrame.current !== null) {
+        cancelAnimationFrame(dragFrame.current);
+        dragFrame.current = null;
+      }
+      draggedIndex.current = null;
+      isDragging.current = false;
+      selectIndex(destination);
+      Animated.parallel([
+        Animated.spring(dragPosition, {
+          toValue: destination,
+          useNativeDriver: true,
+          stiffness: 420,
+          damping: 32,
+          mass: 0.62,
+        }),
+        Animated.spring(dragStretch, {
+          toValue: 1,
+          useNativeDriver: true,
+          stiffness: 360,
+          damping: 24,
+          mass: 0.7,
+        }),
+      ]).start(() => dragBlend.setValue(0));
+    },
+    onPanResponderTerminate: () => {
+      if (dragFrame.current !== null) {
+        cancelAnimationFrame(dragFrame.current);
+        dragFrame.current = null;
+      }
+      draggedIndex.current = null;
+      isDragging.current = false;
+      visualIndexRef.current = activeIndex;
+      requestedIndexRef.current = activeIndex;
+      setVisualIndex(activeIndex);
+      dragPosition.setValue(activeIndex);
+      dragBlend.setValue(0);
+      dragStretch.setValue(1);
+    },
+    onPanResponderTerminationRequest: () => false,
+  });
+
   const tabs = (
     <View
+      ref={trackRef}
       style={styles.track}
-      onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+      onLayout={(event) => {
+        setTrackWidth(event.nativeEvent.layout.width);
+        requestAnimationFrame(measureTrack);
+      }}
+      {...scrubResponder.panHandlers}
       accessibilityRole="tablist"
     >
       {trackWidth > 0 ? (
@@ -92,7 +231,7 @@ export function SectionNav({
                   Animated.multiply(liveTranslateX, tabWidth),
                   Math.max((tabWidth - 44) / 2, 0),
                 ),
-              }],
+              }, { scaleX: dragStretch }],
             },
           ]}
         />
@@ -105,19 +244,7 @@ export function SectionNav({
             key={section.key}
             onPress={() => {
               if (selected) return;
-              setVisualIndex(index);
-              if (!pagerPosition) {
-                Animated.spring(translateX, {
-                  toValue: index,
-                  useNativeDriver: true,
-                  stiffness: 320,
-                  damping: 32,
-                  mass: 0.7,
-                }).start();
-              }
-              lastTabIndex = index;
-              if (onSelect) onSelect(section.route);
-              else router.replace(section.path);
+              selectIndex(index);
             }}
             accessibilityRole="tab"
             accessibilityState={{ selected }}

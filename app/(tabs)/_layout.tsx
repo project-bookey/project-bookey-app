@@ -35,6 +35,7 @@ export default function MainTabsLayout() {
   const initialRouteIndex = lastMainIndex ?? (routeIndex >= 0 ? routeIndex : ROUTES.indexOf('home'));
   const pageRef = useRef<PagerView>(null);
   const visibleIndex = useRef(initialRouteIndex);
+  const pendingIndex = useRef<number | null>(null);
   const returningFromDetail = useRef(routeIndex < 0);
   const [activeIndex, setActiveIndex] = useState(initialRouteIndex);
   const pagerPosition = useRef(new Animated.Value(initialRouteIndex)).current;
@@ -63,6 +64,9 @@ export default function MainTabsLayout() {
   }, [routeIndex]);
 
   const selectPage = (index: number) => {
+    pendingIndex.current = null;
+    pagerPosition.setValue(index);
+    pagerOffset.setValue(0);
     if (index !== visibleIndex.current) {
       visibleIndex.current = index;
       lastMainIndex = index;
@@ -72,10 +76,10 @@ export default function MainTabsLayout() {
 
   const selectRoute = (name: string) => {
     const index = ROUTES.indexOf(name as typeof ROUTES[number]);
-    if (index < 0 || index === visibleIndex.current) return;
-    visibleIndex.current = index;
-    lastMainIndex = index;
-    setActiveIndex(index);
+    if (index < 0 || index === pendingIndex.current) return;
+    if (index === visibleIndex.current && pendingIndex.current === null) return;
+    pendingIndex.current = index;
+    // 입력 피드백은 즉시 보여 주고, 실제 페이지 상태는 onPageSelected에서 확정한다.
     pagerPosition.setValue(index);
     pagerOffset.setValue(0);
     pageRef.current?.setPageWithoutAnimation(index);
