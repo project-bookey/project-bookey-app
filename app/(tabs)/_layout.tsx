@@ -1,4 +1,4 @@
-import { usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import PagerView, { type PagerViewOnPageSelectedEvent } from '@/components/pager/PagerView';
@@ -13,6 +13,7 @@ import PlazaScreen from './plaza';
 import ProfileScreen from './profile';
 
 const ROUTES = ['plaza', 'home', 'clubs', 'messenger', 'profile'] as const;
+const PATHS = ['/plaza', '/home', '/clubs', '/messenger', '/profile'] as const;
 const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
 
 const ACTIVE_BY_ROUTE: Record<string, SectionKey> = {
@@ -26,17 +27,21 @@ const ACTIVE_BY_ROUTE: Record<string, SectionKey> = {
 
 export default function MainTabsLayout() {
   const pathname = usePathname();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const routeName = pathname.split('/').filter(Boolean)[0] ?? 'home';
-  const routeIndex = Math.max(0, ROUTES.indexOf(routeName as typeof ROUTES[number]));
+  const routeIndex = ROUTES.indexOf(routeName as typeof ROUTES[number]);
+  const initialRouteIndex = routeIndex >= 0 ? routeIndex : 1;
   const pageRef = useRef<PagerView>(null);
-  const visibleIndex = useRef(routeIndex);
-  const [activeIndex, setActiveIndex] = useState(routeIndex);
-  const pagerPosition = useRef(new Animated.Value(routeIndex)).current;
+  const visibleIndex = useRef(initialRouteIndex);
+  const [activeIndex, setActiveIndex] = useState(initialRouteIndex);
+  const pagerPosition = useRef(new Animated.Value(initialRouteIndex)).current;
   const pagerOffset = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // 채팅·알림 같은 상세 화면이 위에 올라온 동안에는 뒤의 메인 pager를 유지한다.
+    if (routeIndex < 0) return;
     if (routeIndex === visibleIndex.current) return;
     visibleIndex.current = routeIndex;
     setActiveIndex(routeIndex);
@@ -44,9 +49,11 @@ export default function MainTabsLayout() {
   }, [routeIndex]);
 
   const selectPage = (index: number) => {
-    if (index === visibleIndex.current) return;
-    visibleIndex.current = index;
-    setActiveIndex(index);
+    if (index !== visibleIndex.current) {
+      visibleIndex.current = index;
+      setActiveIndex(index);
+    }
+    if (index !== routeIndex) router.replace(PATHS[index]);
   };
 
   const selectRoute = (name: string) => {
@@ -57,6 +64,7 @@ export default function MainTabsLayout() {
     pagerPosition.setValue(index);
     pagerOffset.setValue(0);
     pageRef.current?.setPageWithoutAnimation(index);
+    if (index !== routeIndex) router.replace(PATHS[index]);
   };
 
   return (
@@ -68,7 +76,7 @@ export default function MainTabsLayout() {
         <AnimatedPagerView
           ref={pageRef}
           style={styles.pager}
-          initialPage={routeIndex}
+          initialPage={initialRouteIndex}
           offscreenPageLimit={1}
           overdrag
           onPageScroll={Animated.event(
