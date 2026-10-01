@@ -12,8 +12,9 @@ import MessengerScreen from './messenger';
 import PlazaScreen from './plaza';
 import ProfileScreen from './profile';
 
-const ROUTES = ['plaza', 'home', 'clubs', 'messenger', 'profile'] as const;
-const PATHS = ['/plaza', '/home', '/clubs', '/messenger', '/profile'] as const;
+// 서가가 가운데 — SectionNav의 SECTIONS 순서와 같아야 한다.
+const ROUTES = ['plaza', 'clubs', 'home', 'messenger', 'profile'] as const;
+const PATHS = ['/plaza', '/clubs', '/home', '/messenger', '/profile'] as const;
 const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
 
 const ACTIVE_BY_ROUTE: Record<string, SectionKey> = {
@@ -32,7 +33,7 @@ export default function MainTabsLayout() {
   const { colors } = useTheme();
   const routeName = pathname.split('/').filter(Boolean)[0] ?? 'home';
   const routeIndex = ROUTES.indexOf(routeName as typeof ROUTES[number]);
-  const initialRouteIndex = routeIndex >= 0 ? routeIndex : 1;
+  const initialRouteIndex = routeIndex >= 0 ? routeIndex : ROUTES.indexOf('home');
   const pageRef = useRef<PagerView>(null);
   const visibleIndex = useRef(initialRouteIndex);
   const [activeIndex, setActiveIndex] = useState(initialRouteIndex);
@@ -86,8 +87,8 @@ export default function MainTabsLayout() {
           onPageSelected={(event: PagerViewOnPageSelectedEvent) => selectPage(event.nativeEvent.position)}
         >
           <View key="plaza" collapsable={false}><PlazaScreen /></View>
-          <View key="home" collapsable={false}><HomeScreen /></View>
           <View key="clubs" collapsable={false}><ClubsScreen /></View>
+          <View key="home" collapsable={false}><HomeScreen /></View>
           <View key="messenger" collapsable={false}><MessengerScreen /></View>
           <View key="profile" collapsable={false}><ProfileScreen /></View>
         </AnimatedPagerView>
