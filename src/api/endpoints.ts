@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type {
+  ActivityCard,
   Banner,
   BookDetail,
   BookLikeView,
@@ -645,16 +646,6 @@ export type ClubActivitySession = {
   endedAt?: string;
   durationSec?: number;
 };
-export type ClubActivityCard = {
-  id: number;
-  sessionId: number;
-  userId: number;
-  nickname: string;
-  durationSec: number;
-  caption?: string;
-  decorationsJson: string;
-  photoUrl?: string;
-};
 
 export const clubCommunityApi = {
   chatState: (clubId: number) =>
@@ -740,9 +731,11 @@ export const clubCommunityApi = {
       query: { meetingId },
     }),
   endActivity: (clubId: number) =>
-    api<ClubActivityCard>(`/api/v1/clubs/${clubId}/activity/end`, {
+    api<ActivityCard>(`/api/v1/clubs/${clubId}/activity/end`, {
       method: "POST",
     }),
+  /** 내 기록 카드 — 모든 클럽, 최근 50장. 노트 스티커 고르기에서 쓴다. */
+  myActivityCards: () => api<ActivityCard[]>("/api/v1/clubs/activity-cards/mine"),
 };
 
 export const profileApi = {

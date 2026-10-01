@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 
+import type { ActivityCard } from '@/api/types';
 import { tiltFor } from '@/theme/tokens';
+import { snapshotOf } from './elements/ActivityCardFace';
 import type { InsertKind, NoteTool } from './NoteToolbar';
 import type { EditorPatch } from './TextEditorSheet';
 import {
@@ -92,6 +94,22 @@ export function useNoteInserts({ editor, me, setTool, select, pickPhoto, openQuo
     select(id);
   }, [editor, setTool, select, getAnchor]);
 
+  /** 함께 독서 기록 카드 붙이기 — 카드 값을 스냅숏으로 담아 둔다(보는 사람이 클럽 멤버가 아니어도 그려지게). */
+  const pickCard = useCallback((card: ActivityCard) => {
+    const id = newId();
+    const w = STICKER_W.card;
+    editor.apply((d) => {
+      const [cx, cy] = anchorOf(d, getAnchor);
+      return addElement(d, {
+        id, z: nextZ(d), type: 'sticker', x: cx - w / 2, y: cy - w / 2, rot: tiltFor(d.elements.length), w,
+        kind: 'card', value: String(card.id), card: snapshotOf(card),
+      });
+    });
+    setStickerOpen(false);
+    setTool('select');
+    select(id);
+  }, [editor, setTool, select, getAnchor]);
+
   /** 오려 둔 문장 조각 붙이기 — 밑줄 고르기 시트에서 고른 스냅숏을 기준점에 놓고 선택 상태로 둔다. 새 요소 id 를 돌려준다. */
   const pickQuote = useCallback((quote: QuoteSnapshot): string => {
     let id = '';
@@ -131,6 +149,6 @@ export function useNoteInserts({ editor, me, setTool, select, pickPhoto, openQuo
 
   return {
     insert, openEditor, editing, patchEditing, closeEditor,
-    stickerOpen, closeSticker: () => setStickerOpen(false), pickSticker, pickQuote,
+    stickerOpen, closeSticker: () => setStickerOpen(false), pickSticker, pickCard, pickQuote,
   };
 }

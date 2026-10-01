@@ -529,7 +529,12 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
       />
 
       <TextEditorSheet element={inserts.editing} members={members} onPatch={inserts.patchEditing} onClose={inserts.closeEditor} />
-      <StickerSheet visible={inserts.stickerOpen} onPick={inserts.pickSticker} onClose={inserts.closeSticker} />
+      <StickerSheet
+        visible={inserts.stickerOpen}
+        onPick={inserts.pickSticker}
+        onPickCard={inserts.pickCard}
+        onClose={inserts.closeSticker}
+      />
       <PageMenu
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}

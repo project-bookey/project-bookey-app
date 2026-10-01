@@ -82,7 +82,8 @@ export default function MeetingDetailScreen() {
     mutationFn: () => clubCommunityApi.endActivity(clubId),
     onSuccess: (card) => {
       qc.invalidateQueries({ queryKey: ['clubActivity', clubId] });
-      notify(`함께 독서 ${formatClock(card.durationSec)}를 기록했어요. 독후감으로 소감을 남겨 보세요.`);
+      qc.invalidateQueries({ queryKey: ['activityCards'] });
+      notify(`함께 독서 ${formatClock(card.durationSec)}를 기록했어요. 카드는 독후감 노트에 스티커로 붙일 수 있어요.`);
       const bookId = club.data?.book?.id;
       router.push({
         pathname: '/post/new',

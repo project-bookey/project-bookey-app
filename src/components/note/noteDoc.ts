@@ -56,7 +56,7 @@ export const DEFAULT_TEXT_W = 500;
 export const DEFAULT_SPEECH_W = 520;
 export const DEFAULT_PHOTO_W = 480;
 export const DEFAULT_QUOTE_W = 560;
-export const STICKER_W = { emoji: 140, pack: 180 } as const;
+export const STICKER_W = { emoji: 140, pack: 180, card: 300 } as const;
 /** 사진 종이 프레임(논리 단위) — 요소의 w·h 는 프레임 바깥 크기다. 사진 자체는 inset 만큼 안쪽, 아래는 폴라로이드 여백(lip). */
 export const PHOTO_FRAME = { inset: 6, lip: 18 } as const;
 /** 프레임 폭 w 에 사진 비율(imgW:imgH)을 맞춘 프레임 높이. 비율을 모르면 정사각형. */
@@ -87,7 +87,20 @@ export type TextElement = Placed & {
   color: PenColor;
   align: 'left' | 'center';
 };
-export type StickerElement = Placed & { type: 'sticker'; w: number; kind: 'emoji' | 'pack'; value: string };
+/**
+ * 함께 독서 기록 카드 스냅숏 — 카드 스티커가 붙일 때 담아 두는 값. 노트를 보는 사람은 클럽 멤버가 아닐 수 있어
+ * 서버에 다시 묻지 않고 이 값만으로 그린다.
+ */
+export type ActivityCardSnapshot = {
+  durationSec: number;
+  clubName: string;
+  meetingTitle?: string;
+  nickname: string;
+  endedAt?: string;
+};
+export type StickerKind = 'emoji' | 'pack' | 'card';
+/** 스티커 — 정사각형(w×w). card 면 value 는 카드 id, card 에 스냅숏을 담는다. */
+export type StickerElement = Placed & { type: 'sticker'; w: number; kind: StickerKind; value: string; card?: ActivityCardSnapshot };
 export type PhotoElement = Placed & { type: 'photo'; w: number; h: number; imageId: number; url: string };
 export type SpeechElement = Placed & {
   type: 'speech';
@@ -192,6 +205,18 @@ function parseElement(raw: unknown): NoteElement | null {
     case 'sticker': {
       const p = placed(raw);
       if (!p || !num(raw.w) || !str(raw.value)) return null;
+      if (raw.kind === 'card') {
+        const c = raw.card as Record<string, unknown> | undefined;
+        if (!c || !num(c.durationSec) || !str(c.clubName) || !str(c.nickname)) return null;
+        const card: ActivityCardSnapshot = {
+          durationSec: c.durationSec,
+          clubName: c.clubName,
+          nickname: c.nickname,
+          meetingTitle: str(c.meetingTitle) ? c.meetingTitle : undefined,
+          endedAt: str(c.endedAt) ? c.endedAt : undefined,
+        };
+        return { ...p, type: 'sticker', w: raw.w, kind: 'card', value: raw.value, card };
+      }
       return { ...p, type: 'sticker', w: raw.w, kind: raw.kind === 'pack' ? 'pack' : 'emoji', value: raw.value };
     }
     case 'photo': {
