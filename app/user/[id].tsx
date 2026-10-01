@@ -1,12 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { chatApi, followApi, postApi, profileApi } from '@/api/endpoints';
+import { chatApi, postApi, profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { PersonGlyph } from '@/components/quote/QuoteCard';
+import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { Button, Card, EmptyState, Numeral, Tag, formatRelative } from '@/components/ui';
 import { useAuth } from '@/store/auth';
@@ -18,11 +19,10 @@ const AVATAR = 56;
 
 /**
  * 유저 마이페이지 (§14.3) — 피드에서 작성자를 눌러 들어온다.
- * 검색이 없으므로 여기서 어필할 방법은 엽서뿐이다. 방문하면 방문 기록이 남는다.
+ * 여기서 바로 팔로우하거나 엽서를 보낸다. 방문하면 방문 기록이 남는다.
  */
 export default function UserProfileScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = Number(id);
@@ -40,16 +40,8 @@ export default function UserProfileScreen() {
     enabled: Number.isInteger(userId),
   });
 
-  const unfollow = useMutation({
-    mutationFn: () => followApi.unfollow(userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userProfile', userId] });
-      queryClient.invalidateQueries({ queryKey: ['follows'] });
-    },
-  });
-
   const [chatError, setChatError] = useState<string | null>(null);
-  /** 채팅 열기 (§14.3) — 맞팔로우일 때만 버튼이 보이지만, 서버 거절도 그대로 표시한다. */
+  /** 채팅 열기 (§14.3) — 엽서 답장이 오간 사이(canChat)에만 버튼이 보이지만, 서버 거절도 그대로 표시한다. */
   const openChat = useMutation({
     mutationFn: () => chatApi.open(userId),
     onSuccess: (chat) => {
@@ -92,7 +84,8 @@ export default function UserProfileScreen() {
 
       {!me ? (
         <View style={styles.actions}>
-          {p.mutual ? (
+          <FollowButton userId={userId} nickname={p.nickname} size="md" />
+          {p.canChat ? (
             <Button
               label="채팅"
               onPress={() => openChat.mutate()}
@@ -103,17 +96,9 @@ export default function UserProfileScreen() {
           {!composing ? (
             <Button
               label="엽서 보내기"
-              variant={p.mutual ? 'outline' : 'primary'}
+              variant={p.canChat ? 'outline' : 'primary'}
               onPress={() => setComposing(true)}
               style={{ flex: 1 }}
-            />
-          ) : null}
-          {p.iFollow ? (
-            <Button
-              label="언팔로우"
-              variant="ghost"
-              onPress={() => unfollow.mutate()}
-              loading={unfollow.isPending}
             />
           ) : null}
         </View>

@@ -504,7 +504,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/follows/my-code/rotate": {
+    "/api/v1/follows/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -513,26 +513,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 팔로우 코드 회전 — 유출 시 무효화 */
-        post: operations["rotate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/follows/code": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 코드로 팔로우 — 지인 전제, 즉시 맞팔로우 */
-        post: operations["followByCode"];
-        delete?: never;
+        /** 팔로우 — 한 방향, 이미 팔로우 중이면 그대로 성공 */
+        post: operations["follow"];
+        /** 언팔로우 — 내 방향만 끊는다 */
+        delete: operations["unfollow"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2201,23 +2185,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/follows/my-code": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 내 팔로우 코드 — QR 은 deepLink 로 그린다 */
-        get: operations["myCode"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/follows/following": {
         parameters: {
             query?: never;
@@ -2227,6 +2194,23 @@ export interface paths {
         };
         /** 팔로잉 목록 */
         get: operations["following"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/follows/following-ids": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내가 팔로우하는 사람 id 전부 — 팔로우 버튼 상태 판정용 */
+        get: operations["followingIds"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2960,23 +2944,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/follows/{userId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 언팔로우 — 내 방향만 끊는다 */
-        delete: operations["unfollow"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/clubs/{clubId}/me": {
         parameters: {
             query?: never;
@@ -3620,13 +3587,6 @@ export interface components {
             /** @enum {string} */
             reason: "BORING" | "DIFFICULT" | "NO_TIME" | "NOT_MY_TASTE" | "OTHER";
         };
-        FollowCodeView: {
-            code: string;
-            deepLink: string;
-        };
-        FollowByCodeRequest: {
-            code: string;
-        };
         FollowUserView: {
             /** Format: int64 */
             userId: number;
@@ -4258,6 +4218,7 @@ export interface components {
             iFollow: boolean;
             followsMe: boolean;
             mutual: boolean;
+            canChat: boolean;
             me: boolean;
         };
         PageResponsePostView: {
@@ -4463,7 +4424,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -4549,6 +4510,9 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             hasNext?: boolean;
+        };
+        FollowingIdsView: {
+            ids: number[];
         };
         ClubMemberBrief: {
             /** Format: int64 */
@@ -5093,8 +5057,6 @@ export type SchemaProgressView = components['schemas']['ProgressView'];
 export type SchemaReadingRecordView = components['schemas']['ReadingRecordView'];
 export type SchemaFinishRequest = components['schemas']['FinishRequest'];
 export type SchemaAbandonRequest = components['schemas']['AbandonRequest'];
-export type SchemaFollowCodeView = components['schemas']['FollowCodeView'];
-export type SchemaFollowByCodeRequest = components['schemas']['FollowByCodeRequest'];
 export type SchemaFollowUserView = components['schemas']['FollowUserView'];
 export type SchemaCheckpointRequest = components['schemas']['CheckpointRequest'];
 export type SchemaCreateClubRequest = components['schemas']['CreateClubRequest'];
@@ -5187,6 +5149,7 @@ export type SchemaVisitorView = components['schemas']['VisitorView'];
 export type SchemaPageResponseReadingRecordView = components['schemas']['PageResponseReadingRecordView'];
 export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
 export type SchemaPageResponseFollowUserView = components['schemas']['PageResponseFollowUserView'];
+export type SchemaFollowingIdsView = components['schemas']['FollowingIdsView'];
 export type SchemaClubMemberBrief = components['schemas']['ClubMemberBrief'];
 export type SchemaClubSummaryView = components['schemas']['ClubSummaryView'];
 export type SchemaPageResponseClubSummaryView = components['schemas']['PageResponseClubSummaryView'];
@@ -6142,11 +6105,13 @@ export interface operations {
             };
         };
     };
-    rotate: {
+    follow: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                userId: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -6157,32 +6122,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["FollowCodeView"];
+                    "*/*": components["schemas"]["FollowUserView"];
                 };
             };
         };
     };
-    followByCode: {
+    unfollow: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                userId: number;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FollowByCodeRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["FollowUserView"];
-                };
+                content?: never;
             };
         };
     };
@@ -9062,26 +9023,6 @@ export interface operations {
             };
         };
     };
-    myCode: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["FollowCodeView"];
-                };
-            };
-        };
-    };
     following: {
         parameters: {
             query?: {
@@ -9101,6 +9042,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseFollowUserView"];
+                };
+            };
+        };
+    };
+    followingIds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FollowingIdsView"];
                 };
             };
         };
@@ -10081,26 +10042,6 @@ export interface operations {
             header?: never;
             path: {
                 postcardId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    unfollow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                userId: number;
             };
             cookie?: never;
         };

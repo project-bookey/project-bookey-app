@@ -5,6 +5,7 @@ import { Eye, Heart } from 'lucide-react-native';
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { FollowButton } from '@/components/social/FollowButton';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
@@ -70,23 +71,27 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
 
       {/* 카드가 사진을 물고 있어 패딩이 0 이다 — 활자 쪽만 제 여백을 갖는다. */}
       <View style={styles.pad}>
-        <Pressable
-          onPress={onOpenAuthor}
-          disabled={!onOpenAuthor}
-          accessibilityRole={onOpenAuthor ? 'button' : undefined}
-          accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
-          style={styles.authorRow}
-        >
-          <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
-          <View style={styles.authorText}>
-            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-              {post.authorNickname}
-            </Text>
-            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
-              {formatRelative(post.publishedAt ?? post.createdAt)}
-            </Text>
-          </View>
-        </Pressable>
+        {/* 팔로우 버튼은 작성자 줄 Pressable 의 형제다 — 버튼 안에 버튼을 넣지 않는다. */}
+        <View style={styles.authorLine}>
+          <Pressable
+            onPress={onOpenAuthor}
+            disabled={!onOpenAuthor}
+            accessibilityRole={onOpenAuthor ? 'button' : undefined}
+            accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
+            style={styles.authorRow}
+          >
+            <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
+            <View style={styles.authorText}>
+              <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
+                {post.authorNickname}
+              </Text>
+              <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
+                {formatRelative(post.publishedAt ?? post.createdAt)}
+              </Text>
+            </View>
+          </Pressable>
+          <FollowButton userId={post.authorId} nickname={post.authorNickname} />
+        </View>
 
         <View style={styles.footRow}>
           <CardIconAction
@@ -274,7 +279,8 @@ const styles = StyleSheet.create({
   excerpt: { fontSize: 16, lineHeight: 25 },
   pad: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
 
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  authorLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  authorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { fontSize: 16, lineHeight: 22 },

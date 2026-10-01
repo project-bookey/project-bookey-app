@@ -18,7 +18,7 @@ import { hairline, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 const POLL_MS = 4000;
 
 /**
- * 1:1 대화방 (§14.3) — 맞팔로우끼리만. 메시지는 최신순으로 받아 inverted 리스트로 그린다.
+ * 1:1 대화방 (§14.3) — 엽서 답장이 오간 사이만. 메시지는 최신순으로 받아 inverted 리스트로 그린다.
  * 위로 스크롤하면 beforeId 커서로 과거 메시지를 더 불러온다.
  */
 export default function ChatRoomScreen() {
@@ -136,7 +136,7 @@ export default function ChatRoomScreen() {
             messages.isLoading ? null : (
               // inverted 리스트라 위아래가 뒤집힌다 — 빈 상태는 단순 문구만 둔다.
               <Text style={[typeScale.caption, styles.empty, { color: colors.textFaint }]}>
-                서로 팔로우한 사이입니다. 첫 인사를 건네보세요.
+                엽서를 주고받은 사이입니다. 첫 인사를 건네보세요.
               </Text>
             )
           }

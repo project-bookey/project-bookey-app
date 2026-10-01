@@ -27,7 +27,7 @@ import type {
   EmailCodeResponse,
   ExchangeTarget,
   FeedSort,
-  FollowCodeView,
+  FollowingIdsView,
   FollowUserView,
   LibrarySummary,
   LikerView,
@@ -518,7 +518,7 @@ export const postcardApi = {
     api<Page<PostcardView>>("/api/v1/postcards/sent", {
       query: { page, size },
     }),
-  /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 성립하면 자동 맞팔로우. */
+  /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 답장이 오가면 채팅을 열 수 있다. */
   reply: (postcardId: number, body: string) =>
     api<PostcardView>(`/api/v1/postcards/${postcardId}/reply`, {
       method: "POST",
@@ -529,15 +529,11 @@ export const postcardApi = {
 };
 
 export const followApi = {
-  myCode: () => api<FollowCodeView>("/api/v1/follows/my-code"),
-  rotateCode: () =>
-    api<FollowCodeView>("/api/v1/follows/my-code/rotate", { method: "POST" }),
-  /** 코드로 팔로우 — 지인 전제, 즉시 맞팔로우. */
-  byCode: (code: string) =>
-    api<FollowUserView>("/api/v1/follows/code", {
-      method: "POST",
-      body: { code },
-    }),
+  /** 팔로우 — 한 방향, 이미 팔로우 중이면 그대로 성공한다. */
+  follow: (userId: number) =>
+    api<FollowUserView>(`/api/v1/follows/${userId}`, { method: "POST" }),
+  /** 내가 팔로우하는 사람 id 전부 — 팔로우 버튼 상태 판정용. */
+  followingIds: () => api<FollowingIdsView>("/api/v1/follows/following-ids"),
   followers: (page = 0, size = 20) =>
     api<Page<FollowUserView>>("/api/v1/follows/followers", {
       query: { page, size },
@@ -551,7 +547,7 @@ export const followApi = {
 };
 
 export const chatApi = {
-  /** 채팅방 열기 — 맞팔로우인 상대만. 이미 있으면 그 방을 돌려준다. */
+  /** 채팅방 열기 — 엽서 답장이 오간 상대만. 이미 있으면 그 방을 돌려준다. */
   open: (userId: number) =>
     api<ChatSummary>("/api/v1/chats", { method: "POST", body: { userId } }),
   list: (page = 0, size = 20) =>

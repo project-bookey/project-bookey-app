@@ -20,7 +20,7 @@ const NAV_CLEARANCE = 104;
 export type PostcardBox = 'INBOX' | 'SENT';
 
 /**
- * 엽서함 (§14.2) — 받은 엽서에 답장(우표 1개, 동봉 엽서는 무료)하면 서로 팔로우된다.
+ * 엽서함 (§14.2) — 받은 엽서에 답장(우표 1개, 동봉 엽서는 무료)하면 두 사람 사이에 채팅이 열린다.
  * 답장하지 않아도 아무 일도 일어나지 않는다 — 거절 통보는 없다.
  *
  * 메신저 구역(app/(tabs)/messenger.tsx)의 '받은 엽서'·'보낸 엽서' 칸이다 — 어느 칸인지는
@@ -149,7 +149,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
 
       <View style={styles.tagRow}>
         {card.stampAttached ? <Tag label="우표 동봉 — 무료 답장" fg={colors.accent} bg={colors.accentSoft} /> : null}
-        {replied ? <Tag label="답장 완료 · 맞팔로우" /> : null}
+        {replied ? <Tag label="답장 완료" /> : null}
       </View>
 
       {replied && card.replyBody ? (

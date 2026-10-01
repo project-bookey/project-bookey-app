@@ -1,9 +1,12 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { FollowButton } from '@/components/social/FollowButton';
 import { Card, FootAction } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
 export type QuoteCardProps = {
+  /** 있으면 작성자 줄 오른쪽에 팔로우 버튼이 선다(내 카드에는 서지 않는다). */
+  authorId?: number;
   authorNickname: string;
   authorAvatarUrl?: string | null;
   bookTitle: string;
@@ -108,7 +111,7 @@ export function QuoteAvatar({ uri, nickname, size = AVATAR_SIZE }: {
 
 /** 밑줄 카드 — 광장 피드와 밑줄 상세가 같은 카드를 쓴다(시안 2d · D1). */
 export function QuoteCard({
-  authorNickname, authorAvatarUrl, bookTitle, page, content, agreeCount, agreedByMe,
+  authorId, authorNickname, authorAvatarUrl, bookTitle, page, content, agreeCount, agreedByMe,
   authorFinished = false, mine, confirming = false, error, tilt = 0,
   onAgree, onDelete, onOpen, onOpenBook,
 }: QuoteCardProps) {
@@ -144,6 +147,7 @@ export function QuoteCard({
             ) : null}
           </View>
         </View>
+        {authorId != null && !mine ? <FollowButton userId={authorId} nickname={authorNickname} /> : null}
       </View>
 
       {onOpen ? (

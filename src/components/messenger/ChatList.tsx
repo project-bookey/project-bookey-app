@@ -18,7 +18,7 @@ const AVATAR = 44;
 const NAV_CLEARANCE = 104;
 
 /**
- * 채팅 목록 (§14.3) — 맞팔로우끼리만. 마지막 메시지 최신순, 15초마다 갱신.
+ * 채팅 목록 (§14.3) — 엽서 답장이 오간 사이만. 마지막 메시지 최신순, 15초마다 갱신.
  * 메신저 구역(app/(tabs)/messenger.tsx)의 '채팅' 칸이다 — 헤더·칸 전환은 구역 화면이 그린다.
  */
 export function ChatList() {
@@ -80,7 +80,7 @@ export function ChatList() {
           <EmptyState
             illustration
             title="아직 채팅이 없어요"
-            description="엽서에 답장이 오가면 서로 팔로우되고, 그때 채팅이 열립니다."
+            description="엽서에 답장이 오가면 그 사람과 채팅을 열 수 있습니다."
           />
         )
       }

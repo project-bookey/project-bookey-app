@@ -6,6 +6,7 @@ import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View }
 import { followApi } from '@/api/endpoints';
 import type { FollowUserView } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { FollowButton } from '@/components/social/FollowButton';
 import { EmptyState, Segmented, Tag, formatRelative } from '@/components/ui';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -21,8 +22,8 @@ const BOXES: { value: Box; label: string }[] = [
 const BOX_VALUES: readonly Box[] = ['FOLLOWING', 'FOLLOWER'];
 
 /**
- * 팔로우 목록 (§14.3) — 검색이 없으므로 사람에게 닿는 길은 피드·엽서·이 목록뿐이다.
- * 누르면 그 사람의 마이페이지로 가고, 엽서·채팅은 거기서 건다(맞팔로우만 채팅).
+ * 팔로우 목록 (§14.3) — 내가 팔로우하는 사람과 나를 팔로우하는 사람.
+ * 누르면 그 사람의 마이페이지로 가고, 엽서·채팅은 거기서 건다. 줄 오른쪽 버튼으로 바로 팔로우·취소한다.
  */
 export default function FollowsScreen() {
   const router = useRouter();
@@ -100,40 +101,45 @@ function FollowRow({ user }: { user: FollowUserView }) {
   const router = useRouter();
   const { colors } = useTheme();
 
+  // 팔로우 버튼은 줄 Pressable 의 형제다 — 웹에서 버튼 안에 버튼이 들어가면 안 된다.
   return (
-    <Pressable
-      onPress={() => router.push(`/user/${user.userId}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`${user.nickname} 프로필 열기`}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surface }]}
-    >
-      {user.avatarUrl ? (
-        <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
-          <Text style={[typeScale.label, { color: colors.accent }]}>
-            {user.nickname.slice(0, 1)}
+    <View style={styles.row}>
+      <Pressable
+        onPress={() => router.push(`/user/${user.userId}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`${user.nickname} 프로필 열기`}
+        style={({ pressed }) => [styles.rowMain, pressed && { backgroundColor: colors.surface }]}
+      >
+        {user.avatarUrl ? (
+          <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, { backgroundColor: colors.accentSoft }]}>
+            <Text style={[typeScale.label, { color: colors.accent }]}>
+              {user.nickname.slice(0, 1)}
+            </Text>
+          </View>
+        )}
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: colors.text }]}>
+            {user.nickname}
+          </Text>
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+            {formatRelative(user.followedAt)}
           </Text>
         </View>
-      )}
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: colors.text }]}>
-          {user.nickname}
-        </Text>
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-          {formatRelative(user.followedAt)}
-        </Text>
-      </View>
-      {/* 맞팔로우에게만 채팅을 걸 수 있다 — 어느 줄이 그런지 여기서 미리 알려준다(§14.3). */}
-      {user.mutual ? <Tag label="맞팔로우" fg={colors.accent} bg={colors.accentSoft} /> : null}
-    </Pressable>
+        {user.mutual ? <Tag label="맞팔로우" fg={colors.accent} bg={colors.accentSoft} /> : null}
+      </Pressable>
+      {/* 팔로워 탭에선 맞팔로우 버튼, 팔로잉 탭에선 눌러 취소하는 '팔로잉' 버튼이 된다. */}
+      <FollowButton userId={user.userId} nickname={user.nickname} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: spacing.xxl },
   head: { gap: spacing.md, marginBottom: spacing.md, paddingHorizontal: spacing.lg },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingRight: spacing.md },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
   avatar: {
     width: 36, height: 36, borderRadius: radius.round,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',

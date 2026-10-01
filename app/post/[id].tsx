@@ -16,6 +16,7 @@ import { isNotePost, noteDocOf } from '@/components/post/postFormat';
 import { useLikePost } from '@/components/post/useLikePost';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
+import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { EmptyState, Eyebrow, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -209,6 +210,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         </View>
         {/* 클럽만 글은 누가 보든 밝힌다(보는 사람도 그 클럽 멤버다). 비공개·링크는 본인에게만. */}
         {visibilityLabel && (post.mine || post.visibility === 'CLUB') ? <Tag label={visibilityLabel} /> : null}
+        {!post.mine ? <FollowButton userId={post.authorId} nickname={post.authorNickname} /> : null}
       </View>
 
       {/* 클럽 독후감이면 어느 클럽의 글인지 — 누르면 그 클럽의 독후감 탭으로 */}

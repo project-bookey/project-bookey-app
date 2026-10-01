@@ -34,7 +34,7 @@ const HEATMAP_DAYS = 90;
  *
  * 올해 읽은 시간 차트는 뺐고 기록 카드만 남겼다. 오려둔 문장·독후감은 여기서 펼치지 않고
  * 각자의 화면(/quote/mine · /post/mine)으로 보내는 링크만 둔다.
- * 소셜(지갑·팔로우 코드·방문)은 따로 탭이었다가 이 화면 맨 아래로 돌아왔다 — 호출하는 API·상태는 그대로다.
+ * 소셜(지갑·팔로우·방문)은 따로 탭이었다가 이 화면 맨 아래로 돌아왔다 — 호출하는 API·상태는 그대로다.
  */
 export default function ProfileScreen() {
   const router = useRouter();

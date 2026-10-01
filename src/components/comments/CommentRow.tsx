@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { FollowButton } from '@/components/social/FollowButton';
 import { formatRelative } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -9,7 +10,7 @@ import { MENTION_RE } from './types';
 import type { ThreadComment } from './types';
 
 /**
- * 스레드 한 줄 — 아바타 · 닉네임 · 본문 · 상대 시각 · 답글 달기 · (본인) 삭제.
+ * 스레드 한 줄 — 아바타 · 닉네임(+팔로우) · 본문 · 상대 시각 · 답글 달기 · (본인) 삭제.
  *
  * 최상위 댓글과 답글이 같은 줄을 쓴다. 두 줄 다 '답글 달기'를 가지지만 `onToggleReplies`(접기)는
  * 최상위 줄에만 넘어온다 — 답글의 답글도 같은 묶음에 평평하게 달리기 때문이다.
@@ -47,9 +48,12 @@ export function CommentRow({
       <View style={styles.row}>
         <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
         <View style={styles.rowBody}>
-          <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-            {comment.authorNickname}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
+              {comment.authorNickname}
+            </Text>
+            {!comment.mine ? <FollowButton userId={comment.authorId} nickname={comment.authorNickname} /> : null}
+          </View>
           <Text style={[styles.body, { color: colors.textMuted }]}>
             {mention ? (
               <>
@@ -104,7 +108,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   rowBody: { flex: 1, gap: 2 },
   // 닉네임은 홈 '오늘의 글'·광장 카드와 같은 15/20 — 아바타(AVATAR_SIZE)와 나란히 서서 누구 말인지 먼저 읽힌다.
-  nickname: { lineHeight: 20 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  nickname: { flexShrink: 1, lineHeight: 20 },
   body: { ...typeScale.body, fontSize: 13, lineHeight: 20 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 2 },
   meta: { fontSize: 9, letterSpacing: 0.4 },

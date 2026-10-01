@@ -39,6 +39,7 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'POSTCARD_RECEIVED': return { href: { pathname: '/messenger', params: { pane: 'inbox' } }, section: true };
     case 'POSTCARD_REPLIED': return { href: { pathname: '/messenger', params: { pane: 'sent' } }, section: true };
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
+    case 'FOLLOWED':
     case 'FOLLOW_CONNECTED': return one('/user/[id]', 'userId');
     case 'HABIT':
     case 'LAG':

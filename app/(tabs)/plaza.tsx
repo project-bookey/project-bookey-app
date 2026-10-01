@@ -12,6 +12,7 @@ import { FocusRing, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
+import { FollowButton } from '@/components/social/FollowButton';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Button, Card, EmptyState, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -332,6 +333,7 @@ function FeedCard({
       <View style={[styles.cardWrap, { transform: [{ rotate: `${tilt}deg` }] }]}>
         {focused ? <FocusRing onDone={onFocusDone} /> : null}
         <QuoteCard
+          authorId={item.authorId}
           authorNickname={item.authorNickname}
           authorAvatarUrl={item.authorAvatarUrl}
           bookTitle={item.bookTitle}
@@ -364,6 +366,7 @@ function FeedCard({
             {item.bookTitle}
           </Text>
         </View>
+        {!mine ? <FollowButton userId={item.authorId} nickname={item.authorNickname} /> : null}
       </View>
       <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={`${item.bookTitle} 상세`} style={styles.finishRow}>
         <TiltCover uri={item.bookCoverUrl} title={item.bookTitle} width={44} entering={false} />
