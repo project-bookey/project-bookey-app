@@ -3,13 +3,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable,
-  StyleSheet, Text, TextInput, View,
+  Image, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatMessage } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { BOOKEY_STICKER_PACKS, findBookeyChatSticker } from '@/components/chat/bookeyStickers';
 import { FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, radius, sans, spacing, typeScale, useTheme } from '@/theme';
@@ -28,6 +29,8 @@ export default function ChatRoomScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const chatId = Number(id);
   const [draft, setDraft] = useState('');
+  const [stickersOpen, setStickersOpen] = useState(false);
+  const [selectedStickerPackId, setSelectedStickerPackId] = useState(BOOKEY_STICKER_PACKS[0].id);
   const [error, setError] = useState<string | null>(null);
   const { confirm, arm, disarm } = useDeleteConfirm<'chat'>();
   const confirmingDelete = confirm === 'chat';
@@ -58,11 +61,14 @@ export default function ChatRoomScreen() {
     () => messages.data?.pages.flatMap((p) => p.messages ?? []) ?? [],
     [messages.data],
   );
+  const selectedStickerPack = BOOKEY_STICKER_PACKS.find((pack) => pack.id === selectedStickerPackId)
+    ?? BOOKEY_STICKER_PACKS[0];
 
   const send = useMutation({
     mutationFn: (body: string) => chatApi.send(chatId, body),
     onSuccess: () => {
       setDraft('');
+      setStickersOpen(false);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] });
       queryClient.invalidateQueries({ queryKey: ['chats'] });
@@ -92,6 +98,11 @@ export default function ChatRoomScreen() {
     const body = draft.trim();
     if (body.length === 0 || send.isPending) return;
     send.mutate(body);
+  };
+
+  const sendSticker = (code: string) => {
+    if (send.isPending) return;
+    send.mutate(code);
   };
 
   return (
@@ -151,7 +162,75 @@ export default function ChatRoomScreen() {
           </Text>
         ) : null}
 
+        {stickersOpen ? (
+          <View style={[styles.stickerPanel, { borderTopColor: colors.line, backgroundColor: colors.surface }]}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.stickerPackList}
+            >
+              {BOOKEY_STICKER_PACKS.map((pack) => {
+                const selected = pack.id === selectedStickerPack.id;
+                return (
+                  <Pressable
+                    key={pack.id}
+                    onPress={() => setSelectedStickerPackId(pack.id)}
+                    accessibilityRole="tab"
+                    accessibilityLabel={`${pack.name} 이모티콘`}
+                    accessibilityState={{ selected }}
+                    style={[
+                      styles.stickerPackTab,
+                      {
+                        borderColor: selected ? colors.accent : colors.line,
+                        backgroundColor: selected ? colors.accentSoft : colors.bg,
+                      },
+                    ]}
+                  >
+                    <Image source={pack.thumbnail} style={styles.stickerPackThumb} resizeMode="contain" />
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.stickerPackName, { color: selected ? colors.accent : colors.textMuted }]}
+                    >
+                      {pack.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stickerList}>
+              {selectedStickerPack.stickers.map((sticker) => (
+                <Pressable
+                  key={sticker.code}
+                  onPress={() => sendSticker(sticker.code)}
+                  disabled={send.isPending}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${sticker.label} 이모티콘 보내기`}
+                  style={({ pressed }) => [
+                    styles.stickerCell,
+                    { borderColor: colors.line },
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <Image source={sticker.source} style={styles.stickerThumb} resizeMode="contain" />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
         <View style={[styles.inputRow, { borderTopColor: colors.line, backgroundColor: colors.bg }]}>
+          <Pressable
+            onPress={() => setStickersOpen((open) => !open)}
+            accessibilityRole="button"
+            accessibilityLabel={stickersOpen ? '이모티콘 닫기' : '이모티콘 열기'}
+            accessibilityState={{ expanded: stickersOpen }}
+            style={[styles.stickerButton, {
+              borderColor: stickersOpen ? colors.accent : colors.lineStrong,
+              backgroundColor: stickersOpen ? colors.accentSoft : colors.surface,
+            }]}
+          >
+            <Text style={[styles.stickerButtonText, { color: stickersOpen ? colors.accent : colors.textMuted }]}>☺</Text>
+          </Pressable>
           <TextInput
             style={[styles.input, {
               borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text,
@@ -192,20 +271,30 @@ export default function ChatRoomScreen() {
 function Bubble({ message }: { message: ChatMessage }) {
   const { colors } = useTheme();
   const mine = message.mine;
+  const sticker = findBookeyChatSticker(message.body);
   return (
     <View style={[styles.bubbleRow, mine ? styles.bubbleRowMine : null]}>
-      <View
-        style={[
-          styles.bubble,
-          mine
-            ? { backgroundColor: colors.accent, borderBottomRightRadius: 4 }
-            : { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
-        ]}
-      >
-        <Text style={[styles.bubbleText, { color: mine ? colors.onAccent : colors.text }]}>
-          {message.body}
-        </Text>
-      </View>
+      {sticker ? (
+        <Image
+          source={sticker.source}
+          style={styles.messageSticker}
+          resizeMode="contain"
+          accessibilityLabel={sticker.label}
+        />
+      ) : (
+        <View
+          style={[
+            styles.bubble,
+            mine
+              ? { backgroundColor: colors.accent, borderBottomRightRadius: 4 }
+              : { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
+          ]}
+        >
+          <Text style={[styles.bubbleText, { color: mine ? colors.onAccent : colors.text }]}>
+            {message.body}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -232,6 +321,45 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderTopWidth: hairline,
   },
+  stickerPanel: {
+    borderTopWidth: hairline,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  stickerPackList: { gap: spacing.xs, paddingBottom: spacing.xs },
+  stickerPackTab: {
+    width: 64,
+    minHeight: 66,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 3,
+  },
+  stickerPackThumb: { width: 42, height: 42 },
+  stickerPackName: { fontFamily: sans.regular, fontSize: 10, lineHeight: 13 },
+  stickerList: { gap: spacing.sm, paddingVertical: spacing.sm },
+  stickerCell: {
+    width: 72,
+    height: 72,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stickerThumb: { width: 66, height: 66 },
+  stickerButton: {
+    width: 40,
+    height: 40,
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stickerButtonText: { fontSize: 22, lineHeight: 28 },
+  messageSticker: { width: 156, height: 156 },
+  pressed: { opacity: 0.72 },
   input: {
     flex: 1,
     minHeight: 40,

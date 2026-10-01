@@ -6,6 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatSummary } from '@/api/types';
+import { chatMessagePreview } from '@/components/chat/bookeyStickers';
 import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { EmptyState, FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -116,7 +117,9 @@ function ChatRow({ chat, confirming, onOpen, onDelete }: {
             }]}
             numberOfLines={1}
           >
-            {chat.lastMessageBody ?? '엽서로 연결됐어요 — 첫 인사를 건네보세요'}
+            {chat.lastMessageBody
+              ? chatMessagePreview(chat.lastMessageBody)
+              : '엽서로 연결됐어요 — 첫 인사를 건네보세요'}
           </Text>
         </View>
       </Pressable>
