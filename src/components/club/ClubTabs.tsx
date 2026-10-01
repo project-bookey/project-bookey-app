@@ -16,26 +16,26 @@ export const clubTabOf = (v: unknown): ClubTabKey | null =>
 const TABS: { key: ClubTabKey; label: string }[] = [
   { key: 'home', label: '홈' },
   { key: 'chat', label: '채팅' },
-  { key: 'meetings', label: '약속' },
+  { key: 'meetings', label: '모임' },
   { key: 'posts', label: '토론' },
   { key: 'reviews', label: '독후감' },
 ];
 
 /**
- * 모임 탭 — 홈 · 채팅 · 약속 · 토론 · 독후감. 모임 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
+ * 클럽 탭 — 홈 · 채팅 · 모임 · 토론 · 독후감. 클럽 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
  * 단독 화면에서 쓰면 라우팅으로 옮긴다.
  * 활성 탭은 잉크 글자 + 2px 민트 표식(구역 네비와 같은 규칙). 홈으로는 navigate(스택에 있으면 되돌아감),
- * 하위 화면끼리는 replace 로 옮겨 뒤로 가기가 항상 모임 홈으로 떨어지게 한다.
+ * 하위 화면끼리는 replace 로 옮겨 뒤로 가기가 항상 클럽 홈으로 떨어지게 한다.
  */
 export function ClubTabs({ clubId, active, onSelect }: {
   clubId: number;
   active: ClubTabKey;
-  /** 주면 화면 이동 대신 이 콜백으로 탭을 바꾼다(모임 홈의 in-place 탭). */
+  /** 주면 화면 이동 대신 이 콜백으로 탭을 바꾼다(클럽 홈의 in-place 탭). */
   onSelect?: (key: ClubTabKey) => void;
 }) {
   const router = useRouter();
   const { colors } = useTheme();
-  // 약속 화면은 host 파라미터를 읽으므로 모임 홈 캐시에서 내 역할을 꺼낸다(홈을 거쳐 왔으면 이미 있다).
+  // 모임 화면은 host 파라미터를 읽으므로 클럽 홈 캐시에서 내 역할을 꺼낸다(홈을 거쳐 왔으면 이미 있다).
   const club = useQuery({ queryKey: ['club', clubId], queryFn: () => clubApi.home(clubId), staleTime: 60_000 });
   const isHost = club.data?.myRole === 'HOST';
   const id = String(clubId);
@@ -55,7 +55,7 @@ export function ClubTabs({ clubId, active, onSelect }: {
       onSelect(key);
       return;
     }
-    // 독후감 탭은 모임 홈 안의 탭이라 홈과 같이 navigate 로 되돌아간다.
+    // 독후감 탭은 클럽 홈 안의 탭이라 홈과 같이 navigate 로 되돌아간다.
     if (key === 'home' || key === 'reviews') router.navigate(hrefOf(key));
     else if (active === 'home') router.push(hrefOf(key));
     else router.replace(hrefOf(key));

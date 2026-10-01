@@ -232,7 +232,7 @@ export default function ClubLogNewScreen() {
         ) : null}
 
         <Button
-          label="모임 보드에 붙이기"
+          label="클럽 보드에 붙이기"
           onPress={() => submit.mutate()}
           loading={submit.isPending}
           disabled={!canSubmit}

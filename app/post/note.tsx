@@ -167,7 +167,7 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
   const pe = usePostNoteEditor(seed);
   const { editor, toDoc } = pe;
 
-  // 말풍선 화자 — 나. 모임 글이면 멤버 중에서 고를 수 있다(모임 홈과 같은 캐시 키).
+  // 말풍선 화자 — 나. 클럽 글이면 멤버 중에서 고를 수 있다(클럽 홈과 같은 캐시 키).
   const me = useAuth((s) => s.user);
   const club = useQuery({
     queryKey: ['club', clubId ?? 0],

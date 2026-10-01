@@ -71,7 +71,7 @@ import { mono } from "@/theme/tokens";
 const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "posts", "reviews"];
 
 /**
- * 모임 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
+ * 클럽 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
  * 위에서부터 함께 읽는 사람(진척 스트립) · 지금 읽는 중 · 요일 스트립 · 그날의 조각 콜라주 · 체크포인트.
  * 초대 코드 재발급·자리·멤버·종료 같은 운영은 호스트 전용 설정(/club/[id]/settings)으로 뺐다.
  */
@@ -182,7 +182,7 @@ export default function ClubHomeScreen() {
   if (club.isLoading && !preview.data) {
     return (
       <PaperScreen>
-        <SubHeader category="모임" />
+        <SubHeader category="클럽" />
         <Loading />
       </PaperScreen>
     );
@@ -203,9 +203,9 @@ export default function ClubHomeScreen() {
     }
     return (
       <PaperScreen>
-        <SubHeader category="모임" />
+        <SubHeader category="클럽" />
         <Text style={[styles.error, { color: colors.danger }]}>
-          모임을 불러오지 못했습니다.
+          클럽을 불러오지 못했습니다.
         </Text>
       </PaperScreen>
     );
@@ -274,14 +274,14 @@ export default function ClubHomeScreen() {
   return (
     <PaperScreen>
       <SubHeader
-        category="모임"
+        category="클럽"
         right={
           isHost ? (
             <Pressable
               onPress={() => router.push(`/club/${clubId}/settings`)}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="모임 관리"
+              accessibilityLabel="클럽 관리"
               style={styles.menuButton}
             >
               <Settings size={22} color={colors.text} {...iconStroke} />
@@ -361,7 +361,7 @@ export default function ClubHomeScreen() {
 
       </View>
 
-      {/* 모임 탭 — 함께 읽는 사람 아래. 누르면 아래 영역만 바뀐다 */}
+      {/* 클럽 탭 — 함께 읽는 사람 아래. 누르면 아래 영역만 바뀐다 */}
       <ClubTabs clubId={clubId} active={tab} onSelect={setTab} />
 
       <SwipeableTabs values={CLUB_TAB_VALUES} value={tab} onChange={setTab} style={styles.body}>
@@ -531,20 +531,20 @@ export default function ClubHomeScreen() {
           </View>
           {ended ? (
             <Button
-              label="모임 결산 보기"
+              label="클럽 결산 보기"
               variant="outline"
               onPress={() => router.push(`/club/${clubId}/result`)}
             />
           ) : null}
           <Button
-            label="모임 나가기"
+            label="클럽 나가기"
             variant="ghost"
             size="sm"
             loading={leave.isPending}
             onPress={async () => {
               if (
                 await confirmAsync(
-                  "모임에서 나갈까요? 남긴 조각과 글은 그대로 남아요.",
+                  "클럽에서 나갈까요? 남긴 조각과 글은 그대로 남아요.",
                   "나가기",
                 )
               )
@@ -609,7 +609,7 @@ function PublicClubPreview({
 
   return (
     <PaperScreen>
-      <SubHeader category="추천 모임" onBack={() => router.back()} />
+      <SubHeader category="추천 클럽" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <TiltCover
@@ -653,7 +653,7 @@ function PublicClubPreview({
         ) : null}
 
         <Card style={{ gap: spacing.md }}>
-          <Eyebrow plain>모임 정보</Eyebrow>
+          <Eyebrow plain>클럽 정보</Eyebrow>
           <KeyValue label="호스트" value={club.hostNickname ?? "-"} />
           <Rule />
           <KeyValue
@@ -672,12 +672,12 @@ function PublicClubPreview({
             <Eyebrow plain>참가 설정</Eyebrow>
             <Toggle
               label="진척 공개"
-              description="끄면 리더보드에 비공개로 표시되고 모임 평균 계산에서 빠집니다."
+              description="끄면 리더보드에 비공개로 표시되고 클럽 평균 계산에서 빠집니다."
               value={shareProgress}
               onChange={onShareProgressChange}
             />
             <Toggle
-              label="모임 목표일을 내 목표로"
+              label="클럽 목표일을 내 목표로"
               description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
               value={adoptTarget}
               onChange={onAdoptTargetChange}
@@ -690,7 +690,7 @@ function PublicClubPreview({
         ) : null}
 
         <Button
-          label={club.alreadyMember ? "모임 홈 보기" : "참가하기"}
+          label={club.alreadyMember ? "클럽 홈 보기" : "참가하기"}
           disabled={!club.joinable && !club.alreadyMember}
           loading={joining}
           onPress={() => {

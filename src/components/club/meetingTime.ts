@@ -1,5 +1,5 @@
 /**
- * 약속 시각 — 서버는 ISO instant, 화면은 KST. 숫자는 모노로 세우므로 '10.1' · '목' · '19:30' 꼴로 짧게 자른다.
+ * 모임 시각 — 서버는 ISO instant, 화면은 KST. 숫자는 모노로 세우므로 '10.1' · '목' · '19:30' 꼴로 짧게 자른다.
  */
 const KST = 'Asia/Seoul';
 
@@ -45,7 +45,7 @@ export function meetingDateLine(startsAt: string, endsAt?: string): string {
   return `${p.year}.${p.month}.${p.day} ${p.weekday} · ${time}`;
 }
 
-/** '2026년 10월 1일 목요일' — 약속 상세의 날짜 카드. */
+/** '2026년 10월 1일 목요일' — 모임 상세의 날짜 카드. */
 export function meetingDateLong(iso: string): string {
   return new Intl.DateTimeFormat('ko-KR', {
     timeZone: KST,
@@ -56,19 +56,19 @@ export function meetingDateLong(iso: string): string {
   }).format(new Date(iso));
 }
 
-/** '오후 7:30' — 약속 상세의 큰 시간. */
+/** '오후 7:30' — 모임 상세의 큰 시간. */
 export function meetingClock12(iso: string): string {
   return new Intl.DateTimeFormat('ko-KR', { timeZone: KST, hour: 'numeric', minute: '2-digit', hour12: true })
     .format(new Date(iso));
 }
 
-/** 새 약속 폼의 날짜 칸 — '2026.10.1 목'. */
+/** 새 모임 폼의 날짜 칸 — '2026.10.1 목'. */
 export function formatPickDate(date: Date): string {
   const p = parts(date);
   return `${p.year}.${p.month}.${p.day} ${p.weekday}`;
 }
 
-/** 새 약속 폼의 시간 칸 — '19:30'. */
+/** 새 모임 폼의 시간 칸 — '19:30'. */
 export function formatPickTime(date: Date): string {
   const p = parts(date);
   return `${p.hour}:${p.minute}`;
@@ -76,7 +76,7 @@ export function formatPickTime(date: Date): string {
 
 export type MeetingState = 'open' | 'past' | 'cancelled';
 
-/** 서버 status 에 '지난 약속'을 얹는다 — 열려 있어도 시작 시각이 지났으면 past. */
+/** 서버 status 에 '지난 모임'을 얹는다 — 열려 있어도 시작 시각이 지났으면 past. */
 export function meetingState(meeting: { status: string; startsAt: string }): MeetingState {
   if (meeting.status !== 'OPEN') return 'cancelled';
   return new Date(meeting.startsAt).getTime() < Date.now() ? 'past' : 'open';
@@ -84,6 +84,6 @@ export function meetingState(meeting: { status: string; startsAt: string }): Mee
 
 export const MEETING_STATE_LABEL: Record<MeetingState, string> = {
   open: '모집 중',
-  past: '지난 약속',
+  past: '지난 모임',
   cancelled: '취소됨',
 };

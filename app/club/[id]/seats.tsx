@@ -12,10 +12,10 @@ import type { ColorTokens } from '@/theme';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
- * 자리 늘리기 — 모임 홈의 '자리 늘리기'로 들어온다(호스트 전용).
+ * 자리 늘리기 — 클럽 홈의 '자리 늘리기'로 들어온다(호스트 전용).
  *
- * 무료 정원을 넘는 자리는 책갈피로 연다. 가격·상한은 모임 홈 응답의 seatPolicy 를 따르고,
- * 늘린 자리는 그 모임에만 적용되며 모임이 끝나면 사라진다(서버 정책).
+ * 무료 정원을 넘는 자리는 책갈피로 연다. 가격·상한은 클럽 홈 응답의 seatPolicy 를 따르고,
+ * 늘린 자리는 그 클럽에만 적용되며 클럽이 끝나면 사라진다(서버 정책).
  */
 export default function ClubSeatsScreen() {
   const router = useRouter();
@@ -46,14 +46,14 @@ export default function ClubSeatsScreen() {
       <PaperScreen>
         <SubHeader category="자리 늘리기" />
         <EmptyState
-          title="모임을 불러오지 못했어요"
+          title="클럽을 불러오지 못했어요"
           description={club.error instanceof ApiError ? club.error.message : undefined}
           action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => club.refetch()} />}
         />
       </PaperScreen>
     );
   }
-  // 딥링크로 멤버가 들어오면 모임 홈으로 돌려보낸다 — 서버도 CLUB_NOT_HOST 로 막는다.
+  // 딥링크로 멤버가 들어오면 클럽 홈으로 돌려보낸다 — 서버도 CLUB_NOT_HOST 로 막는다.
   if (data.myRole !== 'HOST') {
     return <Redirect href={`/club/${clubId}`} />;
   }
@@ -70,7 +70,7 @@ export default function ClubSeatsScreen() {
         queryClient.setQueryData<WalletView>(['wallet'], (prev) => (prev ? { ...prev, bookmarkBalance } : prev));
         queryClient.invalidateQueries({ queryKey: ['club', clubId] });
         queryClient.invalidateQueries({ queryKey: ['clubs'] });
-        // 딥링크·웹 새로고침으로 들어와 돌아갈 곳이 없으면 back() 이 아무 일도 하지 않는다 — 그때는 모임 홈으로.
+        // 딥링크·웹 새로고침으로 들어와 돌아갈 곳이 없으면 back() 이 아무 일도 하지 않는다 — 그때는 클럽 홈으로.
         if (router.canGoBack()) {
           router.back();
         } else {
@@ -113,11 +113,11 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
       <PaperScreen>
         <SubHeader category="자리 늘리기" />
         <EmptyState
-          title={ended ? '끝난 모임이에요' : '이미 최대 정원이에요'}
+          title={ended ? '끝난 클럽이에요' : '이미 최대 정원이에요'}
           description={
             ended
-              ? '늘린 자리는 모임이 끝나면 사라져요.'
-              : `모임은 최대 ${policy.maxLimit}명까지 함께 읽을 수 있어요.`
+              ? '늘린 자리는 클럽이 끝나면 사라져요.'
+              : `클럽은 최대 ${policy.maxLimit}명까지 함께 읽을 수 있어요.`
           }
         />
       </PaperScreen>
@@ -147,7 +147,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
             <Eyebrow plain>{club.name}</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>자리를 열고{'\n'}한 명 더 초대해요</Text>
             <Text style={[typeScale.body, { color: colors.textMuted }]}>
-              모임은 {policy.freeLimit}명까지 무료예요. 책갈피로 자리를 늘리면 최대 {policy.maxLimit}명까지 함께 읽을 수 있어요.
+              클럽은 {policy.freeLimit}명까지 무료예요. 책갈피로 자리를 늘리면 최대 {policy.maxLimit}명까지 함께 읽을 수 있어요.
             </Text>
             <SeatGrid club={club} targetLimit={targetLimit} maxLimit={policy.maxLimit} colors={colors} />
           </View>
@@ -184,7 +184,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
               </Text>
             ) : null}
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
-              늘린 자리는 이 모임에만 적용되고, 모임이 끝나면 사라져요.
+              늘린 자리는 이 클럽에만 적용되고, 클럽이 끝나면 사라져요.
             </Text>
           </View>
 

@@ -5,7 +5,7 @@ import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
-/** 말풍선 화자 고르기 — 모임 멤버 아바타 칩 가로 줄. 선택은 잉크 반전. */
+/** 말풍선 화자 고르기 — 클럽 멤버 아바타 칩 가로 줄. 선택은 잉크 반전. */
 export function MemberPickerRow({ members, selectedUserId, onPick }: {
   members: MemberProgress[];
   selectedUserId: number;

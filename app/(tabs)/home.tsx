@@ -21,7 +21,7 @@ import { HomeScraps } from '@/components/home/HomeScraps';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 챌린지 → 모임 */
+/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 챌린지 → 클럽 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();

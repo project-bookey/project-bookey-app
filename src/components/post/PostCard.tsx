@@ -15,7 +15,7 @@ import { isNotePost, noteDocOf } from './postFormat';
 const POSTER_H = 208;
 
 /** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. 상세 바이라인도 같이 쓴다. */
-export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '모임만' } as const;
+export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '클럽만' } as const;
 /** 노트 카드 썸네일 폭(px). */
 const NOTE_THUMB_W = 96;
 

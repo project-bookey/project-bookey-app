@@ -22,7 +22,7 @@ import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { sans } from '@/theme/tokens';
 
 /**
- * 약속 상세 — 예전 골격(굵은 제목 · 큰 민트 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
+ * 모임 상세 — 예전 골격(굵은 제목 · 큰 민트 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
  * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
  * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
@@ -66,9 +66,9 @@ export default function MeetingDetailScreen() {
     mutationFn: () => clubCommunityApi.cancelMeeting(clubId, mid),
     onSuccess: () => {
       refresh();
-      notify('약속을 취소했어요.');
+      notify('모임을 취소했어요.');
     },
-    onError: fail('약속을 취소하지 못했어요.'),
+    onError: fail('모임을 취소하지 못했어요.'),
   });
   const start = useMutation({
     mutationFn: () => clubCommunityApi.startActivity(clubId, mid),
@@ -87,7 +87,7 @@ export default function MeetingDetailScreen() {
   if (meeting.isLoading || current.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="약속 상세" />
+        <SubHeader category="모임 상세" />
         <Loading />
       </PaperScreen>
     );
@@ -96,9 +96,9 @@ export default function MeetingDetailScreen() {
   if (!m) {
     return (
       <PaperScreen>
-        <SubHeader category="약속 상세" />
+        <SubHeader category="모임 상세" />
         <EmptyState
-          title="약속을 불러오지 못했어요"
+          title="모임을 불러오지 못했어요"
           description={meeting.error instanceof ApiError ? meeting.error.message : undefined}
           action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => meeting.refetch()} />}
         />
@@ -108,7 +108,7 @@ export default function MeetingDetailScreen() {
 
   const state = meetingState(m);
   const statusLine =
-    state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 약속이에요' : '취소된 약속입니다';
+    state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 모임이에요' : '취소된 모임입니다';
   const attendees = m.attendees ?? [];
   const running = current.data?.meetingId === mid;
   const otherRunning = Boolean(current.data && !running);
@@ -123,15 +123,15 @@ export default function MeetingDetailScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="약속 상세" />
+      <SubHeader category="모임 상세" />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={{ gap: 4 }}>
-          <Eyebrow>모임 약속</Eyebrow>
+          <Eyebrow>클럽 모임</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>{m.title}</Text>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>{statusLine}</Text>
         </View>
 
-        {/* 숫자 띠 — 모임 홈과 같은 공용 StatStrip(날짜 · 시간 · 참여) */}
+        {/* 숫자 띠 — 클럽 홈과 같은 공용 StatStrip(날짜 · 시간 · 참여) */}
         <StatStrip
           cells={[
             { label: '날짜', value: meetingDay(m.startsAt), unit: ` ${meetingWeekday(m.startsAt)}` },
@@ -181,7 +181,7 @@ export default function MeetingDetailScreen() {
           )}
           {state === 'open' ? (
             <Button
-              label={m.attending ? '참여 취소' : '이 약속에 참여하기'}
+              label={m.attending ? '참여 취소' : '이 모임에 참여하기'}
               variant={m.attending ? 'outline' : 'primary'}
               onPress={() => attend.mutate()}
               loading={attend.isPending}
@@ -197,10 +197,10 @@ export default function MeetingDetailScreen() {
           </Text>
           <Text style={[typeScale.caption, { color: colors.textMuted, textAlign: 'center' }]}>
             {otherRunning
-              ? '다른 약속에서 독서를 실행 중이에요.'
+              ? '다른 모임에서 독서를 실행 중이에요.'
               : running
-                ? '이 약속의 독서 시간을 기록하고 있어요.'
-                : '약속 현장에서 독서 실행을 눌러 기록을 남겨 보세요.'}
+                ? '이 모임의 독서 시간을 기록하고 있어요.'
+                : '모임 현장에서 독서 실행을 눌러 기록을 남겨 보세요.'}
           </Text>
           <Button
             label={running ? '독서 종료' : '독서 실행'}
@@ -213,11 +213,11 @@ export default function MeetingDetailScreen() {
 
         {isHost && state === 'open' ? (
           <Button
-            label="약속 취소"
+            label="모임 취소"
             variant="ghost"
             loading={cancel.isPending}
             onPress={async () => {
-              if (await confirmAsync('이 약속을 취소할까요? 참여자에게도 취소로 보여요.', '약속 취소')) cancel.mutate();
+              if (await confirmAsync('이 모임을 취소할까요? 참여자에게도 취소로 보여요.', '모임 취소')) cancel.mutate();
             }}
           />
         ) : null}

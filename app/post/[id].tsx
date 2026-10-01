@@ -207,19 +207,19 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
             {formatRelative(post.publishedAt ?? post.createdAt)}
           </Text>
         </View>
-        {/* 모임만 글은 누가 보든 밝힌다(보는 사람도 그 모임 멤버다). 비공개·링크는 본인에게만. */}
+        {/* 클럽만 글은 누가 보든 밝힌다(보는 사람도 그 클럽 멤버다). 비공개·링크는 본인에게만. */}
         {visibilityLabel && (post.mine || post.visibility === 'CLUB') ? <Tag label={visibilityLabel} /> : null}
       </View>
 
-      {/* 모임 독후감이면 어느 모임의 글인지 — 누르면 그 모임의 독후감 탭으로 */}
+      {/* 클럽 독후감이면 어느 클럽의 글인지 — 누르면 그 클럽의 독후감 탭으로 */}
       {post.clubId != null && post.clubName ? (
         <Pressable
           onPress={() => router.push({ pathname: '/club/[id]', params: { id: String(post.clubId), tab: 'reviews' } })}
           accessibilityRole="button"
-          accessibilityLabel={`${post.clubName} 모임 독후감`}
+          accessibilityLabel={`${post.clubName} 클럽 독후감`}
           style={({ pressed }) => [styles.clubLink, pressed ? pressedStyle : null]}
         >
-          <Tag label={`모임 · ${post.clubName}`} />
+          <Tag label={`클럽 · ${post.clubName}`} />
         </Pressable>
       ) : null}
 

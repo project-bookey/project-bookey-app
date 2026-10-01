@@ -319,7 +319,7 @@ export const clubApi = {
     clubId: number,
     body: { shareProgress?: boolean; allowNudge?: boolean },
   ) => api<void>(`/api/v1/clubs/${clubId}/sharing`, { method: "PATCH", body }),
-  /** 모임 설정 (호스트) — 보낸 값만 바뀐다. 서버가 CLUB_NOT_HOST 로 멤버를 막는다. */
+  /** 클럽 설정 (호스트) — 보낸 값만 바뀐다. 서버가 CLUB_NOT_HOST 로 멤버를 막는다. */
   update: (
     clubId: number,
     body: {
@@ -887,7 +887,7 @@ export const postApi = {
     api<Page<Post>>(`/api/v1/books/${bookId}/posts`, { query: { page, size } }),
   mine: (page = 0, size = 20) =>
     api<Page<Post>>("/api/v1/posts", { query: { page, size } }),
-  /** 모임 독후감 — 그 모임 멤버만. 모임 글(광장에도 공개 + 모임만) 최신순. */
+  /** 클럽 독후감 — 그 클럽 멤버만. 클럽 글(광장에도 공개 + 클럽만) 최신순. */
   clubPosts: (clubId: number, page = 0, size = 30) =>
     api<Page<Post>>(`/api/v1/posts/clubs/${clubId}`, { query: { page, size } }),
   get: (postId: number) => api<Post>(`/api/v1/posts/${postId}`),

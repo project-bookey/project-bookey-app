@@ -20,7 +20,7 @@ const STICKERS = ['📚', '✨', '☕', '🔥', '💯', '🌿', '❤️', '⭐',
 const MAX_STICKERS = 8;
 
 /**
- * 모임 기록(스탑워치) — 약속 상세의 '독서 종료'에서 넘어오거나 따로 연다.
+ * 클럽 기록(스탑워치) — 모임 상세의 '독서 종료'에서 넘어오거나 따로 연다.
  * 위는 함께 독서 타이머(모노 숫자), 아래는 최근 기록 카드 목록(괘선 행). 카드를 고르면 꾸미기 모드:
  * 4:5 기록 카드(사진·스티커·한마디)와 편집 폼, PNG 저장·공유.
  */
@@ -53,7 +53,7 @@ export default function ClubActivityScreen() {
     return () => clearInterval(t);
   }, [current.data]);
 
-  // 약속 상세에서 방금 끝낸 카드(cardId)로 들어왔으면 그 카드를 바로 꾸미기 모드로 연다.
+  // 모임 상세에서 방금 끝낸 카드(cardId)로 들어왔으면 그 카드를 바로 꾸미기 모드로 연다.
   useEffect(() => {
     if (editing || !cardId || !cards.data) return;
     const found = cards.data.find((c) => String(c.id) === cardId);
@@ -130,7 +130,7 @@ export default function ClubActivityScreen() {
         a.download = `bookey-club-${editing?.id}.png`;
         a.click();
       } else if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '모임 기록 카드 저장·공유' });
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: '클럽 기록 카드 저장·공유' });
       }
     } finally {
       setSharing(false);
@@ -140,7 +140,7 @@ export default function ClubActivityScreen() {
   if (current.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="모임 기록" />
+        <SubHeader category="클럽 기록" />
         <Loading />
       </PaperScreen>
     );
@@ -153,7 +153,7 @@ export default function ClubActivityScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="모임 기록" />
+      <SubHeader category="클럽 기록" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {card ? (
           <>
@@ -169,12 +169,12 @@ export default function ClubActivityScreen() {
                 <View style={[styles.photo, { backgroundColor: colors.paperAlt }]} />
               )}
               <Text style={styles.stickerLayer}>{stickers.join('  ')}</Text>
-              <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>오늘의 모임 기록</Text>
+              <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>오늘의 클럽 기록</Text>
               <Text style={[styles.duration, { color: colors.text }]}>{formatClock(card.durationSec)}</Text>
               <Text style={[styles.cardCaption, { color: colors.text }]}>
                 {caption || '함께여서 더 오래 집중한 시간'}
               </Text>
-              <Text style={[styles.cardFoot, { color: colors.textFaint }]}>@{card.nickname} · 모임 기록</Text>
+              <Text style={[styles.cardFoot, { color: colors.textFaint }]}>@{card.nickname} · 클럽 기록</Text>
             </View>
 
             <View style={[styles.section, { borderTopColor: colors.line }]}>
@@ -219,7 +219,7 @@ export default function ClubActivityScreen() {
                 {formatClock(elapsed)}
               </Text>
               <Text style={[typeScale.caption, { color: colors.textMuted, textAlign: 'center' }]}>
-                {current.data ? '모임 집중 시간을 기록하고 있어요.' : '모임 사람들과 함께한 시간을 기록해 보세요.'}
+                {current.data ? '클럽 집중 시간을 기록하고 있어요.' : '클럽 사람들과 함께한 시간을 기록해 보세요.'}
               </Text>
               <Button
                 label={current.data ? '기록 종료' : '스탑워치 시작'}
@@ -230,7 +230,7 @@ export default function ClubActivityScreen() {
             </View>
 
             <View style={[styles.section, { borderTopColor: colors.line, borderTopWidth: hairline }]}>
-              <Eyebrow>최근 모임 기록</Eyebrow>
+              <Eyebrow>최근 클럽 기록</Eyebrow>
               {cards.isLoading ? (
                 <Loading />
               ) : (cards.data ?? []).length === 0 ? (

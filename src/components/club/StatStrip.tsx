@@ -7,7 +7,7 @@ export type StatCell = { label: string; value: string; unit?: string };
 
 /**
  * 숫자 띠 — 활자·괘선 판면의 요약 줄. 위아래 괘선 사이를 칸으로 나누고
- * 칸마다 모노 아이브로우 라벨 아래 모노 숫자, 단위는 산세리프로 작게. 모임 홈·약속 상세가 쓴다.
+ * 칸마다 모노 아이브로우 라벨 아래 모노 숫자, 단위는 산세리프로 작게. 클럽 홈·모임 상세가 쓴다.
  */
 export function StatStrip({ cells }: { cells: StatCell[] }) {
   const { colors } = useTheme();

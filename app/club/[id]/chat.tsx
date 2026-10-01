@@ -13,7 +13,7 @@ import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
 
 /**
- * 모임 채팅 — 모임 홈 '채팅' 탭의 본문. 잠겨 있으면 책갈피로 여는 안내, 열리면 말풍선 목록과 입력 줄.
+ * 클럽 채팅 — 클럽 홈 '채팅' 탭의 본문. 잠겨 있으면 책갈피로 여는 안내, 열리면 말풍선 목록과 입력 줄.
  * 상대 말은 종이(surface)에 헤어라인 말풍선, 내 말은 잉크 반전. 민트는 쓰지 않는다 —
  * 보내기도 잉크 네모에 선 아이콘이다. 이름·시각은 모노.
  */
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
 });
 
-/** 딥링크 호환 — 채팅은 이제 모임 홈의 탭이다. */
+/** 딥링크 호환 — 채팅은 이제 클럽 홈의 탭이다. */
 export default function ClubChatRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return <Redirect href={{ pathname: '/club/[id]', params: { id, tab: 'chat' } }} />;

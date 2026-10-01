@@ -31,7 +31,7 @@ const TITLE_MAX = POST_TITLE_MAX;
 const QUOTE_BAR_HEIGHT = 60;
 
 /**
- * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글), 모임 독후감 탭(`clubId`),
+ * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글), 클럽 독후감 탭(`clubId`),
  * 상세 `고치기`(`id`)에서 들어온다.
  * 새 글은 먼저 모드를 고른다(PostModeChooser) — 글로 쓰기는 `format=TEXT` 로 이 화면의 폼을, 노트로 꾸미기는 `/post/note` 를 연다.
  * 고칠 글이 노트면 노트 편집기로 넘긴다.
@@ -65,7 +65,7 @@ export default function PostEditorScreen() {
     enabled: fromBook && !choosing,
   });
 
-  // 모드부터 — 책·모임 파라미터는 고른 화면으로 그대로 넘긴다.
+  // 모드부터 — 책·클럽 파라미터는 고른 화면으로 그대로 넘긴다.
   if (choosing) {
     return (
       <PostModeChooser
@@ -137,7 +137,7 @@ export default function PostEditorScreen() {
         }
       : undefined;
 
-  // 모임 글인지 — 고치기는 글의 모임(바꿀 수 없다), 새 글은 파라미터.
+  // 클럽 글인지 — 고치기는 글의 클럽(바꿀 수 없다), 새 글은 파라미터.
   const formClubId = loaded ? loaded.clubId : Number.isFinite(clubParam) ? clubParam : undefined;
 
   return (
@@ -157,7 +157,7 @@ function Shell({ category, children }: { category: string; children: ReactNode }
 
 /**
  * 폼 본체 — `post` 가 있으면 고치기. 시드는 마운트 때 한 번(부모가 key 로 다시 세운다).
- * clubId 가 있으면 모임 독후감 — 공개 범위가 모임만·광장에도 둘이 되고, 새 글은 clubId 를 싣는다.
+ * clubId 가 있으면 클럽 독후감 — 공개 범위가 클럽만·광장에도 둘이 되고, 새 글은 clubId 를 싣는다.
  */
 function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: PickedBook | null; clubId?: number }) {
   const router = useRouter();
@@ -286,7 +286,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
         </Text>
       ) : null}
 
-      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(모임 토론과 같은 이유). */}
+      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(클럽 토론과 같은 이유). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
           {/* ① 책 — 없어도 된다. 책과 밑줄은 무관하다. */}
