@@ -10,7 +10,7 @@ import { layout, spacing } from '@/theme';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
 
-/** 메신저의 칸 — 엽서함 두 상자와 채팅을 한 줄로 편다(엽서 → 답장 → 맞팔로우 → 채팅 순서 그대로). */
+/** 메신저의 칸 — 엽서함 두 상자와 채팅을 한 줄로 편다(엽서 → 답장 → 채팅 순서 그대로). */
 type Pane = 'inbox' | 'sent' | 'chats';
 const PANES: { value: Pane; label: string }[] = [
   { value: 'inbox', label: '받은 엽서' },

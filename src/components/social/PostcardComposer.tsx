@@ -39,7 +39,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
       queryClient.invalidateQueries({ queryKey: ['postcards'] });
-      setSentMessage('엽서를 보냈어요. 답장이 오면 서로 팔로우됩니다.');
+      setSentMessage('엽서를 보냈어요. 답장이 오면 채팅을 열 수 있어요.');
       setError(null);
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : '엽서를 보내지 못했어요.'),
