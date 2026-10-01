@@ -1,7 +1,7 @@
 import { usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
+import PagerView, { type PagerViewOnPageSelectedEvent } from '@/components/pager/PagerView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandHeader, SectionNav, type SectionKey } from '@/components/collage';
