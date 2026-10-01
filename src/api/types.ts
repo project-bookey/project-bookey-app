@@ -60,7 +60,7 @@ export type SessionEndResult = Schemas['SessionEndResult'];
 export type StatsSummary = Schemas['StatsSummary'];
 export type DailyStat = Schemas['DailyStat'];
 
-// ── 모임 ─────────────────────────────────────────────────
+// ── 클럽 ─────────────────────────────────────────────────
 export type ClubSummary = Schemas['ClubSummaryView'];
 export type ClubMemberBrief = Schemas['ClubMemberBrief'];
 export type ClubPreview = Schemas['ClubPreview'];

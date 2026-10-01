@@ -19,7 +19,7 @@ function daysBetween(startsAt: string, endsAt: string): number {
 /**
  * 코드로 참가 (§12.1).
  * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·토론은 참가 후에만 보인다.
- * 미리보기는 모임 홈과 같은 활자·괘선 언어(명조 이름 · 모노 책 줄 · 숫자 띠).
+ * 미리보기는 클럽 홈과 같은 활자·괘선 언어(명조 이름 · 모노 책 줄 · 숫자 띠).
  */
 export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
@@ -109,7 +109,7 @@ export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
               ]}
             />
             {club.alreadyMember ? (
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가 중인 모임입니다.</Text>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가 중인 클럽입니다.</Text>
             ) : club.joinBlockedReason ? (
               <Text style={errorStyle}>{club.joinBlockedReason}</Text>
             ) : null}
@@ -121,19 +121,19 @@ export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
             <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
             <Text style={[styles.consentText, { color: colors.textMuted }]}>
               · 이 책이 내 서재에 자동으로 등록됩니다{'\n'}
-              · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 모임원에게 보입니다{'\n'}
+              · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 클럽원에게 보입니다{'\n'}
               · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={[styles.bold, { color: colors.text }]}>공유되지 않습니다</Text>
             </Text>
 
             <Rule />
             <Toggle
               label="진척 공개"
-              description="끄면 리더보드에 '비공개'로 표시되고 모임 평균 계산에서 빠집니다."
+              description="끄면 리더보드에 '비공개'로 표시되고 클럽 평균 계산에서 빠집니다."
               value={shareProgress}
               onChange={setShareProgress}
             />
             <Toggle
-              label="모임 목표일을 내 목표로"
+              label="클럽 목표일을 내 목표로"
               description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
               value={adoptTarget}
               onChange={setAdoptTarget}
@@ -168,7 +168,7 @@ export default function ClubJoinScreen() {
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
-  // 모임 탭 안에 끼워 넣을 때(embedded) — 자체 머리가 없으니 위는 좁게, 아래는 하단 바 높이만큼 비운다
+  // 클럽 탭 안에 끼워 넣을 때(embedded) — 자체 머리가 없으니 위는 좁게, 아래는 하단 바 높이만큼 비운다
   embeddedContainer: { paddingTop: spacing.sm, paddingBottom: 104 },
   // 코드 입력 — Field 와 같은 종이 상자, 글자는 모노 크게(한글이 아니라 자간 1 로 숨을 준다)
   codeInput: {

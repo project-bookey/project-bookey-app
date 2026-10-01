@@ -146,7 +146,7 @@ function ChatRow({ chat, confirming, onOpen, onDelete }: {
 }
 
 const styles = StyleSheet.create({
-  // 좌우 여백은 다른 구역 목록(모임)과 같은 lg — 위 칸 전환 버튼과 가장자리를 맞춘다.
+  // 좌우 여백은 다른 구역 목록(클럽)과 같은 lg — 위 칸 전환 버튼과 가장자리를 맞춘다.
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: NAV_CLEARANCE },
   error: { marginBottom: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },

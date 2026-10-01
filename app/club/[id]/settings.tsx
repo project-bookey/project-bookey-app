@@ -18,14 +18,14 @@ import { mono } from '@/theme/tokens';
 const VISIBILITIES: { value: ClubVisibility; label: string; description: string }[] = [
   { value: 'CODE_ONLY', label: '코드로만', description: '초대 코드를 아는 사람만 참가할 수 있어요.' },
   { value: 'LINK', label: '링크', description: '초대 링크를 받은 사람이 참가할 수 있어요.' },
-  { value: 'PUBLIC', label: '공개', description: '추천 모임에 노출되고 누구나 참가할 수 있어요.' },
+  { value: 'PUBLIC', label: '공개', description: '추천 클럽에 노출되고 누구나 참가할 수 있어요.' },
 ];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * 모임 설정 — 모임을 연 사람(호스트)만. 목록의 '관리' 칩과 홈의 '관리'에서 들어온다.
- * 멤버가 딥링크로 들어오면 모임 홈으로 돌려보낸다(서버도 CLUB_NOT_HOST 로 막는다).
+ * 클럽 설정 — 클럽을 연 사람(호스트)만. 목록의 '관리' 칩과 홈의 '관리'에서 들어온다.
+ * 멤버가 딥링크로 들어오면 클럽 홈으로 돌려보낸다(서버도 CLUB_NOT_HOST 로 막는다).
  */
 export default function ClubSettingsScreen() {
   const { colors } = useTheme();
@@ -41,7 +41,7 @@ export default function ClubSettingsScreen() {
   if (club.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="모임 설정" />
+        <SubHeader category="클럽 설정" />
         <Loading />
       </PaperScreen>
     );
@@ -49,9 +49,9 @@ export default function ClubSettingsScreen() {
   if (!club.data) {
     return (
       <PaperScreen>
-        <SubHeader category="모임 설정" />
+        <SubHeader category="클럽 설정" />
         <EmptyState
-          title="모임을 불러오지 못했어요"
+          title="클럽을 불러오지 못했어요"
           description={club.error instanceof ApiError ? club.error.message : undefined}
           action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => club.refetch()} />}
         />
@@ -61,7 +61,7 @@ export default function ClubSettingsScreen() {
   if (club.data.myRole !== 'HOST') {
     return <Redirect href={`/club/${clubId}`} />;
   }
-  // 입력 초기값을 서버 값으로 잡으려고 폼을 따로 둔다 — 모임이 바뀌면 key 로 다시 만든다.
+  // 입력 초기값을 서버 값으로 잡으려고 폼을 따로 둔다 — 클럽이 바뀌면 key 로 다시 만든다.
   return <SettingsForm key={club.data.id} club={club.data} />;
 }
 
@@ -135,9 +135,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
 
   return (
     <PaperScreen>
-      <SubHeader category="모임 설정" />
+      <SubHeader category="클럽 설정" />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* 머리 — 모임 홈과 같은 활자·괘선 언어: 명조 이름 + 모노 책·저자 줄 */}
+        {/* 머리 — 클럽 홈과 같은 활자·괘선 언어: 명조 이름 + 모노 책·저자 줄 */}
         <View style={styles.header}>
           <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={44} tilt={0} entering={false} />
           <View style={{ flex: 1, gap: 4 }}>
@@ -146,20 +146,20 @@ function SettingsForm({ club }: { club: ClubHome }) {
               {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
             </Text>
             {ended ? (
-              <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>종료된 모임</Text>
+              <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>종료된 클럽</Text>
             ) : null}
           </View>
         </View>
 
         <Section title="기본 정보">
-          <Field label="모임 이름" value={name} onChangeText={setName} maxLength={60} placeholder="예: 회사 독서 모임" />
+          <Field label="클럽 이름" value={name} onChangeText={setName} maxLength={60} placeholder="예: 회사 독서 클럽" />
           <Field
             label="소개"
             value={description}
             onChangeText={setDescription}
             maxLength={1000}
             multiline
-            placeholder="어떤 모임인지 한 줄로"
+            placeholder="어떤 클럽인지 한 줄로"
           />
           <Button
             label="저장"
@@ -211,7 +211,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
           <Rule />
           <Toggle
             label="찌르기 허용"
-            description="끄면 이 모임에서는 아무도 찌르기를 보낼 수 없어요."
+            description="끄면 이 클럽에서는 아무도 찌르기를 보낼 수 없어요."
             value={club.allowNudge}
             onChange={(allowNudge) => update.mutate({ allowNudge })}
           />
@@ -316,11 +316,11 @@ function SettingsForm({ club }: { club: ClubHome }) {
               종료하면 더는 조각을 남길 수 없고 결산이 만들어져요.
             </Text>
             <Button
-              label="모임 종료하기"
+              label="클럽 종료하기"
               variant="danger"
               loading={end.isPending}
               onPress={async () => {
-                if (await confirmAsync('모임을 지금 종료할까요? 되돌릴 수 없어요.', '종료')) end.mutate();
+                if (await confirmAsync('클럽을 지금 종료할까요? 되돌릴 수 없어요.', '종료')) end.mutate();
               }}
             />
           </View>

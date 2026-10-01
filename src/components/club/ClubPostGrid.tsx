@@ -20,9 +20,9 @@ const GAP = spacing.xs;
 const PAGE_SIZE = 30;
 
 /**
- * 모임 독후감 — 모임 홈 '독후감' 탭. 인스타 프로필처럼 3열 격자, 칸 하나가 글 하나(3:4).
+ * 클럽 독후감 — 클럽 홈 '독후감' 탭. 인스타 프로필처럼 3열 격자, 칸 하나가 글 하나(3:4).
  * 노트 독후감은 1쪽 썸네일 + 작성자 아바타, 글 독후감은 명조 제목과 발췌를 얹은 종이 칸.
- * 칸을 누르면 상세로, '새 독후감' 은 모임을 싣고 모드 고르기로 간다(끝난 모임엔 없다 — 서버도 409).
+ * 칸을 누르면 상세로, '새 독후감' 은 클럽을 싣고 모드 고르기로 간다(끝난 클럽엔 없다 — 서버도 409).
  */
 export function ClubPostGrid({ clubId, ended }: { clubId: number; ended: boolean }) {
   const router = useRouter();
@@ -70,14 +70,14 @@ export function ClubPostGrid({ clubId, ended }: { clubId: number; ended: boolean
       onEndReachedThreshold={0.5}
       ListHeaderComponent={
         <View style={[styles.head, { borderBottomColor: colors.line }]}>
-          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 독후감 · {total}편</Text>
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>클럽 독후감 · {total}편</Text>
           {!ended ? <Button label="새 독후감" size="sm" variant="ghost" onPress={write} /> : null}
         </View>
       }
       ListEmptyComponent={
         <EmptyState
-          title="아직 모임 독후감이 없어요"
-          description={ended ? '끝난 모임이라 새 독후감을 쓸 수 없어요.' : '함께 읽은 책의 생각을 글이나 노트로 남겨 보세요.'}
+          title="아직 클럽 독후감이 없어요"
+          description={ended ? '끝난 클럽이라 새 독후감을 쓸 수 없어요.' : '함께 읽은 책의 생각을 글이나 노트로 남겨 보세요.'}
           action={ended ? undefined : <Button label="첫 독후감 쓰기" onPress={write} />}
         />
       }

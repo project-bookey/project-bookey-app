@@ -12,7 +12,7 @@ import {
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
-/** 모임 결산 (§12.5) — 활자·괘선 판면: 명조 이름 · 숫자 띠 · 괘선 단(진행률 표, 베스트 인용). */
+/** 클럽 결산 (§12.5) — 활자·괘선 판면: 명조 이름 · 숫자 띠 · 괘선 단(진행률 표, 베스트 인용). */
 export default function ClubResultScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,7 +38,7 @@ export default function ClubResultScreen() {
         <SubHeader category="결산" />
         <EmptyState
           title="결산을 불러오지 못했어요"
-          description={result.error instanceof ApiError ? result.error.message : '모임이 끝나면 결산이 만들어져요.'}
+          description={result.error instanceof ApiError ? result.error.message : '클럽이 끝나면 결산이 만들어져요.'}
           action={<Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => result.refetch()} />}
         />
       </PaperScreen>
@@ -53,7 +53,7 @@ export default function ClubResultScreen() {
         <View style={styles.header}>
           <TiltCover uri={data.book?.coverUrl} title={data.book?.title} width={56} tilt={0} entering={false} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Eyebrow>모임 결산</Eyebrow>
+            <Eyebrow>클럽 결산</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>
             <Text style={[styles.bookLine, { color: colors.textMuted }]}>
               {[data.book?.title, data.book?.author].filter(Boolean).join(' · ')}

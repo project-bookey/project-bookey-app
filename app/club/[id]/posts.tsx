@@ -22,7 +22,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 /**
- * 모임 토론 (§12.3) — 모임 홈 '토론' 탭의 본문. 괘선 머리줄(내 진도까지 칩 · 개수) 아래 글을
+ * 클럽 토론 (§12.3) — 클럽 홈 '토론' 탭의 본문. 괘선 머리줄(내 진도까지 칩 · 개수) 아래 글을
  * 카드 없이 괘선으로 나눠 한 편씩(작성자 · 종류 · 쪽 · 시각, 명조 본문, 잉크 반응 칩, 한 마디).
  *
  * 스포일러 가드는 서버가 강제한다 — 내 진도보다 앞선 글은 본문 없이(masked=true) 내려온다.
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
 });
 
-/** 딥링크 호환 — 토론은 이제 모임 홈의 탭이다. */
+/** 딥링크 호환 — 토론은 이제 클럽 홈의 탭이다. */
 export default function ClubPostsRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return <Redirect href={{ pathname: '/club/[id]', params: { id, tab: 'posts' } }} />;

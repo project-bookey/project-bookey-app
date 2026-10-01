@@ -23,7 +23,7 @@ const KINDS: { value: NoteKind; label: string; caption: string }[] = [
 
 /**
  * 독후감 모드 고르기 — 새 글의 첫 화면. 글로 쓰기(텍스트) / 노트로 꾸미기(+ 노트 종류) 중 하나를 고르고 '시작'.
- * 선택은 잉크로 반전한다. 책·모임 파라미터는 고른 화면으로 그대로 넘긴다(replace — 뒤로 가면 들어온 곳으로).
+ * 선택은 잉크로 반전한다. 책·클럽 파라미터는 고른 화면으로 그대로 넘긴다(replace — 뒤로 가면 들어온 곳으로).
  */
 export function PostModeChooser({ bookId, clubId }: { bookId?: number; clubId?: number }) {
   const router = useRouter();
@@ -47,7 +47,7 @@ export function PostModeChooser({ bookId, clubId }: { bookId?: number; clubId?: 
         <View style={styles.section}>
           <Eyebrow>어떻게 쓸까요</Eyebrow>
           {clubId != null ? (
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>모임 독후감 — 모임 멤버가 봐요. 광장에도 올릴지는 마지막에 골라요</Text>
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>클럽 독후감 — 클럽 멤버가 봐요. 광장에도 올릴지는 마지막에 골라요</Text>
           ) : null}
           {MODES.map((m) => (
             <Choice

@@ -46,7 +46,7 @@ const PLAZA_TABS: readonly PlazaTab[] = ['POST', 'QUOTE', 'FINISH'];
  * 구역 3. 광장 — 다른 독자들이 오려 둔 문장과 독후감, 완독 자랑이 모이는 곳 (시안 2d).
  *
  * 필터 칩 '밑줄'·'완독 자랑'은 같은 피드의 type 이고 '독후감'은 별도 피드(PostFeed)다.
- * 모임은 상단 구역 탭으로 올라가 여기엔 없다.
+ * 클럽은 상단 구역 탭으로 올라가 여기엔 없다.
  *
  * 밑줄 카드는 밑줄 상세(app/quote/[id].tsx)와 같은 QuoteCard 를 쓰고, 캐시 키·패치는
  * src/api/quoteCache.ts 한 곳에서 가져다 쓴다 — 같은 문장이 네 캐시에 살기 때문이다.

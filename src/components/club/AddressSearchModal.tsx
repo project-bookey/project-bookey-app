@@ -16,7 +16,7 @@ export type AddressSelection = {
   longitude: number;
 };
 
-/** 주소 검색 — 새 약속 폼에서 여는 전체 화면 모달. 뒤로(←)가 닫기, 결과 행을 누르면 그 주소를 고른다. */
+/** 주소 검색 — 새 모임 폼에서 여는 전체 화면 모달. 뒤로(←)가 닫기, 결과 행을 누르면 그 주소를 고른다. */
 export function AddressSearchModal({ clubId, visible, onClose, onSelect }: {
   clubId: number;
   visible: boolean;

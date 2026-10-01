@@ -19,7 +19,7 @@ function tilePoint(lat: number, lng: number) {
 }
 
 /**
- * 약속 장소 지도 — OpenStreetMap 타일 3×3 을 이어 붙이고 가운데에 잉크 점을 찍는다.
+ * 모임 장소 지도 — OpenStreetMap 타일 3×3 을 이어 붙이고 가운데에 잉크 점을 찍는다.
  * 종이 위 다른 조각처럼 헤어라인 한 겹으로만 둘러싼다(그림자 없음).
  */
 export function PlaceMap({ latitude, longitude }: { latitude?: number; longitude?: number }) {

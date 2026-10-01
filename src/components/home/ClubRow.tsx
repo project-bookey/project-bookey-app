@@ -9,8 +9,8 @@ import { mono } from '@/theme/tokens';
 import { linkLabel } from '@/components/ui';
 
 /**
- * 홈 추천 모임 행 — 공개 모임 카드 + 맨 끝 '+ 모임 만들기' 타일.
- * 탭 제거 후 유일한 모임 생성 진입점이므로 0건·오류여도 섹션을 유지한다.
+ * 홈 추천 클럽 행 — 공개 클럽 카드 + 맨 끝 '+ 클럽 만들기' 타일.
+ * 탭 제거 후 유일한 클럽 생성 진입점이므로 0건·오류여도 섹션을 유지한다.
  */
 export function ClubRow() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export function ClubRow() {
     <View style={styles.section}>
       <View style={styles.header}>
         <View style={styles.headTitle}>
-          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 모임</Text>
+          <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 클럽</Text>
         </View>
         <Pressable onPress={() => router.navigate('/clubs')} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
           <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('전체보기')}</Text>
@@ -54,11 +54,11 @@ export function ClubRow() {
           <Pressable
             onPress={() => router.push('/club/create')}
             accessibilityRole="button"
-            accessibilityLabel="모임 만들기"
+            accessibilityLabel="클럽 만들기"
             style={[styles.card, styles.createTile, { borderColor: colors.lineStrong }]}
           >
             <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 만들기</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>클럽 만들기</Text>
           </Pressable>
         }
         renderItem={({ item }) => (

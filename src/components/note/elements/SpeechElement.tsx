@@ -10,7 +10,7 @@ import { TEXT_SIZE, type SpeechElement as SpeechEl } from '../noteDoc';
 const TAIL = { w: 16, h: 14 };
 
 /**
- * 말풍선 — 모임에서 누가 무슨 말을 했는지 남긴다. 아바타·닉네임은 삽입할 때 멤버에서 복사해 문서에 박는다
+ * 말풍선 — 클럽에서 누가 무슨 말을 했는지 남긴다. 아바타·닉네임은 삽입할 때 멤버에서 복사해 문서에 박는다
  * (나중에 멤버가 나가도 기록은 그대로). 본문 색은 가독성을 위해 고정(text).
  */
 export function SpeechElement({ element, scale }: { element: SpeechEl; scale: number }) {

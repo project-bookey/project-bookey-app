@@ -37,7 +37,7 @@ export default function MainTabsLayout() {
           <Tabs screenOptions={tabOptions} backBehavior="history" tabBar={() => null}>
           <Tabs.Screen name="plaza" options={{ title: '광장' }} />
           <Tabs.Screen name="home" options={{ title: '서가' }} />
-          <Tabs.Screen name="clubs" options={{ title: '모임' }} />
+          <Tabs.Screen name="clubs" options={{ title: '클럽' }} />
           <Tabs.Screen name="messenger" options={{ title: '메신저' }} />
           <Tabs.Screen name="profile" options={{ title: '나' }} />
           <Tabs.Screen name="search" options={{ title: '탐색', href: null }} />

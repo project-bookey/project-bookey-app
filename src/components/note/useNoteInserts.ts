@@ -12,7 +12,7 @@ import type { NoteEditor } from './useNoteEditor';
 
 const editBatch = (id: string) => `edit:${id}`;
 
-/** 말풍선에 박을 화자 — 모임 멤버(MemberProgress)나 내 정보(Me) 어느 쪽이든 이 모양이면 된다. */
+/** 말풍선에 박을 화자 — 클럽 멤버(MemberProgress)나 내 정보(Me) 어느 쪽이든 이 모양이면 된다. */
 export type NoteSpeaker = { userId: number; nickname: string; avatarUrl?: string | null };
 
 /** 삽입 기준점(논리 좌표) — 주면 그 자리를 가운데로 넣고, 없거나 null 이면 캔버스 가운데쯤. */

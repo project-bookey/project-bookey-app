@@ -17,7 +17,7 @@ import { ClubJoinContent } from '../club/join';
 type ClubView = 'list' | 'join' | 'create';
 const CLUB_VIEWS: readonly ClubView[] = ['list', 'join', 'create'];
 
-/** 구역 4. 모임 — 내 모임 · 코드 참가 · 만들기 (§F12). 광장 칩이 아니라 상단 구역 탭으로 들어온다. */
+/** 구역 4. 클럽 — 내 클럽 · 코드 참가 · 만들기 (§F12). 광장 칩이 아니라 상단 구역 탭으로 들어온다. */
 export default function ClubsScreen() {
   const router = useRouter();
   const [view, setView] = useState<ClubView>('list');
@@ -37,9 +37,9 @@ export default function ClubsScreen() {
       <TourTarget id="club-actions" style={styles.actions}>
         <CapsuleTabs
           items={[
-            { value: 'list', label: '내 모임' },
+            { value: 'list', label: '내 클럽' },
             { value: 'join', label: '코드로 참가' },
-            { value: 'create', label: '모임 만들기' },
+            { value: 'create', label: '클럽 만들기' },
           ]}
           value={view}
           onChange={setView}
@@ -62,7 +62,7 @@ export default function ClubsScreen() {
           clubs.isLoading ? null : (
             <EmptyState
               illustration
-              title="참가 중인 모임이 없어요"
+              title="참가 중인 클럽이 없어요"
               description={'같은 책을 함께 읽으면 완독률이 올라갑니다.\n초대 코드를 받았다면 코드로 참가하세요.'}
             />
           )
@@ -71,7 +71,7 @@ export default function ClubsScreen() {
           <ClubCard
             club={item}
             onPress={() => router.push(`/club/${item.id}`)}
-            // 관리는 모임을 연 사람(호스트)만 — 서버도 CLUB_NOT_HOST 로 막는다.
+            // 관리는 클럽을 연 사람(호스트)만 — 서버도 CLUB_NOT_HOST 로 막는다.
             onManage={item.myRole === 'HOST' ? () => router.push(`/club/${item.id}/settings`) : undefined}
           />
         )}

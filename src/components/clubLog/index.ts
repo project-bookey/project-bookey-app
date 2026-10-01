@@ -1,5 +1,5 @@
 /**
- * 모임 읽기로그 컴포넌트 배럴 — 보드·남기기·모임 홈 진입 카드가 함께 쓴다.
+ * 클럽 읽기로그 컴포넌트 배럴 — 보드·남기기·클럽 홈 진입 카드가 함께 쓴다.
  */
 export { LogScrap, LOG_REACTIONS } from './LogScrap';
 export { WEEK_CARD_BASE_WIDTH, WEEK_CARD_RATIO, WeekCard } from './WeekCard';

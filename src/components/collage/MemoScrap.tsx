@@ -7,7 +7,7 @@ import { radius, spacing } from '@/theme/tokens';
 
 /**
  * 오려 붙인 메모 조각 — 점선 테두리에 살짝 기울어진 종잇조각.
- * `ruled` 는 활자·괘선 판면(모임 홈)용: 기울이지 않고 괘선 한 겹만 두른 평평한 메모.
+ * `ruled` 는 활자·괘선 판면(클럽 홈)용: 기울이지 않고 괘선 한 겹만 두른 평평한 메모.
  */
 export function MemoScrap({ children, rotate = 1.5, variant = 'scrap', style }: {
   children: ReactNode;

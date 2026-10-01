@@ -39,9 +39,9 @@ const emptyForm = () => ({
 });
 
 /**
- * 약속 탭 — 모임 홈 '약속' 탭의 본문. 위는 괘선 머리줄(개수 · 호스트의 만들기), 아래는 약속을
- * 활자·괘선 판면으로 한 줄씩(왼쪽 모노 날짜 칸, 오른쪽 명조 제목·장소·참여). 호스트가 '약속 만들기'를
- * 누르면 목록 위에 새 약속 폼이 펼쳐진다.
+ * 모임 탭 — 클럽 홈 '모임' 탭의 본문. 위는 괘선 머리줄(개수 · 호스트의 만들기), 아래는 모임을
+ * 활자·괘선 판면으로 한 줄씩(왼쪽 모노 날짜 칸, 오른쪽 명조 제목·장소·참여). 호스트가 '모임 만들기'를
+ * 누르면 목록 위에 새 모임 폼이 펼쳐진다.
  */
 export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -102,7 +102,7 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
     setForm((f) => ({
       ...f,
       address,
-      placeName: value.buildingName || f.placeName || '약속 장소',
+      placeName: value.buildingName || f.placeName || '모임 장소',
       latitude: value.latitude,
       longitude: value.longitude,
     }));
@@ -133,20 +133,20 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
         onSelect={selectAddress}
       />
       <View style={[styles.head, { borderBottomColor: colors.line }]}>
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>약속 · {meetings.length}개</Text>
+        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 · {meetings.length}개</Text>
         {isHost ? (
-          <Button label={open ? '닫기' : '약속 만들기'} size="sm" variant="ghost" onPress={() => setOpen((v) => !v)} />
+          <Button label={open ? '닫기' : '모임 만들기'} size="sm" variant="ghost" onPress={() => setOpen((v) => !v)} />
         ) : null}
       </View>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {open ? (
           <View style={[styles.form, { borderColor: colors.lineStrong }]}>
-            <Eyebrow plain>새 약속</Eyebrow>
+            <Eyebrow plain>새 모임</Eyebrow>
             <Field
               label="제목"
               value={form.title}
               onChangeText={(title) => setForm((f) => ({ ...f, title }))}
-              placeholder="약속 제목"
+              placeholder="모임 제목"
             />
             <View style={styles.pickRow}>
               <PickBox label="날짜" value={formatPickDate(date)} onPress={() => setShowDate(true)} />
@@ -230,7 +230,7 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
               placeholder="어디까지 읽고 올지, 준비할 것"
               multiline
             />
-            <Button label="약속 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} />
+            <Button label="모임 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} />
             {!canCreate ? (
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                 제목과 주소 검색 후 장소명을 확인하면 열 수 있어요.
@@ -238,7 +238,7 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
             ) : null}
             {create.error ? (
               <Text style={[typeScale.caption, { color: colors.danger }]}>
-                {create.error instanceof ApiError ? create.error.message : '약속을 만들지 못했어요. 입력 내용을 확인해 주세요.'}
+                {create.error instanceof ApiError ? create.error.message : '모임을 만들지 못했어요. 입력 내용을 확인해 주세요.'}
               </Text>
             ) : null}
           </View>
@@ -248,8 +248,8 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
           <Loading />
         ) : meetings.length === 0 ? (
           <EmptyState
-            title="아직 약속이 없어요"
-            description={isHost ? '첫 약속을 열고 함께 읽을 날을 잡아 보세요.' : '호스트가 약속을 열면 여기에 보여요.'}
+            title="아직 모임이 없어요"
+            description={isHost ? '첫 모임을 열고 함께 읽을 날을 잡아 보세요.' : '호스트가 모임을 열면 여기에 보여요.'}
           />
         ) : (
           <View>
@@ -293,8 +293,8 @@ function PickBox({ label, value, onPress }: { label: string; value: string; onPr
 }
 
 /**
- * 약속 한 줄 — 왼쪽 모노 날짜 칸(10.1 / 목 19:30), 오른쪽 명조 제목 · 장소 · 참여자 아바타.
- * 지난 약속·취소는 글자를 죽인다. 줄 전체가 상세로 가는 링크라 별도 '자세히 보기'는 없다.
+ * 모임 한 줄 — 왼쪽 모노 날짜 칸(10.1 / 목 19:30), 오른쪽 명조 제목 · 장소 · 참여자 아바타.
+ * 지난 모임·취소는 글자를 죽인다. 줄 전체가 상세로 가는 링크라 별도 '자세히 보기'는 없다.
  */
 function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: () => void }) {
   const { colors } = useTheme();
@@ -306,7 +306,7 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${m.title} 약속 상세`}
+      accessibilityLabel={`${m.title} 모임 상세`}
       style={({ pressed }) => [styles.row, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
     >
       <View style={styles.dateCell}>
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   peopleText: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 0.3 },
 });
 
-/** 딥링크 호환 — 약속은 이제 모임 홈의 탭이다. */
+/** 딥링크 호환 — 모임은 이제 클럽 홈의 탭이다. */
 export default function ClubMeetingsRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return <Redirect href={{ pathname: '/club/[id]', params: { id, tab: 'meetings' } }} />;

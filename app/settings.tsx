@@ -111,13 +111,13 @@ export default function SettingsScreen() {
               <Rule />
               <KeyValue
                 label="하루 최대"
-                value={`개인 ${user?.dailyNotifyCap ?? 2}건 · 모임 ${user?.clubNotifyCap ?? 3}건`}
+                value={`개인 ${user?.dailyNotifyCap ?? 2}건 · 클럽 ${user?.clubNotifyCap ?? 3}건`}
               />
               <Rule />
               <View style={styles.switchRow}>
                 <Toggle
                   label="찌르기 받기"
-                  description="모임원이 프리셋 문구로 보내는 가벼운 재촉입니다."
+                  description="클럽원이 프리셋 문구로 보내는 가벼운 재촉입니다."
                   value={user?.allowNudge ?? true}
                   onChange={(value) => updateSettings.mutate({ allowNudge: value })}
                 />

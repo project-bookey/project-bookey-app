@@ -11,7 +11,7 @@ import { Button, Eyebrow, Field, Loading, Rule, Segmented, Toggle } from '@/comp
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
 
-/** 무료 정원은 3명까지 — 더 필요하면 만든 뒤 모임 홈에서 책갈피로 자리를 늘린다(서버가 같은 상한을 검사한다). */
+/** 무료 정원은 3명까지 — 더 필요하면 만든 뒤 클럽 홈에서 책갈피로 자리를 늘린다(서버가 같은 상한을 검사한다). */
 const MEMBER_LIMITS = [
   { value: '2', label: '2명' },
   { value: '3', label: '3명' },
@@ -24,7 +24,7 @@ const DURATIONS = [
   { value: '8', label: '8주' },
 ] as const;
 
-/** 모임 만들기 (§12.1) — 책 선택 → 기간 → 체크포인트 → 공개 범위 */
+/** 클럽 만들기 (§12.1) — 책 선택 → 기간 → 체크포인트 → 공개 범위 */
 export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -71,7 +71,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
       router.replace(`/club/${club.id}`);
     },
-    onError: (e) => setError(e instanceof ApiError ? e.message : '모임을 만들지 못했습니다.'),
+    onError: (e) => setError(e instanceof ApiError ? e.message : '클럽을 만들지 못했습니다.'),
   });
 
   const canSubmit = name.trim().length > 0 && bookId !== null;
@@ -79,17 +79,17 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
   const content = (
       <ScrollView contentContainerStyle={[styles.container, embedded && styles.embeddedContainer]}>
         <Field
-          label="모임 이름"
+          label="클럽 이름"
           value={name}
           onChangeText={setName}
-          placeholder="예: 회사 독서 모임"
+          placeholder="예: 회사 독서 클럽"
           maxLength={60}
         />
         <Field
           label="소개 (선택)"
           value={description}
           onChangeText={setDescription}
-          placeholder="어떤 모임인지 한 줄로"
+          placeholder="어떤 클럽인지 한 줄로"
           multiline
         />
 
@@ -173,7 +173,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
             />
           </View>
           <Text style={[styles.helper, { color: colors.textFaint }]}>
-            호스트 포함 3명까지 무료예요. 더 필요하면 모임을 만든 뒤 책갈피로 자리를 늘릴 수 있어요.
+            호스트 포함 3명까지 무료예요. 더 필요하면 클럽을 만든 뒤 책갈피로 자리를 늘릴 수 있어요.
           </Text>
         </View>
 
@@ -187,7 +187,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
           />
           <Rule />
           <Toggle
-            label="공개 모임"
+            label="공개 클럽"
             description={
               isPublic
                 ? '발견 탭에 노출되고 누구나 참가할 수 있습니다.'
@@ -203,7 +203,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
         ) : null}
 
         <Button
-          label="모임 만들기"
+          label="클럽 만들기"
           disabled={!canSubmit}
           loading={create.isPending}
           onPress={() => create.mutate()}
@@ -215,7 +215,7 @@ export function ClubCreateContent({ embedded = false }: { embedded?: boolean }) 
 
   return (
     <PaperScreen>
-      <SubHeader category="모임 만들기" />
+      <SubHeader category="클럽 만들기" />
       {content}
     </PaperScreen>
   );
@@ -227,7 +227,7 @@ export default function ClubCreateScreen() {
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
-  // 모임 탭 안에 끼워 넣을 때(embedded) — 자체 머리가 없으니 위는 좁게, 아래는 하단 바 높이만큼 비운다
+  // 클럽 탭 안에 끼워 넣을 때(embedded) — 자체 머리가 없으니 위는 좁게, 아래는 하단 바 높이만큼 비운다
   embeddedContainer: { paddingTop: spacing.sm, paddingBottom: 104 },
   helper: { ...typeScale.caption, marginTop: spacing.sm },
   options: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
