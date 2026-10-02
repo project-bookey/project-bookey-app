@@ -220,12 +220,12 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         {visibilityLabel && (post.mine || post.visibility === 'CLUB') ? <Tag label={visibilityLabel} /> : null}
       </View>
 
-      {/* 클럽 독후감이면 어느 클럽의 글인지 — 누르면 그 클럽의 독후감 탭으로 */}
+      {/* 클럽 독후감이면 어느 클럽의 글인지 — 누르면 그 클럽 홈으로 */}
       {post.clubId != null && post.clubName ? (
         <Pressable
-          onPress={() => router.push({ pathname: '/club/[id]', params: { id: String(post.clubId), tab: 'reviews' } })}
+          onPress={() => router.push({ pathname: '/club/[id]', params: { id: String(post.clubId) } })}
           accessibilityRole="button"
-          accessibilityLabel={`${post.clubName} 클럽 독후감`}
+          accessibilityLabel={`${post.clubName} 클럽으로 가기`}
           style={({ pressed }) => [styles.clubLink, pressed ? pressedStyle : null]}
         >
           <Tag label={`클럽 · ${post.clubName}`} />
