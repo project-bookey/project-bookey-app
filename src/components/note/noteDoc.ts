@@ -114,13 +114,12 @@ export type SpeechElement = Placed & {
   size: NoteSize;
 };
 /**
- * 오려 둔 문장 조각 — 밑줄(quote) 하나를 노트에 붙인 것. 문장·쪽·책 제목은 붙일 때의 스냅숏이다
- * (원래 밑줄이 고쳐지거나 지워져도 노트는 그대로). quoteId 는 서버가 글에 밑줄을 붙이는 근거라 `quoteIdsOf` 로 뽑아 보낸다.
+ * 문장 조각 — 책 속 문장을 노트에 옮겨 적은 것(쪽은 고를 때만). 밑줄과 엮이지 않는다 — 노트에 글로만 남는다.
+ * 책 제목·작성자는 옛 조각(밑줄에서 골라 붙이던 때)의 스냅숏에만 있다 — 그대로 보이고, 새 조각은 채우지 않는다.
  */
 export type QuoteElement = Placed & {
   type: 'quote';
   w: number;
-  quoteId: number;
   text: string;
   page?: number;
   bookTitle?: string;
@@ -155,8 +154,9 @@ export function nextZ(doc: NoteDoc): number {
 
 export const isInk = (e: NoteElement): e is InkElement => e.type === 'ink';
 export const isPlaced = (e: NoteElement): e is PlacedElement => e.type !== 'ink';
-/** 편집 시트(더블탭·'편집')로 글을 고칠 수 있는 요소. 문장 조각은 스냅숏이라 고치지 않는다. */
-export const isTextual = (e: NoteElement): e is TextElement | SpeechElement => e.type === 'text' || e.type === 'speech';
+/** 편집 시트(더블탭·'편집')로 글을 고칠 수 있는 요소 — 텍스트·말풍선·문장 조각. */
+export const isTextual = (e: NoteElement): e is TextElement | SpeechElement | QuoteElement =>
+  e.type === 'text' || e.type === 'speech' || e.type === 'quote';
 
 /** 펜 색 토큰 → 실제 색. 테마가 바뀌면 같은 문서가 다른 색으로 풀린다(그게 의도). */
 export function penColorOf(colors: ColorTokens): Record<PenColor, string> {
@@ -241,13 +241,13 @@ function parseElement(raw: unknown): NoteElement | null {
       };
     }
     case 'quote': {
+      // 옛 조각의 quoteId(밑줄 id)는 더 쓰지 않아 읽지 않는다 — 다음에 저장할 때 빠진다.
       const p = placed(raw);
-      if (!p || !num(raw.w) || !num(raw.quoteId) || !str(raw.text)) return null;
+      if (!p || !num(raw.w) || !str(raw.text)) return null;
       return {
         ...p,
         type: 'quote',
         w: raw.w,
-        quoteId: raw.quoteId,
         text: raw.text,
         page: num(raw.page) ? raw.page : undefined,
         bookTitle: str(raw.bookTitle) ? raw.bookTitle : undefined,
@@ -374,11 +374,9 @@ function allElements(doc: PostNoteDoc): NoteElement[] {
   return doc.pages.flatMap((p) => p.elements);
 }
 
-/** 붙인 밑줄 id — 겹치지 않게, 문서 순서대로. 서버에 quoteIds 로 보낸다. */
-export function quoteIdsOf(doc: PostNoteDoc): number[] {
-  const out = new Set<number>();
-  for (const e of allElements(doc)) if (e.type === 'quote') out.add(e.quoteId);
-  return [...out];
+/** 문장 조각 수 — 올리기 시트의 한 줄 요약에 쓴다. */
+export function quoteCountOf(doc: PostNoteDoc): number {
+  return allElements(doc).filter((e) => e.type === 'quote').length;
 }
 
 /** 붙인 사진 id — 겹치지 않게, 문서 순서대로. 서버에 imageIds 로 보낸다. */
@@ -389,14 +387,14 @@ export function imageIdsOf(doc: PostNoteDoc): number[] {
 }
 
 /**
- * 노트 속 글(텍스트·말풍선)을 줄바꿈으로 이은 것 — 서버의 발췌·검색용 bodyMd.
+ * 노트 속 글(텍스트·말풍선·문장 조각)을 줄바꿈으로 이은 것 — 서버의 발췌·검색용 bodyMd.
  * 페이지 순서대로, 한 페이지 안에서는 위에서 아래(같으면 왼쪽부터)로 읽는다. PLAIN_TEXT_MAX 자에서 자른다.
  */
 export function plainTextOf(doc: PostNoteDoc): string {
   const parts: string[] = [];
   for (const page of doc.pages) {
     const texts = page.elements
-      .filter((e): e is TextElement | SpeechElement => isTextual(e) && e.text.trim().length > 0)
+      .filter((e): e is TextElement | SpeechElement | QuoteElement => isTextual(e) && e.text.trim().length > 0)
       .sort((a, b) => a.y - b.y || a.x - b.x);
     for (const e of texts) parts.push(e.text.trim());
   }
@@ -404,34 +402,15 @@ export function plainTextOf(doc: PostNoteDoc): string {
   return joined.length > PLAIN_TEXT_MAX ? joined.slice(0, PLAIN_TEXT_MAX) : joined;
 }
 
-/** 붙일 밑줄의 스냅숏 — 서버 응답(BookQuote 등)에서 화면이 골라 채운다. */
-export type QuoteSnapshot = {
-  quoteId: number;
-  text: string;
-  page?: number | null;
-  bookTitle?: string | null;
-  author?: string | null;
-};
-
-/** 오려 둔 문장 조각 요소를 만든다 — center(논리 좌표)를 주면 그 둘레에, 없으면 캔버스 가운데에 놓는다. */
-export function makeQuoteElement(doc: NoteDoc, quote: QuoteSnapshot, center?: readonly [number, number] | null): QuoteElement {
+/**
+ * 빈 문장 조각을 만든다 — center(논리 좌표)를 주면 그 둘레에, 없으면 캔버스 가운데에 놓는다.
+ * 문장은 넣자마자 열리는 편집 시트에서 옮겨 적는다(텍스트·말풍선과 같은 흐름).
+ */
+export function makeQuoteElement(doc: NoteDoc, center?: readonly [number, number] | null, id = newId()): QuoteElement {
   const canvas = canvasOf(doc);
   const w = Math.min(DEFAULT_QUOTE_W, canvas.w);
   const [cx, cy] = center ?? [canvas.w / 2, canvas.h / 2];
-  return {
-    id: newId(),
-    z: nextZ(doc),
-    type: 'quote',
-    x: cx - w / 2,
-    y: cy - 120,
-    rot: 0,
-    w,
-    quoteId: quote.quoteId,
-    text: quote.text,
-    page: quote.page ?? undefined,
-    bookTitle: quote.bookTitle ?? undefined,
-    author: quote.author ?? undefined,
-  };
+  return { id, z: nextZ(doc), type: 'quote', x: cx - w / 2, y: cy - 120, rot: 0, w, text: '' };
 }
 
 // ────────────────────────────── 변경 헬퍼 ──────────────────────────────

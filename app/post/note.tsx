@@ -10,13 +10,13 @@ import {
 import { ApiError } from '@/api/client';
 import { bookApi, clubApi, postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey } from '@/api/postCache';
-import type { BookQuote, Post, PostVisibility } from '@/api/types';
+import type { Post, PostVisibility } from '@/api/types';
 import { useBookPicker, type PickedBook } from '@/components/book/BookPicker';
 import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
   NOTE_DOC_MAX_BYTES, NOTE_KINDS, NoteCanvas, ZoomControls, ZoomStage, applyPreview, contentBounds, emptyPostNoteDoc, imageIdsOf,
-  plainTextOf, postNoteDocBytes, quoteIdsOf, serializePostNoteDoc, useInkGesture, useNoteInserts, useNotePhotos,
+  isTextual, plainTextOf, postNoteDocBytes, quoteCountOf, serializePostNoteDoc, useInkGesture, useNoteInserts, useNotePhotos,
   useNoteSelection, useNoteZoom, usePostNoteEditor,
   type LiveStroke, type NoteKind, type NoteSpeaker, type PenState, type PlacedElement, type PostNoteDoc, type ZoomHome,
 } from '@/components/note';
@@ -32,16 +32,15 @@ import { SelectionFrame } from '@/components/note/SelectionFrame';
 import { StickerSheet } from '@/components/note/StickerSheet';
 import { TextEditorSheet } from '@/components/note/TextEditorSheet';
 import { NotePublishSheet } from '@/components/post/NotePublishSheet';
-import { QuoteAttachSheet } from '@/components/post/QuoteAttachSheet';
 import {
-  NOTE_IMAGE_MAX, POST_QUOTE_MAX, defaultVisibility, isNotePost, noteDocOf,
+  NOTE_IMAGE_MAX, defaultVisibility, isNotePost, noteDocOf,
 } from '@/components/post/postFormat';
 import { EmptyState, Loading, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
 
-/** 노트 독후감 도구 줄의 삽입 — 텍스트·스티커·사진·말풍선·오려둔 문장. */
+/** 노트 독후감 도구 줄의 삽입 — 텍스트·스티커·사진·말풍선·문장. */
 const NOTE_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech', 'quote'];
 
 const isNoteKind = (v: unknown): v is NoteKind => typeof v === 'string' && (NOTE_KINDS as readonly string[]).includes(v);
@@ -183,7 +182,6 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
   const [pen, setPen] = useState<PenState>({ color: 'ink', width: 8 });
   const [live, setLive] = useState<LiveStroke | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [quotesOpen, setQuotesOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const listRef = useRef<FlatList<string>>(null);
 
@@ -234,34 +232,11 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
 
   const openEditorRef = useRef<(elementId: string) => void>(() => {});
   const selection = useNoteSelection({ editor, scaleRef, tool, onEdit: (elementId) => openEditorRef.current(elementId) });
-  const openQuotes = useCallback(() => {
-    if (quoteIdsOf(toDoc()).length >= POST_QUOTE_MAX) {
-      notify(`오려둔 문장은 ${POST_QUOTE_MAX}개까지 붙일 수 있어요.`);
-      return;
-    }
-    setQuotesOpen(true);
-  }, [toDoc]);
+  // '문장'은 텍스트처럼 빈 조각을 넣고 편집 시트에서 옮겨 적는다 — 밑줄에서 고르지 않는다.
   const inserts = useNoteInserts({
-    editor, me: speaker, setTool, select: selection.select, pickPhoto: photos.pick, openQuotes, getAnchor: zoom.visibleCenter,
+    editor, me: speaker, setTool, select: selection.select, pickPhoto: photos.pick, getAnchor: zoom.visibleCenter,
   });
   openEditorRef.current = inserts.openEditor;
-
-  const pickQuote = (quote: BookQuote) => {
-    setQuotesOpen(false);
-    const ids = quoteIdsOf(toDoc());
-    if (!ids.includes(quote.id) && ids.length >= POST_QUOTE_MAX) {
-      notify(`오려둔 문장은 ${POST_QUOTE_MAX}개까지 붙일 수 있어요.`);
-      return;
-    }
-    inserts.pickQuote({
-      quoteId: quote.id,
-      text: quote.content,
-      page: quote.page,
-      bookTitle: quote.bookTitle,
-      // 남이 오려 둔 문장이면 누구의 것인지 밝힌다.
-      author: quote.mine ? undefined : quote.authorNickname,
-    });
-  };
 
   // ────────────────────────────── 페이지 ──────────────────────────────
 
@@ -327,7 +302,8 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
   const submit = useMutation({
     mutationFn: () => {
       const doc = toDoc();
-      // 노트 속 글은 이어 붙여 bodyMd 로 보낸다 — 서버가 발췌·검색에 쓴다. 사진·밑줄은 문서에서 뽑는다.
+      // 노트 속 글은 이어 붙여 bodyMd 로 보낸다 — 서버가 발췌·검색에 쓴다. 사진은 문서에서 뽑는다.
+      // 밑줄은 엮지 않는다 — 문장 조각은 노트에 옮겨 적은 글이다. 고치기에서도 빈 목록을 보내 옛 글의 밑줄 연결을 푼다.
       const body = {
         bookId: book?.bookId,
         title: title.trim(),
@@ -335,7 +311,7 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
         visibility,
         tags: [],
         imageIds: imageIdsOf(doc),
-        quoteIds: quoteIdsOf(doc),
+        quoteIds: [],
         document: serializePostNoteDoc(doc),
       };
       return editingPost
@@ -377,7 +353,7 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
     ? [
         `노트 ${snapshot.pages.length}쪽`,
         `사진 ${imageIdsOf(snapshot).length}장`,
-        `문장 ${quoteIdsOf(snapshot).length}개`,
+        `문장 ${quoteCountOf(snapshot)}개`,
       ].join(' · ')
     : '';
   const publishNotice = photos.busy
@@ -433,7 +409,7 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
                   onCommit={selection.commit}
                   onDelete={selection.remove}
                   onFront={selection.front}
-                  onEdit={selected.type === 'text' || selected.type === 'speech' ? () => inserts.openEditor(selected.id) : undefined}
+                  onEdit={isTextual(selected) ? () => inserts.openEditor(selected.id) : undefined}
                 />
               ) : null}
             </NoteCanvas>
@@ -544,15 +520,6 @@ function NoteEditor({ post, initial, initialBook, clubId }: {
         canDelete={pe.canDeletePage}
         onDelete={() => void deletePage()}
       />
-      {quotesOpen ? (
-        <QuoteAttachSheet
-          book={book}
-          selectedIds={quoteIdsOf(toDoc())}
-          onPick={pickQuote}
-          onClose={() => setQuotesOpen(false)}
-          max={POST_QUOTE_MAX}
-        />
-      ) : null}
       {publishOpen ? (
         <NotePublishSheet
           picker={picker}

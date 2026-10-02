@@ -11,10 +11,7 @@ import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { Button, EmptyState, FootAction, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/**
- * 한 번에 받아오는 건수 — 독후감의 밑줄 고르기 시트와 같은 키(myQuotesKey)를 쓰므로 쪽 크기도 맞춘다.
- * 한 캐시에 크기가 다른 쪽이 섞이면 '더 보기'가 그 사이 문장을 건너뛴다.
- */
+/** 한 번에 받아오는 건수. */
 const PAGE_SIZE = 20;
 
 /**

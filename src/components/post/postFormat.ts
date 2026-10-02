@@ -1,8 +1,6 @@
 import type { Post, PostVisibility } from '@/api/types';
 import { parsePostNoteDoc, type PostNoteDoc } from '@/components/note';
 
-/** 글 하나에 엮을 수 있는 밑줄 수 — 서버 상한과 같은 값(텍스트·노트 공통). */
-export const POST_QUOTE_MAX = 10;
 /** 노트 독후감에 붙일 수 있는 사진 수 — 서버 상한과 같은 값(텍스트 글은 10). */
 export const NOTE_IMAGE_MAX = 30;
 /** 제목 길이 상한 — 서버 계약과 같은 값. */

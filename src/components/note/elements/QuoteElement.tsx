@@ -18,7 +18,7 @@ export function quoteMetaOf(element: Pick<QuoteEl, 'page' | 'bookTitle' | 'autho
 }
 
 /**
- * 오려 둔 문장 조각 — 밑줄 조각(QuoteScrap)과 같은 말씨: 종이 조각 위 명조 문장, 왼쪽 악센트 선, 모노 메타 한 줄.
+ * 문장 조각 — 밑줄 조각(QuoteScrap)과 같은 말씨: 종이 조각 위 명조 문장, 왼쪽 악센트 선, 모노 메타 한 줄.
  * 기울기는 요소의 rot 이 맡으므로 조각 자체는 똑바로 그린다. 폭만 저장하고 높이는 문장 길이가 정한다.
  */
 export function QuoteElement({ element, scale }: { element: QuoteEl; scale: number }) {

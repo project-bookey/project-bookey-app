@@ -11,7 +11,7 @@ import { pressedStyle } from '@/theme/tokens';
 type Mode = 'TEXT' | 'NOTE';
 
 const MODES: { value: Mode; label: string; caption: string }[] = [
-  { value: 'TEXT', label: '글로 쓰기', caption: '마크다운으로 쓰고 사진·오려둔 문장을 넣어요' },
+  { value: 'TEXT', label: '글로 쓰기', caption: '마크다운으로 쓰고 사진·책 속 문장을 넣어요' },
   { value: 'NOTE', label: '노트로 꾸미기', caption: '종이 위에 글·사진·스티커·펜으로 꾸며요 · 6페이지까지' },
 ];
 
