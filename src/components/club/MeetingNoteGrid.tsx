@@ -7,7 +7,7 @@ import { ApiError } from '@/api/client';
 import { meetingNoteApi } from '@/api/endpoints';
 import type { MeetingNote } from '@/api/types';
 import { parseMeetingNoteDoc } from '@/components/note';
-import { NoteDocThumb } from '@/components/post/NoteThumb';
+import { NoteDocThumb } from '@/components/note/NoteDocThumb';
 import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';

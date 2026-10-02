@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import type { Post } from '@/api/types';
-import { CANVAS, NoteCanvas, canvasOf, contentBounds, pageDocOf, pageHeightFor, type NoteDoc, type NoteRect } from '@/components/note';
+import { NoteCanvas, pageHeightFor } from './NoteCanvas';
+import { CANVAS, canvasOf, contentBounds, type NoteDoc, type NoteRect } from './noteDoc';
 import { radius } from '@/theme';
-import { noteDocOf } from './postFormat';
 
 /** 대형노트 썸네일에서 쓴 구역 둘레에 둘 여백(논리 단위). */
 const CROP_MARGIN = 80;
 
-/** 격자노트 한 쪽 비율(세로/가로) — 독후감 썸네일 기본값. */
+/** 격자노트 한 쪽 비율(세로/가로) — 썸네일 기본값. */
 const PAGE_RATIO = CANVAS.h / CANVAS.w;
 
 /**
@@ -28,16 +27,7 @@ function cropOf(doc: NoteDoc, ratio: number): NoteRect {
 }
 
 /**
- * 노트 독후감 썸네일 — 1쪽을 격자노트 비율(3:4)로 줄여 그린다(읽기 전용, 눌림은 바깥 몫).
- * 대형노트는 종이 전체를 줄이면 거의 빈 종이라, 쓴 구역만 잘라 보여 준다(SVG 층은 그 창만 그린다).
- */
-export function NoteThumb({ post, width }: { post: Pick<Post, 'document'>; width: number }) {
-  const doc = useMemo(() => pageDocOf(noteDocOf(post), 0), [post]);
-  return <NoteDocThumb doc={doc} width={width} />;
-}
-
-/**
- * 페이지 문서 썸네일. 대형노트는 ratio(세로/가로) 상자로 쓴 구역을 잘라 보여 준다 — 모임 노트 피드는 정사각(1).
+ * 노트 문서 썸네일. 대형노트는 ratio(세로/가로) 상자로 쓴 구역을 잘라 보여 준다 — 모임 노트 피드는 정사각(1).
  * 격자·줄노트는 비율과 상관없이 한 쪽 전체(3:4)를 그린다.
  */
 export function NoteDocThumb({ doc, width, ratio = PAGE_RATIO }: { doc: NoteDoc; width: number; ratio?: number }) {

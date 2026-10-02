@@ -32,10 +32,10 @@ import { useAuth } from '@/store/auth';
 import { layout, radius, serif, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
-/** 모임 노트 도구 줄의 삽입 — 독후감 노트에서 문장 조각만 뺐다. */
+/** 모임 노트 도구 줄의 삽입 — 텍스트·스티커·사진·말풍선. */
 const MEETING_NOTE_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech'];
 const CANVAS = canvasFor('large');
-/** 사진 상한 — 독후감 노트와 같은 값. 여럿이 함께 쓰는 노트라 한 사람이 다 쓰지 않게 하는 정도. */
+/** 사진 상한 — 여럿이 함께 쓰는 노트라 한 사람이 다 쓰지 않게 하는 정도. */
 const NOTE_IMAGE_MAX = 30;
 /** 함께 보는 사람 아바타는 이만큼만 겹쳐 보이고 나머지는 숫자로. */
 const PEER_AVATAR_MAX = 4;
@@ -94,7 +94,7 @@ function Shell({ children }: { children: ReactNode }) {
 }
 
 /**
- * 편집기 본체 — 대형노트 한 장을 줌 무대 위에 올리고, 독후감 노트와 같은 도구(보기·선택·펜·지우개 + 삽입)를 쓴다.
+ * 편집기 본체 — 대형노트 한 장을 줌 무대 위에 올리고, 노트 도구(보기·선택·펜·지우개 + 삽입)를 쓴다.
  * 위에는 모임 제목·함께 보는 사람·동기화 상태, 종이 위에는 다른 멤버가 보고 있는 곳을 이름표로 띄운다.
  */
 function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetingId: number; note: MeetingNote }) {

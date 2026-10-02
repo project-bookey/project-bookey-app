@@ -33,7 +33,7 @@ const INSERTS: { key: InsertKind; icon: LucideIcon; label: string }[] = [
 
 /**
  * 하단 도구 줄 — 왼쪽 네 개는 모드(보기·선택·펜·지우개), 오른쪽은 삽입 동작(시트를 연다). 삽입 종류는 inserts 로 고른다
- * (독후감 노트는 텍스트·스티커·사진·문장 조각처럼).
+ * (모임 노트는 텍스트·스티커·사진·말풍선).
  * 활성 모드는 잉크로 찍은 도장처럼 반전한다. 펜·지우개일 땐 위에 펜 줄(색·굵기)이 하나 더 뜬다.
  */
 export function NoteToolbar({ tool, onTool, pen, onPen, onInsert, photoDisabled = false, inserts = DEFAULT_INSERTS }: {

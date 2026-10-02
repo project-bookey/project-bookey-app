@@ -9,10 +9,9 @@ import { postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
-import { NoteViewer } from '@/components/post/NoteViewer';
 import { PostBody } from '@/components/post/PostBody';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
-import { isNotePost, noteDocOf } from '@/components/post/postFormat';
+import { isNotePost } from '@/components/post/postFormat';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { Avatar } from '@/components/Avatar';
@@ -69,13 +68,10 @@ export default function PostDetailScreen() {
     arm('post');
   };
 
-  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다. 노트는 노트 편집기로.
-  const editAction = post.data?.mine ? (
+  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다. 예전 노트 독후감은 고칠 편집기가 없다.
+  const editAction = post.data?.mine && !isNotePost(post.data) ? (
     <Pressable
-      onPress={() => router.push({
-        pathname: post.data && isNotePost(post.data) ? '/post/note' : '/post/new',
-        params: { id: String(postId) },
-      })}
+      onPress={() => router.push({ pathname: '/post/new', params: { id: String(postId) } })}
       accessibilityRole="button"
       accessibilityLabel="독후감 고치기"
       hitSlop={8}
@@ -161,10 +157,9 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   const { colors } = useTheme();
   const hasBook = post.bookId != null;
   const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
-  const note = isNotePost(post);
-  const noteDoc = useMemo(() => (note ? noteDocOf(post) : null), [note, post]);
   // 옛 글이 밑줄로 엮어 둔 문장(표시 자리·글 끝)도 본문의 문장 조각으로 그린다 — 밑줄 상세로 가는 길은 없다.
-  const body = useMemo(() => (note ? '' : postBodyOf(post).text), [note, post]);
+  // 예전 노트 독후감도 서버가 뽑아 둔 글(bodyMd)·사진으로 보여 준다.
+  const body = useMemo(() => postBodyOf(post).text, [post]);
 
   return (
     <View style={styles.article}>
@@ -228,10 +223,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         </Pressable>
       ) : null}
 
-      {noteDoc ? <NoteViewer doc={noteDoc} /> : null}
-
       {/* ③ 사진 — 인화지를 가로로 늘어놓는다. 번갈아 살짝 기울여 붙인 티를 낸다 */}
-      {!note && post.images.length > 0 ? (
+      {post.images.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photos}>
           {post.images.map((image, i) => (
             <Image
@@ -248,8 +241,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         </ScrollView>
       ) : null}
 
-      {/* ④ 본문 — 글 사이에 옮겨 적은 문장 조각이 끼어든다. 노트는 문장 조각이 페이지 안에 있다 */}
-      {!note ? <PostBody md={body} /> : null}
+      {/* ④ 본문 — 글 사이에 옮겨 적은 문장 조각이 끼어든다 */}
+      <PostBody md={body} />
 
       {/* ⑤ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글은 없다(§14.1) */}
       <View style={styles.footRow}>

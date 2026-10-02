@@ -14,7 +14,7 @@ import type { ApplyOptions } from './useNoteEditor';
 
 /**
  * 사진 올리기 함수 — prepareImage 가 만든 multipart 폼을 받아 서버가 준 사진을 돌려준다.
- * 독후감 노트는 `postApi.uploadImage`.
+ * 모임 노트는 `meetingNoteApi` 의 사진 올리기.
  */
 export type NoteImageUpload = (form: FormData) => Promise<{
   id: number;
