@@ -34,8 +34,9 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CLUB_NUDGE': return club('/club/[id]');
     case 'POST_LIKED':
     case 'POST_COMMENTED': return one('/post/[id]', 'postId');
+    // 밑줄 화면을 걷어내 갈 곳이 없다 — 옛 알림은 목록에만 남는다(누르면 읽음 처리만).
     case 'QUOTE_AGREED':
-    case 'QUOTE_COMMENTED': return one('/quote/[id]', 'quoteId');
+    case 'QUOTE_COMMENTED': return null;
     case 'POSTCARD_RECEIVED': return { href: { pathname: '/messenger', params: { pane: 'inbox' } }, section: true };
     case 'POSTCARD_REPLIED': return { href: { pathname: '/messenger', params: { pane: 'sent' } }, section: true };
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');

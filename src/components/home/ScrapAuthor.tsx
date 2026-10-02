@@ -9,28 +9,27 @@ import {
   META_LH,
   META_SIZE,
 } from '@/components/home/scrapMetrics';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { Tag } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 홈 '오늘의 글' 조각 머리의 작성자 행 — 아바타 옆에 두 줄.
  *
- *   닉네임 ………………… [밑줄|독후감]  ← 종류 태그
- *   책 제목 ………………… 좋아요 12    ← 핫 지표
+ *   닉네임 ………………… [독후감]  ← 종류 태그
+ *   책 제목 ………………… 좋아요 12  ← 핫 지표
  *
- * 광장 밑줄 카드(QuoteCard 의 authorRow)와 같은 짜임이라 눈에 익고, 오른쪽 열이 각 줄의 글자
+ * 광장 카드의 작성자 줄과 같은 짜임이라 눈에 익고, 오른쪽 열이 각 줄의 글자
  * 밑선에 맞아 떨어진다 — 처음엔 핫 지표를 행 세로 가운데에 하나만 뒀는데 어느 줄에도
  * 안 맞아 떠 보인다는 피드백(2026-09-08, 시안 D)으로 종류·좋아요를 두 줄에 나눠 앉혔다.
  *
- * 밑줄 조각(HomeScraps)과 독후감 조각(PostScrap 의 home)이 같은 행을 머리에 세운다 —
- * 6초마다 번갈아 서는 두 조각의 첫 줄이 같은 모양이어야 눈이 흔들리지 않는다.
+ * 독후감 조각(PostScrap 의 home)이 이 행을 머리에 세운다.
  * 높이(AUTHOR_H)와 아래 간격(AUTHOR_GAP)을 여기서 못 박아 행 높이 계산(HomeScraps 의 ROW_H)에
- * 그대로 들어간다 — 쓰는 쪽이 간격을 따로 주면 두 조각이 어긋난다.
+ * 그대로 들어간다 — 쓰는 쪽이 간격을 따로 주면 행 높이와 어긋난다.
  *
- * 핫 지표는 표시 전용이라 누를 수 없고, 토글은 광장에서만. 0 이어도 쓴다 — 한쪽만 비우면
+ * 핫 지표는 표시 전용이라 누를 수 없고, 토글은 광장에서만. 0 이어도 쓴다 — 비우면
  * 회전할 때 오른쪽 열이 들쭉날쭉하다.
- * 아바타는 광장 카드의 QuoteAvatar 를 그대로 쓴다 — 사진이 없으면 닉네임 첫 글자.
+ * 아바타는 앱 공용 Avatar 를 그대로 쓴다 — 사진이 없으면 실루엣.
  * 누를 수 없다 — 바깥 행 하나가 통째로 버튼이다(HomeScraps 의 rowWrap 주석 참고).
  */
 export function ScrapAuthor({ nickname, avatarUrl, where, kind, stat }: {
@@ -38,15 +37,15 @@ export function ScrapAuthor({ nickname, avatarUrl, where, kind, stat }: {
   avatarUrl?: string | null;
   /** 둘째 줄 왼쪽 — 책 제목. 길면 말줄임. */
   where: string;
-  /** 첫째 줄 오른쪽 태그 — 무슨 글의 조각인지. 밑줄과 독후감이 섞여 돌아가는 자리라 늘 단다. */
-  kind: '밑줄' | '독후감';
+  /** 첫째 줄 오른쪽 태그 — 무슨 글의 조각인지. */
+  kind: '독후감';
   /** 둘째 줄 오른쪽 핫 지표 — `좋아요 12`. */
   stat: string;
 }) {
   const { colors } = useTheme();
   return (
     <View style={styles.row}>
-      <QuoteAvatar uri={avatarUrl} nickname={nickname} size={AUTHOR_AVATAR} />
+      <Avatar uri={avatarUrl} nickname={nickname} size={AUTHOR_AVATAR} />
       <View style={styles.text}>
         <View style={styles.line1}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>

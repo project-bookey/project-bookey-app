@@ -6,13 +6,13 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { ApiError } from '@/api/client';
-import { chatApi, libraryApi, postApi, profileApi, quoteApi, statsApi, walletApi } from '@/api/endpoints';
+import { chatApi, libraryApi, postApi, profileApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { Post, ReadingRecord } from '@/api/types';
 import {
   MemoScrap, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
-import { PersonGlyph } from '@/components/quote/QuoteCard';
+import { PersonGlyph } from '@/components/Avatar';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { FollowButton } from '@/components/social/FollowButton';
 import { FollowSection, type FollowBox } from '@/components/social/FollowSection';
@@ -41,7 +41,7 @@ const POSTS_PAGE = 10;
  * 마이페이지 — '나' 탭(mine)과 다른 사람의 페이지(/user/[id])가 같은 판을 쓴다.
  *
  * 둘 다: 프로필 줄 · 서재 선반 · 기록 카드(스트릭·히트맵).
- * 나만: 사진·닉네임 편집, 설정, 지갑 메모/방문 노트, 출석, 오려둔 문장/독후감 링크, 팔로우 목록.
+ * 나만: 사진·닉네임 편집, 설정, 지갑 메모/방문 노트, 출석, 내 독후감 링크, 팔로우 목록.
  * 남만: 프로필 줄 오른쪽 팔로우 칩, 팔로워 줄 아래 채팅·엽서 링크(시안 A), 공개 독후감 — 팔로우는 이 화면에서만 한다.
  * 남의 서재·통계는 /users/{id}/library · /users/{id}/stats 로 받는다(각오 메모는 서버가 비워 보낸다).
  */
@@ -631,27 +631,19 @@ function EnvelopeLine({ color }: { color: string }) {
 }
 
 /**
- * '내가 오려둔 문장'·'내 독후감' — 프로필에서는 목록을 펼치지 않고 각자의 화면으로 보내는 링크만 둔다.
+ * '내 독후감' — 프로필에서는 목록을 펼치지 않고 제 화면으로 보내는 링크만 둔다.
  *
- * 개수는 size 1 응답의 totalElements 로 센다 — 목록은 /quote/mine · /post/mine 의 몫이라 그 이상은 받지 않는다.
+ * 개수는 size 1 응답의 totalElements 로 센다 — 목록은 /post/mine 의 몫이라 그 이상은 받지 않는다.
  * 서버가 totalElements 를 생략했거나 아직 못 받았으면 개수 없이 링크만 보인다. 0건이어도 링크는 남긴다 —
- * 들어간 화면의 빈 상태가 첫 문장·첫 독후감을 권한다.
+ * 들어간 화면의 빈 상태가 첫 독후감을 권한다.
  */
 function MyScraps() {
   const router = useRouter();
-  const quotes = useQuery({ queryKey: ['quotes', 'mine'], queryFn: () => quoteApi.mine(0, 1) });
   const posts = useQuery({ queryKey: MY_POSTS_LATEST_KEY, queryFn: () => postApi.mine(0, 1) });
 
   return (
     <View style={styles.block}>
       <Card>
-        <LinkRow
-          label="내가 오려둔 문장"
-          count={quotes.data?.totalElements}
-          unit="개"
-          onPress={() => router.push('/quote/mine')}
-        />
-        <Rule />
         <LinkRow
           label="내 독후감"
           count={posts.data?.totalElements}

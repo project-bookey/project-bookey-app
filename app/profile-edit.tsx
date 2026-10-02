@@ -6,7 +6,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { PersonGlyph } from '@/components/quote/QuoteCard';
+import { PersonGlyph } from '@/components/Avatar';
 import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';

@@ -6,7 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import type { PostcardView } from '@/api/types';
-import { AVATAR_SIZE, PersonGlyph } from '@/components/quote/QuoteCard';
+import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
 import { Button, Card, EmptyState, FootAction, Tag, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';

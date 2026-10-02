@@ -79,7 +79,7 @@ export function FollowSection({ box, onChangeBox }: {
         ) : (
           <EmptyState
             title="아직 나를 팔로우한 사람이 없어요"
-            description="광장에 밑줄이나 독후감을 올리면 나를 찾아올 거예요."
+            description="광장에 독후감을 올리면 나를 찾아올 거예요."
           />
         )
       ) : (

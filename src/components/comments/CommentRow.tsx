@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { formatRelative } from '@/components/ui';
 import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -18,7 +18,7 @@ import type { ThreadComment } from './types';
  *
  * variant — 'card'(최상위, 기본)는 줄 전체(와 펼친 답글)를 카드 박스로 감싼다.
  * 'reply'(답글)는 박스 없이 부모 카드 안에서 얕게 들여쓴 줄로만 그린다.
- * 아바타·닉네임 크기는 최상위와 같다 — 앱 어디서나 사람은 한 크기(QuoteCard 의 AVATAR_SIZE)로 선다.
+ * 아바타·닉네임 크기는 최상위와 같다 — 앱 어디서나 사람은 한 크기(Avatar 의 AVATAR_SIZE)로 선다.
  */
 export function CommentRow({
   comment, confirming, error, expanded = false, variant = 'card', onDelete, onToggleReplies, onPressReply, children,
@@ -56,7 +56,7 @@ export function CommentRow({
           accessibilityLabel={comment.mine ? undefined : `${comment.authorNickname} 프로필 열기`}
           style={({ pressed }) => pressed && pressedStyle}
         >
-          <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
+          <Avatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
         </Pressable>
         <View style={styles.rowBody}>
           <View style={styles.nameRow}>

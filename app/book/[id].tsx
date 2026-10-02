@@ -14,7 +14,6 @@ import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
-import { BookQuotesTab } from '@/components/book/BookQuotesTab';
 import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
@@ -816,10 +815,9 @@ function ProgressEditor({ rid, progress, colors }: {
   );
 }
 
-type RecordTab = 'REVIEW' | 'QUOTE' | 'POST';
+type RecordTab = 'REVIEW' | 'POST';
 const RECORD_TABS: { value: RecordTab; label: string }[] = [
   { value: 'REVIEW', label: '리뷰' },
-  { value: 'QUOTE', label: '밑줄' },
   { value: 'POST', label: '독후감' },
 ];
 
@@ -850,7 +848,7 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
   );
 }
 
-/** 리뷰 | 밑줄 | 독후감 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 밑줄·독후감 탭을 한 제목줄 아래에 둔다. */
+/** 리뷰 | 독후감 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 독후감 탭을 한 제목줄 아래에 둔다. */
 function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | null; colors: ColorTokens }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -862,7 +860,6 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
 
   const [tab, setTab] = useState<RecordTab>('REVIEW');
   const [open, setOpen] = useState(false);
-  const [quoteOpen, setQuoteOpen] = useState(false);
   const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
@@ -871,7 +868,6 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
   const switchTab = (next: RecordTab) => {
     if (next === tab) return;
     setOpen(false);
-    setQuoteOpen(false);
     setTab(next);
   };
 
@@ -896,8 +892,8 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
 
   const items = reviews.data?.content ?? [];
 
-  // 우측 액션은 탭별 — 리뷰는 '쓰기', 밑줄은 '오려두기', 독후감은 작성 화면으로 나가는 '쓰기'.
-  // 리뷰·밑줄은 이 책의 읽기 기록이 있어야 쓸 수 있지만, 독후감은 서재에 담지 않은 책에도 쓸 수 있다.
+  // 우측 액션은 탭별 — 리뷰는 '쓰기', 독후감은 작성 화면으로 나가는 '쓰기'.
+  // 리뷰는 이 책의 읽기 기록이 있어야 쓸 수 있지만, 독후감은 서재에 담지 않은 책에도 쓸 수 있다.
   const action = tab === 'POST'
     ? (
         <Pressable
@@ -906,15 +902,9 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
           <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('쓰기')}</Text>
         </Pressable>
       )
-    : tab === 'REVIEW'
-    ? (rid != null && !done && !open ? (
+    : (rid != null && !done && !open ? (
         <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
           <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('쓰기', 'action')}</Text>
-        </Pressable>
-      ) : null)
-    : (rid != null && !quoteOpen ? (
-        <Pressable onPress={() => setQuoteOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('오려두기', 'action')}</Text>
         </Pressable>
       ) : null);
 
@@ -924,8 +914,6 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
 
       {tab === 'POST' ? (
         <BookPostsTab bookId={bookId} />
-      ) : tab === 'QUOTE' ? (
-        <BookQuotesTab bookId={bookId} rid={rid} open={quoteOpen} onClose={() => setQuoteOpen(false)} />
       ) : (
         <>
           {open ? (
@@ -1104,9 +1092,9 @@ const styles = StyleSheet.create({
   },
   formActions: { flexDirection: 'row', gap: spacing.sm },
   formButton: { flex: 1 },
-  // 리뷰|밑줄 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
+  // 리뷰|독후감 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
   tabHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  // 탭 헤더 우측 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다(세 탭 모두 같은 자리).
+  // 탭 헤더 우측 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다(두 탭 모두 같은 자리).
   // 늘린 좌우 여백만큼 음수 마진으로 되돌려 글자는 제목줄 끝에 그대로 맞춘다(FootAction 과 같은 규율).
   tabAction: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
   tabRow: { flexDirection: 'row', gap: 18 },

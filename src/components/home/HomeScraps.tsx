@@ -11,55 +11,43 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { plazaApi, postApi } from '@/api/endpoints';
+import { postApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
-import { PLAZA_HOME_KEY } from '@/api/quoteCache';
-import type { PlazaItem, Post } from '@/api/types';
-import { MemoScrap, TiltCover } from '@/components/collage';
+import type { Post } from '@/api/types';
+import { TiltCover } from '@/components/collage';
 import { HomeSection } from '@/components/home/HomeSection';
-import { ScrapAuthor } from '@/components/home/ScrapAuthor';
-import { QUOTE_LINES, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
 import { linkLabel } from '@/components/ui';
 
-/** 광장에서 받아 오는 밑줄 후보 수 — 이 안에서 '핫한 순'으로 다시 추린다. */
-const FEED_SIZE = 10;
-/** 독후감 후보 수 — 스포트라이트에는 두 장까지만 서므로 다섯이면 넉넉하다. */
-const POST_FEED_SIZE = 5;
-/**
- * 스포트라이트 자리 배분 — 밑줄 셋·독후감 둘을 번갈아 세운다(6초마다 한 장씩, 모두 다섯 장).
- * 한쪽이 모자라면 그 자리를 다른 쪽 다음 후보가 메운다(독후감이 0건이면 밑줄 다섯 장).
- */
-const SLOTS = ['quote', 'post', 'quote', 'post', 'quote'] as const;
+/** 스포트라이트에 세우는 독후감 수 — 6초마다 한 장씩 돌린다. */
+const FEED_SIZE = 5;
 /** 회전 간격(ms). */
 const ROTATE_MS = 6000;
 /** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. */
 const COVER_W = 72;
 /** 표지 높이(px) — TiltCover 가 폭의 1.5배로 그린다. 글 조각도 이 높이에 맞춰 선다. */
 const COVER_H = Math.round(COVER_W * 1.5);
-// 작성자 행·인용 조판(AUTHOR_*·QUOTE_LINES·QUOTE_MAX_H)은 독후감 조각과 나눠 쓰는 값이라
-// scrapMetrics 한 곳에 있다 — 스포트라이트는 인용 토큰(`typeScale.quote`, 세리프 17/28)을 그대로 세운다.
+// 작성자 행·글 상자 조판(AUTHOR_*·QUOTE_MAX_H)은 독후감 조각(PostScrap 의 home)이 쓰는 값이라
+// scrapMetrics 한 곳에 있다.
 
 /**
  * 행 고정 높이(px) — **표지와 같은 108**.
  *
  * 회전할 때 아래 행들이 밀리면 안 되므로 minHeight 가 아니라 높이를 못 박는다.
- * minHeight 만 주면 문장이 긴 항목에서 카드가 그 값을 넘겨 행이 커지고, 짧은 항목으로
+ * minHeight 만 주면 제목이 긴 항목에서 카드가 그 값을 넘겨 행이 커지고, 짧은 항목으로
  * 넘어가는 순간 홈 전체가 출렁인다.
  *
  * 값은 계산이 아니라 COVER_H 다 — 글 조각이 옆 표지보다 훨씬 커서 어색하다는
- * 피드백(2026-09-08)으로 표지 높이에 맞췄다(그전엔 인용 3줄 기준 162였다).
- * 그 108 을 안에서 이렇게 나눠 쓴다:
+ * 피드백(2026-09-08)으로 표지 높이에 맞췄다. 그 108 을 안에서 이렇게 나눠 쓴다:
  *
  *   스크랩 테두리 1×2 + 안쪽 여백 12×2  = 26
  *   작성자 행 44 + 아래 간격 8          = 52
- *   글 상자(인용 1줄 · 독후감 제목 1줄) = 28
+ *   글 상자(독후감 제목 1줄)            = 28
  *                                     합 = 106  (남는 2px 은 글꼴 폴백 여유)
  *
- * 작성자 행이나 인용 줄 수를 키우려면 scrapMetrics 를 고치되 이 셈이 108 을 넘지 않아야 한다 —
+ * 작성자 행이나 글 상자를 키우려면 scrapMetrics 를 고치되 이 셈이 108 을 넘지 않아야 한다 —
  * 넘으면 조각 안에서 글이 소리 없이 잘린다(글 상자마다 overflow:hidden 이 걸려 있다).
- * 독후감 조각도 같은 짜임(작성자 행 + 글 상자 28)이라 어느 쪽이 서도 행 높이가 같다.
  */
 const ROW_H = COVER_H;
 /** 들어오는 조각이 올라오는 거리(px) — 책상에 내려놓는 듯한 짧은 낙차. */
@@ -69,85 +57,49 @@ const CARD_TILT = [-1.2, 1];
 
 const EASE_OUT = Easing.out(Easing.quad);
 
-/** 스포트라이트에 서는 조각 — 밑줄 한 장이거나 독후감 한 장이다. */
-type Scrap = { kind: 'quote'; item: PlazaItem } | { kind: 'post'; item: Post };
-
 /**
- * 홈 히어로 바로 아래('지금 붐비는 책' 위) '오늘의 글' — 광장의 밑줄과 독후감 중 핫한 것을
+ * 홈 히어로 바로 아래('지금 붐비는 책' 위) '오늘의 글' — 광장의 독후감 중 핫한 것을
  * 한 장씩 스포트라이트로 세우고 6초마다 돌린다 (시안 2a: 글 카드 + 표지 스크랩 한 쌍).
  *
- * 조각 머리에는 작성자 아바타·닉네임을 세운다(ScrapAuthor) — 누구의 글인지가 먼저 읽히게.
- * 밑줄 셋·독후감 둘을 번갈아 세워 광장에 두 종류의 글이 있다는 것을 홈에서부터 알린다.
- * 한쪽이 모자라면 다른 쪽이 그 자리를 메우고, 둘 다 0건이면 섹션을 통째로 감춘다 —
- * 홈에 빈 상자를 남기지 않는다. 그래서 섹션 틀(HomeSection: 괘선 + 위 여백)도 홈이 아니라
- * 여기서 두른다. 홈이 감싸면 조각이 없을 때 괘선과 여백만 덩그러니 남는다 —
+ * 조각 머리에는 작성자 아바타·닉네임을 세운다(PostScrap 의 home) — 누구의 글인지가 먼저 읽히게.
+ * 0건이면 섹션을 통째로 감춘다 — 홈에 빈 상자를 남기지 않는다. 그래서 섹션 틀(HomeSection: 괘선 + 위 여백)도
+ * 홈이 아니라 여기서 두른다. 홈이 감싸면 조각이 없을 때 괘선과 여백만 덩그러니 남는다 —
  * HomeSection 은 자식이 null 을 그리는지 알 수 없다(자식은 늘 '있는' 엘리먼트다).
  *
- * 광장 화면의 무한 쿼리와 캐시를 나눠 쓴다(밑줄 `plazaFeedKey('QUOTE')` vs `PLAZA_HOME_KEY`,
- * 독후감 `postFeedKey` vs `POST_HOME_KEY`). 서로 다른 항목을 담지만 같은 글이 겹칠 수 있어,
- * 좋아요 낙관 업데이트는 quoteCache·postCache 의 patch…Everywhere 가 두 캐시를 함께 손본다.
+ * 광장 화면의 무한 쿼리와 캐시를 나눠 쓴다(`postFeedKey` vs `POST_HOME_KEY`). 같은 글이 겹칠 수 있어
+ * 좋아요 낙관 업데이트는 postCache 의 patch…Everywhere 가 두 캐시를 함께 손본다.
  *
- * 좋아요·댓글 수는 여기선 표시 전용이다. 홈에서는 누를 수 없고, 무엇이 붐비는지만 알린다.
+ * 좋아요 수는 여기선 표시 전용이다. 홈에서는 누를 수 없고, 무엇이 붐비는지만 알린다.
  *
  * 광장으로 가는 이동은 push 가 아니라 navigate 다 — 구역(서가·탐색·광장·나) 사이는
  * push 하면 오갈 때마다 스택에 같은 구역이 쌓인다.
  *
- * 조각을 누르면 그 글의 상세(app/quote/[id].tsx · app/post/[id].tsx)로 간다 —
- * 스포트라이트에서 잘려 보이던 글을 통째로 읽고 댓글까지 그 자리에서 잇는다.
- * 헤더 '광장 →' 만 광장으로 남는다.
+ * 조각을 누르면 그 독후감의 상세(app/post/[id].tsx)로 간다 — 스포트라이트에서 잘려 보이던 글을
+ * 통째로 읽는다. 헤더 '광장 →' 만 광장으로 남는다.
  */
 export function HomeScraps() {
   const router = useRouter();
   const { colors } = useTheme();
 
-  const quotes = useQuery({
-    queryKey: PLAZA_HOME_KEY,
-    queryFn: () => plazaApi.feed('QUOTE', 0, FEED_SIZE),
-  });
   const posts = useQuery({
     queryKey: POST_HOME_KEY,
-    queryFn: () => postApi.feed('HOT', 0, POST_FEED_SIZE),
+    queryFn: () => postApi.feed('HOT', 0, FEED_SIZE),
   });
 
-  /**
-   * 회전 목록 — 양쪽을 각자 핫한 순(좋아요 내림차순, 동률이면 최신순)으로 세운 뒤
-   * SLOTS 차례대로 한 장씩 꺼내 끼운다. 제 차례 쪽 후보가 떨어지면 다른 쪽 다음 후보를 당겨 쓴다.
-   */
-  const spotlight = useMemo<Scrap[]>(() => {
-    const hotQuotes = [...(quotes.data?.content ?? [])].sort((a, b) => {
-      const hot = (b.agreeCount ?? 0) - (a.agreeCount ?? 0);
-      if (hot !== 0) return hot;
-      return b.occurredAt.localeCompare(a.occurredAt);
-    });
-    const hotPosts = [...(posts.data?.content ?? [])].sort((a, b) => {
+  /** 회전 목록 — 핫한 순(좋아요 내림차순, 동률이면 최신순)으로 세운다. */
+  const spotlight = useMemo<Post[]>(() => (
+    [...(posts.data?.content ?? [])].sort((a, b) => {
       const hot = b.likeCount - a.likeCount;
       if (hot !== 0) return hot;
       return (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt);
-    });
-
-    let qi = 0;
-    let pi = 0;
-    const picked: Scrap[] = [];
-    for (const slot of SLOTS) {
-      // 제 차례 쪽을 먼저 보고, 그쪽이 비었으면 다른 쪽 다음 후보로 자리를 메운다.
-      const quoteFirst = slot === 'quote' ? qi < hotQuotes.length : pi >= hotPosts.length;
-      if (quoteFirst && qi < hotQuotes.length) picked.push({ kind: 'quote', item: hotQuotes[qi++] });
-      else if (pi < hotPosts.length) picked.push({ kind: 'post', item: hotPosts[pi++] });
-    }
-    return picked;
-  }, [quotes.data, posts.data]);
+    })
+  ), [posts.data]);
 
   /**
-   * 회전 목록의 신원 — 밑줄·독후감 두 쿼리가 시차를 두고 도착하므로, 같은 turn 에 서 있던
-   * 조각이 목록이 바뀌면서 다른 글로 갈린다. 그 교체도 연출을 타야 해서 신원을 정착 애니메이션의
-   * 의존성으로 쓴다(quoteId 가 빈 항목은 발생 시각으로 가른다).
+   * 회전 목록의 신원 — 다시 받아 온 목록이 달라지면 같은 turn 에 서 있던 조각이 다른 글로 갈린다.
+   * 그 교체도 연출을 타야 해서 신원을 정착 애니메이션의 의존성으로 쓴다.
    */
-  const spotlightId = useMemo(
-    () => spotlight
-      .map((s) => (s.kind === 'post' ? `post:${s.item.id}` : `quote:${s.item.quoteId ?? s.item.occurredAt}`))
-      .join('|'),
-    [spotlight],
-  );
+  const spotlightId = useMemo(() => spotlight.map((post) => post.id).join('|'), [spotlight]);
 
   // 계속 증가하는 카운터를 목록 길이로 나눠 쓴다 — 목록이 줄어도 범위를 벗어나지 않는다.
   const [turn, setTurn] = useState(0);
@@ -180,7 +132,7 @@ export function HomeScraps() {
   }, [rotating, advance, settle]);
 
   // 새 조각이 책상에 놓이는 연출 — 살짝 아래에서 올라오며 기울기가 정착한다.
-  // 회전(turn)뿐 아니라 목록이 갈릴 때(spotlightId)도 다시 돈다 — 늦게 도착한 쿼리가
+  // 회전(turn)뿐 아니라 목록이 갈릴 때(spotlightId)도 다시 돈다 — 다시 받아 온 목록이
   // 화면의 조각을 바꿔 치우는데 연출만 없으면 글자가 툭 튄다. turn 은 그대로 둔다(순서 유지).
   useEffect(() => {
     settle.value = 0;
@@ -200,52 +152,18 @@ export function HomeScraps() {
     transform: [{ rotate: `${settle.value * tilt}deg` }],
   }));
 
-  const scrap = spotlight[index];
-  if (!scrap) return null;
+  const post = spotlight[index];
+  if (!post) return null;
 
   /** 헤더 '광장 →' — 목적지가 특정 글이 아니라 구역 자체라 navigate 로 연다. */
   const openPlaza = () => router.navigate('/plaza');
 
-  /** 지금 서 있는 조각의 상세로. 종류만 갈리고 누를 자리는 행 하나로 같다. */
-  const openScrap = () => {
-    if (scrap.kind === 'post') {
-      router.push(`/post/${scrap.item.id}`);
-      return;
-    }
-    // 문장 id 가 없는 항목(있어서는 안 되지만 응답이 비었을 때)은 갈 곳이 없으므로
-    // 광장으로 보낸다 — 구역 사이라 navigate.
-    if (scrap.item.quoteId == null) router.navigate('/plaza');
-    else router.push(`/quote/${scrap.item.quoteId}`);
-  };
-
-  const scrapLabel =
-    scrap.kind === 'post'
-      ? `${scrap.item.authorNickname}의 독후감 ${scrap.item.title} · 독후감 상세로`
-      : `${scrap.item.authorNickname}가 오려둔 ${scrap.item.bookTitle}의 문장 · 밑줄 상세로`;
-
   const row = (
     <Animated.View style={[styles.row, groupStyle]}>
       <Animated.View style={[styles.cardSlot, cardStyle]}>
-        {scrap.kind === 'quote' ? (
-          /* 기울기는 회전 연출과 함께 움직여야 해서 바깥에서 준다. */
-          <MemoScrap rotate={0} style={styles.card}>
-            {/* 좋아요는 표시 전용 — 홈에서는 누를 수 없다. 토글은 광장에서만.
-                0 이어도 쓴다: 독후감 조각도 늘 쓰므로 여기서만 비우면 작성자 행 오른쪽이 들쭉날쭉하다. */}
-            <ScrapAuthor
-              nickname={scrap.item.authorNickname}
-              avatarUrl={scrap.item.authorAvatarUrl}
-              where={scrap.item.bookTitle}
-              kind="밑줄"
-              stat={`좋아요 ${scrap.item.agreeCount ?? 0}`}
-            />
-            <Text numberOfLines={QUOTE_LINES} style={[styles.quote, { color: colors.text }]}>
-              {scrap.item.content}
-            </Text>
-          </MemoScrap>
-        ) : (
-          /* onPress 를 주지 않는다 — 누를 자리는 바깥 행 버튼 하나뿐이다(rowWrap 주석 참고). */
-          <PostScrap post={scrap.item} rotate={0} variant="home" />
-        )}
+        {/* onPress 를 주지 않는다 — 누를 자리는 바깥 행 버튼 하나뿐이다(rowWrap 주석 참고).
+            기울기는 회전 연출과 함께 움직여야 해서 바깥에서 준다. */}
+        <PostScrap post={post} rotate={0} variant="home" />
       </Animated.View>
 
       {/*
@@ -266,9 +184,9 @@ export function HomeScraps() {
         importantForAccessibility="no-hide-descendants"
       >
         <TiltCover
-          uri={scrap.item.bookCoverUrl}
+          uri={post.bookCoverUrl}
           // 책 없는 독후감은 표지에 세울 책 제목이 없다 — 글 제목으로 대신 채운다.
-          title={scrap.kind === 'quote' ? scrap.item.bookTitle : scrap.item.bookTitle ?? scrap.item.title}
+          title={post.bookTitle ?? post.title}
           width={COVER_W}
           tilt={2}
           entering={false}
@@ -295,15 +213,13 @@ export function HomeScraps() {
         {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고
             라벨만 현재 항목으로 바뀐다.
 
-            누를 자리는 종류와 무관하게 **행 전체 하나**다. 6초마다 같은 자리에 밑줄과 독후감이
-            번갈아 서므로, 한쪽만 카드에 버튼을 달면 표지·카드와 표지 사이 여백·좌우 패딩이
-            차례에 따라 눌리기도 하고 안 눌리기도 한다 — 표지를 겨냥한 탭이 무반응이면
-            사용자에겐 앱이 먹통으로 읽힌다. 그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음)
-            목적지와 라벨만 kind 로 가른다. 독후감 조각은 onPress 없이 그림으로만 그려진다. */}
+            누를 자리는 **행 전체 하나**다 — 조각에만 버튼을 달면 표지·카드와 표지 사이 여백·좌우 패딩은
+            눌리지 않아, 표지를 겨냥한 탭이 무반응이면 사용자에겐 앱이 먹통으로 읽힌다.
+            그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음) 독후감 조각은 onPress 없이 그림으로만 그려진다. */}
         <Pressable
-          onPress={openScrap}
+          onPress={() => router.push(`/post/${post.id}`)}
           accessibilityRole="button"
-          accessibilityLabel={scrapLabel}
+          accessibilityLabel={`${post.authorNickname}의 독후감 ${post.title} · 독후감 상세로`}
           style={styles.rowWrap}
         >
           {row}
@@ -326,11 +242,6 @@ const styles = StyleSheet.create({
   // 높이를 못 박아 글 길이·회전과 무관하게 아래 행이 그대로 있게 한다.
   row: { flexDirection: 'row', gap: spacing.md, height: ROW_H },
   cardSlot: { flex: 1 },
-  // numberOfLines 는 줄 수만 자를 뿐 글자 상자는 못 자른다 — 시스템 글꼴을 크게 키우면
-  // 3줄이 ROW_H 를 넘겨 아래 '추천' 행 위로 번진다. 조각 밖으로는 한 픽셀도 내보내지 않는다.
-  card: { flex: 1, overflow: 'hidden' },
-  // 인용은 제 줄 수만큼만 차지하고 3줄에서 끊긴다(QUOTE_MAX_H 주석 참고).
-  quote: { ...typeScale.quote, maxHeight: QUOTE_MAX_H, overflow: 'hidden' },
   // 표지와 행 높이가 같다(ROW_H = COVER_H) — 그래도 가운데 걸기는 남긴다.
   // 표지가 폭의 1.5배에서 반올림되는 자리라 1px 어긋나도 위아래가 갈리지 않게.
   coverSlot: { justifyContent: 'center' },

@@ -4,11 +4,11 @@ import type { Page } from '@/api/types';
 import type { ThreadComment } from '@/components/comments/types';
 
 /**
- * 댓글 스레드 캐시 — 밑줄·리뷰가 함께 쓰는 도메인 무관 조작.
+ * 댓글 스레드 캐시 — 도메인 무관 조작.
  *
  * 스레드는 무효화 대신 캐시를 직접 손본다. 오래된 순 무한 목록이라 무효화하면 이미 받아 둔
  * 페이지를 전부 다시 받으면서도 방금 쓴 댓글은 다음 페이지에 있어 안 보이기 때문이다.
- * 목록 키는 도메인마다 다르므로(밑줄·리뷰) 키를 인자로 받는다.
+ * 목록 키는 도메인마다 다르므로 키를 인자로 받는다.
  */
 export type CommentsCache = InfiniteData<Page<ThreadComment>>;
 

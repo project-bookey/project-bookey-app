@@ -8,7 +8,7 @@ import { clubApi } from '@/api/endpoints';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
 import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import {
   Button, EmptyState, Eyebrow, Field, FootAction, KeyValue, Loading, Rule, Segmented, Tag, Toggle, linkLabel,
 } from '@/components/ui';
@@ -257,7 +257,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
             <View key={member.clubMemberId}>
               {index > 0 ? <Rule /> : null}
               <View style={styles.memberRow}>
-                <QuoteAvatar uri={member.avatarUrl} nickname={member.nickname} size={28} />
+                <Avatar uri={member.avatarUrl} nickname={member.nickname} size={28} />
                 <Text style={[typeScale.label, { color: colors.text, flex: 1 }]} numberOfLines={1}>
                   {member.nickname}
                 </Text>

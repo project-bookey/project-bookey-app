@@ -9,13 +9,13 @@ import { PostScrap } from '@/components/post/PostScrap';
 import { Card, linkLabel } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
-/** 한 번에 받는 독후감 수 — 섹션 안에 붙는 조각이라 적게(밑줄 탭과 같은 값). */
+/** 한 번에 받는 독후감 수 — 섹션 안에 붙는 조각이라 적게. */
 const PAGE_SIZE = 5;
 
 /**
  * 도서 상세 리뷰 섹션의 '독후감' 탭 — 이 책에 달린 공개 독후감을 점선 메모 조각으로 늘어놓는다.
  * 조각을 누르면 독후감 상세로 간다. 쓰기는 섹션 제목줄의 `쓰기 →`(작성 화면)로 나가므로
- * 여기에는 인라인 폼이 없다 — 밑줄과 달리 사진·마크다운까지 있는 긴 글이라 한 화면을 다 쓴다.
+ * 여기에는 인라인 폼이 없다 — 사진·마크다운까지 있는 긴 글이라 한 화면을 다 쓴다.
  */
 export function BookPostsTab({ bookId }: { bookId: number }) {
   const router = useRouter();

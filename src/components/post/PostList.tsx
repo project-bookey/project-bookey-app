@@ -10,7 +10,7 @@ import { useLikePost } from '@/components/post/useLikePost';
 import { EmptyState, FootAction, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 카드 교차 회전(도) — 광장 밑줄·완독 카드와 같은 값이라 화면을 옮겨도 결이 이어진다. */
+/** 카드 교차 회전(도) — 광장 완독 카드와 같은 값이라 화면을 옮겨도 결이 이어진다. */
 const CARD_TILT = [-1.1, 0.8];
 
 /**

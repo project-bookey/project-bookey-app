@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { radius, sans, serif, useTheme } from '@/theme';
 import { hairline, mono } from '@/theme/tokens';
 import { TEXT_SIZE, type SpeechElement as SpeechEl } from '../noteDoc';
@@ -35,7 +35,7 @@ export function SpeechElement({ element, scale }: { element: SpeechEl; scale: nu
         }}
       >
         <View style={[styles.head, { gap: 6 * scale }]}>
-          <QuoteAvatar uri={element.avatarUrl} nickname={element.nickname} size={avatar} />
+          <Avatar uri={element.avatarUrl} nickname={element.nickname} size={avatar} />
           <Text
             numberOfLines={1}
             style={{ flex: 1, fontFamily: mono.medium, fontSize: 11 * scale, color: colors.textMuted }}

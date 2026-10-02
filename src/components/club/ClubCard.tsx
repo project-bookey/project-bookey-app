@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
 import { Chip, StickyNote, TiltCover } from '@/components/collage';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { Numeral, ProgressBar, percent } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
@@ -91,7 +91,7 @@ function MembersLine({ members }: { members: ClubMemberBrief[] }) {
       <View style={styles.avatars}>
         {shown.map((m, i) => (
           <View key={m.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.surface }]}>
-            <QuoteAvatar uri={m.avatarUrl} nickname={m.nickname} size={AVATAR} />
+            <Avatar uri={m.avatarUrl} nickname={m.nickname} size={AVATAR} />
             {m.readingNow ? (
               <View style={[styles.liveDot, { backgroundColor: colors.accent, borderColor: colors.surface }]} />
             ) : null}

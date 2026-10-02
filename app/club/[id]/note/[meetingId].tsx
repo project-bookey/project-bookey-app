@@ -26,7 +26,7 @@ import { PendingPhotos } from '@/components/note/PendingPhotos';
 import { SelectionFrame } from '@/components/note/SelectionFrame';
 import { StickerSheet } from '@/components/note/StickerSheet';
 import { TextEditorSheet } from '@/components/note/TextEditorSheet';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { EmptyState, Loading, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { layout, radius, serif, spacing, typeScale, useTheme } from '@/theme';
@@ -325,7 +325,7 @@ function PeerStack({ people }: { people: MeetingNotePeer[] }) {
       <View style={styles.avatars}>
         {shown.map((p, i) => (
           <View key={p.userId} style={[styles.avatar, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.bg }]}>
-            <QuoteAvatar uri={p.avatarUrl} nickname={p.nickname} size={24} />
+            <Avatar uri={p.avatarUrl} nickname={p.nickname} size={24} />
           </View>
         ))}
       </View>

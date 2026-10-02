@@ -99,14 +99,11 @@ export type VerificationLevel = NonNullable<Review['verificationLevel']>;
 export type ReviewComment = Schemas['ReviewCommentView'];
 export type CreateReviewComment = Schemas['CreateReviewCommentRequest'];
 
-// ── 밑줄 · 광장 ──────────────────────────────────────────
-export type BookQuote = Schemas['BookQuoteView'];
-export type QuoteAgree = Schemas['QuoteAgreeView'];
-export type CreateQuote = Schemas['CreateBookQuoteRequest'];
+// ── 광장 ─────────────────────────────────────────────────
 export type PlazaItem = Schemas['PlazaItemView'];
 export type PlazaItemType = PlazaItem['type'];
-export type QuoteComment = Schemas['QuoteCommentView'];
-export type CreateQuoteComment = Schemas['CreateQuoteCommentRequest'];
+/** 옛 독후감에 엮여 있던 밑줄(`Post.quotes`) — 앱은 밑줄 기능을 걷어냈고, 옛 글을 조각 글로 바꿀 때만 읽는다. */
+export type BookQuote = Schemas['BookQuoteView'];
 
 // ── 독후감 ───────────────────────────────────────────────
 export type Post = Schemas['PostView'];

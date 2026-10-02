@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { MemberProgress, NudgeMessageKey } from '@/api/types';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import {
   Button, Card, ProgressBar, Tag, formatDuration, formatRelative, percent,
 } from '@/components/ui';
@@ -57,7 +57,7 @@ export function MemberStrip({ members, readingNowIds, logCounts, selectedUserId,
           >
             <View>
               <View style={[styles.avatarRing, { borderColor: member.isMe ? colors.accent : 'transparent' }]}>
-                <QuoteAvatar uri={member.avatarUrl} nickname={member.nickname} size={AVATAR} />
+                <Avatar uri={member.avatarUrl} nickname={member.nickname} size={AVATAR} />
               </View>
               {live ? (
                 <View style={[styles.liveDot, { backgroundColor: colors.accent, borderColor: colors.bg }]} />

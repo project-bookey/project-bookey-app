@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import type { MemberProgress } from '@/api/types';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
@@ -31,7 +31,7 @@ export function MemberPickerRow({ members, selectedUserId, onPick }: {
               pressed && !selected ? pressedStyle : null,
             ]}
           >
-            <QuoteAvatar uri={m.avatarUrl} nickname={m.nickname} size={22} />
+            <Avatar uri={m.avatarUrl} nickname={m.nickname} size={22} />
             <Text style={[typeScale.monoLabel, { color: selected ? colors.onInk : colors.text }]}>{m.nickname}</Text>
           </Pressable>
         );

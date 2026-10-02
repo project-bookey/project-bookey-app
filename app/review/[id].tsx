@@ -10,7 +10,7 @@ import { ReviewCard } from '@/components/review/ReviewCard';
 import { EmptyState, linkLabel } from '@/components/ui';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 얌전하게(밑줄 상세와 같은 값). */
+/** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 얌전하게. */
 const CARD_TILT = -0.6;
 
 /**
