@@ -286,7 +286,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
         </Text>
       ) : null}
 
-      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(클럽 토론과 같은 이유). */}
+      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(댓글 스레드와 같은 이유). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
           {/* ① 책 — 없어도 된다. 책과 밑줄은 무관하다. */}

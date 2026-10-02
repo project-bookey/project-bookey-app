@@ -7,7 +7,7 @@ import { clubApi } from '@/api/endpoints';
 import { StatStrip } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Button, EmptyState, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, Rule, formatDuration, linkLabel, percent,
+  Button, EmptyState, Eyebrow, KeyValue, Loading, Numeral, ProgressBar, formatDuration, linkLabel, percent,
 } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -71,12 +71,6 @@ export default function ClubResultScreen() {
           />
           <ProgressBar value={data.finishRate} height={4} />
           <KeyValue label="총 독서시간" value={formatDuration(data.totalDurationSec)} />
-          {data.topDiscussant ? (
-            <>
-              <Rule />
-              <KeyValue label="최다 토론" value={data.topDiscussant} />
-            </>
-          ) : null}
         </View>
 
         <View style={[styles.section, { borderTopColor: colors.line }]}>

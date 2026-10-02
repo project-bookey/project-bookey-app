@@ -12,7 +12,7 @@ bookey 모바일 앱 — iOS / Android (Expo, React Native).
 project-bookey-app/
 ├─ app/            화면 (expo-router 파일 기반 라우팅)
 │   ├─ (tabs)/     홈 · 서재 · 모임 · 기록 · 프로필
-│   ├─ club/       모임 참가 · 생성 · 홈 · 토론 · 결산
+│   ├─ club/       모임 참가 · 생성 · 홈 · 결산
 │   ├─ book/       도서 상세
 │   ├─ timer.tsx   독서 타이머
 │   └─ search.tsx  도서 검색

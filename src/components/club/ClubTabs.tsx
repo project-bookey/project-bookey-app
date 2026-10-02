@@ -6,9 +6,9 @@ import { clubApi } from '@/api/endpoints';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
-export type ClubTabKey = 'home' | 'chat' | 'meetings' | 'notes' | 'posts' | 'reviews';
+export type ClubTabKey = 'home' | 'chat' | 'meetings' | 'notes' | 'reviews';
 export const isClubTabKey = (v: unknown): v is ClubTabKey =>
-  v === 'home' || v === 'chat' || v === 'meetings' || v === 'notes' || v === 'posts' || v === 'reviews';
+  v === 'home' || v === 'chat' || v === 'meetings' || v === 'notes' || v === 'reviews';
 /** ?tab= 값 → 탭. 옛 노트 탭(notebook)은 그 자리를 이은 독후감 탭으로. 모르는 값이면 null. */
 export const clubTabOf = (v: unknown): ClubTabKey | null =>
   v === 'notebook' ? 'reviews' : isClubTabKey(v) ? v : null;
@@ -18,12 +18,11 @@ const TABS: { key: ClubTabKey; label: string }[] = [
   { key: 'chat', label: '채팅' },
   { key: 'meetings', label: '모임' },
   { key: 'notes', label: '노트' },
-  { key: 'posts', label: '토론' },
   { key: 'reviews', label: '독후감' },
 ];
 
 /**
- * 클럽 탭 — 홈 · 채팅 · 모임 · 노트 · 토론 · 독후감. 클럽 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
+ * 클럽 탭 — 홈 · 채팅 · 모임 · 노트 · 독후감. 클럽 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
  * 단독 화면에서 쓰면 라우팅으로 옮긴다.
  * 활성 탭은 잉크 글자 + 2px 민트 표식(구역 네비와 같은 규칙). 홈으로는 navigate(스택에 있으면 되돌아감),
  * 하위 화면끼리는 replace 로 옮겨 뒤로 가기가 항상 클럽 홈으로 떨어지게 한다.
@@ -46,7 +45,6 @@ export function ClubTabs({ clubId, active, onSelect }: {
       case 'home': return `/club/${clubId}`;
       case 'chat': return `/club/${clubId}/chat`;
       case 'meetings': return { pathname: '/club/[id]/meetings', params: { id, host: isHost ? '1' : '0' } };
-      case 'posts': return `/club/${clubId}/posts`;
       case 'notes': return { pathname: '/club/[id]', params: { id, tab: 'notes' } };
       case 'reviews': return { pathname: '/club/[id]', params: { id, tab: 'reviews' } };
     }

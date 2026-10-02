@@ -18,7 +18,7 @@ function daysBetween(startsAt: string, endsAt: string): number {
 
 /**
  * 코드로 참가 (§12.1).
- * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·토론은 참가 후에만 보인다.
+ * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·기록은 참가 후에만 보인다.
  * 미리보기는 클럽 홈과 같은 활자·괘선 언어(명조 이름 · 모노 책 줄 · 숫자 띠).
  */
 export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
