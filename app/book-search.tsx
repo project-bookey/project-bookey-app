@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
   type TextStyle,
@@ -41,6 +41,7 @@ export default function SearchScreen() {
   const [keyword, setKeyword] = useState('');
   /** 포커스 표시는 input 자체(웹 기본 outline) 대신 검색바 컨테이너 보더로 그린다. */
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
   /** 담기 칩이 열려 있는 행의 책 id — 한 번에 한 행만 연다. */
   const [openAddId, setOpenAddId] = useState<number | null>(null);
   /** 이 세션에서 담기 완료한 책 id — '담김 ✓' 표시용. */
@@ -98,7 +99,9 @@ export default function SearchScreen() {
   const todayPick = recommendedList.length > 0 ? recommendedList[todaySeed % recommendedList.length] : null;
 
   return (
-    <PaperScreen>
+    // 헤더가 없는 화면이라 상단 세이프에어리어를 직접 밀어준다 — 안 주면 검색바가
+    // 상태 표시줄·노치 밑으로 들어가 터치가 안 된다.
+    <PaperScreen withTopInset>
       <View style={styles.searchBarWrap}>
         <View
           style={[
@@ -111,6 +114,7 @@ export default function SearchScreen() {
         >
           <SearchGlyph color={colors.accent} />
           <TextInput
+            ref={inputRef}
             value={input}
             onChangeText={setInput}
             placeholder='제목, 저자, 혹은 "요즘 좀 지친다"'
@@ -131,7 +135,15 @@ export default function SearchScreen() {
             <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>상황으로</Text>
             <View style={styles.moodChips}>
               {MOOD_QUERIES.map((mood) => (
-                <Chip key={mood.label} label={mood.label} onPress={() => setInput(mood.query)} />
+                <Chip
+                  key={mood.label}
+                  label={mood.label}
+                  onPress={() => {
+                    // 칩으로 채운 뒤에도 바로 고쳐 쓸 수 있게 입력창 포커스를 유지한다
+                    setInput(mood.query);
+                    inputRef.current?.focus();
+                  }}
+                />
               ))}
             </View>
           </View>
