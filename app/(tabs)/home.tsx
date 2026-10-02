@@ -207,7 +207,7 @@ export default function HomeScreen() {
             }))}
             onPressBook={openBook}
             onPressAll={() => router.push('/library')}
-            onPressEmpty={() => router.navigate('/book-search')}
+            onPressAdd={() => router.navigate('/book-search')}
           />
         </HomeSection>
 

@@ -3,7 +3,7 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { TiltCover, useCoverEntrance } from '@/components/collage';
 import { useTheme } from '@/theme';
-import { hairline, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
+import { hairline, pressedStyle, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
 import { linkLabel } from '@/components/ui';
 
 export type RowBook = {
@@ -31,8 +31,11 @@ const BADGE_BLEED = 16;
 /** 기울어진 표지의 위쪽 모서리가 올라오는 양(96×144, 최대 6°). */
 const TILT_BLEED = 5;
 
-/** 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressEmpty가 있으면 + 타일, 없으면 유령 표지. */
-export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressEmpty }: {
+/**
+ * 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressAdd가 있으면 + 타일, 없으면 유령 표지.
+ * onPressAdd가 있으면 책이 있을 때도 목록 끝에 + 타일을 붙인다.
+ */
+export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressAdd }: {
   title: string;
   /** 제목 옆 모노 악센트 라벨 (예: LIVE) */
   label?: string;
@@ -45,8 +48,8 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
   staggered?: boolean;
   onPressBook: (book: RowBook) => void;
   onPressAll?: () => void;
-  /** 빈 행의 + 타일 이동 대상 — 없으면 '준비 중' 유령 표지로 대체 */
-  onPressEmpty?: () => void;
+  /** + 타일 이동 대상 — 목록 끝(빈 행이면 단독)에 붙는다. 없으면 빈 행은 '준비 중' 유령 표지로 대체 */
+  onPressAdd?: () => void;
 }) {
   const { colors } = useTheme();
   const empty = !loading && books.length === 0;
@@ -82,14 +85,9 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
             <View key={i} style={[styles.cover, { backgroundColor: colors.surface }]} />
           ))}
         </View>
-      ) : empty && onPressEmpty ? (
+      ) : empty && onPressAdd ? (
         <View style={listStyle}>
-          <Pressable onPress={onPressEmpty} accessibilityRole="button" accessibilityLabel="책 추가">
-            <View style={[styles.cover, styles.ghost, { borderColor: colors.lineStrong }]}>
-              <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-              <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
-            </View>
-          </Pressable>
+          <AddTile onPress={onPressAdd} />
         </View>
       ) : empty ? (
         <View style={styles.emptyWrap}>
@@ -118,9 +116,28 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
               onPress={() => onPressBook(item)}
             />
           )}
+          ListFooterComponent={onPressAdd ? <AddTile onPress={onPressAdd} /> : null}
         />
       )}
     </View>
+  );
+}
+
+/** 점선 + 타일 — 표지 한 칸 크기. */
+function AddTile({ onPress }: { onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="책 추가"
+      style={({ pressed }) => (pressed ? pressedStyle : null)}
+    >
+      <View style={[styles.cover, styles.ghost, { borderColor: colors.lineStrong }]}>
+        <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
+        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
+      </View>
+    </Pressable>
   );
 }
 
