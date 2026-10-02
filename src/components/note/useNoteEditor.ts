@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 import type { NoteDoc } from './noteDoc';
+import { applyOps, type NoteOp } from './noteOps';
 
 /** 되돌리기 깊이 — 문서는 구조를 공유하는 불변 객체라 스냅샷 30장이 가볍다. */
 const UNDO_LIMIT = 30;
@@ -13,7 +14,7 @@ export type NoteEditorState = { doc: NoteDoc; undo: NoteDoc[] };
 
 /**
  * 페이지 문서 편집 상태 — 서버와 무관한 순수 편집기. 문서와 되돌리기 스택을 든다.
- * onChange 는 사용자 편집(apply·undo)마다 불린다 — load(페이지 넘김)에는 불리지 않는다.
+ * onChange 는 사용자 편집(apply·undo)마다 불린다 — load(페이지 넘김)·applyRemote(남의 편집)에는 불리지 않는다.
  */
 export function useNoteEditor(initial: NoteDoc, options?: { onChange?: () => void }) {
   const onChangeRef = useRef(options?.onChange);
@@ -75,7 +76,27 @@ export function useNoteEditor(initial: NoteDoc, options?: { onChange?: () => voi
     setDoc(state.doc);
   }, []);
 
-  return { doc, docRef, apply, endBatch, undo, canUndo, snapshot, load };
+  /**
+   * 다른 멤버의 편집을 얹는다(모임 공유 노트). 되돌리기 건은 만들지 않고, 쌓인 스냅숏에도 같은 연산을 얹어
+   * 되돌리기가 내 편집만 되돌리게 한다. 단 스냅숏에 없고 지금 문서에는 있는 요소(스냅숏 뒤에 내가 붙인 것)는
+   * 스냅숏에 넣지 않는다 — 넣으면 붙이기를 되돌려도 그 요소가 남는다.
+   */
+  const applyRemote = useCallback((ops: readonly NoteOp[]) => {
+    if (ops.length === 0) return;
+    const current = docRef.current;
+    const next = applyOps(current, ops);
+    if (next === current) return;
+    const currentIds = new Set(current.elements.map((e) => e.id));
+    undoRef.current = undoRef.current.map((snapshot) => {
+      const ids = new Set(snapshot.elements.map((e) => e.id));
+      const relevant = ops.filter((op) => op.t === 'delete' || ids.has(op.el.id) || !currentIds.has(op.el.id));
+      return applyOps(snapshot, relevant);
+    });
+    docRef.current = next;
+    setDoc(next);
+  }, []);
+
+  return { doc, docRef, apply, endBatch, undo, canUndo, snapshot, load, applyRemote };
 }
 
 export type NoteEditor = ReturnType<typeof useNoteEditor>;

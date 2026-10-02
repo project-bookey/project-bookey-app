@@ -33,6 +33,9 @@ import type {
   LibrarySummary,
   LikerView,
   Me,
+  MeetingNote,
+  MeetingNoteImage,
+  MeetingNoteOpsResult,
   Notification,
   NudgeMessageKey,
   Page,
@@ -737,6 +740,35 @@ export const clubCommunityApi = {
   /** 내 기록 카드 — 모든 클럽, 최근 50장. 노트 스티커 고르기에서 쓴다. */
   myActivityCards: () => api<ActivityCard[]>("/api/v1/clubs/activity-cards/mine"),
 };
+
+/**
+ * 모임 공유 노트 — 실시간 편집은 웹소켓(`meetingNoteSocketPath`)으로 하고, 연결이 끊겼을 때 같은 연산을 applyOps 로 보낸다.
+ * 연산은 요소 id 기준 upsert·delete 라 다시 보내도 결과가 같다.
+ */
+export const meetingNoteApi = {
+  /** 클럽 피드 — 빈 노트는 빼고 최근에 고친 순. 썸네일용 문서 포함. */
+  clubNotes: (clubId: number, page = 0, size = 18) =>
+    api<Page<MeetingNote>>(`/api/v1/clubs/${clubId}/meeting-notes`, {
+      query: { page, size },
+    }),
+  get: (clubId: number, meetingId: number) =>
+    api<MeetingNote>(`/api/v1/clubs/${clubId}/meetings/${meetingId}/note`),
+  applyOps: (clubId: number, meetingId: number, ops: unknown[], clientId: string) =>
+    api<MeetingNoteOpsResult>(
+      `/api/v1/clubs/${clubId}/meetings/${meetingId}/note/ops`,
+      { method: "POST", body: { ops, clientId } },
+    ),
+  /** 사진 업로드 — 응답 id 를 photo 요소의 imageId 로 넣어 보내야 노트에 붙는다. */
+  uploadImage: (clubId: number, meetingId: number, form: FormData) =>
+    api<MeetingNoteImage>(
+      `/api/v1/clubs/${clubId}/meetings/${meetingId}/note/images`,
+      { method: "POST", body: form },
+    ),
+};
+
+/** 모임 노트 실시간 연결 경로 — `wsUrlOf` 로 주소를 만든다. */
+export const meetingNoteSocketPath = (clubId: number, meetingId: number) =>
+  `/ws/clubs/${clubId}/meetings/${meetingId}/note`;
 
 export const profileApi = {
   /** 유저 프로필 — 열람하면 방문 기록이 남는다(방문 수는 전체 공개). */

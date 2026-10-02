@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubApi, clubCommunityApi } from '@/api/endpoints';
+import { clubCommunityApi } from '@/api/endpoints';
 import { StatStrip, confirmAsync, notify } from '@/components/club';
 import {
   meetingClock,
@@ -19,14 +19,15 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { Button, Card, EmptyState, Eyebrow, Loading, formatClock, linkLabel } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
-import { sans } from '@/theme/tokens';
+import { pressedStyle, sans } from '@/theme/tokens';
 
 /**
  * 모임 상세 — 예전 골격(굵은 제목 · 큰 민트 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
  * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
  * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
- * 함께 독서를 끝내면 소감은 독후감으로 남긴다 — 클럽과 클럽 책을 싣고 독후감 쓰기(모드 고르기)로 간다.
+ * 함께 독서를 끝내면 그 모임의 공유 노트로 간다 — 멤버 모두가 같은 대형노트에 그날을 함께 남긴다.
+ * 노트는 모임 상세에서 언제든 다시 열 수 있다.
  */
 export default function MeetingDetailScreen() {
   const { id, meetingId, host } = useLocalSearchParams<{ id: string; meetingId: string; host?: string }>();
@@ -46,13 +47,16 @@ export default function MeetingDetailScreen() {
     queryKey: ['clubActivity', clubId, 'current'],
     queryFn: () => clubCommunityApi.currentActivity(clubId),
   });
-  // 클럽 홈과 같은 키 — 독서를 끝낸 뒤 독후감에 클럽 책을 미리 골라 두려고 쓴다.
-  const club = useQuery({ queryKey: ['club', clubId], queryFn: () => clubApi.home(clubId) });
   useEffect(() => {
     if (!current.data) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [current.data]);
+
+  const openNote = () => router.push({
+    pathname: '/club/[id]/note/[meetingId]',
+    params: { id: String(clubId), meetingId: String(mid) },
+  });
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ['clubMeeting', clubId, mid] });
@@ -83,12 +87,8 @@ export default function MeetingDetailScreen() {
     onSuccess: (card) => {
       qc.invalidateQueries({ queryKey: ['clubActivity', clubId] });
       qc.invalidateQueries({ queryKey: ['activityCards'] });
-      notify(`함께 독서 ${formatClock(card.durationSec)}를 기록했어요. 카드는 독후감 노트에 스티커로 붙일 수 있어요.`);
-      const bookId = club.data?.book?.id;
-      router.push({
-        pathname: '/post/new',
-        params: { clubId: String(clubId), ...(bookId != null ? { bookId: String(bookId) } : {}) },
-      });
+      notify(`함께 독서 ${formatClock(card.durationSec)}를 기록했어요. 모임 노트에 함께 남겨 보세요 · 기록 카드는 스티커로 붙일 수 있어요.`);
+      openNote();
     },
     onError: fail('독서를 끝내지 못했어요.'),
   });
@@ -209,7 +209,7 @@ export default function MeetingDetailScreen() {
               ? '다른 모임에서 독서를 실행 중이에요.'
               : running
                 ? '이 모임의 독서 시간을 기록하고 있어요.'
-                : '모임 현장에서 독서 실행을 누르고, 끝나면 독후감으로 소감을 남겨 보세요.'}
+                : '모임 현장에서 독서 실행을 누르고, 끝나면 모임 노트에 다 같이 소감을 남겨 보세요.'}
           </Text>
           <Button
             label={running ? '독서 종료' : '독서 실행'}
@@ -218,6 +218,23 @@ export default function MeetingDetailScreen() {
             onPress={() => (running ? end.mutate() : start.mutate())}
             loading={start.isPending || end.isPending}
           />
+        </Card>
+
+        <Card style={{ gap: spacing.sm }}>
+          {heading('모임 노트')}
+          <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+            {state === 'cancelled'
+              ? '취소된 모임의 노트는 읽기만 돼요.'
+              : '멤버 모두가 같은 대형노트에 그날의 생각·사진·스티커를 함께 붙여요. 다른 사람이 쓰는 모습이 바로 보여요.'}
+          </Text>
+          <Pressable
+            onPress={openNote}
+            accessibilityRole="link"
+            accessibilityLabel="모임 노트 열기"
+            style={({ pressed }) => [styles.link, pressed ? pressedStyle : null]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('모임 노트', 'nav')}</Text>
+          </Pressable>
         </Card>
 
         {isHost && state === 'open' ? (
@@ -240,6 +257,7 @@ const styles = StyleSheet.create({
   // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 Pretendard ExtraBold 토큰으로.
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
   time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
+  link: { minHeight: 36, justifyContent: 'center', alignSelf: 'flex-start' },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',

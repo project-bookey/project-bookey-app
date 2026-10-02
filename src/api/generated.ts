@@ -710,6 +710,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/meetings/{meetingId}/note/ops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 모임 노트 연산 적용 — 요소 id 기준 upsert·delete. 실시간 연결이 끊겼을 때 쓴다 */
+        post: operations["applyMeetingNoteOps"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/meetings/{meetingId}/note/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 모임 노트 사진 올리기 — 응답 id 를 photo 요소의 imageId 로 넣어 보내야 24시간 뒤 정리되지 않는다 */
+        post: operations["uploadMeetingNoteImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/meetings/{meetingId}/attendees/me": {
         parameters: {
             query?: never;
@@ -2319,6 +2353,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/meetings/{meetingId}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 모임 노트 — 아직 아무도 쓰지 않았으면 빈 노트(id null, version 0) */
+        get: operations["meetingNote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{clubId}/meeting-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 모임 노트 피드 — 빈 노트는 빼고 최근에 고친 순. 썸네일용 문서 포함 */
+        get: operations["meetingNoteFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/logs/week": {
         parameters: {
             query?: never;
@@ -3779,6 +3847,27 @@ export interface components {
             /** @enum {string} */
             messageKey: "READ_TOGETHER" | "CHECKPOINT_SOON" | "WAITING";
         };
+        /** @description 노트 연산 — 요소 id 기준 upsert({t:'upsert', el}) · delete({t:'delete', id}). 같은 연산을 다시 보내도 결과가 같다 */
+        ApplyMeetingNoteOpsRequest: {
+            ops: {
+                [key: string]: unknown;
+            }[];
+            /** @description 보낸 기기 식별자 — 실시간 방송에서 자기 연산을 알아보는 데 쓴다 */
+            clientId?: string;
+        };
+        MeetingNoteOpsResult: {
+            /** Format: int32 */
+            version: number;
+        };
+        MeetingNoteImageView: {
+            /** Format: int64 */
+            id: number;
+            url: string;
+            /** Format: int32 */
+            width?: number;
+            /** Format: int32 */
+            height?: number;
+        };
         KickRequest: {
             /** Format: int64 */
             userId: number;
@@ -4649,6 +4738,44 @@ export interface components {
             /** Format: double */
             longitude: number;
         };
+        /** @description 모임 공유 노트 — 모임 하나에 대형노트 한 권. 아직 아무도 쓰지 않았으면 id 는 null, version 0, 빈 문서 */
+        MeetingNoteView: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            clubId: number;
+            /** Format: int64 */
+            meetingId: number;
+            meetingTitle?: string;
+            /** Format: date-time */
+            meetingStartsAt?: string;
+            /** @description 대형노트 문서 {v, paper, kind:'large', elements[]} — 앱이 소유한 JSON */
+            document: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            version: number;
+            /** Format: int32 */
+            elementCount: number;
+            /** @description 노트에 손댄 멤버 — 처음 손댄 순 */
+            contributors: components["schemas"]["MeetingAttendeeView"][];
+            /** Format: date-time */
+            updatedAt?: string;
+            /** @description 끝난 클럽·취소된 모임이면 true — 읽기만 된다 */
+            readOnly: boolean;
+        };
+        PageResponseMeetingNoteView: {
+            content?: components["schemas"]["MeetingNoteView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         ClubLogDayView: {
             /** Format: date */
             date: string;
@@ -5074,6 +5201,9 @@ export type SchemaCreateClubPostRequest = components['schemas']['CreateClubPostR
 export type SchemaClubPostView = components['schemas']['ClubPostView'];
 export type SchemaReactionRequest = components['schemas']['ReactionRequest'];
 export type SchemaNudgeRequest = components['schemas']['NudgeRequest'];
+export type SchemaApplyMeetingNoteOpsRequest = components['schemas']['ApplyMeetingNoteOpsRequest'];
+export type SchemaMeetingNoteOpsResult = components['schemas']['MeetingNoteOpsResult'];
+export type SchemaMeetingNoteImageView = components['schemas']['MeetingNoteImageView'];
 export type SchemaKickRequest = components['schemas']['KickRequest'];
 export type SchemaJoinPublicRequest = components['schemas']['JoinPublicRequest'];
 export type SchemaUnlockResult = components['schemas']['UnlockResult'];
@@ -5163,6 +5293,8 @@ export type SchemaPageResponseClubPostView = components['schemas']['PageResponse
 export type SchemaPlaceView = components['schemas']['PlaceView'];
 export type SchemaCoordinates = components['schemas']['Coordinates'];
 export type SchemaAddressView = components['schemas']['AddressView'];
+export type SchemaMeetingNoteView = components['schemas']['MeetingNoteView'];
+export type SchemaPageResponseMeetingNoteView = components['schemas']['PageResponseMeetingNoteView'];
 export type SchemaClubLogDayView = components['schemas']['ClubLogDayView'];
 export type SchemaClubLogSummary = components['schemas']['ClubLogSummary'];
 export type SchemaClubLogWeekView = components['schemas']['ClubLogWeekView'];
@@ -6491,6 +6623,63 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MeetingView"];
+                };
+            };
+        };
+    };
+    applyMeetingNoteOps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyMeetingNoteOpsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingNoteOpsResult"];
+                };
+            };
+        };
+    };
+    uploadMeetingNoteImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingNoteImageView"];
                 };
             };
         };
@@ -9193,6 +9382,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AddressView"][];
+                };
+            };
+        };
+    };
+    meetingNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingNoteView"];
+                };
+            };
+        };
+    };
+    meetingNoteFeed: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseMeetingNoteView"];
                 };
             };
         };

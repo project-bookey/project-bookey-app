@@ -31,6 +31,7 @@ import {
   notify,
 } from "@/components/club";
 import { ClubPostGrid } from "@/components/club/ClubPostGrid";
+import { MeetingNoteGrid } from "@/components/club/MeetingNoteGrid";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubChatBody } from "./chat";
 import { ClubMeetingsBody } from "./meetings";
@@ -68,7 +69,7 @@ import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono } from "@/theme/tokens";
 
-const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "posts", "reviews"];
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "notes", "posts", "reviews"];
 
 /**
  * 클럽 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
@@ -568,6 +569,7 @@ export default function ClubHomeScreen() {
         ) : null}
         {tab === "chat" ? <ClubChatBody /> : null}
         {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} /> : null}
+        {tab === "notes" ? <MeetingNoteGrid clubId={clubId} onOpenMeetings={() => setTab("meetings")} /> : null}
         {tab === "posts" ? <ClubPostsBody /> : null}
         {tab === "reviews" ? <ClubPostGrid clubId={clubId} ended={ended} /> : null}
       </SwipeableTabs>

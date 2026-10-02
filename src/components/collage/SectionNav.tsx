@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
-import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Animated, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -14,18 +16,19 @@ export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' |
 /**
  * 하단 구역 네비. 탐색은 서가의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
- * 메신저(엽서함·채팅)는 헤더 아이콘 둘이던 것을 사람 사이 글끼리 한 구역으로 묶은 것 — 클럽 옆에 선다.
+ * 서가는 가운데에 두고 집 아이콘을 쓴다 — 앱의 홈이 서가이기 때문(광장은 펼친 책).
+ * 메신저(엽서함·채팅)는 헤더 아이콘 둘이던 것을 사람 사이 글끼리 한 구역으로 묶은 것.
  * 설정은 탭이 아니라 '나' 화면 프로필 행의 톱니로 들어가는 서브 화면이다(2026-09-08).
  */
 const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[] = [
   { key: 'plaza', label: '광장', path: '/plaza', route: 'plaza' },
-  { key: 'shelf', label: '서가', path: '/home', route: 'home' },
   { key: 'clubs', label: '클럽', path: '/clubs', route: 'clubs' },
+  { key: 'shelf', label: '서가', path: '/home', route: 'home' },
   { key: 'messenger', label: '메신저', path: '/messenger', route: 'messenger' },
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
 ];
 
-let lastTabIndex = 0;
+let lastTabIndex = SECTIONS.findIndex((section) => section.key === 'shelf');
 
 /**
  * 네이티브 헤더가 없는 메인 화면의 하단 탭.
@@ -50,13 +53,34 @@ export function SectionNav({
     return index < 0 ? SECTIONS.findIndex((section) => section.key === 'shelf') : index;
   }, [active]);
   const [visualIndex, setVisualIndex] = useState(activeIndex);
+  const visualIndexRef = useRef(activeIndex);
+  const requestedIndexRef = useRef(activeIndex);
+  const trackRef = useRef<View>(null);
+  const trackLeft = useRef(0);
+  const trackWidthRef = useRef(0);
+  const draggedIndex = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const dragFrame = useRef<number | null>(null);
+  const nextDragPosition = useRef(activeIndex);
   const translateX = useRef(new Animated.Value(lastTabIndex)).current;
-  const liveTranslateX = pagerPosition && pagerOffset
+  const pagerTranslateX = pagerPosition && pagerOffset
     ? Animated.add(pagerPosition, pagerOffset)
     : translateX;
+  const dragPosition = useRef(new Animated.Value(activeIndex)).current;
+  const dragBlend = useRef(new Animated.Value(0)).current;
+  const dragStretch = useRef(new Animated.Value(1)).current;
+  const liveTranslateX = Animated.add(
+    Animated.multiply(pagerTranslateX, Animated.add(1, Animated.multiply(dragBlend, -1))),
+    Animated.multiply(dragPosition, dragBlend),
+  );
 
   useEffect(() => {
-    setVisualIndex(activeIndex);
+    if (!isDragging.current) {
+      setVisualIndex(activeIndex);
+      visualIndexRef.current = activeIndex;
+      requestedIndexRef.current = activeIndex;
+      dragPosition.setValue(activeIndex);
+    }
     if (!pagerPosition) {
       Animated.spring(translateX, {
         toValue: activeIndex,
@@ -67,15 +91,131 @@ export function SectionNav({
       }).start();
     }
     lastTabIndex = activeIndex;
-  }, [activeIndex, pagerPosition, translateX]);
+  }, [activeIndex, dragPosition, pagerPosition, translateX]);
 
   const tabWidth = trackWidth > 0 ? (trackWidth - 8) / SECTIONS.length : 0;
   const nativeGlass = Platform.OS === 'ios' && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
 
+  const selectIndex = (index: number) => {
+    const section = SECTIONS[index];
+    if (!section || index === requestedIndexRef.current) return;
+    requestedIndexRef.current = index;
+    visualIndexRef.current = index;
+    setVisualIndex(index);
+    if (!pagerPosition) {
+      Animated.spring(translateX, {
+        toValue: index,
+        useNativeDriver: true,
+        stiffness: 320,
+        damping: 32,
+        mass: 0.7,
+      }).start();
+    }
+    lastTabIndex = index;
+    if (onSelect) onSelect(section.route);
+    else router.replace(section.path);
+  };
+
+  const measureTrack = () => {
+    trackRef.current?.measureInWindow((x, _y, width) => {
+      trackLeft.current = x + 4;
+      trackWidthRef.current = Math.max(width - 8, 0);
+    });
+  };
+
+  const scrubTo = (event: GestureResponderEvent) => {
+    const width = trackWidthRef.current;
+    if (width <= 0) return;
+    const relativeX = Math.max(0, Math.min(event.nativeEvent.pageX - trackLeft.current, width - 1));
+    const continuousIndex = Math.max(
+      0,
+      Math.min((relativeX / width) * SECTIONS.length - 0.5, SECTIONS.length - 1),
+    );
+    nextDragPosition.current = continuousIndex;
+    if (dragFrame.current === null) {
+      dragFrame.current = requestAnimationFrame(() => {
+        dragFrame.current = null;
+        dragPosition.setValue(nextDragPosition.current);
+      });
+    }
+    const index = Math.max(0, Math.min(Math.floor((relativeX / width) * SECTIONS.length), SECTIONS.length - 1));
+    if (draggedIndex.current === index) return;
+    draggedIndex.current = index;
+    visualIndexRef.current = index;
+    setVisualIndex(index);
+  };
+  const scrubResponder = PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_event, gesture) => (
+      Math.abs(gesture.dx) > 5 && Math.abs(gesture.dx) > Math.abs(gesture.dy)
+    ),
+    onPanResponderGrant: (event) => {
+      measureTrack();
+      isDragging.current = true;
+      draggedIndex.current = null;
+      dragPosition.setValue(visualIndexRef.current);
+      dragBlend.setValue(1);
+      Animated.spring(dragStretch, {
+        toValue: 1.16,
+        useNativeDriver: true,
+        stiffness: 420,
+        damping: 32,
+        mass: 0.55,
+      }).start();
+      scrubTo(event);
+    },
+    onPanResponderMove: scrubTo,
+    onPanResponderRelease: () => {
+      const destination = draggedIndex.current ?? visualIndexRef.current;
+      if (dragFrame.current !== null) {
+        cancelAnimationFrame(dragFrame.current);
+        dragFrame.current = null;
+      }
+      draggedIndex.current = null;
+      isDragging.current = false;
+      selectIndex(destination);
+      Animated.parallel([
+        Animated.spring(dragPosition, {
+          toValue: destination,
+          useNativeDriver: true,
+          stiffness: 420,
+          damping: 32,
+          mass: 0.62,
+        }),
+        Animated.spring(dragStretch, {
+          toValue: 1,
+          useNativeDriver: true,
+          stiffness: 360,
+          damping: 24,
+          mass: 0.7,
+        }),
+      ]).start(() => dragBlend.setValue(0));
+    },
+    onPanResponderTerminate: () => {
+      if (dragFrame.current !== null) {
+        cancelAnimationFrame(dragFrame.current);
+        dragFrame.current = null;
+      }
+      draggedIndex.current = null;
+      isDragging.current = false;
+      visualIndexRef.current = activeIndex;
+      requestedIndexRef.current = activeIndex;
+      setVisualIndex(activeIndex);
+      dragPosition.setValue(activeIndex);
+      dragBlend.setValue(0);
+      dragStretch.setValue(1);
+    },
+    onPanResponderTerminationRequest: () => false,
+  });
+
   const tabs = (
     <View
+      ref={trackRef}
       style={styles.track}
-      onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+      onLayout={(event) => {
+        setTrackWidth(event.nativeEvent.layout.width);
+        requestAnimationFrame(measureTrack);
+      }}
+      {...scrubResponder.panHandlers}
       accessibilityRole="tablist"
     >
       {trackWidth > 0 ? (
@@ -91,7 +231,7 @@ export function SectionNav({
                   Animated.multiply(liveTranslateX, tabWidth),
                   Math.max((tabWidth - 44) / 2, 0),
                 ),
-              }],
+              }, { scaleX: dragStretch }],
             },
           ]}
         />
@@ -104,19 +244,7 @@ export function SectionNav({
             key={section.key}
             onPress={() => {
               if (selected) return;
-              setVisualIndex(index);
-              if (!pagerPosition) {
-                Animated.spring(translateX, {
-                  toValue: index,
-                  useNativeDriver: true,
-                  stiffness: 320,
-                  damping: 32,
-                  mass: 0.7,
-                }).start();
-              }
-              lastTabIndex = index;
-              if (onSelect) onSelect(section.route);
-              else router.replace(section.path);
+              selectIndex(index);
             }}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
@@ -181,16 +309,16 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
     case 'plaza':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Path d="M4 10.5 12 5l8 5.5" {...stroke} />
-          <Path d="M6.5 10v8.5h11V10" {...stroke} />
-          <Path d="M9 18.5v-5h6v5" {...stroke} />
+          <Path d="M5 6.5h5.5A2.5 2.5 0 0 1 13 9v9.5a2.5 2.5 0 0 0-2.5-2.5H5z" {...stroke} />
+          <Path d="M19 6.5h-3.5A2.5 2.5 0 0 0 13 9v9.5a2.5 2.5 0 0 1 2.5-2.5H19z" {...stroke} />
         </Svg>
       );
     case 'shelf':
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Path d="M5 6.5h5.5A2.5 2.5 0 0 1 13 9v9.5a2.5 2.5 0 0 0-2.5-2.5H5z" {...stroke} />
-          <Path d="M19 6.5h-3.5A2.5 2.5 0 0 0 13 9v9.5a2.5 2.5 0 0 1 2.5-2.5H19z" {...stroke} />
+          <Path d="M4 10.5 12 5l8 5.5" {...stroke} />
+          <Path d="M6.5 10v8.5h11V10" {...stroke} />
+          <Path d="M9 18.5v-5h6v5" {...stroke} />
         </Svg>
       );
     case 'clubs':
