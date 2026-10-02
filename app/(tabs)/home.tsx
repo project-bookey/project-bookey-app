@@ -12,7 +12,6 @@ import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { NoticePopup } from '@/components/home/NoticePopup';
 import { BookRow, RowBook } from '@/components/home/BookRow';
-import { ChallengeRow } from '@/components/home/ChallengeRow';
 import { ClubRow } from '@/components/home/ClubRow';
 import { HeroPager } from '@/components/home/HeroPager';
 import { HomeSection } from '@/components/home/HomeSection';
@@ -20,7 +19,7 @@ import { HomeScraps } from '@/components/home/HomeScraps';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 챌린지 → 클럽 */
+/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 클럽 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -66,7 +65,6 @@ export default function HomeScreen() {
   const refetchAll = () => {
     reading.refetch(); want.refetch(); stats.refetch();
     banners.refetch(); notices.refetch(); popular.refetch(); recommended.refetch();
-    queryClient.invalidateQueries({ queryKey: ['challenges'] });
     queryClient.invalidateQueries({ queryKey: POST_HOME_KEY });
   };
 
@@ -206,10 +204,6 @@ export default function HomeScreen() {
             onPressAll={() => router.push('/library')}
             onPressAdd={() => router.navigate('/book-search')}
           />
-        </HomeSection>
-
-        <HomeSection>
-          <ChallengeRow />
         </HomeSection>
 
         <HomeSection>

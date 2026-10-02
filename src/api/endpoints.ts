@@ -5,7 +5,6 @@ import type {
   BookDetail,
   BookLikeView,
   BookSummary,
-  Challenge,
   ChatMessage,
   ChatMessages,
   ChatSummary,
@@ -868,27 +867,6 @@ export const postApi = {
   /** 사진 업로드 — multipart. Content-Type 은 런타임이 boundary 와 함께 붙인다. */
   uploadImage: (form: FormData) =>
     api<PostImage>("/api/v1/posts/images", { method: "POST", body: form }),
-};
-
-export const challengeApi = {
-  create: (body: {
-    readingRecordId?: number;
-    bookId?: number;
-    budgetSec: number;
-  }) => api<Challenge>("/api/v1/challenges", { method: "POST", body }),
-  active: () => api<Challenge[]>("/api/v1/challenges/active"),
-  get: (id: number) => api<Challenge>(`/api/v1/challenges/${id}`),
-  start: (id: number) =>
-    api<Challenge>(`/api/v1/challenges/${id}/start`, { method: "POST" }),
-  pause: (id: number) =>
-    api<Challenge>(`/api/v1/challenges/${id}/pause`, { method: "POST" }),
-  progress: (id: number, currentPage: number) =>
-    api<Challenge>(`/api/v1/challenges/${id}/progress`, {
-      method: "PATCH",
-      body: { currentPage },
-    }),
-  cancel: (id: number) =>
-    api<void>(`/api/v1/challenges/${id}`, { method: "DELETE" }),
 };
 
 export type { Checkpoint };

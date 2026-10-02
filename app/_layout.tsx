@@ -84,8 +84,6 @@ export default function RootLayout() {
             <Stack.Screen name="settings" options={{ title: '설정' }} />
             <Stack.Screen name="subscription" options={{ title: '구독' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
-            <Stack.Screen name="challenge/new" options={{ title: '새 챌린지' }} />
-            <Stack.Screen name="challenge/[id]" options={{ title: '챌린지' }} />
             <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
             <Stack.Screen name="club/create" options={{ title: '클럽 만들기' }} />
             <Stack.Screen name="club/[id]/index" options={{ title: '클럽' }} />
