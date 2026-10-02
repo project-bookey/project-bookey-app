@@ -5,7 +5,6 @@ import { Eye, Heart } from 'lucide-react-native';
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { FollowButton } from '@/components/social/FollowButton';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
@@ -71,7 +70,7 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
 
       {/* 카드가 사진을 물고 있어 패딩이 0 이다 — 활자 쪽만 제 여백을 갖는다. */}
       <View style={styles.pad}>
-        {/* 팔로우 버튼은 작성자 줄 Pressable 의 형제다 — 버튼 안에 버튼을 넣지 않는다. */}
+        {/* 작성자 줄을 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
         <View style={styles.authorLine}>
           <Pressable
             onPress={onOpenAuthor}
@@ -90,7 +89,6 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
               </Text>
             </View>
           </Pressable>
-          <FollowButton userId={post.authorId} nickname={post.authorNickname} />
         </View>
 
         <View style={styles.footRow}>

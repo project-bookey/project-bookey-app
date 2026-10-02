@@ -1,16 +1,16 @@
+import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { FollowButton } from '@/components/social/FollowButton';
 import { formatRelative } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 import { MENTION_RE } from './types';
 import type { ThreadComment } from './types';
 
 /**
- * 스레드 한 줄 — 아바타 · 닉네임(+팔로우) · 본문 · 상대 시각 · 답글 달기 · (본인) 삭제.
+ * 스레드 한 줄 — 아바타 · 닉네임(누르면 마이페이지) · 본문 · 상대 시각 · 답글 달기 · (본인) 삭제.
  *
  * 최상위 댓글과 답글이 같은 줄을 쓴다. 두 줄 다 '답글 달기'를 가지지만 `onToggleReplies`(접기)는
  * 최상위 줄에만 넘어온다 — 답글의 답글도 같은 묶음에 평평하게 달리기 때문이다.
@@ -37,6 +37,7 @@ export function CommentRow({
   children?: ReactNode;
 }) {
   const { colors } = useTheme();
+  const router = useRouter();
   const isReply = variant === 'reply';
   // 답글의 답글이면 본문이 '@닉네임 ' 으로 시작한다 — 그 앞머리만 잘라 악센트로 그린다.
   const mention = MENTION_RE.exec(comment.body);
@@ -46,13 +47,31 @@ export function CommentRow({
   return (
     <View style={isReply ? undefined : [styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
       <View style={styles.row}>
-        <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
+        {/* 아바타·닉네임을 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
+        <Pressable
+          onPress={() => router.push(`/user/${comment.authorId}`)}
+          disabled={comment.mine}
+          hitSlop={8}
+          accessibilityRole={comment.mine ? undefined : 'button'}
+          accessibilityLabel={comment.mine ? undefined : `${comment.authorNickname} 프로필 열기`}
+          style={({ pressed }) => pressed && pressedStyle}
+        >
+          <QuoteAvatar uri={comment.authorAvatarUrl} nickname={comment.authorNickname} />
+        </Pressable>
         <View style={styles.rowBody}>
           <View style={styles.nameRow}>
-            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-              {comment.authorNickname}
-            </Text>
-            {!comment.mine ? <FollowButton userId={comment.authorId} nickname={comment.authorNickname} /> : null}
+            <Pressable
+              onPress={() => router.push(`/user/${comment.authorId}`)}
+              disabled={comment.mine}
+              hitSlop={8}
+              accessibilityRole={comment.mine ? undefined : 'button'}
+              accessibilityLabel={comment.mine ? undefined : `${comment.authorNickname} 프로필 열기`}
+              style={({ pressed }) => [styles.nameLink, pressed && pressedStyle]}
+            >
+              <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
+                {comment.authorNickname}
+              </Text>
+            </Pressable>
           </View>
           <Text style={[styles.body, { color: colors.textMuted }]}>
             {mention ? (
@@ -109,6 +128,7 @@ const styles = StyleSheet.create({
   rowBody: { flex: 1, gap: 2 },
   // 닉네임은 홈 '오늘의 글'·광장 카드와 같은 15/20 — 아바타(AVATAR_SIZE)와 나란히 서서 누구 말인지 먼저 읽힌다.
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  nameLink: { flexShrink: 1 },
   nickname: { flexShrink: 1, lineHeight: 20 },
   body: { ...typeScale.body, fontSize: 13, lineHeight: 20 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 2 },

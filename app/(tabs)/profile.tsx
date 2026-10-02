@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -12,7 +13,7 @@ import {
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/quote/QuoteCard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
-import { SocialCard } from '@/components/social/SocialCard';
+import { FollowSection, type FollowBox } from '@/components/social/FollowSection';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { Card, Eyebrow, KeyValue, Rule, formatDuration, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
@@ -34,13 +35,21 @@ const HEATMAP_DAYS = 90;
  *
  * 올해 읽은 시간 차트는 뺐고 기록 카드만 남겼다. 오려둔 문장·독후감은 여기서 펼치지 않고
  * 각자의 화면(/quote/mine · /post/mine)으로 보내는 링크만 둔다.
- * 소셜(지갑·팔로우·방문)은 따로 탭이었다가 이 화면 맨 아래로 돌아왔다 — 호출하는 API·상태는 그대로다.
+ * 팔로우 목록은 따로 화면(/follows)이었다가 이 화면 맨 아래 섹션으로 들어왔다 — 위쪽 팔로워·팔로잉 숫자를 누르면 그리로 내려간다.
  */
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const user = useAuth((s) => s.user);
   const myId = user?.id;
+  const scrollRef = useRef<ScrollView>(null);
+  // 팔로우 섹션의 세로 위치 — onLayout 으로 받아 두고 숫자를 누르면 그 자리로 스크롤한다.
+  const followY = useRef(0);
+  const [followBox, setFollowBox] = useState<FollowBox>('FOLLOWER');
+  const openFollows = (box: FollowBox) => {
+    setFollowBox(box);
+    scrollRef.current?.scrollTo({ y: Math.max(0, followY.current - spacing.lg), animated: true });
+  };
 
   const summary = useQuery({ queryKey: ['library', 'summary'], queryFn: libraryApi.summary });
   const myProfile = useQuery({
@@ -74,7 +83,7 @@ export default function ProfileScreen() {
 
   return (
     <PaperScreen>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
         <View style={styles.profileRow}>
           <Pressable
             onPress={() => router.push({ pathname: '/profile-photo', params: { returnTo: 'profile' } })}
@@ -113,22 +122,34 @@ export default function ProfileScreen() {
             <Text style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
               @{user?.handle ?? '—'} · 완독 {counts?.finished ?? 0}권
             </Text>
-            {/* 눌러 팔로우 목록으로 — 거기서 사람을 골라 엽서·채팅을 건다 (§14.3) */}
-            <Pressable
-              onPress={() => router.push({ pathname: '/follows', params: { tab: 'FOLLOWER' } })}
-              accessibilityRole="button"
-              accessibilityLabel="팔로워 · 팔로잉 목록"
-              hitSlop={8}
-              style={({ pressed }) => [styles.profileSocial, pressed && styles.pressed]}
-            >
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                팔로워{' '}
-                <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followerCount ?? 0}</Text>
-                {' · '}팔로잉{' '}
-                <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
-                {linkLabel('')}
-              </Text>
-            </Pressable>
+            {/* 숫자를 누르면 아래 팔로우 섹션으로 내려가며 그 탭이 열린다 (§14.3) */}
+            <View style={styles.profileSocial}>
+              <Pressable
+                onPress={() => openFollows('FOLLOWER')}
+                accessibilityRole="button"
+                accessibilityLabel={`팔로워 ${myProfile.data?.followerCount ?? 0}명 목록`}
+                hitSlop={8}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                  팔로워{' '}
+                  <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followerCount ?? 0}</Text>
+                </Text>
+              </Pressable>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+              <Pressable
+                onPress={() => openFollows('FOLLOWING')}
+                accessibilityRole="button"
+                accessibilityLabel={`팔로잉 ${myProfile.data?.followingCount ?? 0}명 목록`}
+                hitSlop={8}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                  팔로잉{' '}
+                  <Text style={[styles.profileCount, { color: colors.text }]}>{myProfile.data?.followingCount ?? 0}</Text>
+                </Text>
+              </Pressable>
+            </View>
           </View>
           {/* 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다. */}
           <TourTarget id="profile-settings" style={styles.settingsTarget}>
@@ -295,8 +316,8 @@ export default function ProfileScreen() {
 
         <MyScraps />
 
-        <View style={styles.block}>
-          <SocialCard />
+        <View style={styles.block} onLayout={(e) => { followY.current = e.nativeEvent.layout.y; }}>
+          <FollowSection box={followBox} onChangeBox={setFollowBox} />
         </View>
       </ScrollView>
     </PaperScreen>
@@ -600,7 +621,7 @@ const styles = StyleSheet.create({
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
   profileCount: { fontFamily: sans.semiBold },
-  profileSocial: { alignSelf: 'flex-start' },
+  profileSocial: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start' },
   pressed: pressedStyle,
 
   scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
