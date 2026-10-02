@@ -11,7 +11,8 @@ import type { BookQuote, Post } from '@/api/types';
  *
  * 옛 글은 밑줄을 `〖오려둔 문장 123〗` 표시로 가리켰고, 서버가 그 밑줄을 `post.quotes` 로 함께 내려준다.
  * `inlineLegacyQuotes` 가 그 표시를 같은 꼴의 조각 글로 바꾼다 — 상세는 바꾼 글을 그리고, 고치기는 바꾼 글로
- * 시작해 저장하면 밑줄 연결이 풀리고 글만 남는다.
+ * 시작해 저장하면 밑줄 연결이 풀리고 글만 남는다. 서버 V36 마이그레이션이 같은 규칙으로 옛 글을 본문 글로 굳히고
+ * 밑줄을 지운 뒤로는(post.quotes 는 늘 빈 목록, 표시도 없음) 이 길은 아무것도 바꾸지 않는다.
  */
 
 export type BodySegment =
@@ -155,15 +156,12 @@ export function splitQuoteBlocks(md: string): BodySegment[] {
 }
 
 /**
- * 옛 밑줄 하나 → 조각 글. 출처는 옛 조각의 메타 줄과 같다(남의 밑줄이면 작성자 · 책 제목 · 쪽수).
- * 작성자는 글쓴이와 견준다 — 보는 사람 기준(`mine`)이면 남이 볼 때 글쓴이 이름이 붙는다.
+ * 옛 밑줄 하나 → 조각 글. 출처는 책 제목 · 쪽수(있는 것만).
+ * 남의 밑줄이어도 그 사람 닉네임은 넣지 않는다 — 글 본문에 남의 이름이 굳으면 그 사람이 탈퇴해도 지워지지 않는다.
+ * 서버 V36 마이그레이션(LegacyQuoteInliner)과 같은 글을 만든다.
  */
-function legacyBlock(quote: BookQuote, authorId: number): string {
-  const source = [
-    quote.authorId !== authorId ? `${quote.authorNickname}님` : null,
-    quote.bookTitle || null,
-    pageSource(quote.page) ?? null,
-  ].filter(Boolean).join(' · ');
+function legacyBlock(quote: BookQuote): string {
+  const source = [quote.bookTitle || null, pageSource(quote.page) ?? null].filter(Boolean).join(' · ');
   return quoteBlock(quote.content, source);
 }
 
@@ -172,11 +170,7 @@ function legacyBlock(quote: BookQuote, authorId: number): string {
  * 표시가 가리키는 밑줄이 없으면(지워진 밑줄) 표시만 지운다 — 예전에도 그 자리는 비어 보였다.
  * 끝에 옮긴 수(`moved`)를 함께 돌려줘 고치기 화면이 한 줄로 알린다. 새 방식 글은 그대로 지나간다.
  */
-export function inlineLegacyQuotes(
-  md: string,
-  quotes: readonly BookQuote[],
-  authorId: number,
-): { text: string; moved: number } {
+export function inlineLegacyQuotes(md: string, quotes: readonly BookQuote[]): { text: string; moved: number } {
   if (quotes.length === 0 && !LEGACY_MARKER().test(md)) return { text: md, moved: 0 };
   const byId = new Map(quotes.map((quote) => [quote.id, quote] as const));
   const placed = new Set<number>();
@@ -199,7 +193,7 @@ export function inlineLegacyQuotes(
   const pushQuote = (quote: BookQuote) => {
     placed.add(quote.id);
     if (out.length > 0 && out[out.length - 1].trim() !== '') out.push('');
-    out.push(...legacyBlock(quote, authorId).split('\n'));
+    out.push(...legacyBlock(quote).split('\n'));
     gap = true;
     dropBlank = false;
   };
@@ -240,6 +234,6 @@ export function inlineLegacyQuotes(
 }
 
 /** 상세·고치기가 쓰는 본문 — 옛 밑줄은 조각 글로 바꿔 둔다(`inlineLegacyQuotes`). */
-export function postBodyOf(post: Pick<Post, 'bodyMd' | 'quotes' | 'authorId'>): { text: string; moved: number } {
-  return inlineLegacyQuotes(post.bodyMd, post.quotes, post.authorId);
+export function postBodyOf(post: Pick<Post, 'bodyMd' | 'quotes'>): { text: string; moved: number } {
+  return inlineLegacyQuotes(post.bodyMd, post.quotes);
 }
