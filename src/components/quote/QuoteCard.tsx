@@ -1,11 +1,11 @@
+import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FollowButton } from '@/components/social/FollowButton';
 import { Card, FootAction } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 export type QuoteCardProps = {
-  /** 있으면 작성자 줄 오른쪽에 팔로우 버튼이 선다(내 카드에는 서지 않는다). */
+  /** 있으면 작성자 줄을 눌러 그 사람의 마이페이지로 간다(내 카드는 누를 수 없다). 팔로우는 거기서 한다. */
   authorId?: number;
   authorNickname: string;
   authorAvatarUrl?: string | null;
@@ -116,6 +116,8 @@ export function QuoteCard({
   onAgree, onDelete, onOpen, onOpenBook,
 }: QuoteCardProps) {
   const { colors } = useTheme();
+  const router = useRouter();
+  const openAuthor = authorId != null && !mine ? () => router.push(`/user/${authorId}`) : undefined;
 
   const body = (
     <Text style={[styles.quote, { color: colors.text, borderLeftColor: colors.accent }]}>
@@ -125,7 +127,13 @@ export function QuoteCard({
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
-      <View style={styles.authorRow}>
+      <Pressable
+        onPress={openAuthor}
+        disabled={!openAuthor}
+        accessibilityRole={openAuthor ? 'button' : undefined}
+        accessibilityLabel={openAuthor ? `${authorNickname} 프로필 열기` : undefined}
+        style={({ pressed }) => [styles.authorRow, pressed && pressedStyle]}
+      >
         <QuoteAvatar uri={authorAvatarUrl} nickname={authorNickname} />
         <View style={styles.authorText}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
@@ -147,8 +155,7 @@ export function QuoteCard({
             ) : null}
           </View>
         </View>
-        {authorId != null && !mine ? <FollowButton userId={authorId} nickname={authorNickname} /> : null}
-      </View>
+      </Pressable>
 
       {onOpen ? (
         <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="밑줄 상세">

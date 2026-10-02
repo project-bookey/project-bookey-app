@@ -16,7 +16,6 @@ import { isNotePost, noteDocOf } from '@/components/post/postFormat';
 import { useLikePost } from '@/components/post/useLikePost';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
 import { QuoteScrap } from '@/components/quote/QuoteScrap';
-import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { EmptyState, Eyebrow, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -199,18 +198,26 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
 
       {/* ② 바이라인 — 작성자 · 올린 때 · 조회. 본인의 비공개·링크 글에는 공개 범위를 밝힌다 */}
       <View style={styles.byline}>
-        <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
-        <View style={styles.bylineText}>
-          <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-            {post.authorNickname}
-          </Text>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-            {formatRelative(post.publishedAt ?? post.createdAt)}
-          </Text>
-        </View>
+        {/* 작성자를 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
+        <Pressable
+          onPress={() => router.push(`/user/${post.authorId}`)}
+          disabled={post.mine}
+          accessibilityRole={post.mine ? undefined : 'button'}
+          accessibilityLabel={post.mine ? undefined : `${post.authorNickname} 프로필 열기`}
+          style={({ pressed }) => [styles.bylineAuthor, pressed ? pressedStyle : null]}
+        >
+          <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
+          <View style={styles.bylineText}>
+            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
+              {post.authorNickname}
+            </Text>
+            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
+              {formatRelative(post.publishedAt ?? post.createdAt)}
+            </Text>
+          </View>
+        </Pressable>
         {/* 클럽만 글은 누가 보든 밝힌다(보는 사람도 그 클럽 멤버다). 비공개·링크는 본인에게만. */}
         {visibilityLabel && (post.mine || post.visibility === 'CLUB') ? <Tag label={visibilityLabel} /> : null}
-        {!post.mine ? <FollowButton userId={post.authorId} nickname={post.authorNickname} /> : null}
       </View>
 
       {/* 클럽 독후감이면 어느 클럽의 글인지 — 누르면 그 클럽의 독후감 탭으로 */}
@@ -374,6 +381,7 @@ const styles = StyleSheet.create({
   bookLinkText: { fontSize: 13, letterSpacing: 0.4 },
 
   byline: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bylineAuthor: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   bylineText: { flex: 1 },
   // 바이라인 조판은 홈 '오늘의 글'(ScrapAuthor)·광장 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { fontSize: 17, lineHeight: 23 },

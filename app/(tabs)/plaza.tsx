@@ -12,7 +12,6 @@ import { FocusRing, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { QuoteAvatar, QuoteCard } from '@/components/quote/QuoteCard';
 import { QuoteDraftFields, useQuoteDraft } from '@/components/quote/QuoteDraftFields';
-import { FollowButton } from '@/components/social/FollowButton';
 import { useAgreeQuote } from '@/components/quote/useAgreeQuote';
 import { Button, Card, EmptyState, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -20,7 +19,7 @@ import { TourTarget } from '@/components/tour/TourTarget';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { CapsuleTabs } from '@/components/CapsuleTabs';
 import { useAuth } from '@/store/auth';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
@@ -325,6 +324,7 @@ function FeedCard({
   onFocusDone: () => void;
 }) {
   const { colors } = useTheme();
+  const router = useRouter();
   const tilt = CARD_TILT[index % CARD_TILT.length];
 
   if (item.type === 'QUOTE') {
@@ -356,7 +356,14 @@ function FeedCard({
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
-      <View style={styles.authorRow}>
+      {/* 작성자 줄을 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
+      <Pressable
+        onPress={() => router.push(`/user/${item.authorId}`)}
+        disabled={mine}
+        accessibilityRole={mine ? undefined : 'button'}
+        accessibilityLabel={mine ? undefined : `${item.authorNickname} 프로필 열기`}
+        style={({ pressed }) => [styles.authorRow, pressed && pressedStyle]}
+      >
         <QuoteAvatar uri={item.authorAvatarUrl} nickname={item.authorNickname} />
         <View style={styles.authorText}>
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
@@ -366,8 +373,7 @@ function FeedCard({
             {item.bookTitle}
           </Text>
         </View>
-        {!mine ? <FollowButton userId={item.authorId} nickname={item.authorNickname} /> : null}
-      </View>
+      </Pressable>
       <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={`${item.bookTitle} 상세`} style={styles.finishRow}>
         <TiltCover uri={item.bookCoverUrl} title={item.bookTitle} width={44} entering={false} />
         <View style={styles.finishText}>
