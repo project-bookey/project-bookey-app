@@ -906,9 +906,6 @@ export const postApi = {
     api<Page<Post>>(`/api/v1/books/${bookId}/posts`, { query: { page, size } }),
   mine: (page = 0, size = 20) =>
     api<Page<Post>>("/api/v1/posts", { query: { page, size } }),
-  /** 클럽 독후감 — 그 클럽 멤버만. 클럽 글(광장에도 공개 + 클럽만) 최신순. */
-  clubPosts: (clubId: number, page = 0, size = 30) =>
-    api<Page<Post>>(`/api/v1/posts/clubs/${clubId}`, { query: { page, size } }),
   get: (postId: number) => api<Post>(`/api/v1/posts/${postId}`),
   create: (body: CreatePost) =>
     api<Post>("/api/v1/posts", { method: "POST", body }),

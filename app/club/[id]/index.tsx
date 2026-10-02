@@ -30,7 +30,6 @@ import {
   confirmAsync,
   notify,
 } from "@/components/club";
-import { ClubPostGrid } from "@/components/club/ClubPostGrid";
 import { MeetingNoteGrid } from "@/components/club/MeetingNoteGrid";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubChatBody } from "./chat";
@@ -68,7 +67,7 @@ import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono } from "@/theme/tokens";
 
-const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "notes", "reviews"];
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "notes"];
 
 /**
  * 클럽 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
@@ -82,7 +81,6 @@ export default function ClubHomeScreen() {
   const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const clubId = Number(id);
   // 탭은 화면 이동 없이 아래 영역만 바꾼다. 딥링크(?tab=)로 들어오면 그 탭으로 연다.
-  // 옛 노트 탭 링크(?tab=notebook)는 독후감 탭으로 연다.
   const [tab, setTab] = useState<ClubTabKey>(clubTabOf(tabParam) ?? "home");
   useEffect(() => {
     const next = clubTabOf(tabParam);
@@ -569,7 +567,6 @@ export default function ClubHomeScreen() {
         {tab === "chat" ? <ClubChatBody /> : null}
         {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} /> : null}
         {tab === "notes" ? <MeetingNoteGrid clubId={clubId} onOpenMeetings={() => setTab("meetings")} /> : null}
-        {tab === "reviews" ? <ClubPostGrid clubId={clubId} ended={ended} /> : null}
       </SwipeableTabs>
     </PaperScreen>
   );

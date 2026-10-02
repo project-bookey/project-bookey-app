@@ -18,8 +18,6 @@ export const bookPostsKey = (bookId: number) => ['posts', 'book', bookId] as con
 export const myPostsKey = ['posts', 'mine'] as const;
 /** 내 최신 독후감 한 건(프로필) — Page 하나. */
 export const MY_POSTS_LATEST_KEY = ['posts', 'mine', 'latest'] as const;
-/** 클럽 독후감 무한 목록(클럽 홈 독후감 탭). ['posts'] 접두사라 invalidatePostLists 에 같이 걸린다. */
-export const clubPostsKey = (clubId: number) => ['posts', 'club', clubId] as const;
 export const postKey = (postId: number) => ['post', postId] as const;
 
 export type PostListCache = InfiniteData<Page<Post>>;
@@ -77,7 +75,6 @@ export function patchPostEverywhere(queryClient: QueryClient, postId: number, pa
   queryClient.setQueryData<PostListCache>(postFeedKey, patchInfinite);
   queryClient.setQueryData<Page<Post>>(POST_HOME_KEY, (old) => (old ? patchPage(old) : old));
   queryClient.setQueriesData<PostListCache>({ queryKey: ['posts', 'book'] }, patchInfinite);
-  queryClient.setQueriesData<PostListCache>({ queryKey: ['posts', 'club'] }, patchInfinite);
   // 내 독후감은 무한 목록(myPostsKey)과 최신 한 건(MY_POSTS_LATEST_KEY)이 같은 접두사라
   // 한 번에 걸린다 — 'pages' 유무로 InfiniteData / Page 를 가른다.
   queryClient.setQueriesData<PostListCache | Page<Post>>({ queryKey: ['posts', 'mine'] }, (old) =>

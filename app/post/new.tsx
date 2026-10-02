@@ -31,7 +31,7 @@ const TITLE_MAX = POST_TITLE_MAX;
 const QUOTE_BAR_HEIGHT = 60;
 
 /**
- * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글), 클럽 독후감 탭(`clubId`),
+ * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글),
  * 상세 `고치기`(`id`)에서 들어온다.
  * 새 글은 먼저 모드를 고른다(PostModeChooser) — 글로 쓰기는 `format=TEXT` 로 이 화면의 폼을, 노트로 꾸미기는 `/post/note` 를 연다.
  * 고칠 글이 노트면 노트 편집기로 넘긴다.
