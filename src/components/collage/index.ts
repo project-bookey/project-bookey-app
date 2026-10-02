@@ -11,6 +11,7 @@ export { FocusRing } from './FocusRing';
 export { MemoScrap } from './MemoScrap';
 export { PaperScreen } from './PaperScreen';
 export { PlusGlyph } from './PlusGlyph';
+export { SearchGlyph } from './SearchGlyph';
 export { SectionNav } from './SectionNav';
 export type { SectionKey } from './SectionNav';
 export { StickyNote } from './StickyNote';
