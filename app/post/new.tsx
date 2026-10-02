@@ -16,7 +16,7 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
 import {
-  POST_TITLE_MAX, defaultVisibility, isNotePost, visibilityCaption, visibilityOptions,
+  POST_TITLE_MAX, defaultVisibility, visibilityCaption, visibilityOptions,
 } from '@/components/post/postFormat';
 import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/post/postQuotes';
 import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
@@ -33,7 +33,6 @@ const QUOTE_BAR_HEIGHT = 60;
 /**
  * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글),
  * 상세 `고치기`(`id`)에서 들어온다.
- * 예전에 노트로 꾸민 독후감(format NOTE)은 노트 편집기가 없어져 고칠 수 없다.
  *
  * 폼 상태는 안쪽 PostForm 이 마운트될 때 한 번에 시드한다 — 그래서 이 바깥 화면은 고칠 글·책을 먼저 받아
  * 오고 나서야 폼을 세운다(useBookPicker 의 initial 도 마운트 때 한 번만 읽힌다). 로딩·404·남의 글은 여기서 거른다.
@@ -97,13 +96,6 @@ export default function PostEditorScreen() {
             )}
           />
         )}
-      </Shell>
-    );
-  }
-  if (loaded && isNotePost(loaded)) {
-    return (
-      <Shell category={category}>
-        <EmptyState title="고칠 수 없는 글입니다" description="노트로 꾸민 독후감은 더 이상 고칠 수 없어요." />
       </Shell>
     );
   }
@@ -212,7 +204,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
       };
       return editing
         ? postApi.update(post.id, base)
-        : postApi.create({ ...base, readingRecordId: book?.recordId, format: 'TEXT', clubId });
+        : postApi.create({ ...base, readingRecordId: book?.recordId, clubId });
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(postKey(saved.id), saved);
