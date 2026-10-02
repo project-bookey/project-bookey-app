@@ -91,6 +91,11 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
     queryFn: () => (mine ? libraryApi.list('WANT_TO_READ') : profileApi.library(userId as number, 'WANT_TO_READ')),
     enabled: ready,
   });
+  const finished = useQuery({
+    queryKey: mine ? ['library', 'FINISHED'] : ['userLibrary', userId, 'FINISHED'],
+    queryFn: () => (mine ? libraryApi.list('FINISHED') : profileApi.library(userId as number, 'FINISHED')),
+    enabled: ready,
+  });
   // 기록 카드의 총 독서시간·스트릭 때문에 한 해를 덮는 365일을 받는다. 히트맵은 이 응답의 최근 구간만 잘라 쓴다.
   const stats = useQuery({
     queryKey: mine ? ['stats', 365] : ['userStats', userId, 365],
@@ -98,12 +103,13 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
     enabled: ready,
   });
 
-  // 읽는 중을 앞에 세우고 읽고 싶은 책을 뒤에 잇는다 — 선반은 '지금 손이 가는 순서'다.
+  // 읽는 중을 앞에 세우고 완독한 책, 읽고 싶은 책 순으로 잇는다 — 지금 손에 든 책 다음에 다 읽은 책을 보여 준다.
   const shelf: ReadingRecord[] = [
     ...(reading.data?.content ?? []),
+    ...(finished.data?.content ?? []),
     ...(want.data?.content ?? []),
   ].slice(0, SHELF_CAP);
-  const shelfLoading = reading.isLoading || want.isLoading;
+  const shelfLoading = reading.isLoading || finished.isLoading || want.isLoading;
 
   const counts = summary.data;
   const libraryTotal = counts
@@ -343,7 +349,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
           </View>
         ) : shelf.length === 0 ? (
           <Text style={[typeScale.caption, styles.shelfEmpty, { color: colors.textFaint }]}>
-            지금 읽거나 읽고 싶은 책이 아직 없어요.
+            서재에 담긴 책이 아직 없어요.
           </Text>
         ) : (
           <ScrollView
