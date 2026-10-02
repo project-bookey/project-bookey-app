@@ -1742,6 +1742,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/{userId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 유저의 독서 통계 — 마이페이지 기록 카드(스트릭·히트맵)용, 최대 366일 */
+        get: operations["stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{userId}/profile": {
         parameters: {
             query?: never;
@@ -1768,6 +1785,40 @@ export interface paths {
         };
         /** 유저의 공개 독후감 — 피드에서 휘발된 글도 여기엔 축적 */
         get: operations["posts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 유저의 서재 — 마이페이지 선반용. 남의 서재면 각오(commitment) 메모는 비운다 */
+        get: operations["library"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/library/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 유저의 서재 상태별 개수 */
+        get: operations["librarySummary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8513,6 +8564,30 @@ export interface operations {
             };
         };
     };
+    stats: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StatsSummary"];
+                };
+            };
+        };
+    };
     profile: {
         parameters: {
             query?: never;
@@ -8556,6 +8631,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
+    library: {
+        parameters: {
+            query?: {
+                status?: "WANT_TO_READ" | "READING" | "PAUSED" | "FINISHED" | "ABANDONED";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseReadingRecordView"];
+                };
+            };
+        };
+    };
+    librarySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LibrarySummary"];
                 };
             };
         };

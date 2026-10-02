@@ -774,6 +774,15 @@ export const profileApi = {
   /** 유저 프로필 — 열람하면 방문 기록이 남는다(방문 수는 전체 공개). */
   user: (userId: number) =>
     api<UserProfileView>(`/api/v1/users/${userId}/profile`),
+  /** 유저의 서재 — 마이페이지 선반용. 남의 서재면 각오 메모는 비어 온다. */
+  library: (userId: number, status?: ReadingStatus) =>
+    api<Page<ReadingRecord>>(`/api/v1/users/${userId}/library`, { query: { status, size: 50 } }),
+  /** 유저의 서재 상태별 개수. */
+  librarySummary: (userId: number) =>
+    api<LibrarySummary>(`/api/v1/users/${userId}/library/summary`),
+  /** 유저의 독서 통계 — 마이페이지 기록 카드용(서버가 최대 366일로 자른다). */
+  stats: (userId: number, days = 90) =>
+    api<StatsSummary>(`/api/v1/users/${userId}/stats`, { query: { days } }),
   /** 내 방문자 목록 — 구독 회원 전용. */
   visitors: (page = 0, size = 20) =>
     api<Page<VisitorView>>("/api/v1/me/visitors", { query: { page, size } }),

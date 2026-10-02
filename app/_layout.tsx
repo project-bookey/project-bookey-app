@@ -99,7 +99,7 @@ export default function RootLayout() {
             <Stack.Screen name="club/[id]/log/[postId]" options={{ title: '조각' }} />
             <Stack.Screen name="club/[id]/note/[meetingId]" options={{ title: '모임 노트' }} />
             <Stack.Screen name="book/[id]" options={{ title: '도서' }} />
-            <Stack.Screen name="user/[id]" options={{ title: '독자' }} />
+            <Stack.Screen name="user/[id]" options={{ title: '마이페이지' }} />
             <Stack.Screen name="postcards" options={{ title: '엽서함' }} />
             <Stack.Screen name="visitors" options={{ title: '방문자' }} />
             <Stack.Screen name="chats" options={{ title: '채팅' }} />
