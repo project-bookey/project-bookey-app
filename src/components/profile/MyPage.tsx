@@ -19,7 +19,7 @@ import { FollowSection, type FollowBox } from '@/components/social/FollowSection
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { TourTarget } from '@/components/tour/TourTarget';
 import {
-  Button, Card, EmptyState, Eyebrow, KeyValue, Rule, formatDuration, formatRelative, linkLabel,
+  Card, EmptyState, Eyebrow, KeyValue, Rule, formatDuration, formatRelative, linkLabel,
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
@@ -42,7 +42,7 @@ const POSTS_PAGE = 10;
  *
  * 둘 다: 프로필 줄 · 서재 선반 · 기록 카드(스트릭·히트맵).
  * 나만: 사진·닉네임 편집, 설정, 지갑 메모/방문 노트, 출석, 오려둔 문장/독후감 링크, 팔로우 목록.
- * 남만: 팔로우 · 채팅 · 엽서 버튼과 공개 독후감 — 팔로우는 이 화면에서만 한다.
+ * 남만: 프로필 줄 오른쪽 팔로우 칩, 팔로워 줄 아래 채팅·엽서 링크(시안 A), 공개 독후감 — 팔로우는 이 화면에서만 한다.
  * 남의 서재·통계는 /users/{id}/library · /users/{id}/stats 로 받는다(각오 메모는 서버가 비워 보낸다).
  */
 export function MyPage({ userId, mine }: { userId: number | undefined; mine: boolean }) {
@@ -54,6 +54,17 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
   // 팔로우 섹션의 세로 위치 — onLayout 으로 받아 두고 숫자를 누르면 그 자리로 스크롤한다.
   const followY = useRef(0);
   const [followBox, setFollowBox] = useState<FollowBox>('FOLLOWER');
+  // 남의 페이지 동작(시안 A) — 채팅·엽서 링크는 프로필 줄 안에, 엽서 작성 칸은 그 아래에 펼친다.
+  const [composing, setComposing] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const openChat = useMutation({
+    mutationFn: () => chatApi.open(userId as number),
+    onSuccess: (chat) => {
+      setChatError(null);
+      router.push({ pathname: '/chat/[id]', params: { id: String(chat.id), name: chat.otherNickname } });
+    },
+    onError: (e) => setChatError(e instanceof ApiError ? e.message : '채팅을 열지 못했어요.'),
+  });
   const openFollows = (box: FollowBox) => {
     setFollowBox(box);
     scrollRef.current?.scrollTo({ y: Math.max(0, followY.current - spacing.lg), animated: true });
@@ -192,11 +203,52 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               </Pressable>
             </View>
           ) : (
-            <View style={styles.profileSocial}>
-              <SocialCount label="팔로워" value={followerCount} />
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
-              <SocialCount label="팔로잉" value={followingCount} />
-            </View>
+            <>
+              <View style={styles.profileSocial}>
+                <SocialCount label="팔로워" value={followerCount} />
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+                <SocialCount label="팔로잉" value={followingCount} />
+                {p?.mutual || p?.followsMe ? (
+                  <>
+                    <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+                    <Text style={[typeScale.caption, { color: p.mutual ? colors.accent : colors.textFaint }]}>
+                      {p.mutual ? '맞팔로우' : '나를 팔로우'}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+              {/* 채팅은 엽서 답장이 오간 사이(canChat)에만 — 서버 거절도 아래에 그대로 표시한다. */}
+              {p ? (
+                <View style={styles.visitorLinks}>
+                  {p.canChat ? (
+                    <Pressable
+                      onPress={() => openChat.mutate()}
+                      disabled={openChat.isPending}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${p.nickname}님과 채팅`}
+                      hitSlop={8}
+                      style={({ pressed }) => [styles.visitorLink, pressed && styles.pressed]}
+                    >
+                      <ChatLine color={colors.accent} />
+                      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('채팅')}</Text>
+                    </Pressable>
+                  ) : null}
+                  <Pressable
+                    onPress={() => setComposing((v) => !v)}
+                    accessibilityRole="button"
+                    accessibilityLabel={composing ? '엽서 쓰기 닫기' : `${p.nickname}님에게 엽서 쓰기`}
+                    accessibilityState={{ expanded: composing }}
+                    hitSlop={8}
+                    style={({ pressed }) => [styles.visitorLink, pressed && styles.pressed]}
+                  >
+                    <EnvelopeLine color={composing ? colors.textFaint : colors.accent} />
+                    <Text style={[typeScale.monoLabel, { color: composing ? colors.textFaint : colors.accent }]}>
+                      {linkLabel(composing ? '엽서 닫기' : '엽서 쓰기', 'action')}
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </>
           )}
         </View>
         {mine ? (
@@ -217,10 +269,32 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
             </Pressable>
           </TourTarget>
+        ) : userId != null ? (
+          // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
+          <View style={styles.followSlot}>
+            <FollowButton userId={userId} nickname={p?.nickname} />
+          </View>
         ) : null}
       </View>
 
-      {mine ? <MyWalletRow /> : p && userId != null ? <VisitorActions userId={userId} profile={p} /> : null}
+      {!mine && (chatError || composing) && p && userId != null ? (
+        <View style={[styles.block, styles.visitorActions]}>
+          {chatError ? (
+            <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
+              {chatError}
+            </Text>
+          ) : null}
+          {composing ? (
+            <PostcardComposer
+              toUserId={userId}
+              toNickname={p.nickname}
+              onDone={() => setComposing(false)}
+            />
+          ) : null}
+        </View>
+      ) : null}
+
+      {mine ? <MyWalletRow /> : null}
 
       {mine ? <AttendanceCard /> : null}
 
@@ -420,69 +494,6 @@ function MyWalletRow() {
   );
 }
 
-/**
- * 남의 페이지 동작 줄 — 팔로우 · 채팅 · 엽서. 팔로우는 앱에서 이 자리에서만 한다.
- * 채팅은 엽서 답장이 오간 사이(canChat)에만 보이지만, 서버 거절도 그대로 표시한다.
- */
-function VisitorActions({ userId, profile }: {
-  userId: number;
-  profile: { nickname: string; canChat: boolean; mutual: boolean; followsMe: boolean };
-}) {
-  const router = useRouter();
-  const { colors } = useTheme();
-  const [composing, setComposing] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const openChat = useMutation({
-    mutationFn: () => chatApi.open(userId),
-    onSuccess: (chat) => {
-      setChatError(null);
-      router.push({ pathname: '/chat/[id]', params: { id: String(chat.id), name: chat.otherNickname } });
-    },
-    onError: (e) => setChatError(e instanceof ApiError ? e.message : '채팅을 열지 못했어요.'),
-  });
-
-  return (
-    <View style={[styles.block, styles.visitorActions]}>
-      {profile.mutual || profile.followsMe ? (
-        <Text style={[typeScale.monoLabel, { color: profile.mutual ? colors.accent : colors.textFaint }]}>
-          {profile.mutual ? '서로 팔로우하고 있어요' : '나를 팔로우하고 있어요'}
-        </Text>
-      ) : null}
-      <View style={styles.actionRow}>
-        <FollowButton userId={userId} nickname={profile.nickname} size="md" />
-        {profile.canChat ? (
-          <Button
-            label="채팅"
-            onPress={() => openChat.mutate()}
-            loading={openChat.isPending}
-            style={{ flex: 1 }}
-          />
-        ) : null}
-        {!composing ? (
-          <Button
-            label="엽서 보내기"
-            variant={profile.canChat ? 'outline' : 'primary'}
-            onPress={() => setComposing(true)}
-            style={{ flex: 1 }}
-          />
-        ) : null}
-      </View>
-      {chatError ? (
-        <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
-          {chatError}
-        </Text>
-      ) : null}
-      {composing ? (
-        <PostcardComposer
-          toUserId={userId}
-          toNickname={profile.nickname}
-          onDone={() => setComposing(false)}
-        />
-      ) : null}
-    </View>
-  );
-}
-
 /** 남의 공개 독후감 — 피드에서 휘발된 글도 여기엔 쌓인다. 누르면 독후감 상세로. */
 function PublicPosts({ userId }: { userId: number }) {
   const router = useRouter();
@@ -596,6 +607,25 @@ function PencilLine({ color }: { color: string }) {
         {...iconStroke}
         strokeWidth={2.1}
       />
+    </Svg>
+  );
+}
+
+/** 말풍선 — 채팅 링크 앞. */
+function ChatLine({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <Path d="M4 5h16v11H9l-5 4z" stroke={color} {...iconStroke} />
+    </Svg>
+  );
+}
+
+/** 봉투 — 엽서 쓰기 링크 앞. */
+function EnvelopeLine({ color }: { color: string }) {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <Path d="M3 6h18v13H3z" stroke={color} {...iconStroke} />
+      <Path d="m3 7 9 6 9-6" stroke={color} {...iconStroke} />
     </Svg>
   );
 }
@@ -945,7 +975,10 @@ const styles = StyleSheet.create({
   missing: { ...layout.content, paddingTop: spacing.xl },
   shelfEmpty: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   visitorActions: { gap: spacing.sm },
-  actionRow: { flexDirection: 'row', gap: spacing.sm },
+  // 링크 두 개 사이를 spacing.lg 로 띄워 오터치를 막는다 — 글자는 작아도 hitSlop 으로 44pt 가까이 받는다.
+  visitorLinks: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: 2 },
+  visitorLink: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28 },
+  followSlot: { alignSelf: 'flex-start', marginTop: spacing.xs },
   postsSection: { gap: spacing.md },
   postTitle: { fontFamily: serif.bold, fontSize: 16, lineHeight: 23, marginBottom: spacing.xs },
   postFoot: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.sm },
