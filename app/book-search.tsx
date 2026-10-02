@@ -8,7 +8,7 @@ import {
 
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
-import { Chip, MemoScrap, PaperScreen, TiltCover } from '@/components/collage';
+import { Chip, MemoScrap, PaperScreen, SearchGlyph, TiltCover } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -109,7 +109,7 @@ export default function SearchScreen() {
             },
           ]}
         >
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>⌕</Text>
+          <SearchGlyph color={colors.accent} />
           <TextInput
             value={input}
             onChangeText={setInput}

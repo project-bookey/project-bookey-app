@@ -6,7 +6,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { ApiError } from '@/api/client';
 import { bookApi, challengeApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SearchGlyph, SubHeader } from '@/components/collage';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
@@ -139,7 +139,7 @@ export default function NewChallengeScreen() {
             },
           ]}
         >
-          <Text style={[typeScale.body, { color: colors.textFaint }]}>⌕</Text>
+          <SearchGlyph color={colors.textFaint} />
           <TextInput
             value={input}
             onChangeText={setInput}

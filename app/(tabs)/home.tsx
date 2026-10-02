@@ -8,7 +8,7 @@ import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
 import { PLAZA_HOME_KEY } from '@/api/quoteCache';
 import type { ReadingRecord } from '@/api/types';
-import { PaperScreen } from '@/components/collage';
+import { PaperScreen, SearchGlyph } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { NoticePopup } from '@/components/home/NoticePopup';
@@ -100,7 +100,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="책 검색"
           >
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>⌕</Text>
+            <SearchGlyph color={colors.accent} />
             <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
           </Pressable>
         </TourTarget>
