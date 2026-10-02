@@ -118,7 +118,3 @@ export type PostImage = Schemas['PostImageView'];
 export type PostLike = Schemas['PostLikeView'];
 export type PostComment = Schemas['PostCommentView'];
 export type CreatePostComment = Schemas['CreatePostCommentRequest'];
-
-// ── 챌린지 ───────────────────────────────────────────────
-export type Challenge = Schemas['ChallengeView'];
-export type ChallengeStatus = Challenge['status'];
