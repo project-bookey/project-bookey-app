@@ -1,10 +1,7 @@
-import type { Post, PostVisibility } from '@/api/types';
+import type { PostVisibility } from '@/api/types';
 
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 export const POST_TITLE_MAX = 300;
-
-/** 예전에 노트로 꾸민 독후감인지 — 노트 편집기가 없어져 고칠 수 없다. */
-export const isNotePost = (post: Pick<Post, 'format'>) => post.format === 'NOTE';
 
 /**
  * 공개 범위 고르기 — 클럽 글은 클럽만(CLUB)·광장에도(PUBLIC), 그 밖은 공개·비공개.

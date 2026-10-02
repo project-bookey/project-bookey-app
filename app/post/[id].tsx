@@ -11,7 +11,6 @@ import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { PostBody } from '@/components/post/PostBody';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
-import { isNotePost } from '@/components/post/postFormat';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { Avatar } from '@/components/Avatar';
@@ -68,8 +67,8 @@ export default function PostDetailScreen() {
     arm('post');
   };
 
-  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다. 예전 노트 독후감은 고칠 편집기가 없다.
-  const editAction = post.data?.mine && !isNotePost(post.data) ? (
+  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다.
+  const editAction = post.data?.mine ? (
     <Pressable
       onPress={() => router.push({ pathname: '/post/new', params: { id: String(postId) } })}
       accessibilityRole="button"
@@ -158,7 +157,6 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   const hasBook = post.bookId != null;
   const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
   // 옛 글이 밑줄로 엮어 둔 문장(표시 자리·글 끝)도 본문의 문장 조각으로 그린다 — 밑줄 상세로 가는 길은 없다.
-  // 예전 노트 독후감도 서버가 뽑아 둔 글(bodyMd)·사진으로 보여 준다.
   const body = useMemo(() => postBodyOf(post).text, [post]);
 
   return (

@@ -3182,15 +3182,6 @@ export interface components {
             /** @description 더 쓰지 않는다 — 보내도 무시한다(옛 앱 호환) */
             quoteIds?: number[];
             /**
-             * @description 생략하면 TEXT
-             * @enum {string}
-             */
-            format?: "TEXT" | "NOTE";
-            /** @description NOTE 전용 캔버스 문서 — pages 배열 1~6장, 1MB 이하 */
-            document?: {
-                [key: string]: unknown;
-            };
-            /**
              * Format: int64
              * @description 모임 안에서 쓸 때 그 모임 id — 활성 멤버·진행 중 모임만
              */
@@ -3261,12 +3252,6 @@ export interface components {
             mine: boolean;
             /** Format: date-time */
             createdAt: string;
-            /** @enum {string} */
-            format: "TEXT" | "NOTE";
-            /** @description NOTE 글의 캔버스 문서 — TEXT 는 null */
-            document?: {
-                [key: string]: unknown;
-            };
             /** Format: int64 */
             clubId?: number;
             clubName?: string;
@@ -3980,10 +3965,6 @@ export interface components {
             imageIds?: number[];
             /** @description 더 쓰지 않는다 — 보내도 무시한다(옛 앱 호환) */
             quoteIds?: number[];
-            /** @description 생략하면 유지 — NOTE 글만, 문서 전체를 덮어쓴다 */
-            document?: {
-                [key: string]: unknown;
-            };
         };
         NotificationSettingsRequest: {
             /** @enum {string} */

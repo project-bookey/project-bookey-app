@@ -110,8 +110,6 @@ export type Post = Schemas['PostView'];
 export type CreatePost = Schemas['CreatePostRequest'];
 export type UpdatePost = Schemas['UpdatePostRequest'];
 export type PostVisibility = Post['visibility'];
-/** 독후감 형식 — TEXT(마크다운 글) · NOTE(캔버스 노트, document 에 앱 소유 문서). */
-export type PostFormat = Post['format'];
 export type PostImage = Schemas['PostImageView'];
 export type PostLike = Schemas['PostLikeView'];
 export type PostComment = Schemas['PostCommentView'];
