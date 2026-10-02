@@ -1,16 +1,10 @@
 import type { Post, PostVisibility } from '@/api/types';
-import { parsePostNoteDoc, type PostNoteDoc } from '@/components/note';
 
-/** 노트 독후감에 붙일 수 있는 사진 수 — 서버 상한과 같은 값(텍스트 글은 10). */
-export const NOTE_IMAGE_MAX = 30;
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 export const POST_TITLE_MAX = 300;
 
-/** 노트 모드 독후감인지. */
+/** 예전에 노트로 꾸민 독후감인지 — 노트 편집기가 없어져 고칠 수 없다. */
 export const isNotePost = (post: Pick<Post, 'format'>) => post.format === 'NOTE';
-
-/** 서버의 불투명 document → 노트 문서. 깨졌거나 비어도 빈 격자 한 장으로 연다(throw 없음). */
-export const noteDocOf = (post: Pick<Post, 'document'>): PostNoteDoc => parsePostNoteDoc(post.document);
 
 /**
  * 공개 범위 고르기 — 클럽 글은 클럽만(CLUB)·광장에도(PUBLIC), 그 밖은 공개·비공개.

@@ -112,8 +112,6 @@ export type UpdatePost = Schemas['UpdatePostRequest'];
 export type PostVisibility = Post['visibility'];
 /** 독후감 형식 — TEXT(마크다운 글) · NOTE(캔버스 노트, document 에 앱 소유 문서). */
 export type PostFormat = Post['format'];
-/** 서버는 노트 문서를 해석하지 않아 { [key: string]: unknown } 으로 온다 — 앱의 PostNoteDoc(note/noteDoc.ts)으로 경계에서 좁힌다. */
-export type PostDocument = NonNullable<Post['document']>;
 export type PostImage = Schemas['PostImageView'];
 export type PostLike = Schemas['PostLikeView'];
 export type PostComment = Schemas['PostCommentView'];

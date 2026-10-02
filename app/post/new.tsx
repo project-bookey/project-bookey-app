@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import {
@@ -15,7 +15,6 @@ import type { PickedBook } from '@/components/book/BookPicker';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
-import { PostModeChooser } from '@/components/post/PostModeChooser';
 import {
   POST_TITLE_MAX, defaultVisibility, isNotePost, visibilityCaption, visibilityOptions,
 } from '@/components/post/postFormat';
@@ -34,15 +33,14 @@ const QUOTE_BAR_HEIGHT = 60;
 /**
  * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글),
  * 상세 `고치기`(`id`)에서 들어온다.
- * 새 글은 먼저 모드를 고른다(PostModeChooser) — 글로 쓰기는 `format=TEXT` 로 이 화면의 폼을, 노트로 꾸미기는 `/post/note` 를 연다.
- * 고칠 글이 노트면 노트 편집기로 넘긴다.
+ * 예전에 노트로 꾸민 독후감(format NOTE)은 노트 편집기가 없어져 고칠 수 없다.
  *
  * 폼 상태는 안쪽 PostForm 이 마운트될 때 한 번에 시드한다 — 그래서 이 바깥 화면은 고칠 글·책을 먼저 받아
  * 오고 나서야 폼을 세운다(useBookPicker 의 initial 도 마운트 때 한 번만 읽힌다). 로딩·404·남의 글은 여기서 거른다.
  */
 export default function PostEditorScreen() {
-  const { id, bookId, clubId, format } = useLocalSearchParams<{
-    id?: string; bookId?: string; clubId?: string; format?: string;
+  const { id, bookId, clubId } = useLocalSearchParams<{
+    id?: string; bookId?: string; clubId?: string;
   }>();
   const { colors } = useTheme();
   const postId = id ? Number(id) : NaN;
@@ -51,7 +49,6 @@ export default function PostEditorScreen() {
   const fromBook = !editing && Number.isFinite(bookParam);
   const category = editing ? '독후감 고치기' : '독후감 쓰기';
   const clubParam = clubId ? Number(clubId) : NaN;
-  const choosing = !editing && format !== 'TEXT';
 
   // 꺼진 쿼리에도 키는 있어야 한다 — NaN 을 키에 넣으면 서로 다른 화면이 한 자리를 나눠 쓰게 되므로 자리 키를 둔다.
   const post = useQuery({
@@ -63,18 +60,8 @@ export default function PostEditorScreen() {
   const book = useQuery({
     queryKey: fromBook ? ['book', bookParam] : ['book', 'pending'],
     queryFn: () => bookApi.detail(bookParam),
-    enabled: fromBook && !choosing,
+    enabled: fromBook,
   });
-
-  // 모드부터 — 책·클럽 파라미터는 고른 화면으로 그대로 넘긴다.
-  if (choosing) {
-    return (
-      <PostModeChooser
-        bookId={Number.isFinite(bookParam) ? bookParam : undefined}
-        clubId={Number.isFinite(clubParam) ? clubParam : undefined}
-      />
-    );
-  }
 
   if ((editing && post.isLoading) || (fromBook && book.isLoading)) {
     return (
@@ -114,7 +101,11 @@ export default function PostEditorScreen() {
     );
   }
   if (loaded && isNotePost(loaded)) {
-    return <Redirect href={{ pathname: '/post/note', params: { id: String(loaded.id) } }} />;
+    return (
+      <Shell category={category}>
+        <EmptyState title="고칠 수 없는 글입니다" description="노트로 꾸민 독후감은 더 이상 고칠 수 없어요." />
+      </Shell>
+    );
   }
   if (loaded && !loaded.mine) {
     return (

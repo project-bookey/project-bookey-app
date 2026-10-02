@@ -1,4 +1,4 @@
-/** 노트 캔버스 엔진 배럴 — 노트 모드 독후감(여러 페이지·노트 종류·줌)이 쓴다. */
+/** 노트 캔버스 엔진 배럴 — 모임 노트가 쓴다. */
 export { NoteCanvas, scaleFor, pageHeightFor } from './NoteCanvas';
 export { InkLayer } from './InkLayer';
 export type { LiveStroke } from './InkLayer';
@@ -18,8 +18,6 @@ export {
 } from './noteOps';
 export type { NoteOp } from './noteOps';
 export type { ApplyOptions, NoteEditor, NoteEditorState } from './useNoteEditor';
-export { usePostNoteEditor } from './usePostNoteEditor';
-export type { PostNoteEditor } from './usePostNoteEditor';
 export { useNotePhotos } from './useNotePhotos';
 export type { NoteImageUpload, PendingPhoto } from './useNotePhotos';
 export { useNoteInserts, anchorOf } from './useNoteInserts';

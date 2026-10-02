@@ -1,10 +1,7 @@
 /**
  * 노트 문서 — 앱이 소유한 스키마.
  *
- * 두 겹이다.
- * - `PostNoteDoc`: 노트 모드 독후감 하나 = 노트 종류(kind) + 페이지 1~6장. 서버(`posts.document`)는 이 JSON 을
- *   해석하지 않고 그대로 저장·반환한다(pages 길이·직렬화 크기만 검사). 경계에서 `parsePostNoteDoc` 로 좁힌다.
- * - `NoteDoc`: 캔버스가 그리는 단위 — 페이지 한 장. 노트 문서의 페이지는 `pageDocOf` 로 이 모양이 된다(종이·크기는 kind 에서).
+ * `NoteDoc`: 캔버스가 그리는 단위 — 종이 한 장(종이·크기는 kind 에서). 모임 노트가 이 모양을 쓴다.
  * 그래서 CLAUDE.md 의 "서버 응답 필드를 손으로 쓰지 않는다" 규칙에서 이 파일만 예외다 — 서버 타입은 불투명 JSON 이고,
  * 경계에서 여기 타입으로 좁힌다. 모르는 요소는 버리되 절대 throw 하지 않는다.
  *
@@ -297,110 +294,6 @@ function parseElements(raw: unknown): NoteElement[] {
 export const parseNoteElement = parseElement;
 /** 요소 배열을 좁힌다 — 모르는·깨진 요소는 버린다. */
 export const parseNoteElements = parseElements;
-
-// ────────────────────────────── 노트 모드 독후감 문서 ──────────────────────────────
-
-/** 노트 한 권의 페이지 상한 — 서버 검사(pages 1~6)와 같은 값. */
-export const NOTE_PAGE_MAX = 6;
-/** 서버가 받는 document 직렬화 상한(바이트). */
-export const NOTE_DOC_MAX_BYTES = 1_000_000;
-
-export type NotePageDoc = { id: string; elements: NoteElement[] };
-/** 노트 모드 독후감 문서. pages 는 1..NOTE_PAGE_MAX 장. */
-export type PostNoteDoc = { v: typeof DOC_VERSION; kind: NoteKind; pages: NotePageDoc[] };
-
-export function emptyNotePage(): NotePageDoc {
-  return { id: newId(), elements: [] };
-}
-
-export function emptyPostNoteDoc(kind: NoteKind): PostNoteDoc {
-  return { v: DOC_VERSION, kind, pages: [emptyNotePage()] };
-}
-
-/**
- * 서버의 불투명 document 를 노트 문서로 좁힌다. 모르는 kind 는 격자, 깨진 페이지는 빈 페이지 취급,
- * 페이지 id 가 없거나 겹치면 새로 매긴다. 6장을 넘으면 자르고, 한 장도 없으면 빈 한 장. 절대 throw 하지 않는다.
- */
-export function parsePostNoteDoc(raw: unknown): PostNoteDoc {
-  if (!isRecord(raw)) return emptyPostNoteDoc('grid');
-  const kind: NoteKind = oneOf(raw.kind, NOTE_KINDS) ? raw.kind : 'grid';
-  const pages: NotePageDoc[] = [];
-  const ids = new Set<string>();
-  if (Array.isArray(raw.pages)) {
-    for (const item of raw.pages) {
-      if (pages.length >= NOTE_PAGE_MAX) break;
-      const r = isRecord(item) ? item : {};
-      let id = str(r.id) && r.id.length > 0 ? r.id : newId();
-      while (ids.has(id)) id = newId();
-      ids.add(id);
-      pages.push({ id, elements: parseElements(r.elements) });
-    }
-  }
-  if (pages.length === 0) pages.push(emptyNotePage());
-  return { v: DOC_VERSION, kind, pages };
-}
-
-/**
- * 서버로 보낼 JSON 객체 — undefined 필드를 걷어낸 깊은 사본. 서버 타입이 불투명 JSON 이라 그대로 넘긴다.
- */
-export function serializePostNoteDoc(doc: PostNoteDoc): Record<string, unknown> {
-  return JSON.parse(JSON.stringify({ v: doc.v, kind: doc.kind, pages: doc.pages })) as Record<string, unknown>;
-}
-
-/** 직렬화 크기(UTF-8 바이트) — 올리기 전에 NOTE_DOC_MAX_BYTES 와 견준다. */
-export function postNoteDocBytes(doc: PostNoteDoc): number {
-  const json = JSON.stringify({ v: doc.v, kind: doc.kind, pages: doc.pages });
-  let bytes = 0;
-  for (let i = 0; i < json.length; i++) {
-    const c = json.charCodeAt(i);
-    if (c < 0x80) bytes += 1;
-    else if (c < 0x800) bytes += 2;
-    else if (c >= 0xd800 && c <= 0xdbff) {
-      bytes += 4;
-      i++;
-    } else bytes += 3;
-  }
-  return bytes;
-}
-
-/** 노트 문서의 index 번째 페이지 → 캔버스가 그리는 페이지 문서(종이·크기는 kind 에서). 범위 밖이면 빈 페이지. */
-export function pageDocOf(doc: PostNoteDoc, index: number): NoteDoc {
-  const page = doc.pages[index];
-  return { v: DOC_VERSION, paper: paperFor(doc.kind), kind: doc.kind, elements: page ? page.elements : [] };
-}
-
-/** 모든 페이지의 요소를 문서 순서대로. */
-function allElements(doc: PostNoteDoc): NoteElement[] {
-  return doc.pages.flatMap((p) => p.elements);
-}
-
-/** 문장 조각 수 — 올리기 시트의 한 줄 요약에 쓴다. */
-export function quoteCountOf(doc: PostNoteDoc): number {
-  return allElements(doc).filter((e) => e.type === 'quote').length;
-}
-
-/** 붙인 사진 id — 겹치지 않게, 문서 순서대로. 서버에 imageIds 로 보낸다. */
-export function imageIdsOf(doc: PostNoteDoc): number[] {
-  const out = new Set<number>();
-  for (const e of allElements(doc)) if (e.type === 'photo') out.add(e.imageId);
-  return [...out];
-}
-
-/**
- * 노트 속 글(텍스트·말풍선·문장 조각)을 줄바꿈으로 이은 것 — 서버의 발췌·검색용 bodyMd.
- * 페이지 순서대로, 한 페이지 안에서는 위에서 아래(같으면 왼쪽부터)로 읽는다. PLAIN_TEXT_MAX 자에서 자른다.
- */
-export function plainTextOf(doc: PostNoteDoc): string {
-  const parts: string[] = [];
-  for (const page of doc.pages) {
-    const texts = page.elements
-      .filter((e): e is TextElement | SpeechElement | QuoteElement => isTextual(e) && e.text.trim().length > 0)
-      .sort((a, b) => a.y - b.y || a.x - b.x);
-    for (const e of texts) parts.push(e.text.trim());
-  }
-  const joined = parts.join('\n');
-  return joined.length > PLAIN_TEXT_MAX ? joined.slice(0, PLAIN_TEXT_MAX) : joined;
-}
 
 /**
  * 빈 문장 조각을 만든다 — center(논리 좌표)를 주면 그 둘레에, 없으면 캔버스 가운데에 놓는다.
