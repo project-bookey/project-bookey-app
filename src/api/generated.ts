@@ -210,59 +210,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/quotes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 내 오려둔 문장 목록 — 최신순, bookId 로 책 하나만 추리고 q 로 문장·책 제목 검색 */
-        get: operations["myQuotes"];
-        put?: never;
-        /** 문장 오려두기 */
-        post: operations["create_2"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quotes/{quoteId}/comments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 댓글 목록 — 최상위만, 오래된 순 */
-        get: operations["list_1"];
-        put?: never;
-        /** 댓글 작성 — parentId 를 주면 답글(1단계) */
-        post: operations["create_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quotes/{quoteId}/agree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 나도 그럼 — agree 토글 */
-        post: operations["agree"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/posts": {
         parameters: {
             query?: never;
@@ -274,7 +221,7 @@ export interface paths {
         get: operations["listMine"];
         put?: never;
         /** 독후감 작성 */
-        post: operations["create_4"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -306,10 +253,10 @@ export interface paths {
             cookie?: never;
         };
         /** 댓글 목록 — 오래된 순, 루트 댓글에 답글을 묶어 내린다 */
-        get: operations["list_2"];
+        get: operations["list_1"];
         put?: never;
         /** 댓글 작성 — parentId 를 주면 답글 */
-        post: operations["create_5"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -426,7 +373,7 @@ export interface paths {
             cookie?: never;
         };
         /** 서재 목록 — 상태별 필터 */
-        get: operations["list_3"];
+        get: operations["list_2"];
         put?: never;
         /** 서재에 책 추가 */
         post: operations["add"];
@@ -533,7 +480,7 @@ export interface paths {
         get: operations["myClubs"];
         put?: never;
         /** 모임 만들기 — 초대 코드 자동 발급 */
-        post: operations["create_6"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -602,7 +549,7 @@ export interface paths {
         get: operations["feed"];
         put?: never;
         /** 글 · 댓글 작성 */
-        post: operations["create_7"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -771,7 +718,7 @@ export interface paths {
         get: operations["day"];
         put?: never;
         /** 조각 남기기 — 사진 한 장(선택) + 한 줄, 쪽에 붙이면 그 쪽까지 읽은 멤버에게만 보인다 */
-        post: operations["create_8"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -934,7 +881,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 채팅 목록 — 마지막 메시지·안읽음 수 포함 */
-        get: operations["list_4"];
+        get: operations["list_3"];
         put?: never;
         /** 채팅방 열기 — 맞팔로우인 상대만, 이미 있으면 그 방 */
         post: operations["open_1"];
@@ -956,57 +903,6 @@ export interface paths {
         put?: never;
         /** 메시지 보내기 — 언팔로우된 상대에게는 보낼 수 없다 */
         post: operations["send_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/challenges": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 챌린지 생성 — 즉시 시작 */
-        post: operations["create_9"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/challenges/{id}/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 타임워치 재개 */
-        post: operations["start_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/challenges/{id}/pause": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 타임워치 일시정지 */
-        post: operations["pause_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1347,10 +1243,10 @@ export interface paths {
             cookie?: never;
         };
         /** 에디터 픽 목록 */
-        get: operations["list_5"];
+        get: operations["list_4"];
         put?: never;
         /** 에디터 픽 추가 */
-        post: operations["create_10"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1416,10 +1312,10 @@ export interface paths {
             cookie?: never;
         };
         /** 배너/공지 전체 목록 — 비활성·기간 외 포함 */
-        get: operations["list_6"];
+        get: operations["list_5"];
         put?: never;
         /** 배너 생성 */
-        post: operations["create_11"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1470,7 +1366,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 관리자 계정 생성 (SUPER_ADMIN) */
-        post: operations["create_12"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1637,23 +1533,6 @@ export interface paths {
         head?: never;
         /** 글 · 조각 수정 — 작성자만, 한 줄과 쪽을 보낸 값으로 바꾼다 */
         patch: operations["update_5"];
-        trace?: never;
-    };
-    "/api/v1/challenges/{id}/progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** 쪽수 기록 — 총쪽수 도달 시 성공 전이 */
-        patch: operations["progress"];
         trace?: never;
     };
     "/admin/v1/ops-flags/{key}": {
@@ -1852,7 +1731,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서별 세션 목록 */
-        get: operations["list_7"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1921,41 +1800,6 @@ export interface paths {
         };
         /** 내가 쓴 리뷰 */
         get: operations["listMine_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quotes/{quoteId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 문장 한 건 — 상세 진입용 */
-        get: operations["get_1"];
-        put?: never;
-        post?: never;
-        /** 문장 삭제 — 본인만 */
-        delete: operations["delete_5"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quotes/{quoteId}/comments/{commentId}/replies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 답글 목록 — 오래된 순 */
-        get: operations["replies_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2175,7 +2019,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 광장 피드 — 밑줄(QUOTE) · 완독 자랑(FINISH), q 로 문장·책 제목 검색(QUOTE 만) */
+        /** 광장 피드 — 완독 자랑(FINISH). 밑줄(QUOTE)은 걷어내 늘 빈 페이지 */
         get: operations["feed_2"];
         put?: never;
         post?: never;
@@ -2193,7 +2037,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 알림 목록 */
-        get: operations["list_8"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2231,7 +2075,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
-        delete: operations["delete_6"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2571,41 +2415,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/challenges/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 챌린지 단건 */
-        get: operations["get_2"];
-        put?: never;
-        post?: never;
-        /** 챌린지 포기 */
-        delete: operations["cancel"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/challenges/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 진행 중 챌린지 목록 */
-        get: operations["active"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/books/{bookId}": {
         parameters: {
             query?: never;
@@ -2632,23 +2441,6 @@ export interface paths {
         };
         /** 도서별 리뷰 목록 — 완독 검증 > 부분 검증 > 미검증 순 */
         get: operations["listByBook"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/books/{bookId}/quotes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 책별 오려둔 문장 목록 — 최신순, q 로 문장·책 제목 검색 */
-        get: operations["quotes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2750,7 +2542,7 @@ export interface paths {
             cookie?: never;
         };
         /** 활성 배너/공지 목록 — 기간 내, 정렬 순 */
-        get: operations["list_9"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2974,7 +2766,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 세션 삭제 */
-        delete: operations["delete_7"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2991,24 +2783,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 댓글 삭제 — 본인만 */
-        delete: operations["delete_8"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quotes/{quoteId}/comments/{commentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 댓글 삭제 — 본인만 */
-        delete: operations["delete_9"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3025,7 +2800,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 댓글 삭제 — 본인만, 답글도 함께 지워진다 */
-        delete: operations["delete_10"];
+        delete: operations["delete_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3042,7 +2817,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 엽서 삭제 — 보낸 사람 또는 받은 사람만 */
-        delete: operations["delete_11"];
+        delete: operations["delete_9"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3059,7 +2834,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 내 알림 삭제 */
-        delete: operations["delete_12"];
+        delete: operations["delete_10"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3093,7 +2868,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 채팅방 삭제 — 참가자만, 메시지도 함께 삭제된다 */
-        delete: operations["delete_13"];
+        delete: operations["delete_11"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3393,14 +3168,33 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
-        CreateBookQuoteRequest: {
+        CreatePostRequest: {
             /** Format: int64 */
-            bookId: number;
+            bookId?: number;
             /** Format: int64 */
             readingRecordId?: number;
-            content: string;
-            /** Format: int32 */
-            page?: number;
+            title: string;
+            bodyMd: string;
+            /** @enum {string} */
+            visibility: "PUBLIC" | "LINK" | "PRIVATE" | "CLUB";
+            tags: string[];
+            imageIds: number[];
+            /** @description 더 쓰지 않는다 — 보내도 무시한다(옛 앱 호환) */
+            quoteIds?: number[];
+            /**
+             * @description 생략하면 TEXT
+             * @enum {string}
+             */
+            format?: "TEXT" | "NOTE";
+            /** @description NOTE 전용 캔버스 문서 — pages 배열 1~6장, 1MB 이하 */
+            document?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Format: int64
+             * @description 모임 안에서 쓸 때 그 모임 id — 활성 멤버·진행 중 모임만
+             */
+            clubId?: number;
         };
         BookQuoteView: {
             /** Format: int64 */
@@ -3424,61 +3218,6 @@ export interface components {
             commentCount: number;
             /** Format: date-time */
             createdAt: string;
-        };
-        CreateQuoteCommentRequest: {
-            body: string;
-            /** Format: int64 */
-            parentId?: number;
-        };
-        QuoteCommentView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int64 */
-            quoteId: number;
-            /** Format: int64 */
-            parentId?: number;
-            /** Format: int64 */
-            authorId: number;
-            authorNickname: string;
-            authorAvatarUrl?: string;
-            body: string;
-            mine: boolean;
-            /** Format: int64 */
-            replyCount: number;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        QuoteAgreeView: {
-            agreed: boolean;
-            /** Format: int64 */
-            agreeCount: number;
-        };
-        CreatePostRequest: {
-            /** Format: int64 */
-            bookId?: number;
-            /** Format: int64 */
-            readingRecordId?: number;
-            title: string;
-            bodyMd: string;
-            /** @enum {string} */
-            visibility: "PUBLIC" | "LINK" | "PRIVATE" | "CLUB";
-            tags: string[];
-            imageIds: number[];
-            quoteIds: number[];
-            /**
-             * @description 생략하면 TEXT
-             * @enum {string}
-             */
-            format?: "TEXT" | "NOTE";
-            /** @description NOTE 전용 캔버스 문서 — pages 배열 1~6장, 1MB 이하 */
-            document?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Format: int64
-             * @description 모임 안에서 쓸 때 그 모임 id — 활성 멤버·진행 중 모임만
-             */
-            clubId?: number;
         };
         PostImageView: {
             /** Format: int64 */
@@ -3993,6 +3732,9 @@ export interface components {
             otherNickname: string;
             otherAvatarUrl?: string;
             lastMessageBody?: string;
+            /** @enum {string} */
+            lastMessageType?: "TEXT" | "STICKER";
+            lastStickerCode?: string;
             /** Format: date-time */
             lastMessageAt?: string;
             /** Format: int64 */
@@ -4001,37 +3743,10 @@ export interface components {
             createdAt: string;
         };
         SendMessageRequest: {
-            body: string;
-        };
-        CreateChallengeRequest: {
-            /** Format: int64 */
-            readingRecordId?: number;
-            /** Format: int64 */
-            bookId?: number;
-            /** Format: int32 */
-            budgetSec: number;
-        };
-        ChallengeView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int64 */
-            readingRecordId: number;
-            book?: components["schemas"]["BookSummary"];
-            /** Format: int32 */
-            budgetSec: number;
-            /** Format: int32 */
-            elapsedSec: number;
-            /** Format: int32 */
-            remainingSec: number;
-            running: boolean;
+            body?: string;
             /** @enum {string} */
-            status: "ACTIVE" | "SUCCEEDED" | "FAILED" | "CANCELLED";
-            /** Format: int32 */
-            currentPage: number;
-            /** Format: int32 */
-            totalPages: number;
-            /** Format: date-time */
-            completedAt?: string;
+            type?: "TEXT" | "STICKER";
+            stickerCode?: string;
         };
         ManualBookRequest: {
             title: string;
@@ -4263,7 +3978,7 @@ export interface components {
             visibility?: "PUBLIC" | "LINK" | "PRIVATE" | "CLUB";
             /** @description 생략하면 유지, 빈 목록이면 사진을 전부 뗌 */
             imageIds?: number[];
-            /** @description 생략하면 유지, 빈 목록이면 밑줄 연결을 전부 지움 */
+            /** @description 더 쓰지 않는다 — 보내도 무시한다(옛 앱 호환) */
             quoteIds?: number[];
             /** @description 생략하면 유지 — NOTE 글만, 문서 전체를 덮어쓴다 */
             document?: {
@@ -4321,10 +4036,6 @@ export interface components {
             /** @enum {string} */
             spoilerLevel?: "NONE" | "PAGE" | "BOOK";
         };
-        ChallengeProgressRequest: {
-            /** Format: int32 */
-            currentPage: number;
-        };
         OpsFlagRequest: {
             enabled: boolean;
             note?: string;
@@ -4343,6 +4054,28 @@ export interface components {
             coverUrl?: string;
             category?: string;
             reason: string;
+        };
+        DailyStat: {
+            date: string;
+            /** Format: int64 */
+            durationSec: number;
+            /** Format: int64 */
+            pages: number;
+            /** Format: int32 */
+            sessionCount: number;
+        };
+        StatsSummary: {
+            /** Format: int64 */
+            totalDurationSec: number;
+            /** Format: int64 */
+            todayDurationSec: number;
+            /** Format: int64 */
+            weekDurationSec: number;
+            /** Format: int32 */
+            currentStreakDays: number;
+            /** Format: int32 */
+            longestStreakDays: number;
+            daily: components["schemas"]["DailyStat"][];
         };
         UserProfileView: {
             /** Format: int64 */
@@ -4376,27 +4109,29 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
-        DailyStat: {
-            date: string;
-            /** Format: int64 */
-            durationSec: number;
-            /** Format: int64 */
-            pages: number;
+        PageResponseReadingRecordView: {
+            content?: components["schemas"]["ReadingRecordView"][];
             /** Format: int32 */
-            sessionCount: number;
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
         };
-        StatsSummary: {
+        LibrarySummary: {
             /** Format: int64 */
-            totalDurationSec: number;
+            reading: number;
             /** Format: int64 */
-            todayDurationSec: number;
+            wantToRead: number;
             /** Format: int64 */
-            weekDurationSec: number;
-            /** Format: int32 */
-            currentStreakDays: number;
-            /** Format: int32 */
-            longestStreakDays: number;
-            daily: components["schemas"]["DailyStat"][];
+            finished: number;
+            /** Format: int64 */
+            abandoned: number;
+            /** Format: int64 */
+            paused: number;
         };
         PageResponseReviewCommentView: {
             content?: components["schemas"]["ReviewCommentView"][];
@@ -4426,30 +4161,6 @@ export interface components {
         };
         PageResponseReviewView: {
             content?: components["schemas"]["ReviewView"][];
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            hasNext?: boolean;
-        };
-        PageResponseBookQuoteView: {
-            content?: components["schemas"]["BookQuoteView"][];
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            hasNext?: boolean;
-        };
-        PageResponseQuoteCommentView: {
-            content?: components["schemas"]["QuoteCommentView"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -4551,23 +4262,12 @@ export interface components {
             bookCoverUrl?: string;
             /** Format: date-time */
             occurredAt: string;
-            /** Format: int64 */
-            quoteId?: number;
-            content?: string;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int64 */
-            agreeCount?: number;
-            agreedByMe?: boolean;
-            authorFinished?: boolean;
-            /** Format: int64 */
-            commentCount?: number;
         };
         NotificationView: {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "QUOTE_AGREED" | "QUOTE_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -4617,30 +4317,6 @@ export interface components {
             avatarUrl?: string;
             /** Format: date-time */
             visitedAt: string;
-        };
-        PageResponseReadingRecordView: {
-            content?: components["schemas"]["ReadingRecordView"][];
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            hasNext?: boolean;
-        };
-        LibrarySummary: {
-            /** Format: int64 */
-            reading: number;
-            /** Format: int64 */
-            wantToRead: number;
-            /** Format: int64 */
-            finished: number;
-            /** Format: int64 */
-            abandoned: number;
-            /** Format: int64 */
-            paused: number;
         };
         PageResponseFollowUserView: {
             content?: components["schemas"]["FollowUserView"][];
@@ -5216,12 +4892,8 @@ export type SchemaReviewView = components['schemas']['ReviewView'];
 export type SchemaReportRequest = components['schemas']['ReportRequest'];
 export type SchemaCreateReviewCommentRequest = components['schemas']['CreateReviewCommentRequest'];
 export type SchemaReviewCommentView = components['schemas']['ReviewCommentView'];
-export type SchemaCreateBookQuoteRequest = components['schemas']['CreateBookQuoteRequest'];
-export type SchemaBookQuoteView = components['schemas']['BookQuoteView'];
-export type SchemaCreateQuoteCommentRequest = components['schemas']['CreateQuoteCommentRequest'];
-export type SchemaQuoteCommentView = components['schemas']['QuoteCommentView'];
-export type SchemaQuoteAgreeView = components['schemas']['QuoteAgreeView'];
 export type SchemaCreatePostRequest = components['schemas']['CreatePostRequest'];
+export type SchemaBookQuoteView = components['schemas']['BookQuoteView'];
 export type SchemaPostImageView = components['schemas']['PostImageView'];
 export type SchemaPostView = components['schemas']['PostView'];
 export type SchemaPostLikeView = components['schemas']['PostLikeView'];
@@ -5267,8 +4939,6 @@ export type SchemaJoinRequest = components['schemas']['JoinRequest'];
 export type SchemaOpenChatRequest = components['schemas']['OpenChatRequest'];
 export type SchemaChatSummaryView = components['schemas']['ChatSummaryView'];
 export type SchemaSendMessageRequest = components['schemas']['SendMessageRequest'];
-export type SchemaCreateChallengeRequest = components['schemas']['CreateChallengeRequest'];
-export type SchemaChallengeView = components['schemas']['ChallengeView'];
 export type SchemaManualBookRequest = components['schemas']['ManualBookRequest'];
 export type SchemaPageSuggestionRequest = components['schemas']['PageSuggestionRequest'];
 export type SchemaPageSuggestionResponse = components['schemas']['PageSuggestionResponse'];
@@ -5305,19 +4975,18 @@ export type SchemaUpdateGoalRequest = components['schemas']['UpdateGoalRequest']
 export type SchemaUpdateClubRequest = components['schemas']['UpdateClubRequest'];
 export type SchemaUpdateSharingRequest = components['schemas']['UpdateSharingRequest'];
 export type SchemaUpdateClubPostRequest = components['schemas']['UpdateClubPostRequest'];
-export type SchemaChallengeProgressRequest = components['schemas']['ChallengeProgressRequest'];
 export type SchemaOpsFlagRequest = components['schemas']['OpsFlagRequest'];
 export type SchemaEditorPickUpdateRequest = components['schemas']['EditorPickUpdateRequest'];
 export type SchemaUpdateBookRequest = components['schemas']['UpdateBookRequest'];
-export type SchemaUserProfileView = components['schemas']['UserProfileView'];
-export type SchemaPageResponsePostView = components['schemas']['PageResponsePostView'];
 export type SchemaDailyStat = components['schemas']['DailyStat'];
 export type SchemaStatsSummary = components['schemas']['StatsSummary'];
+export type SchemaUserProfileView = components['schemas']['UserProfileView'];
+export type SchemaPageResponsePostView = components['schemas']['PageResponsePostView'];
+export type SchemaPageResponseReadingRecordView = components['schemas']['PageResponseReadingRecordView'];
+export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
 export type SchemaPageResponseReviewCommentView = components['schemas']['PageResponseReviewCommentView'];
 export type SchemaVerificationPreview = components['schemas']['VerificationPreview'];
 export type SchemaPageResponseReviewView = components['schemas']['PageResponseReviewView'];
-export type SchemaPageResponseBookQuoteView = components['schemas']['PageResponseBookQuoteView'];
-export type SchemaPageResponseQuoteCommentView = components['schemas']['PageResponseQuoteCommentView'];
 export type SchemaBookDetail = components['schemas']['BookDetail'];
 export type SchemaRatingSummary = components['schemas']['RatingSummary'];
 export type SchemaLikerView = components['schemas']['LikerView'];
@@ -5330,8 +4999,6 @@ export type SchemaNotificationView = components['schemas']['NotificationView'];
 export type SchemaPageResponseNotificationView = components['schemas']['PageResponseNotificationView'];
 export type SchemaPageResponseVisitorView = components['schemas']['PageResponseVisitorView'];
 export type SchemaVisitorView = components['schemas']['VisitorView'];
-export type SchemaPageResponseReadingRecordView = components['schemas']['PageResponseReadingRecordView'];
-export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
 export type SchemaPageResponseFollowUserView = components['schemas']['PageResponseFollowUserView'];
 export type SchemaFollowingIdsView = components['schemas']['FollowingIdsView'];
 export type SchemaClubMemberBrief = components['schemas']['ClubMemberBrief'];
@@ -5759,128 +5426,6 @@ export interface operations {
             };
         };
     };
-    myQuotes: {
-        parameters: {
-            query?: {
-                bookId?: number;
-                q?: string;
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageResponseBookQuoteView"];
-                };
-            };
-        };
-    };
-    create_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateBookQuoteRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BookQuoteView"];
-                };
-            };
-        };
-    };
-    list_1: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path: {
-                quoteId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageResponseQuoteCommentView"];
-                };
-            };
-        };
-    };
-    create_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                quoteId: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateQuoteCommentRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["QuoteCommentView"];
-                };
-            };
-        };
-    };
-    agree: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                quoteId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["QuoteAgreeView"];
-                };
-            };
-        };
-    };
     listMine: {
         parameters: {
             query?: {
@@ -5904,7 +5449,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5950,7 +5495,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_1: {
         parameters: {
             query?: {
                 page?: number;
@@ -5975,7 +5520,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -6147,7 +5692,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_2: {
         parameters: {
             query?: {
                 status?: "WANT_TO_READ" | "READING" | "PAUSED" | "FINISHED" | "ABANDONED";
@@ -6356,7 +5901,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -6480,7 +6025,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -6805,7 +6350,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_6: {
         parameters: {
             query?: {
                 body?: string;
@@ -7077,7 +6622,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_3: {
         parameters: {
             query?: {
                 page?: number;
@@ -7170,74 +6715,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ChatMessageView"];
-                };
-            };
-        };
-    };
-    create_9: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateChallengeRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ChallengeView"];
-                };
-            };
-        };
-    };
-    start_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ChallengeView"];
-                };
-            };
-        };
-    };
-    pause_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ChallengeView"];
                 };
             };
         };
@@ -7749,7 +7226,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -7769,7 +7246,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7871,7 +7348,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_5: {
         parameters: {
             query?: {
                 kind?: "AD" | "NOTICE";
@@ -7893,7 +7370,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -7963,7 +7440,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -8402,32 +7879,6 @@ export interface operations {
             };
         };
     };
-    progress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChallengeProgressRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ChallengeView"];
-                };
-            };
-        };
-    };
     updateOpsFlag: {
         parameters: {
             query?: never;
@@ -8705,7 +8156,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_6: {
         parameters: {
             query?: {
                 readingRecordId?: number;
@@ -8816,74 +8267,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseReviewView"];
-                };
-            };
-        };
-    };
-    get_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                quoteId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BookQuoteView"];
-                };
-            };
-        };
-    };
-    delete_5: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                quoteId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    replies_1: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path: {
-                quoteId: number;
-                commentId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageResponseQuoteCommentView"];
                 };
             };
         };
@@ -9176,7 +8559,6 @@ export interface operations {
         parameters: {
             query?: {
                 type?: "QUOTE" | "FINISH";
-                q?: string;
                 page?: number;
                 size?: number;
             };
@@ -9197,7 +8579,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_7: {
         parameters: {
             query?: {
                 page?: number;
@@ -9265,7 +8647,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -9737,68 +9119,6 @@ export interface operations {
             };
         };
     };
-    get_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ChallengeView"];
-                };
-            };
-        };
-    };
-    cancel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    active: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ChallengeView"][];
-                };
-            };
-        };
-    };
     detail_3: {
         parameters: {
             query?: never;
@@ -9843,32 +9163,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseReviewView"];
-                };
-            };
-        };
-    };
-    quotes: {
-        parameters: {
-            query?: {
-                q?: string;
-                page?: number;
-                size?: number;
-            };
-            header?: never;
-            path: {
-                bookId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PageResponseBookQuoteView"];
                 };
             };
         };
@@ -9987,7 +9281,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_8: {
         parameters: {
             query?: {
                 kind?: "AD" | "NOTICE";
@@ -10281,7 +9575,7 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -10301,7 +9595,7 @@ export interface operations {
             };
         };
     };
-    delete_8: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -10322,28 +9616,7 @@ export interface operations {
             };
         };
     };
-    delete_9: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                quoteId: number;
-                commentId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    delete_10: {
+    delete_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -10364,7 +9637,7 @@ export interface operations {
             };
         };
     };
-    delete_11: {
+    delete_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10384,7 +9657,7 @@ export interface operations {
             };
         };
     };
-    delete_12: {
+    delete_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -10424,7 +9697,7 @@ export interface operations {
             };
         };
     };
-    delete_13: {
+    delete_11: {
         parameters: {
             query?: never;
             header?: never;
