@@ -16,7 +16,7 @@ import {
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { Button, Card, EmptyState, Eyebrow, Loading, formatClock, linkLabel } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle, sans } from '@/theme/tokens';
@@ -177,7 +177,7 @@ export default function MeetingDetailScreen() {
             <View>
               {attendees.map((person) => (
                 <View key={person.userId} style={[styles.personRow, { borderBottomColor: colors.line }]}>
-                  <QuoteAvatar uri={person.avatarUrl} nickname={person.nickname} size={34} />
+                  <Avatar uri={person.avatarUrl} nickname={person.nickname} size={34} />
                   <Text style={[typeScale.body, { color: colors.text, flex: 1 }]}>{person.nickname}</Text>
                   <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>참여</Text>
                 </View>

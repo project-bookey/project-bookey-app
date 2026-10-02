@@ -7,7 +7,7 @@ import type { Page, Post } from '@/api/types';
  *
  * 광장 독후감 무한 피드 · 홈 스포트라이트 · 책별 목록 · 내 독후감(무한 목록과 최신 한 건) · 클럽 독후감 · 상세.
  * 좋아요·댓글 수가 바뀌면 다섯 곳을 한 번에 손봐야 화면끼리 어긋나지 않는다.
- * 키와 패치를 여기 한 곳에 둔다(밑줄의 quoteCache 와 같은 꼴).
+ * 키와 패치를 여기 한 곳에 둔다.
  */
 export const postFeedKey = ['posts', 'feed'] as const;
 /** 홈 '오늘의 글' 스포트라이트의 독후감 몫(HomeScraps) — 피드와 갈라 둔 키(Page 하나). */

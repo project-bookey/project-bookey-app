@@ -7,7 +7,7 @@ import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatSummary } from '@/api/types';
 import { chatMessagePreview } from '@/components/chat/bookeyStickers';
-import { PersonGlyph } from '@/components/quote/QuoteCard';
+import { PersonGlyph } from '@/components/Avatar';
 import { EmptyState, FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';

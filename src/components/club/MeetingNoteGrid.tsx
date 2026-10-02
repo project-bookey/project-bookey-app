@@ -8,7 +8,7 @@ import { meetingNoteApi } from '@/api/endpoints';
 import type { MeetingNote } from '@/api/types';
 import { parseMeetingNoteDoc } from '@/components/note';
 import { NoteDocThumb } from '@/components/post/NoteThumb';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
@@ -116,7 +116,7 @@ function MeetingNoteCell({ note, size, onPress }: { note: MeetingNote; size: num
         <View pointerEvents="none" style={styles.people}>
           {contributors.map((p, i) => (
             <View key={p.userId ?? i} style={[styles.avatar, { marginLeft: i === 0 ? 0 : -6, borderColor: colors.surface }]}>
-              <QuoteAvatar uri={p.avatarUrl} nickname={p.nickname ?? '멤버'} size={18} />
+              <Avatar uri={p.avatarUrl} nickname={p.nickname ?? '멤버'} size={18} />
             </View>
           ))}
         </View>

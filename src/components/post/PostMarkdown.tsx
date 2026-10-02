@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   em: { fontStyle: 'italic' },
   del: { textDecorationLine: 'line-through' },
   link: { textDecorationLine: 'underline' },
-  // QuoteCard 의 인용 본문과 같은 왼쪽 악센트 선.
+  // 문장 조각(PostBody)과 같은 왼쪽 악센트 선.
   blockquote: { borderLeftWidth: 2, paddingLeft: 11, gap: spacing.md },
   list: { gap: spacing.xs },
   listRow: { flexDirection: 'row', alignItems: 'flex-start' },

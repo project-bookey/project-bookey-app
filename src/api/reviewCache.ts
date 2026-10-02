@@ -6,12 +6,12 @@ import type { Page, Review } from '@/api/types';
  * 리뷰 캐시 — 같은 리뷰가 두 곳에 산다.
  *
  * 도서 상세의 책별 리뷰 목록과 리뷰 상세. 댓글 수가 바뀌면 두 곳을 한 번에 손봐야
- * 화면끼리 어긋나지 않는다. 키와 패치를 여기 한 곳에 둔다(밑줄 캐시와 같은 규율).
+ * 화면끼리 어긋나지 않는다. 키와 패치를 여기 한 곳에 둔다(독후감 캐시와 같은 규율).
  */
 export const reviewKey = (reviewId: number) => ['review', reviewId] as const;
 /** 리뷰 댓글 — reviewKey 의 접두사다. 리뷰 키를 취소·무효화할 때는 exact: true 를 붙여야 댓글까지 딸려가지 않는다. */
 export const reviewCommentsKey = (reviewId: number) => ['review', reviewId, 'comments'] as const;
-/** 책별 리뷰 목록 — bookQuotesKey(['quotes','book',id]) 와 같은 모양. ['book', id](도서 상세) 와 뿌리를 분리한다. */
+/** 책별 리뷰 목록 — ['book', id](도서 상세) 와 뿌리를 분리한다. */
 export const bookReviewsKey = (bookId: number) => ['reviews', 'book', bookId] as const;
 
 /** 두 캐시가 공통으로 가진 반응 필드 — 패치는 이것만 건드린다. */

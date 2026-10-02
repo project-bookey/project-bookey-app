@@ -4,13 +4,12 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 문장 길이 상한 — 서버 계약과 같은 값. */
+/** 문장 길이 상한 — 독후감 본문에 조각 하나로 넣기 알맞은 길이(옛 밑줄 문장 상한과 같은 500). */
 export const QUOTE_CONTENT_MAX = 500;
 
 /**
- * 오려두기 초안 상태 — 문장·쪽수와 그 검증을 한곳에 모은다.
- * 광장(책 고르기 있음)과 도서 상세 밑줄 탭(책이 이미 정해짐)이 같은 규칙을 쓰기 위한 것으로,
- * 책 선택 여부처럼 화면마다 다른 조건은 호출 쪽에서 `canSubmit` 에 덧붙인다.
+ * 문장 넣기 초안 상태 — 문장·쪽수와 그 검증을 한곳에 모은다.
+ * 화면마다 다른 조건이 생기면 호출 쪽에서 `canSubmit` 에 덧붙인다.
  */
 export function useQuoteDraft() {
   const [content, setContent] = useState('');
@@ -26,13 +25,13 @@ export function useQuoteDraft() {
 }
 
 /**
- * 오려두기 입력 필드 — 문장 칸 + (쪽수 · 글자 수 · trailing) 한 줄 + 쪽수 경고.
- * 광장·도서 상세(밑줄 오려두기)와 독후감의 문장 넣기 시트가 이 필드를 공유한다. 바깥 카드·책 고르기·확인 버튼은
- * 화면마다 달라서 여기서 그리지 않고, 조각 사이 간격도 감싸는 Card 의 gap 에 맡긴다(그래서 조각들을 Fragment 로 그대로 내보낸다).
+ * 문장 입력 필드 — 문장 칸 + (쪽수 · 글자 수 · trailing) 한 줄 + 쪽수 경고. 독후감의 문장 넣기 시트가 쓴다.
+ * 바깥 시트·확인 버튼은 부르는 쪽 몫이라 여기서 그리지 않고, 조각 사이 간격도 감싸는 쪽의 gap 에 맡긴다
+ * (그래서 조각들을 Fragment 로 그대로 내보낸다).
  */
 export function QuoteDraftFields({ draft, trailing, autoFocus, contentMaxHeight }: {
   draft: ReturnType<typeof useQuoteDraft>;
-  /** 메타 줄 오른쪽 끝에 붙일 것 — 광장은 여기에 오려두기 버튼을 넘긴다. */
+  /** 메타 줄 오른쪽 끝에 붙일 것 — 문장 넣기 시트는 여기에 넣기 버튼을 넘긴다. */
   trailing?: ReactNode;
   /** 열리자마자 문장 칸에 커서를 둔다 — 시트처럼 문장을 쓰려고 연 자리에서만 켠다. */
   autoFocus?: boolean;

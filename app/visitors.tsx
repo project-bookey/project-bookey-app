@@ -5,7 +5,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { ApiError } from '@/api/client';
 import { profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { AVATAR_SIZE, PersonGlyph } from '@/components/quote/QuoteCard';
+import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
 import { EmptyState, formatRelative } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 

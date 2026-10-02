@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlignVertical: 'top',
   },
-  // 밑줄 오려두기의 쪽 칸과 같은 폭·숫자 활자.
+  // 문장 넣기 시트(QuoteDraftFields)의 쪽 칸과 같은 폭·숫자 활자.
   pageInput: {
     width: 84,
     borderWidth: hairline,

@@ -307,7 +307,7 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
 const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
 /**
- * 카드 푸터 액션 — 10px 모노 라벨 + 36px 터치 상자. 밑줄 카드·독후감 카드의 푸터가 같이 쓴다.
+ * 카드 푸터 액션 — 10px 모노 라벨 + 36px 터치 상자. 독후감 카드 푸터 등이 같이 쓴다.
  * 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓히되,
  * 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다. `onPress` 가 없으면 글자만 같은 상자에 놓는다.
  */

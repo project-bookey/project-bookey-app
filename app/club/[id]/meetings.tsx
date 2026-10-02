@@ -17,7 +17,7 @@ import {
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Eyebrow, Field, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, mono, pressedStyle } from '@/theme/tokens';
@@ -328,7 +328,7 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
             <View style={styles.avatars}>
               {attendees.slice(0, 4).map((p, i) => (
                 <View key={p.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -6, borderColor: colors.bg }]}>
-                  <QuoteAvatar uri={p.avatarUrl} nickname={p.nickname} size={20} />
+                  <Avatar uri={p.avatarUrl} nickname={p.nickname} size={20} />
                 </View>
               ))}
             </View>

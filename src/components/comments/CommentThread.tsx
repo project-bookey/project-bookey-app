@@ -21,7 +21,7 @@ import type { CommentThreadAdapter, ReplyTarget, ThreadComment } from './types';
 import { linkLabel } from '@/components/ui';
 
 /**
- * 댓글 스레드 — 밑줄 상세와 리뷰 상세가 같이 쓰는 목록 + 입력 바.
+ * 댓글 스레드 — 목록 + 입력 바. 도메인은 어댑터로 갈아 끼운다.
  *
  * 화면은 위에 올릴 카드(header)와 어댑터만 넘기고, 상태·뮤테이션·캐시 손질은 전부 여기서 한다.
  * 답글은 서버 계약대로 한 단계까지다 — 접기 컨트롤은 최상위 줄만 가진다. '답글 달기'는 답글 줄에도
@@ -31,7 +31,7 @@ export function CommentThread({
   adapter, header, title = '댓글', placeholder, showComposer = true, composerPlaceholder, emptyText,
 }: {
   adapter: CommentThreadAdapter;
-  /** 목록 위에 올릴 카드 — 밑줄은 QuoteCard, 리뷰는 ReviewCard. */
+  /** 목록 위에 올릴 카드 — 리뷰는 ReviewCard. */
   header?: ReactNode;
   title?: string;
   /** 대상을 아직 못 받았을 때 목록 자리에 대신 놓을 것(로딩 뼈대·안내). */

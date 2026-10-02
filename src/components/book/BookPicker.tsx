@@ -23,7 +23,7 @@ export type PickedBook = {
 
 /**
  * 책 고르기 상태 — 읽는 중인 책 빠른 선택 + 검색 후보 + 선택.
- * 광장 오려두기와 독후감 작성이 같이 쓴다. 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 —
+ * 독후감 작성(글·노트)이 쓴다. 아직 안 골랐고 검색 중도 아니면 읽는 중인 첫 책이 기본 —
  * 한 권만 읽는 사람은 바로 쓰기 시작한다. `initial` 이 있으면(수정 화면) 그 책이 기본값보다 앞선다.
  * `initial` 은 마운트 시 1회만 읽는다 — 비동기로 늦게 도착하는 책은 `pick()` 으로 넣는다.
  * `initial: null` 과 `pick(null)` 은 '책 없음' — 기본값도 서지 않는다(독후감은 책 없이도 쓴다).
@@ -87,7 +87,7 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
   // undefined = 아직 안 골랐다(기본값이 선다) · null = '책 없음'으로 골랐다(기본값도 서지 않는다).
   const [picked, setPicked] = useState<PickedBook | null | undefined>(opts?.initial);
   // 기록이 안 붙은 책(수정 화면·시트가 넘긴 initial)은 읽는 중 목록에서 같은 책의 기록을 찾아 붙인다 —
-  // 검색 결과 보강과 같은 방식이다. 기록이 붙어야 여기서 오린 밑줄이 내 독서 기록에 매인다.
+  // 검색 결과 보강과 같은 방식이다. 기록이 붙어야 여기서 쓴 글이 내 독서 기록에 매인다.
   const withRecord = (book: PickedBook): PickedBook => {
     if (book.recordId != null) return book;
     const found = quickPicks.find((q) => q.bookId === book.bookId)?.recordId;

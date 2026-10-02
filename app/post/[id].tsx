@@ -15,7 +15,7 @@ import { VISIBILITY_LABEL } from '@/components/post/PostCard';
 import { isNotePost, noteDocOf } from '@/components/post/postFormat';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { EmptyState, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -202,7 +202,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
           accessibilityLabel={post.mine ? undefined : `${post.authorNickname} 프로필 열기`}
           style={({ pressed }) => [styles.bylineAuthor, pressed ? pressedStyle : null]}
         >
-          <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
+          <Avatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
           <View style={styles.bylineText}>
             <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
               {post.authorNickname}

@@ -4,7 +4,6 @@ import type {
   Banner,
   BookDetail,
   BookLikeView,
-  BookQuote,
   BookSummary,
   Challenge,
   ChatMessage,
@@ -22,8 +21,6 @@ import type {
   ClubSummary,
   ClubVisibility,
   CreatePost,
-  CreateQuote,
-  CreateQuoteComment,
   CreateReviewComment,
   EmailCodeResponse,
   ExchangeTarget,
@@ -46,8 +43,6 @@ import type {
   PostImage,
   PostLike,
   PostcardView,
-  QuoteAgree,
-  QuoteComment,
   ReadingNow,
   ReadingRecord,
   ReadingStatus,
@@ -836,56 +831,11 @@ export const reviewApi = {
     }),
 };
 
-export const quoteApi = {
-  create: (body: CreateQuote) =>
-    api<BookQuote>("/api/v1/quotes", { method: "POST", body }),
-  /**
-   * 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만.
-   * q 는 문장 내용·책 제목을 대소문자 무시 부분 일치로 훑는다(빈 값이면 전체).
-   */
-  mine: (page = 0, size = 20, bookId?: number, q?: string) =>
-    api<Page<BookQuote>>("/api/v1/quotes", {
-      query: { page, size, bookId, q },
-    }),
-  /** 밑줄 한 건 — 상세 진입·새로고침·딥링크. */
-  get: (quoteId: number) => api<BookQuote>(`/api/v1/quotes/${quoteId}`),
-  /** 책별 밑줄 — 최신순. 도서 상세 밑줄 탭은 5건씩 받는다. q 는 문장 내용·책 제목 검색. */
-  byBook: (bookId: number, page = 0, size = 5, q?: string) =>
-    api<Page<BookQuote>>(`/api/v1/books/${bookId}/quotes`, {
-      query: { page, size, q },
-    }),
-  remove: (quoteId: number) =>
-    api<void>(`/api/v1/quotes/${quoteId}`, { method: "DELETE" }),
-  /** '좋아요' 토글 — 서버가 토글 후 상태를 돌려준다. */
-  agree: (quoteId: number) =>
-    api<QuoteAgree>(`/api/v1/quotes/${quoteId}/agree`, { method: "POST" }),
-  /** 댓글 — 오래된 순. */
-  comments: (quoteId: number, page = 0, size = 30) =>
-    api<Page<QuoteComment>>(`/api/v1/quotes/${quoteId}/comments`, {
-      query: { page, size },
-    }),
-  /** 한 댓글의 답글 — 오래된 순. */
-  replies: (quoteId: number, commentId: number, page = 0, size = 20) =>
-    api<Page<QuoteComment>>(
-      `/api/v1/quotes/${quoteId}/comments/${commentId}/replies`,
-      { query: { page, size } },
-    ),
-  addComment: (quoteId: number, body: CreateQuoteComment) =>
-    api<QuoteComment>(`/api/v1/quotes/${quoteId}/comments`, {
-      method: "POST",
-      body,
-    }),
-  removeComment: (quoteId: number, commentId: number) =>
-    api<void>(`/api/v1/quotes/${quoteId}/comments/${commentId}`, {
-      method: "DELETE",
-    }),
-};
-
 export const plazaApi = {
-  /** 광장 피드. q 는 문장 내용·책 제목 검색 — 완독 자랑(FINISH)에는 뜻이 없어 서버가 무시한다. */
-  feed: (type: PlazaItemType, page = 0, size = 20, q?: string) =>
+  /** 광장 피드 — 앱은 완독 자랑(FINISH)만 받는다(밑줄은 앱에서 걷어냈다). */
+  feed: (type: PlazaItemType, page = 0, size = 20) =>
     api<Page<PlazaItem>>("/api/v1/plaza/feed", {
-      query: { type, page, size, q },
+      query: { type, page, size },
     }),
 };
 

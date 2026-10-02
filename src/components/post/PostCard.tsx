@@ -4,7 +4,7 @@ import { Eye, Heart } from 'lucide-react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
-import { QuoteAvatar } from '@/components/quote/QuoteCard';
+import { Avatar } from '@/components/Avatar';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
@@ -20,7 +20,7 @@ export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '�
 const NOTE_THUMB_W = 96;
 
 /**
- * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다(밑줄의 QuoteCard 와 같은 꼴).
+ * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다.
  *
  * '포스터' 꼴이다 — 첫 사진이 카드 머리를 통째로 채우고, 아래로 깔린 그라데이션 위에
  * 책 이름과 표제를 얹는다. 표지는 사진 오른쪽 위에 붙인 것처럼 걸친다. 그 아래로
@@ -79,7 +79,7 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
             accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
             style={styles.authorRow}
           >
-            <QuoteAvatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
+            <Avatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
             <View style={styles.authorText}>
               <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
                 {post.authorNickname}
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   authorLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   authorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   authorText: { flex: 1 },
-  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)·밑줄 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
+  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { fontSize: 16, lineHeight: 22 },
   where: { fontSize: 12, letterSpacing: 0.3, lineHeight: 17, marginTop: 2 },
 

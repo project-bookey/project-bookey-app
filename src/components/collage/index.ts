@@ -7,7 +7,6 @@ export type { BookBand, BookNote } from './BoundBook';
 export { BrandHeader } from './BrandHeader';
 export { Chip } from './Chip';
 export { DotGridBackground } from './DotGridBackground';
-export { FocusRing } from './FocusRing';
 export { MemoScrap } from './MemoScrap';
 export { PaperScreen } from './PaperScreen';
 export { PlusGlyph } from './PlusGlyph';

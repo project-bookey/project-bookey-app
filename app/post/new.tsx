@@ -20,9 +20,9 @@ import {
   POST_TITLE_MAX, defaultVisibility, isNotePost, visibilityCaption, visibilityOptions,
 } from '@/components/post/postFormat';
 import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/post/postQuotes';
+import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { useQuoteDraft } from '@/components/quote/QuoteDraftFields';
 import { Card, EmptyState, Eyebrow, Field, Segmented, linkLabel } from '@/components/ui';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -418,10 +418,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.lg,
   },
-  // 헤더 우측 제출 버튼 — 광장 컴포저의 오려두기 버튼과 같은 만듦새(네모).
+  // 헤더 우측 제출 버튼 — 강조색 네모.
   submit: { borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   error: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  // 본문 칸 — 오려두기의 문장 칸과 같은 활자(quote 토큰 15/25), 길게 쓰는 글이라 높이만 키운다.
+  // 본문 칸 — 문장 넣기 시트의 문장 칸과 같은 활자(quote 토큰 15/25), 길게 쓰는 글이라 높이만 키운다.
   bodyInput: {
     minHeight: 220,
     borderWidth: hairline,

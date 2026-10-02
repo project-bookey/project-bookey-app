@@ -1,14 +1,14 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { NoteSheet } from '@/components/note/NoteSheet';
-import { QuoteDraftFields, type useQuoteDraft } from '@/components/quote/QuoteDraftFields';
+import { QuoteDraftFields, type useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 문장 넣기 시트 — 독후감 본문 커서 자리에 넣을 문장을 그 자리에서 옮겨 적는다.
  *
- * 밑줄(오려두기)과는 따로다 — 여기서 쓴 문장은 독후감 본문에 글로만 남고 밑줄 목록에는 생기지 않는다.
- * 문장·쪽수 칸과 그 검증은 밑줄 오려두기와 같은 QuoteDraftFields 를 쓰고, 하단 시트는 노트 도구 시트를 그대로 쓴다.
+ * 여기서 쓴 문장은 독후감 본문에 글로만 남는다. 문장·쪽수 칸과 그 검증은 QuoteDraftFields 가 맡고,
+ * 하단 시트는 노트 도구 시트를 그대로 쓴다.
  * 열림과 초안은 부모가 쥔다 — 바탕을 잘못 눌러 닫혀도 다시 열면 쓰던 문장이 그대로 있다.
  */
 export function QuoteInsertSheet({ draft, onInsert, onClose }: {
@@ -53,7 +53,7 @@ export function QuoteInsertSheet({ draft, onInsert, onClose }: {
 }
 
 const styles = StyleSheet.create({
-  // 광장 오려두기 버튼과 같은 만듦새(네모) — 메타 줄 오른쪽 끝에 붙는다.
+  // 강조색 네모 버튼 — 메타 줄 오른쪽 끝에 붙는다.
   submit: {
     marginLeft: 'auto',
     borderRadius: radius.sm,
