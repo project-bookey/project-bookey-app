@@ -7,7 +7,7 @@ import { hairline } from '@/theme/tokens';
 import { NoteAction } from './NoteAction';
 import { IDLE_DELTA, type Delta, type Preview } from './editing';
 import { handleDelta, type Point } from './noteGeometry';
-import type { PlacedElement } from './noteDoc';
+import { isTextual, type PlacedElement } from './noteDoc';
 
 const HANDLE = 16;
 const HIT = 44;
@@ -64,7 +64,7 @@ export function SelectionFrame({ element, scale, height, onPreview, onCommit, on
       delta.current = { ...IDLE_DELTA };
     }), [id]);
 
-  const canEdit = element.type === 'text' || element.type === 'speech';
+  const canEdit = isTextual(element);
   const actionsTop = Math.max(0, top - 40);
 
   return (

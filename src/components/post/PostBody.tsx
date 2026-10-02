@@ -1,31 +1,20 @@
 import { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import type { BookQuote } from '@/api/types';
+import { MemoScrap } from '@/components/collage';
 import { PostMarkdown } from '@/components/post/PostMarkdown';
-import { parseQuoteIds, splitByQuoteMarkers } from '@/components/post/quoteMarkers';
-import { QuoteScrap } from '@/components/quote/QuoteScrap';
-import { spacing } from '@/theme';
-
-/** 표시가 가리키는 밑줄 중 실제로 그릴 수 있는 것 — 지워졌거나 화면이 실체를 모르는 밑줄이면 빠진다. */
-export function usedQuoteIds(md: string, quotes: BookQuote[]): Set<number> {
-  const have = new Set(quotes.map((quote) => quote.id));
-  return new Set(parseQuoteIds(md).filter((id) => have.has(id)));
-}
+import { splitQuoteBlocks } from '@/components/post/postQuotes';
+import { spacing, typeScale, useTheme } from '@/theme';
 
 /**
- * 독후감 본문 — 글 사이에 오려둔 문장이 끼어든다.
+ * 독후감 본문 — 글 사이에 옮겨 적은 문장 조각이 끼어든다.
  *
- * 표시를 마크다운 파서에 태우지 않고 그 앞에서 쪼갠다. 라이브러리의 토큰 규칙에 얽히지 않고,
- * 표시가 가리키는 밑줄이 없으면 그 자리를 그냥 비울 수 있다.
+ * 조각(`>` 묶음)은 마크다운 파서에 태우지 않고 그 앞에서 쪼갠다(postQuotes 참고). 글은 PostMarkdown 이,
+ * 조각은 밑줄 조각과 같은 점선 메모가 그린다 — 번갈아 살짝 기울여 붙인 티를 낸다.
+ * 옛 글의 밑줄 표시는 부르는 쪽이 `postBodyOf` 로 미리 조각 글로 바꿔 넘긴다.
  */
-export function PostBody({ md, quotes, onPressQuote }: {
-  md: string;
-  quotes: BookQuote[];
-  onPressQuote?: (quoteId: number) => void;
-}) {
-  const byId = useMemo(() => new Map(quotes.map((quote) => [quote.id, quote] as const)), [quotes]);
-  const segments = useMemo(() => splitByQuoteMarkers(md), [md]);
+export function PostBody({ md }: { md: string }) {
+  const segments = useMemo(() => splitQuoteBlocks(md), [md]);
   let scrapIndex = 0;
   return (
     <View style={styles.root}>
@@ -33,24 +22,34 @@ export function PostBody({ md, quotes, onPressQuote }: {
         if (segment.kind === 'text') {
           return <PostMarkdown key={`t${i}`} md={segment.text} />;
         }
-        const quote = byId.get(segment.quoteId);
-        if (!quote) return null;
         const rotate = scrapIndex++ % 2 === 0 ? -1 : 1;
-        return (
-          <QuoteScrap
-            key={`q${i}`}
-            quote={quote}
-            rotate={rotate}
-            // 남의 문장도 인용할 수 있어 글쓴이 것이 아니면 누가 오려뒀는지 밝힌다.
-            showAuthor
-            onPress={onPressQuote ? () => onPressQuote(quote.id) : undefined}
-          />
-        );
+        return <QuoteBlock key={`q${i}`} text={segment.text} source={segment.source} rotate={rotate} />;
       })}
     </View>
   );
 }
 
+/** 문장 조각 하나 — 밑줄 조각(QuoteScrap)과 같은 만듦새: 점선 메모 안 명조 문장 + 왼쪽 악센트 선 + 모노 출처 한 줄. */
+function QuoteBlock({ text, source, rotate }: { text: string; source?: string; rotate: number }) {
+  const { colors } = useTheme();
+  return (
+    <MemoScrap rotate={rotate}>
+      <Text selectable style={[styles.text, { color: colors.text, borderLeftColor: colors.accent }]}>
+        {text}
+      </Text>
+      {source ? (
+        <Text numberOfLines={2} style={[typeScale.monoLabel, styles.source, { color: colors.textMuted }]}>
+          {source}
+        </Text>
+      ) : null}
+    </MemoScrap>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { gap: spacing.md },
+  // QuoteScrap 의 인용 본문과 같은 값 — quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
+  text: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
+  // 출처 줄 — QuoteScrap 의 메타 줄과 같은 값(9px 모노, 위 여백 sm).
+  source: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
 });

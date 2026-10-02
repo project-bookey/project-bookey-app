@@ -32,7 +32,7 @@ import { useAuth } from '@/store/auth';
 import { layout, radius, serif, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
-/** 모임 노트 도구 줄의 삽입 — 독후감 노트에서 오려둔 문장(책 하나에 묶임)만 뺐다. */
+/** 모임 노트 도구 줄의 삽입 — 독후감 노트에서 문장 조각만 뺐다. */
 const MEETING_NOTE_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech'];
 const CANVAS = canvasFor('large');
 /** 사진 상한 — 독후감 노트와 같은 값. 여럿이 함께 쓰는 노트라 한 사람이 다 쓰지 않게 하는 정도. */

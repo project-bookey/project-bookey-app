@@ -10,21 +10,21 @@ import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { NoteViewer } from '@/components/post/NoteViewer';
-import { PostBody, usedQuoteIds } from '@/components/post/PostBody';
+import { PostBody } from '@/components/post/PostBody';
 import { VISIBILITY_LABEL } from '@/components/post/PostCard';
 import { isNotePost, noteDocOf } from '@/components/post/postFormat';
+import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { QuoteAvatar } from '@/components/quote/QuoteCard';
-import { QuoteScrap } from '@/components/quote/QuoteScrap';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { EmptyState, Eyebrow, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
+import { EmptyState, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
 
 /**
  * 독후감 상세 — 광장 독후감 카드·책 상세·내 독후감에서 들어온다.
- * 글 한 편(표지·제목·바이라인·사진·본문·엮은 밑줄·액션 행)만 펼친다. 노트 독후감은 사진·본문 자리에 페이지 넘김 뷰어가 선다.
+ * 글 한 편(표지·제목·바이라인·사진·본문·액션 행)만 펼친다. 노트 독후감은 사진·본문 자리에 페이지 넘김 뷰어가 선다.
  * 댓글은 없다 — 독후감의 상호작용은 좋아요와 엽서뿐이다(§14.1, v1.2 확정).
  */
 export default function PostDetailScreen() {
@@ -163,12 +163,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
   const note = isNotePost(post);
   const noteDoc = useMemo(() => (note ? noteDocOf(post) : null), [note, post]);
-
-  // 본문 표시가 소비하지 않은 밑줄만 아래에 모은다 — 표시로 넣은 것을 두 번 보여주지 않는다.
-  const leftoverQuotes = useMemo(() => {
-    const used = usedQuoteIds(post.bodyMd, post.quotes);
-    return post.quotes.filter((quote) => !used.has(quote.id));
-  }, [post.bodyMd, post.quotes]);
+  // 옛 글이 밑줄로 엮어 둔 문장(표시 자리·글 끝)도 본문의 문장 조각으로 그린다 — 밑줄 상세로 가는 길은 없다.
+  const body = useMemo(() => (note ? '' : postBodyOf(post).text), [note, post]);
 
   return (
     <View style={styles.article}>
@@ -252,33 +248,10 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         </ScrollView>
       ) : null}
 
-      {/* ④ 본문 — 표시가 있는 자리에 오려둔 문장이 들어간다 */}
-      {!note ? (
-        <PostBody
-          md={post.bodyMd}
-          quotes={post.quotes}
-          onPressQuote={(quoteId) => router.push(`/quote/${quoteId}`)}
-        />
-      ) : null}
+      {/* ④ 본문 — 글 사이에 옮겨 적은 문장 조각이 끼어든다. 노트는 문장 조각이 페이지 안에 있다 */}
+      {!note ? <PostBody md={body} /> : null}
 
-      {/* ⑤ 본문에 넣지 않은 밑줄 — 표시 없이 엮기만 하던 옛 글을 위해 남긴다. 노트는 문장 조각이 페이지 안에 있다 */}
-      {!note && leftoverQuotes.length > 0 ? (
-        <View style={styles.quotes}>
-          <Eyebrow plain>오려둔 문장 {leftoverQuotes.length}</Eyebrow>
-          {leftoverQuotes.map((quote, i) => (
-            <QuoteScrap
-              key={quote.id}
-              quote={quote}
-              rotate={i % 2 === 0 ? -1 : 1}
-              // 본문 안 조각과 같은 규칙 — 글쓴이 것이 아니면 누가 오려뒀는지 밝힌다.
-              showAuthor
-              onPress={() => router.push(`/quote/${quote.id}`)}
-            />
-          ))}
-        </View>
-      ) : null}
-
-      {/* ⑥ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글은 없다(§14.1) */}
+      {/* ⑤ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글은 없다(§14.1) */}
       <View style={styles.footRow}>
         <DetailIconAction
           icon="heart"
@@ -390,8 +363,6 @@ const styles = StyleSheet.create({
   // 기울인 인화지 모서리가 잘리지 않게 사방으로 숨을 둔다.
   photos: { gap: spacing.md, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
   photo: { width: PHOTO, height: PHOTO, borderRadius: radius.sm, borderWidth: hairline },
-
-  quotes: { gap: spacing.md },
 
   clubLink: { alignSelf: 'flex-start', paddingVertical: spacing.xs, marginVertical: -spacing.xs },
 

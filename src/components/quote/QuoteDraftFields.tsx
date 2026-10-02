@@ -27,13 +27,20 @@ export function useQuoteDraft() {
 
 /**
  * 오려두기 입력 필드 — 문장 칸 + (쪽수 · 글자 수 · trailing) 한 줄 + 쪽수 경고.
- * 광장과 도서 상세가 이 필드를 공유한다. 바깥 카드·책 고르기·확인 버튼은 화면마다 달라서 여기서 그리지 않고,
- * 조각 사이 간격도 감싸는 Card 의 gap 에 맡긴다(그래서 조각들을 Fragment 로 그대로 내보낸다).
+ * 광장·도서 상세(밑줄 오려두기)와 독후감의 문장 넣기 시트가 이 필드를 공유한다. 바깥 카드·책 고르기·확인 버튼은
+ * 화면마다 달라서 여기서 그리지 않고, 조각 사이 간격도 감싸는 Card 의 gap 에 맡긴다(그래서 조각들을 Fragment 로 그대로 내보낸다).
  */
-export function QuoteDraftFields({ draft, trailing }: {
+export function QuoteDraftFields({ draft, trailing, autoFocus, contentMaxHeight }: {
   draft: ReturnType<typeof useQuoteDraft>;
   /** 메타 줄 오른쪽 끝에 붙일 것 — 광장은 여기에 오려두기 버튼을 넘긴다. */
   trailing?: ReactNode;
+  /** 열리자마자 문장 칸에 커서를 둔다 — 시트처럼 문장을 쓰려고 연 자리에서만 켠다. */
+  autoFocus?: boolean;
+  /**
+   * 문장 칸 높이 상한 — 스크롤 없는 시트에서만 준다. 네이티브의 여러 줄 칸은 글을 따라 자라서,
+   * 상한이 없으면 긴 문장이 아래 줄(넣기 버튼)을 시트·키보드 밖으로 밀어낸다. 넘치면 칸 안에서 스크롤한다.
+   */
+  contentMaxHeight?: number;
 }) {
   const { colors } = useTheme();
   const { content, setContent, pageText, setPageText, pageValid } = draft;
@@ -46,11 +53,12 @@ export function QuoteDraftFields({ draft, trailing }: {
         placeholder="마음에 걸린 문장을 옮겨 적어 보세요."
         placeholderTextColor={colors.textFaint}
         multiline
+        autoFocus={autoFocus}
         maxLength={QUOTE_CONTENT_MAX}
         accessibilityLabel="문장"
         style={[styles.contentInput, {
           backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-        }]}
+        }, contentMaxHeight != null ? { maxHeight: contentMaxHeight } : null]}
       />
 
       <View style={styles.meta}>

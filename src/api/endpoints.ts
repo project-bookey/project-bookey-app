@@ -840,7 +840,7 @@ export const quoteApi = {
   create: (body: CreateQuote) =>
     api<BookQuote>("/api/v1/quotes", { method: "POST", body }),
   /**
-   * 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만 — 독후감 작성 시 밑줄 고르기에 쓴다.
+   * 내가 오려둔 문장. totalElements 가 총 개수다. bookId 를 주면 그 책 것만.
    * q 는 문장 내용·책 제목을 대소문자 무시 부분 일치로 훑는다(빈 값이면 전체).
    */
   mine: (page = 0, size = 20, bookId?: number, q?: string) =>

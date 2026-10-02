@@ -4,11 +4,11 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { renderElementBody } from './NoteElementView';
 import { IDLE_DELTA, type Delta, type Preview } from './editing';
-import type { PlacedElement } from './noteDoc';
+import { isTextual, type PlacedElement } from './noteDoc';
 
 export type ElementHandlers = {
   onSelect: (id: string) => void;
-  /** 텍스트·말풍선 더블탭 — 편집 시트를 연다. */
+  /** 텍스트·말풍선·문장 더블탭 — 편집 시트를 연다. */
   onEdit: (id: string) => void;
   onPreview: (preview: Preview) => void;
   /** 제스처 하나가 끝났을 때 — 지금까지의 델타를 문서에 적용한다. */
@@ -41,7 +41,7 @@ export const EditableElementView = memo(function EditableElementView({
       latest.current.onCommit(id, { ...delta.current });
       delta.current = { ...IDLE_DELTA };
     };
-    const canEdit = element.type === 'text' || element.type === 'speech';
+    const canEdit = isTextual(element);
     const tap = Gesture.Tap().runOnJS(true).maxDuration(250).onEnd((_e, ok) => {
       if (ok) latest.current.onSelect(id);
     });
