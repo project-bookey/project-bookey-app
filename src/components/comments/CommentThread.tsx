@@ -195,7 +195,7 @@ export function CommentThread({
   );
 
   return (
-    /* 오프셋 없음 — 헤더리스라 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(토론 화면과 같은 이유). */
+    /* 오프셋 없음 — 헤더리스라 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(독후감 작성 화면과 같은 이유). */
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FlatList
         data={items}

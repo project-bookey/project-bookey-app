@@ -24,7 +24,7 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
       const weekOf = item.payload?.weekOf;
       return club('/club/[id]/log/week', typeof weekOf === 'string' ? { weekOf } : undefined);
     }
-    case 'CLUB_NEW_POST': return club('/club/[id]/posts');
+    case 'CLUB_NEW_POST': return club('/club/[id]');
     case 'CLUB_NOTE_PAGE': return club('/club/[id]', { tab: 'reviews' });
     case 'CLUB_ENDED': return club('/club/[id]/result');
     case 'CLUB_CHECKPOINT_DUE':

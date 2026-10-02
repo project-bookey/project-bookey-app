@@ -361,10 +361,6 @@ export const clubApi = {
       method: "POST",
       body: { toUserId, messageKey },
     }),
-  posts: (clubId: number, onlyMyRange: boolean) =>
-    api<Page<ClubPost>>(`/api/v1/clubs/${clubId}/posts`, {
-      query: { onlyMyRange, size: 50 },
-    }),
   createPost: (
     clubId: number,
     body: {

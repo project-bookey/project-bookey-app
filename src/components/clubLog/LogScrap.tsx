@@ -7,7 +7,7 @@ import { hairline, mono, radius, serif, spacing, tiltFor, typeScale } from '@/th
 import { kstTime } from './dates';
 import { linkLabel } from '@/components/ui';
 
-/** 반응 4종 — 토론 글과 같은 종류·이름. */
+/** 반응 4종. */
 export const LOG_REACTIONS = [
   { kind: 'LIKE', label: '좋아요' },
   { kind: 'FIRE', label: '뜨겁다' },
