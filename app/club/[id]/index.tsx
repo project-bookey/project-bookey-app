@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ellipsis, MessageSquare } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -56,18 +58,17 @@ import { mono, sans, serif } from "@/theme/tokens";
 const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "meetings", "notes"];
 /** 함께하는 사람 줄에 겹쳐 보일 프로필 수. */
 const MEMBER_AVATARS = 5;
-/** 소개가 길면 이 줄까지만 보이고 '더 보기'. */
-const INTRO_LINES = 4;
-/** 이 글자 수를 넘거나 줄이 많으면 긴 소개로 본다 — 웹은 줄 수를 재 주지 않아 길이로 가늠한다. */
-const INTRO_LONG_CHARS = 140;
+/** 한 줄 소개는 짧게만 쓰지만(50자) 예전에 길게 쓴 소개도 머리에서 두 줄을 넘지 않게 자른다. */
+const INTRO_LINES = 2;
 /** 홈에 보여 줄 최근 노트 · 읽기 조각 수. */
 const RECENT_NOTES = 3;
 const RECENT_LOGS = 3;
 
 /**
- * 클럽 홈 (§12.2) — 머리(이름 · 호스트 · 멤버 수 · 공개)와 홈 · 모임 · 노트 세 탭.
- * 홈은 클럽을 처음 보는 사람도 한눈에 알 수 있게 위에서부터 소개 → 함께하는 사람(겹친 프로필, 누르면 클럽 정보)
- * → 다음 모임(참여하기) → 최근 노트 → 읽기 조각(지금 읽는 책이 있을 때만) 순서로 쌓는다.
+ * 클럽 홈 (§12.2) — 머리와 홈 · 모임 · 노트 세 탭.
+ * 머리는 탭을 바꿔도 그대로 남는 클럽의 얼굴이다: 이름 · 호스트 · 멤버 수 · 공개, 한 줄 소개, 함께하는 사람
+ * (겹친 프로필, 누르면 클럽 정보). 호스트가 올린 배경 사진이 있으면 헤더 줄까지 깔고 아래로 갈수록 종이색으로 덮는다.
+ * 홈 탭은 다음 모임(참여하기) → 최근 노트 → 읽기 조각(지금 읽는 책이 있을 때만) 순서로 쌓는다.
  * 클럽은 기간 없이 이어지고, 다가오는 모임의 책이 지금 읽는 책이 된다(서버가 맞춘다).
  * 채팅은 탭이 아니라 헤더 말풍선(안 읽음 배지)으로 여는 전체 화면(/club/[id]/chat)이다.
  * 이번 주 카드 · 초대 코드 · 나가기는 ⋯ 의 클럽 정보(/club/[id]/info)로, 운영은 호스트 전용 설정으로 뺐다.
@@ -176,48 +177,103 @@ export default function ClubHomeScreen() {
     .filter(Boolean)
     .join(" · ");
   const unreadChat = chatState.data?.unreadCount ?? 0;
+  const intro = data.description?.trim() ?? "";
 
   return (
     <PaperScreen>
-      <SubHeader
-        category="클럽"
-        right={
-          // 두 아이콘은 44pt 상자를 sm 만큼 떼어 둔다(오터치 방지).
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => router.push(`/club/${clubId}/chat`)}
-              accessibilityRole="button"
-              accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
-              style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
-            >
-              <MessageSquare size={22} color={colors.text} {...iconStroke} />
-              {unreadChat > 0 ? (
-                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                  <Text style={[styles.badgeText, { color: colors.onAccent }]}>
-                    {unreadChat > 9 ? "9+" : unreadChat}
-                  </Text>
-                </View>
-              ) : null}
-            </Pressable>
-            <Pressable
-              onPress={() => router.push(`/club/${clubId}/info`)}
-              accessibilityRole="button"
-              accessibilityLabel="클럽 정보"
-              style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
-            >
-              <Ellipsis size={22} color={colors.text} {...iconStroke} />
-            </Pressable>
+      {/* 머리 — 배경 사진이 있으면 헤더 줄까지 깔고, 글씨가 읽히도록 아래로 갈수록 종이색으로 덮는다 */}
+      <View>
+        {data.backgroundUrl ? (
+          <>
+            <Image
+              source={{ uri: data.backgroundUrl }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+            />
+            <LinearGradient
+              colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
+              locations={[0, 0.55, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+          </>
+        ) : null}
+        <SubHeader
+          category="클럽"
+          right={
+            // 두 아이콘은 44pt 상자를 sm 만큼 떼어 둔다(오터치 방지).
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => router.push(`/club/${clubId}/chat`)}
+                accessibilityRole="button"
+                accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
+                style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
+              >
+                <MessageSquare size={22} color={colors.text} {...iconStroke} />
+                {unreadChat > 0 ? (
+                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                    <Text style={[styles.badgeText, { color: colors.onAccent }]}>
+                      {unreadChat > 9 ? "9+" : unreadChat}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+              <Pressable
+                onPress={() => router.push(`/club/${clubId}/info`)}
+                accessibilityRole="button"
+                accessibilityLabel="클럽 정보"
+                style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
+              >
+                <Ellipsis size={22} color={colors.text} {...iconStroke} />
+              </Pressable>
+            </View>
+          }
+        />
+        {/* 명조 이름 · 모노 한 줄 · 한 줄 소개 · 함께하는 사람. 소개가 없으면 호스트에게만 적으러 가는 링크 */}
+        <View style={styles.top}>
+          <View style={{ gap: spacing.xs }}>
+            <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
+              {data.name}
+            </Text>
+            <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
+              {metaLine}
+            </Text>
           </View>
-        }
-      />
-      {/* 머리 — 명조 이름과 모노 한 줄(호스트 · 멤버 수 · 공개). 소개는 홈 탭 맨 위에 쓴다 */}
-      <View style={styles.top}>
-        <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
-          {data.name}
-        </Text>
-        <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
-          {metaLine}
-        </Text>
+          {intro ? (
+            <Text numberOfLines={INTRO_LINES} style={[styles.intro, { color: colors.text }]}>
+              {intro}
+            </Text>
+          ) : isHost ? (
+            <Pressable
+              onPress={() => router.push(`/club/${clubId}/settings`)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.linkBox, pressed && pressedStyle]}
+            >
+              <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("한 줄 소개 적기")}</Text>
+            </Pressable>
+          ) : null}
+          {/* 함께하는 사람 — 겹친 프로필과 인원만 짧게. 누르면 클럽 정보에서 진척 · 찌르기 */}
+          <Pressable
+            onPress={() => router.push(`/club/${clubId}/info`)}
+            accessibilityRole="button"
+            accessibilityLabel={`함께하는 사람 ${data.memberCount}명 보기`}
+            style={({ pressed }) => [styles.members, pressed && pressedStyle]}
+          >
+            <View style={styles.avatars}>
+              {data.members.slice(0, MEMBER_AVATARS).map((m, i) => (
+                <View
+                  key={m.userId}
+                  style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.bg }]}
+                >
+                  <Avatar uri={m.avatarUrl} nickname={m.nickname} size={28} />
+                </View>
+              ))}
+            </View>
+            <Text style={[typeScale.label, { color: colors.text }]}>
+              {linkLabel(`함께하는 사람 ${data.memberCount}명`)}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <ClubTabs clubId={clubId} active={tab} onSelect={changeTab} />
@@ -243,7 +299,7 @@ export default function ClubHomeScreen() {
 }
 
 /**
- * 홈 탭 — 소개 · 함께하는 사람 · 다음 모임 · 최근 노트 · 읽기 조각.
+ * 홈 탭 — 다음 모임 · 최근 노트 · 읽기 조각(소개 · 함께하는 사람은 탭 위 머리에 있다).
  * 주요 행동은 다음 모임의 '이 모임에 참여하기' 하나뿐이다(UX 철칙 Von Restorff) — 나머지는 링크·테두리 버튼.
  */
 function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
@@ -261,7 +317,6 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
   const isHost = club.myRole === "HOST";
   const hasBook = club.book != null;
   const me = club.members.find((m) => m.isMe);
-  const [introOpen, setIntroOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const meetings = useQuery({
@@ -311,8 +366,6 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
     setRefreshing(false);
   };
 
-  const intro = club.description?.trim() ?? "";
-  const introLong = intro.length > INTRO_LONG_CHARS || intro.split("\n").length > INTRO_LINES;
   const contentWidth = Math.min(width, layout.content.maxWidth) - spacing.lg * 2;
   const noteSize = Math.floor((contentWidth - spacing.xs * (RECENT_NOTES - 1)) / RECENT_NOTES);
   const deadlinePassed = next?.responseDeadline != null && new Date(next.responseDeadline).getTime() < Date.now();
@@ -330,59 +383,6 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
       contentContainerStyle={styles.home}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
     >
-      {/* 소개 — 클럽을 처음 보는 사람이 가장 먼저 읽는 글. 없으면 호스트에게만 적으러 가는 링크 */}
-      <View style={styles.section}>
-        {intro ? (
-          <View style={{ gap: spacing.xs }}>
-            <Text numberOfLines={introOpen ? undefined : INTRO_LINES} style={[styles.intro, { color: colors.text }]}>
-              {intro}
-            </Text>
-            {introLong ? (
-              <Pressable
-                onPress={() => setIntroOpen((v) => !v)}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.linkBox, pressed && pressedStyle]}
-              >
-                <Text style={[typeScale.label, { color: colors.textMuted }]}>{introOpen ? "접기" : "더 보기"}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : isHost ? (
-          <Pressable
-            onPress={() => router.push(`/club/${clubId}/settings`)}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.linkBox, pressed && pressedStyle]}
-          >
-            <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("클럽 소개 적기")}</Text>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              멤버와 참가하려는 사람이 가장 먼저 보는 글이에요.
-            </Text>
-          </Pressable>
-        ) : null}
-
-        {/* 함께하는 사람 — 겹친 프로필과 인원만 짧게. 누르면 클럽 정보에서 진척 · 찌르기 */}
-        <Pressable
-          onPress={() => router.push(`/club/${clubId}/info`)}
-          accessibilityRole="button"
-          accessibilityLabel={`함께하는 사람 ${club.memberCount}명 보기`}
-          style={({ pressed }) => [styles.members, pressed && pressedStyle]}
-        >
-          <View style={styles.avatars}>
-            {club.members.slice(0, MEMBER_AVATARS).map((m, i) => (
-              <View
-                key={m.userId}
-                style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.bg }]}
-              >
-                <Avatar uri={m.avatarUrl} nickname={m.nickname} size={28} />
-              </View>
-            ))}
-          </View>
-          <Text style={[typeScale.label, { color: colors.text }]}>
-            {linkLabel(`함께하는 사람 ${club.memberCount}명`)}
-          </Text>
-        </Pressable>
-      </View>
-
       {/* 다음 모임 — 카드 본문은 모임 상세로, 참여하기는 본문의 형제(웹에서 button 안에 button 이 들어가지 않게) */}
       <View style={styles.section}>
         <Eyebrow>다음 모임</Eyebrow>
@@ -633,14 +633,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: { fontFamily: sans.bold, fontSize: 10 },
+  // 머리 — 이름 묶음 · 소개 · 함께하는 사람 사이는 md, 그룹 안은 xs.
   top: {
     ...layout.content,
-    gap: spacing.xs,
+    gap: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  name: { ...typeScale.displaySerif, fontSize: 22, lineHeight: 30 },
+  name: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 32 },
   metaLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   body: { flex: 1 },
   // 홈 — 섹션 사이 xl, 섹션 안 sm~md(UX 철칙 Proximity).
@@ -655,7 +656,7 @@ const styles = StyleSheet.create({
   // 글자 링크도 44pt 상자로(UX 철칙 Fitts).
   headLink: { minHeight: 44, justifyContent: "center" },
   linkBox: { minHeight: 44, justifyContent: "center", alignSelf: "flex-start", gap: 2 },
-  intro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 25 },
+  intro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
   flex: { flex: 1 },
   // 함께하는 사람 줄 전체가 하나의 버튼 — 44pt 높이를 지킨다.
   members: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: 44, alignSelf: "flex-start" },

@@ -323,6 +323,12 @@ export const clubApi = {
     allowNudge?: boolean;
   }) => api<ClubHome>("/api/v1/clubs", { method: "POST", body }),
   home: (clubId: number) => api<ClubHome>(`/api/v1/clubs/${clubId}`),
+  /** 배경 사진 올리기 (호스트) — 클럽 머리에 깔린다. 이전 사진은 서버가 지운다. */
+  uploadBackground: (clubId: number, form: FormData) =>
+    api<ClubHome>(`/api/v1/clubs/${clubId}/background`, { method: "POST", body: form }),
+  /** 배경 사진 빼기 (호스트) — 종이 바탕으로 돌아간다. */
+  removeBackground: (clubId: number) =>
+    api<ClubHome>(`/api/v1/clubs/${clubId}/background`, { method: "DELETE" }),
   rotateCode: (clubId: number) =>
     api<{ joinCode: string }>(`/api/v1/clubs/${clubId}/rotate-code`, {
       method: "POST",

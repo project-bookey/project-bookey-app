@@ -4,5 +4,6 @@ export { MemberDetail, MemberStrip, NUDGES } from './MemberStrip';
 export { confirmAsync, notify } from './dialogs';
 export { ClubTabs, clubTabOf, isClubTabKey } from './ClubTabs';
 export { StatStrip } from './StatStrip';
+export { CLUB_DESCRIPTION_MAX } from './limits';
 export type { StatCell } from './StatStrip';
 export type { ClubTabKey } from './ClubTabs';
