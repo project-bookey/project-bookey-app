@@ -222,7 +222,7 @@ export default function BookDetailScreen() {
                 <ConfirmButton
                   label="완독 처리"
                   question="완독으로 기록할까요?"
-                  tone="accent"
+                  tone="ink"
                   pending={finish.isPending}
                   onConfirm={() => finish.mutate()}
                 />

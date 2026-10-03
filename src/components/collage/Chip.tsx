@@ -20,6 +20,7 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
     <Pressable
       onPress={onPress}
       disabled={inert}
+      hitSlop={CHIP_HIT_SLOP}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected: active, disabled: inert }}
@@ -38,6 +39,9 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
     </Pressable>
   );
 }
+
+/** 칩 겉모습(약 31pt)은 지키고 위아래로 넓혀 44pt 터치 상자를 만든다. */
+const CHIP_HIT_SLOP = { top: 7, bottom: 7 };
 
 const styles = StyleSheet.create({
   chip: {

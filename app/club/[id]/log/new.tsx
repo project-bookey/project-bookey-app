@@ -183,7 +183,7 @@ export default function ClubLogNewScreen() {
         </View>
 
         <View style={{ gap: spacing.sm }}>
-          <Eyebrow plain>한 줄</Eyebrow>
+          <Eyebrow>한 줄</Eyebrow>
           <TextInput
             value={body}
             onChangeText={setBody}
@@ -197,7 +197,7 @@ export default function ClubLogNewScreen() {
         </View>
 
         <View style={{ gap: spacing.sm }}>
-          <Eyebrow plain>몇 쪽까지 읽었나요</Eyebrow>
+          <Eyebrow>몇 쪽까지 읽었나요</Eyebrow>
           <View style={styles.pageRow}>
             <TextInput
               value={page}

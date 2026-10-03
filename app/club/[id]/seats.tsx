@@ -144,7 +144,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
         <View style={styles.block}>
           {/* 머리 — 카드 없이 명조 표제와 자리 격자(활자·괘선 언어) */}
           <View style={styles.hero}>
-            <Eyebrow plain>{club.name}</Eyebrow>
+            <Eyebrow>{club.name}</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>자리를 열고{'\n'}한 명 더 초대해요</Text>
             <Text style={[typeScale.body, { color: colors.textMuted }]}>
               클럽은 {policy.freeLimit}명까지 무료예요. 책갈피로 자리를 늘리면 최대 {policy.maxLimit}명까지 함께 읽을 수 있어요.

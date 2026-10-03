@@ -104,7 +104,7 @@ export default function ProfileEditScreen() {
           </Pressable>
 
           <Card>
-            <Eyebrow plain>닉네임</Eyebrow>
+            <Eyebrow>닉네임</Eyebrow>
             <TextInput
               value={nickname}
               onChangeText={(value) => {
@@ -131,7 +131,7 @@ export default function ProfileEditScreen() {
           </Card>
 
           <Card>
-            <Eyebrow plain>기본 정보</Eyebrow>
+            <Eyebrow>기본 정보</Eyebrow>
             <View style={styles.field}>
               <Text style={[typeScale.label, { color: colors.textMuted }]}>성별</Text>
               <Segmented options={GENDER_OPTIONS} value={gender} onChange={setGender} />

@@ -91,7 +91,7 @@ export default function TossPaymentSuccessScreen() {
       <SubHeader category="결제" onBack={() => router.replace(verifyBody?.kind === 'BOOKMARK_PURCHASE' ? '/bookmarks' : '/subscription')} />
       <View style={styles.container}>
         <Card style={styles.card}>
-          <Eyebrow plain>{verifyBody?.kind === 'BOOKMARK_PURCHASE' ? 'BOOKMARK' : 'BOOKEY PLUS'}</Eyebrow>
+          <Eyebrow>{verifyBody?.kind === 'BOOKMARK_PURCHASE' ? 'BOOKMARK' : 'BOOKEY PLUS'}</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>
             {verifyPayment.isSuccess
               ? verifyBody?.kind === 'BOOKMARK_PURCHASE' ? '책갈피가 충전되었습니다.' : '구독이 시작되었습니다.'

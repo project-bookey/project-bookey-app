@@ -42,7 +42,7 @@ export default function WalletScreen() {
         <View style={styles.block}>
           <Card>
             <View style={styles.head}>
-              <Eyebrow plain>보유</Eyebrow>
+              <Eyebrow>보유</Eyebrow>
               {subscribed ? <Tag label="구독 중" fg={colors.accent} bg={colors.accentSoft} /> : null}
             </View>
             {wallet.isError ? (
@@ -76,7 +76,7 @@ export default function WalletScreen() {
 
           {/* 교환 — 책갈피가 기축, 엽서(1)·우표(2)로 바꾼다. 잔액이 모자라면 버튼을 잠근다. */}
           <Card>
-            <Eyebrow plain>교환</Eyebrow>
+            <Eyebrow>교환</Eyebrow>
             <View style={styles.actions}>
               <Button
                 label="엽서로 교환 (책갈피 1)"
@@ -104,7 +104,7 @@ export default function WalletScreen() {
           </Card>
 
           <Card>
-            <Eyebrow plain>구독</Eyebrow>
+            <Eyebrow>구독</Eyebrow>
             <Text style={[typeScale.body, styles.copy, { color: colors.textMuted }]}>
               {subscribed
                 ? '방문자 확인 같은 구독 혜택을 쓰고 있어요.'

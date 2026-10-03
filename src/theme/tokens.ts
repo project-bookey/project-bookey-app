@@ -75,7 +75,7 @@ export const typeScale = {
   label: { fontFamily: sans.semiBold, fontSize: 13 },
   /** 메타 정보 */
   caption: { fontFamily: sans.regular, fontSize: 12 },
-  /** 아이브로우 — 주로 악센트 색으로 쓴다 */
+  /** 아이브로우 — 뮤트 톤으로 쓴다(악센트는 CTA·진행·링크 몫) */
   overline: { fontFamily: sans.bold, fontSize: 11, letterSpacing: 0.8 },
   /** 히어로 표제 — 세리프 */
   displaySerif: { fontFamily: serif.extraBold, fontSize: 30, lineHeight: 40, letterSpacing: -0.5 },

@@ -51,10 +51,13 @@ export function Card({ children, style }: { children: ReactNode; style?: ViewSty
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-/** 아이브로우 — 모노 대문자 라벨. plain 이면 악센트 없이 뮤트 톤으로만 쓴다. */
-export function Eyebrow({ children, plain }: { children: ReactNode; plain?: boolean }) {
+/**
+ * 아이브로우 — 모노 대문자 라벨. 뮤트 톤으로만 쓴다 — 악센트는 화면의 CTA·진행·링크 몫이라
+ * 섹션 라벨까지 칠하면 정작 눌러야 할 하나가 묻힌다(UX 철칙 Von Restorff).
+ */
+export function Eyebrow({ children }: { children: ReactNode }) {
   const { styles } = useStyles();
-  return <Text style={[styles.eyebrow, plain && styles.eyebrowPlain]}>{children}</Text>;
+  return <Text style={styles.eyebrow}>{children}</Text>;
 }
 
 export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) {
@@ -84,6 +87,14 @@ export function OrnamentDivider() {
   return <View style={styles.divider} />;
 }
 
+/**
+ * 버튼 터치 상자는 44pt 이상(UX 철칙 Fitts). sm 은 겉모습(34pt)을 지키고 위아래 hitSlop 으로,
+ * ghost 는 글자뿐이라 상자 높이를 44 로 두고 좌우 hitSlop 으로 짧은 라벨('취소')의 폭을 채운다.
+ * 웹은 hitSlop 을 무시하지만 웹은 확인용 미리보기라 네이티브 기준으로 맞춘다.
+ */
+const SM_HIT_SLOP = { top: 5, bottom: 5 };
+const GHOST_HIT_SLOP = { left: 10, right: 10 };
+
 export function Button({
   label, onPress, variant = 'primary', disabled, loading, style, size = 'md',
 }: {
@@ -103,6 +114,7 @@ export function Button({
       accessibilityRole="button"
       onPress={onPress}
       disabled={isDisabled}
+      hitSlop={variant === 'ghost' ? GHOST_HIT_SLOP : size === 'sm' ? SM_HIT_SLOP : undefined}
       style={({ pressed }) => [
         styles.button,
         size === 'sm' && styles.buttonSm,
@@ -214,9 +226,12 @@ export function Segmented<T extends string>({ options, value, onChange }: {
   );
 }
 
+/** 라벨 없는 토글의 트랙(26pt)을 위아래로 넓혀 44pt 터치 상자로 만든다. */
+const TOGGLE_HIT_SLOP = { top: 9, bottom: 9 };
+
 /**
  * 직접 그린 토글. 플랫폼 기본 Switch 는 iOS/안드로이드/웹에서 색이 제각각이라
- * 디자인을 지키기 위해 직접 그린다.
+ * 디자인을 지키기 위해 직접 그린다. 라벨이 있으면 행 전체가 눌린다 — 트랙(46×26)만으로는 손가락이 빗나간다.
  */
 export function Toggle({ value, onChange, label, description }: {
   value: boolean;
@@ -225,30 +240,41 @@ export function Toggle({ value, onChange, label, description }: {
   description?: string;
 }) {
   const { styles } = useStyles();
-  const control = (
-    <Pressable
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
-      onPress={() => onChange(!value)}
-      style={[styles.toggleTrack, value && styles.toggleTrackOn]}
-    >
+  const track = (
+    <View style={[styles.toggleTrack, value && styles.toggleTrackOn]}>
       <View style={[styles.toggleKnob, value && styles.toggleKnobOn]} />
-    </Pressable>
+    </View>
   );
 
   if (!label) {
-    return control;
+    return (
+      <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: value }}
+        onPress={() => onChange(!value)}
+        hitSlop={TOGGLE_HIT_SLOP}
+      >
+        {track}
+      </Pressable>
+    );
   }
   return (
-    <View style={styles.toggleRow}>
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={label}
+      onPress={() => onChange(!value)}
+      style={({ pressed }) => [styles.toggleRow, pressed && pressedStyle]}
+    >
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.toggleLabel}>{label}</Text>
         {description ? <Text style={styles.toggleDescription}>{description}</Text> : null}
       </View>
-      {control}
-    </View>
+      {track}
+    </Pressable>
   );
 }
+
 
 export function EmptyState({ title, description, action, illustration = false }: {
   title: string;
@@ -393,8 +419,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       overflow: 'hidden',
       ...cardShadow,
     },
-    eyebrow: { ...typeScale.monoEyebrow, color: colors.accent },
-    eyebrowPlain: { color: colors.textMuted },
+    eyebrow: { ...typeScale.monoEyebrow, color: colors.textMuted },
     sectionTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24, color: colors.text },
     doubleRule: { gap: 2 },
     doubleRuleThick: { height: 2, backgroundColor: colors.lineStrong },
@@ -420,7 +445,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       borderWidth: hairline,
       borderColor: colors.lineStrong,
     },
-    buttonGhost: { backgroundColor: 'transparent', minHeight: 32, paddingHorizontal: 0 },
+    buttonGhost: { backgroundColor: 'transparent', minHeight: 44, paddingHorizontal: 0 },
     buttonDanger: {
       backgroundColor: 'transparent',
       borderWidth: hairline,
@@ -471,11 +496,12 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       borderRadius: radius.sm,
       overflow: 'hidden',
     },
-    segment: { flex: 1, paddingVertical: spacing.sm + 2, alignItems: 'center' },
+    // 선택은 잉크로 뒤집는다 — 악센트는 CTA 몫. 높이는 손가락 기준 44pt.
+    segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     segmentDivider: { borderLeftWidth: hairline, borderLeftColor: colors.line },
-    segmentActive: { backgroundColor: colors.accent },
+    segmentActive: { backgroundColor: colors.ink },
     segmentLabel: { ...typeScale.label, fontSize: 12, color: colors.textMuted },
-    segmentLabelActive: { color: colors.onAccent },
+    segmentLabelActive: { color: colors.onInk },
     toggleTrack: {
       width: 46,
       height: 26,
@@ -486,15 +512,15 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       padding: 2,
       justifyContent: 'center',
     },
-    toggleTrackOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+    toggleTrackOn: { backgroundColor: colors.ink, borderColor: colors.ink },
     toggleKnob: {
       width: 20,
       height: 20,
       borderRadius: radius.sm,
       backgroundColor: colors.textFaint,
     },
-    toggleKnobOn: { backgroundColor: colors.onAccent, alignSelf: 'flex-end' },
-    toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    toggleKnobOn: { backgroundColor: colors.onInk, alignSelf: 'flex-end' },
+    toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44 },
     toggleLabel: { ...typeScale.label, color: colors.text },
     toggleDescription: { ...typeScale.caption, color: colors.textFaint, lineHeight: 16 },
     empty: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl },

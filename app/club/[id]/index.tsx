@@ -650,7 +650,7 @@ function PublicClubPreview({
         ) : null}
 
         <Card style={{ gap: spacing.md }}>
-          <Eyebrow plain>클럽 정보</Eyebrow>
+          <Eyebrow>클럽 정보</Eyebrow>
           <KeyValue label="호스트" value={club.hostNickname ?? "-"} />
           <Rule />
           <KeyValue
@@ -666,7 +666,7 @@ function PublicClubPreview({
 
         {club.joinable ? (
           <Card style={{ gap: spacing.md }}>
-            <Eyebrow plain>참가 설정</Eyebrow>
+            <Eyebrow>참가 설정</Eyebrow>
             <Toggle
               label="진척 공개"
               description="끄면 리더보드에 비공개로 표시되고 클럽 평균 계산에서 빠집니다."
