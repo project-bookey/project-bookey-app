@@ -67,7 +67,7 @@ export default function BookmarksScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.block}>
           <Card style={styles.hero}>
-            <Eyebrow plain>BOOKMARK</Eyebrow>
+            <Eyebrow>BOOKMARK</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>책갈피 충전</Text>
             <Text style={[typeScale.body, styles.copy, { color: colors.textMuted }]}>
               책갈피는 엽서와 우표로 교환해 대화를 이어갈 때 사용합니다.
@@ -109,7 +109,7 @@ export default function BookmarksScreen() {
           </View>
 
           <Card>
-            <Eyebrow plain>직접 입력</Eyebrow>
+            <Eyebrow>직접 입력</Eyebrow>
             <View style={styles.inputRow}>
               <TextInput
                 value={custom}
@@ -136,7 +136,7 @@ export default function BookmarksScreen() {
           </Card>
 
           <Card>
-            <Eyebrow plain>결제 요약</Eyebrow>
+            <Eyebrow>결제 요약</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <KeyValue label="구매 수량" value={`${quantity}개`} />
               <Rule />

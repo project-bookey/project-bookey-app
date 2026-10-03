@@ -16,7 +16,7 @@ export function NotificationBell() {
   return (
     <Pressable
       onPress={() => router.push('/notifications')}
-      hitSlop={8}
+      hitSlop={BELL_HIT_SLOP}
       accessibilityRole="button"
       accessibilityLabel="알림"
     >
@@ -31,6 +31,9 @@ export function NotificationBell() {
     </Pressable>
   );
 }
+
+/** 종 글리프(22)를 사방 11pt 넓혀 44pt 터치 상자로 만든다 — 왼쪽 잔액 칩과는 spacing.md 로 떨어져 겹치지 않는다. */
+const BELL_HIT_SLOP = 11;
 
 /** 종 — 구역 네비의 로고 마크(22)와 같은 크기. 래스터 PNG 였던 것을 다른 아이콘과 같은 각진 획으로 그린다. */
 function BellGlyph({ color }: { color: string }) {

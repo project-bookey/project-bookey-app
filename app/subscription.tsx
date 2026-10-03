@@ -65,7 +65,7 @@ export default function SubscriptionScreen() {
           </Card>
 
           <Card>
-            <Eyebrow plain>포함 혜택</Eyebrow>
+            <Eyebrow>포함 혜택</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <KeyValue label="매월 지급" value="엽서 50장 · 우표 30개" />
               <Rule />
@@ -78,7 +78,7 @@ export default function SubscriptionScreen() {
           </Card>
 
           <Card>
-            <Eyebrow plain>결제</Eyebrow>
+            <Eyebrow>결제</Eyebrow>
             <View style={styles.checkoutButtons}>
               {Platform.OS === 'ios' ? (
                 <Button

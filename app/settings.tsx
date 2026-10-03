@@ -59,7 +59,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={[styles.block, styles.settings]}>
           <View>
-            <Eyebrow plain>재촉 톤</Eyebrow>
+            <Eyebrow>재촉 톤</Eyebrow>
             <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
               같은 상황이라도 어떻게 말을 걸지 고를 수 있습니다.
             </Text>
@@ -102,7 +102,7 @@ export default function SettingsScreen() {
           </View>
 
           <Card>
-            <Eyebrow plain>알림</Eyebrow>
+            <Eyebrow>알림</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <KeyValue
                 label="조용 시간"
@@ -126,7 +126,7 @@ export default function SettingsScreen() {
           </Card>
 
           <Card>
-            <Eyebrow plain>화면 테마</Eyebrow>
+            <Eyebrow>화면 테마</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <Segmented options={THEMES} value={preference} onChange={setPreference} />
             </View>

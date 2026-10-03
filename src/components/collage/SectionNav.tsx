@@ -3,13 +3,13 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
 import {
-  Animated, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, View,
+  Animated, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
-import { hairline, iconStroke, pressedStyle, spacing } from '@/theme/tokens';
+import { hairline, iconStroke, pressedStyle, sans, spacing } from '@/theme/tokens';
 
 export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
@@ -94,6 +94,8 @@ export function SectionNav({
   }, [activeIndex, dragPosition, pagerPosition, translateX]);
 
   const tabWidth = trackWidth > 0 ? (trackWidth - 8) / SECTIONS.length : 0;
+  // 표식은 아이콘+라벨 묶음을 감싼다 — 탭 폭에서 양옆 2pt 씩만 남긴다.
+  const markerWidth = Math.max(tabWidth - 4, 44);
   const nativeGlass = Platform.OS === 'ios' && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
 
   const selectIndex = (index: number) => {
@@ -224,12 +226,13 @@ export function SectionNav({
           style={[
             styles.marker,
             {
+              width: markerWidth,
               backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.68)',
               borderColor: mode === 'dark' ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.92)',
               transform: [{
                 translateX: Animated.add(
                   Animated.multiply(liveTranslateX, tabWidth),
-                  Math.max((tabWidth - 44) / 2, 0),
+                  Math.max((tabWidth - markerWidth) / 2, 0),
                 ),
               }, { scaleX: dragStretch }],
             },
@@ -239,6 +242,8 @@ export function SectionNav({
       {SECTIONS.map((section, index) => {
         const selected = section.key === active || (active === 'explore' && section.key === 'shelf');
         const visuallySelected = index === visualIndex;
+        // 선택은 잉크로 — 악센트는 화면 안의 CTA 몫(UX 철칙 Von Restorff).
+        const tint = visuallySelected ? colors.ink : colors.textMuted;
         return (
           <Pressable
             key={section.key}
@@ -252,7 +257,10 @@ export function SectionNav({
             hitSlop={6}
             style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
           >
-            <SectionIcon name={section.key} color={visuallySelected ? colors.accent : colors.textMuted} />
+            <SectionIcon name={section.key} color={tint} />
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.label, { color: tint }]}>
+              {section.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -303,7 +311,7 @@ export function SectionNav({
 
 function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
   const stroke = { stroke: color, ...iconStroke };
-  const size = 27;
+  const size = 24;
 
   switch (name) {
     case 'plaza':
@@ -377,23 +385,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  // 활성 표식도 유리 안에서 움직이는 작은 캡슐로 두어 현재 위치를 명확히 한다.
+  // 활성 표식도 유리 안에서 움직이는 작은 캡슐로 두어 현재 위치를 명확히 한다. 폭은 탭 폭에 맞춰 그린다.
   marker: {
     position: 'absolute',
     left: 4,
-    top: 7,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    top: 4,
+    height: 50,
+    borderRadius: 25,
     borderWidth: hairline,
   },
+  // 아이콘만으로는 '광장·서가' 같은 이 앱만의 구역을 알아보기 어렵다 — 라벨을 함께 둔다(UX 철칙 Jakob).
   tab: {
     flex: 1,
     minWidth: 0,
     height: 58,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
     paddingHorizontal: 2,
   },
+  label: { fontFamily: sans.semiBold, fontSize: 10, lineHeight: 12 },
   pressed: pressedStyle,
 });

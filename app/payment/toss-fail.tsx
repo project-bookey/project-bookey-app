@@ -22,7 +22,7 @@ export default function TossPaymentFailScreen() {
       <SubHeader category="결제" onBack={() => router.replace(isBookmarkPurchase ? '/bookmarks' : '/subscription')} />
       <View style={styles.container}>
         <Card style={styles.card}>
-          <Eyebrow plain>{isBookmarkPurchase ? 'BOOKMARK' : 'BOOKEY PLUS'}</Eyebrow>
+          <Eyebrow>{isBookmarkPurchase ? 'BOOKMARK' : 'BOOKEY PLUS'}</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>결제가 취소되었습니다.</Text>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>
             {code ? `[${code}] ` : ''}{message}

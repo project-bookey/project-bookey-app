@@ -141,7 +141,7 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {open ? (
           <View style={[styles.form, { borderColor: colors.lineStrong }]}>
-            <Eyebrow plain>새 모임</Eyebrow>
+            <Eyebrow>새 모임</Eyebrow>
             <Field
               label="제목"
               value={form.title}
@@ -181,7 +181,7 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
               </View>
             ) : null}
 
-            <Eyebrow plain>장소</Eyebrow>
+            <Eyebrow>장소</Eyebrow>
             <Button label="주소 검색" variant="outline" onPress={() => setShowAddress(true)} />
             <Field
               label="장소명 검색"
