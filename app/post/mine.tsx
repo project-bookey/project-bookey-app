@@ -33,7 +33,9 @@ export default function MyPostsScreen() {
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
   });
 
-  const writeAction = (
+  // 비어 있으면 빈 상태의 '첫 독후감 쓰기'가 같은 곳으로 간다 — 헤더의 '+ 쓰기'는 그때 숨겨 입구를 하나로(Hick).
+  const empty = mine.isSuccess && mine.data.pages.every((p) => p.content.length === 0);
+  const writeAction = empty ? undefined : (
     <Pressable
       onPress={() => router.push('/post/new')}
       accessibilityRole="button"
