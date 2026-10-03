@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubCommunityApi } from '@/api/endpoints';
@@ -152,7 +152,18 @@ export function ClubChatBody() {
           data={items}
           keyExtractor={(m) => String(m.id)}
           contentContainerStyle={chatListContent}
-          onEndReached={() => pages.hasNextPage && pages.fetchNextPage()}
+          // 1:1 대화방과 같게 — 이전 메시지를 받는 중엔 다시 부르지 않고, 목록 끝(위쪽)에 진행 표시를 둔다.
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (pages.hasNextPage && !pages.isFetchingNextPage) pages.fetchNextPage();
+          }}
+          ListFooterComponent={
+            pages.isFetchingNextPage ? (
+              <View style={styles.paging}>
+                <ActivityIndicator size="small" color={colors.textMuted} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <ChatBubble mine={item.mine} body={item.body} sender={item.senderNickname} createdAt={item.createdAt} />
           )}
@@ -188,6 +199,7 @@ function errorText(error: unknown, fallback: string): string {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  paging: { paddingVertical: spacing.md, alignItems: 'center' },
   giftBar: {
     ...layout.content,
     flexDirection: 'row',
