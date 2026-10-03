@@ -92,6 +92,20 @@ export const authApi = {
       auth: false,
       body: { email },
     }),
+  /** 비밀번호 재설정 코드 발급 — 가입된 이메일만(없으면 EMAIL_NOT_REGISTERED). 로컬 서버는 devCode 를 동봉한다. */
+  requestPasswordResetCode: (email: string) =>
+    api<EmailCodeResponse>("/api/v1/auth/password/code", {
+      method: "POST",
+      auth: false,
+      body: { email },
+    }),
+  /** 비밀번호 재설정 — 코드가 맞으면 새 비밀번호로 바꾸고 다른 기기는 로그아웃시킨 뒤 바로 로그인 토큰을 준다. */
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    api<TokenResponse>("/api/v1/auth/password/reset", {
+      method: "POST",
+      auth: false,
+      body: { email, code, newPassword },
+    }),
   /** 가입 — 서버 설정에 따라 code(이메일 인증) 또는 identityVerificationId(휴대폰 본인인증)를 요구한다. */
   emailSignup: (
     email: string,

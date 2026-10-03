@@ -13,6 +13,8 @@ type AuthState = {
                 verification: { code?: string; identityVerificationId?: string },
                 consent: { termsAgreed: true; termsVersion: string; privacyAgreed: true; privacyVersion: string }) => Promise<void>;
   socialLogin: (provider: 'GOOGLE' | 'APPLE' | 'KAKAO', token: string) => Promise<boolean>;
+  /** 비밀번호 재설정 — 성공하면 그대로 로그인된다. */
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   setUser: (user: Me) => void;
@@ -47,6 +49,12 @@ export const useAuth = create<AuthState>((set) => ({
     const result = await authApi.emailSignup(email, password, nickname, verification, consent);
     await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
     set({ user: result.user, status: "authenticated" });
+  },
+
+  resetPassword: async (email, code, newPassword) => {
+    const result = await authApi.resetPassword(email, code, newPassword);
+    await setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+    set({ user: result.user, status: 'authenticated' });
   },
 
   socialLogin: async (provider, token) => {

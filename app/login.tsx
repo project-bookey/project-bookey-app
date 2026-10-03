@@ -31,6 +31,7 @@ const BUTTON_HEIGHT = 48;
  * 소셜 계정은 서버가 바로 가입시킨다(newUser — 이메일 가입과 같은 가입 마무리를 거친다).
  * 가입 인증은 서버 설정(signup-config)을 따른다 — IDENTITY, EMAIL_CODE 또는 NONE.
  * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 프로필 기본 정보 단계(/profile-photo)를 거쳐 홈으로 간다.
+ * 비밀번호를 잊은 사람은 비밀번호 칸 아래 링크로 /password-reset 에 간다(입력해 둔 이메일을 넘긴다).
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -357,6 +358,21 @@ export default function LoginScreen() {
                 textContentType={isSignup ? 'newPassword' : 'password'}
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
               />
+              {/* 비밀번호를 잊었을 때의 길은 비밀번호 칸 바로 아래 — 흔한 자리(Jakob)이자 그 칸과 한 묶음(Proximity). */}
+              {!isSignup ? (
+                <Pressable
+                  onPress={() => router.push({
+                    pathname: '/password-reset',
+                    params: email.trim() ? { email: email.trim() } : {},
+                  })}
+                  disabled={busy}
+                  hitSlop={{ top: 0, bottom: 12, left: 12, right: 12 }}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
+                >
+                  <Text style={styles.forgotLabel}>{linkLabel('비밀번호 찾기')}</Text>
+                </Pressable>
+              ) : null}
             </View>
             {isSignup && signupConfig.data?.verification === 'IDENTITY' ? (
               <View style={styles.field}>
@@ -610,6 +626,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ghostLabel: { ...typeScale.label, color: darkColors.textMuted },
+  // 겉 높이 32 + 아래 hitSlop 12 = 44pt. 위는 비밀번호 칸과 겹치지 않게 넓히지 않는다.
+  forgot: { alignSelf: 'flex-end', paddingVertical: spacing.sm },
+  forgotLabel: { ...typeScale.caption, color: darkColors.textMuted },
   error: { ...typeScale.caption, color: darkColors.danger },
   codeRow: { flexDirection: 'row', gap: spacing.sm },
   codeInput: { flex: 1 },
