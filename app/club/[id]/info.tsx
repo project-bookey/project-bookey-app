@@ -6,18 +6,18 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
-import type { Checkpoint, ClubHome, NudgeMessageKey } from '@/api/types';
+import type { ClubHome, NudgeMessageKey } from '@/api/types';
 import { MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
+import { meetingDay } from '@/components/club/meetingTime';
 import { clubLogKeys, mondayOf, todayKst } from '@/components/clubLog';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
-import { Button, Card, EmptyState, Eyebrow, Loading, Numeral, Rule, linkLabel, percent } from '@/components/ui';
-import type { ColorTokens } from '@/theme';
-import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, EmptyState, Eyebrow, Loading, Rule, linkLabel, percent } from '@/components/ui';
+import { iconStroke, layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 /**
- * 클럽 정보 — 클럽 홈의 ⋯ 와 멤버 아바타에서 들어온다. 홈은 소식 · 채팅 · 모임만 남기고,
- * 함께 읽는 사람(진척 · 찌르기) · 체크포인트 · 이번 주 카드 · 초대 코드 · 나가기는 여기로 모았다.
+ * 클럽 정보 — 클럽 홈의 ⋯ 와 멤버 아바타에서 들어온다. 홈은 소식 · 모임 · 노트만 남기고,
+ * 함께 읽는 사람(지금 읽는 책의 진척 · 찌르기) · 이번 주 카드 · 초대 코드 · 나가기는 여기로 모았다.
  * 운영(코드 재발급 · 자리 · 멤버 · 종료)은 여전히 호스트 전용 설정(/club/[id]/settings)이다.
  */
 export default function ClubInfoScreen() {
@@ -123,7 +123,9 @@ export default function ClubInfoScreen() {
             <View style={{ flex: 1, gap: 6, justifyContent: 'center' }}>
               <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>
               <Text style={[styles.bookLine, { color: colors.textMuted }]}>
-                {[data.book?.title, data.book?.author].filter(Boolean).join(' · ')}
+                {data.book
+                  ? `지금 읽는 책 · ${[data.book.title, data.book.author].filter(Boolean).join(' · ')}`
+                  : '읽을 책 미정'}
               </Text>
             </View>
           </View>
@@ -131,7 +133,9 @@ export default function ClubInfoScreen() {
             cells={[
               { label: '역할', value: isHost ? '호스트' : '멤버' },
               { label: '인원', value: String(data.memberCount), unit: ` / ${data.memberLimit}명` },
-              { label: ended ? '상태' : '남은 날', value: ended ? '종료' : `D-${Math.max(0, data.daysLeft)}` },
+              ended
+                ? { label: '상태', value: '종료' }
+                : { label: '다음 모임', value: data.nextMeetingAt ? meetingDay(data.nextMeetingAt) : '미정' },
             ]}
           />
         </View>
@@ -161,28 +165,7 @@ export default function ClubInfoScreen() {
           ) : null}
         </View>
 
-        {data.nextCheckpoint || data.checkpoints.length > 0 ? (
-          <View style={{ gap: spacing.sm }}>
-            <Eyebrow>체크포인트</Eyebrow>
-            {data.nextCheckpoint ? (
-              <Card style={{ gap: spacing.xs }}>
-                <View style={styles.checkpointHead}>
-                  <Text style={[styles.checkpointTitle, { color: colors.text }]}>{data.nextCheckpoint.title}</Text>
-                  <Numeral style={[styles.checkpointTarget, { color: colors.text }]}>
-                    ~{data.nextCheckpoint.targetPage}쪽
-                  </Numeral>
-                </View>
-                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                  마감 {new Date(data.nextCheckpoint.dueAt).toLocaleDateString('ko-KR')} ·{' '}
-                  {data.nextCheckpoint.achievedCount}/{data.nextCheckpoint.memberCount}명 달성
-                </Text>
-              </Card>
-            ) : null}
-            {data.checkpoints.length > 0 ? <CheckpointGrid checkpoints={data.checkpoints} colors={colors} /> : null}
-          </View>
-        ) : null}
-
-        {/* 이번 주 카드 · 초대 코드 · 결산 — 괘선 아래 한 묶음 */}
+        {/* 이번 주 카드 · 초대 코드 — 괘선 아래 한 묶음 */}
         <View style={{ gap: spacing.sm }}>
           <Rule />
           <Pressable
@@ -198,9 +181,6 @@ export default function ClubInfoScreen() {
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>초대 코드</Text>
             <Text style={[styles.code, { color: colors.textMuted }]}>{data.joinCode}</Text>
           </View>
-          {ended ? (
-            <Button label="클럽 결산 보기" variant="outline" onPress={() => router.push(`/club/${clubId}/result`)} />
-          ) : null}
         </View>
 
         {/* 파괴적 동작 — 위 묶음과 섹션 간격(xl)으로 떼어 맨 아래에 둔다 */}
@@ -217,42 +197,6 @@ export default function ClubInfoScreen() {
   );
 }
 
-function CheckpointGrid({ checkpoints, colors }: { checkpoints: Checkpoint[]; colors: ColorTokens }) {
-  return (
-    <View style={styles.grid}>
-      {checkpoints.map((cp) => {
-        const state = !cp.evaluated ? 'pending' : cp.myAchieved ? 'met' : 'missed';
-        return (
-          <View key={cp.id} style={styles.gridCell}>
-            <View
-              style={[
-                styles.gridMark,
-                { borderColor: colors.line, backgroundColor: colors.surface },
-                // 달성은 '켜짐' 상태 — 도장처럼 잉크로 반전한다(악센트는 CTA 몫).
-                state === 'met' && { backgroundColor: colors.ink, borderColor: colors.ink },
-                state === 'missed' && { borderColor: colors.danger },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.gridMarkText,
-                  { color: colors.textFaint },
-                  state === 'met' && { color: colors.onInk },
-                  state === 'missed' && { color: colors.danger },
-                ]}
-              >
-                {state === 'met' ? '✓' : state === 'missed' ? '×' : '·'}
-              </Text>
-            </View>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>{cp.seq}주</Text>
-            <Numeral style={[styles.gridPage, { color: colors.textFaint }]}>{cp.targetPage}</Numeral>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   menuButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
@@ -261,23 +205,8 @@ const styles = StyleSheet.create({
   bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   count: { fontFamily: mono.regular, fontSize: 11 },
-  checkpointHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  checkpointTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
-  checkpointTarget: { fontSize: 14 },
   // 글자 한 줄이라 여백으로 44pt 상자를 만든다(UX 철칙 Fitts).
   linkRow: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   code: { fontFamily: mono.semiBold, fontSize: 14, letterSpacing: 3 },
-  grid: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  gridCell: { alignItems: 'center', gap: spacing.xs, width: 52 },
-  gridMark: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.md,
-    borderWidth: hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridMarkText: { fontFamily: mono.semiBold, fontSize: 14 },
-  gridPage: { fontSize: 10 },
 });

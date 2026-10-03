@@ -5,6 +5,7 @@ import type { ClubMemberBrief, ClubSummary } from '@/api/types';
 import { Chip, StickyNote, TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
 import { Numeral, ProgressBar, percent } from '@/components/ui';
+import { meetingDay } from './meetingTime';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
@@ -14,7 +15,8 @@ const BAND_H = 128;
 
 /**
  * 내 클럽 카드(포스터 띠) — 표지·책·함께 읽는 사람이 한눈에 들어오게.
- * 위 띠는 표지를 흐려 깐 배경 위에 기울인 표지와 D-day 스티키, 아래 본문은 이름 · 책 · 사람 · 내 진척.
+ * 위 띠는 표지를 흐려 깐 배경 위에 기울인 표지와 다음 모임 스티키, 아래 본문은 이름 · 지금 읽는 책 · 사람 · 내 진척.
+ * 클럽은 기간 없이 이어지므로 D-day 대신 다음 모임 날짜를 붙이고, 읽을 책이 아직 없으면 진척 줄을 뺀다.
  * 카드 본문은 누르면 클럽 홈으로, 호스트에게만 붙는 '관리' 칩은 본문 Pressable 의 형제로 둬
  * 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
@@ -25,8 +27,10 @@ export function ClubCard({ club, onPress, onManage }: {
 }) {
   const { colors, cardShadow } = useTheme();
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
-  const dday = ended ? '종료' : club.daysLeft >= 0 ? `D-${club.daysLeft}` : '기간 종료';
-  const bookLine = [club.book?.title ?? '도서 없음', club.book?.author].filter(Boolean).join(' · ');
+  const note = ended ? '종료' : club.nextMeetingAt ? `모임 ${meetingDay(club.nextMeetingAt)}` : null;
+  const bookLine = club.book
+    ? [club.book.title, club.book.author].filter(Boolean).join(' · ')
+    : '읽을 책 미정';
   const cover = club.book?.coverUrl ?? club.coverUrl;
 
   return (
@@ -45,11 +49,13 @@ export function ClubCard({ club, onPress, onManage }: {
           <View style={styles.bandCover}>
             <TiltCover uri={cover} title={club.book?.title} width={76} tilt={-4} entering={false} />
           </View>
-          <View style={styles.bandNote}>
-            <StickyNote rotate={4} style={styles.note}>
-              <Text style={[styles.noteText, { color: colors.onNote }]}>{dday}</Text>
-            </StickyNote>
-          </View>
+          {note ? (
+            <View style={styles.bandNote}>
+              <StickyNote rotate={4} style={styles.note}>
+                <Text style={[styles.noteText, { color: colors.onNote }]}>{note}</Text>
+              </StickyNote>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.body}>
@@ -58,13 +64,15 @@ export function ClubCard({ club, onPress, onManage }: {
           </Text>
           <Text numberOfLines={1} style={[styles.book, { color: colors.textMuted }]}>{bookLine}</Text>
           <MembersLine members={club.members ?? []} />
-          <View style={styles.progressLine}>
-            <View style={{ flex: 1 }}>
-              <ProgressBar value={club.myCompletionRate} height={5} />
+          {club.book ? (
+            <View style={styles.progressLine}>
+              <View style={{ flex: 1 }}>
+                <ProgressBar value={club.myCompletionRate} height={5} />
+              </View>
+              <Numeral style={[styles.pct, { color: colors.text }]}>{percent(club.myCompletionRate)}</Numeral>
+              <Text style={[styles.avg, { color: colors.textFaint }]}>평균 {percent(club.averageCompletionRate)}</Text>
             </View>
-            <Numeral style={[styles.pct, { color: colors.text }]}>{percent(club.myCompletionRate)}</Numeral>
-            <Text style={[styles.avg, { color: colors.textFaint }]}>평균 {percent(club.averageCompletionRate)}</Text>
-          </View>
+          ) : null}
         </View>
       </Pressable>
 

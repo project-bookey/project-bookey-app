@@ -12,11 +12,6 @@ import { Button, Eyebrow, Rule, Toggle } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, sans } from '@/theme/tokens';
 
-/** 시작~끝 일수 — '30일'. */
-function daysBetween(startsAt: string, endsAt: string): number {
-  return Math.max(0, Math.round((Date.parse(endsAt) - Date.parse(startsAt)) / 86400000));
-}
-
 /**
  * 코드로 참가 (§12.1).
  * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·기록은 참가 후에만 보인다.
@@ -29,7 +24,6 @@ export default function ClubJoinScreen() {
   const insets = useSafeAreaInsets();
   const [code, setCode] = useState('');
   const [shareProgress, setShareProgress] = useState(true);
-  const [adoptTarget, setAdoptTarget] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const normalized = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
@@ -43,7 +37,7 @@ export default function ClubJoinScreen() {
   });
 
   const join = useMutation({
-    mutationFn: () => clubApi.join(normalized, { adoptTargetDate: adoptTarget, shareProgress }),
+    mutationFn: () => clubApi.join(normalized, { shareProgress }),
     onSuccess: (club) => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
@@ -94,7 +88,9 @@ export default function ClubJoinScreen() {
                 <View style={{ flex: 1, gap: spacing.xs }}>
                   <Text style={[styles.clubName, { color: colors.text }]}>{club.name}</Text>
                   <Text style={[styles.bookLine, { color: colors.textMuted }]}>
-                    {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
+                    {club.book
+                      ? `지금 읽는 책 · ${[club.book.title, club.book.author].filter(Boolean).join(' · ')}`
+                      : '읽을 책 미정'}
                   </Text>
                   {club.description ? (
                     <Text numberOfLines={2} style={[typeScale.caption, { color: colors.textFaint }]}>
@@ -107,7 +103,6 @@ export default function ClubJoinScreen() {
                 cells={[
                   { label: '호스트', value: club.hostNickname ?? '—' },
                   { label: '인원', value: String(club.memberCount), unit: ` / ${club.memberLimit}명` },
-                  { label: '기간', value: String(daysBetween(club.startsAt, club.endsAt)), unit: '일' },
                 ]}
               />
               {club.alreadyMember ? (
@@ -122,7 +117,7 @@ export default function ClubJoinScreen() {
             <View style={[styles.section, { borderTopColor: colors.line }]}>
               <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
               <Text style={[styles.consentText, { color: colors.textMuted }]}>
-                · 이 책이 내 서재에 자동으로 등록됩니다{'\n'}
+                · 클럽이 지금 읽는 책이 내 서재에 자동으로 등록됩니다 — 모임마다 책이 바뀌면 그 책도요{'\n'}
                 · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 클럽원에게 보입니다{'\n'}
                 · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={[styles.bold, { color: colors.text }]}>공유되지 않습니다</Text>
               </Text>
@@ -133,12 +128,6 @@ export default function ClubJoinScreen() {
                 description="끄면 리더보드에 '비공개'로 표시되고 클럽 평균 계산에서 빠집니다."
                 value={shareProgress}
                 onChange={setShareProgress}
-              />
-              <Toggle
-                label="클럽 목표일을 내 목표로"
-                description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
-                value={adoptTarget}
-                onChange={setAdoptTarget}
               />
             </View>
           ) : null}

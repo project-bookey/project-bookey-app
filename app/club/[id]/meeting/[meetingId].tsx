@@ -15,7 +15,7 @@ import {
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
 import { Button, Card, EmptyState, Eyebrow, Loading, formatClock, linkLabel } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
@@ -151,6 +151,25 @@ export default function MeetingDetailScreen() {
           ]}
         />
 
+        {/* 읽을 책 — 다가오는 모임의 책이 클럽의 지금 읽는 책이 된다. 누르면 책 상세 */}
+        {m.book ? (
+          <Pressable
+            onPress={() => router.push(`/book/${m.book!.id}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`읽을 책 ${m.book.title}`}
+            style={({ pressed }) => [styles.bookRow, pressed && pressedStyle]}
+          >
+            <TiltCover uri={m.book.coverUrl} title={m.book.title} width={44} tilt={0} entering={false} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Eyebrow>읽을 책</Eyebrow>
+              <Text numberOfLines={2} style={[typeScale.label, { color: colors.text }]}>{linkLabel(m.book.title)}</Text>
+              {m.book.author ? (
+                <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>{m.book.author}</Text>
+              ) : null}
+            </View>
+          </Pressable>
+        ) : null}
+
         {/* 날짜 카드 — 가운데 큰 시간. 악센트는 아래 주요 버튼 몫이라 본문 잉크로 */}
         <Card style={{ alignItems: 'center', gap: 6 }}>
           <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{meetingDateLong(m.startsAt)}</Text>
@@ -257,6 +276,8 @@ export default function MeetingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 읽을 책 — 표지와 제목 묶음이 한 줄, 줄 전체가 책 상세로 가는 링크.
+  bookRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44 },
   container: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl * 2 },
   // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 Pretendard ExtraBold 토큰으로.
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
