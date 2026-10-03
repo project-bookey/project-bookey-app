@@ -526,7 +526,8 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     toggleDescription: { ...typeScale.caption, color: colors.textFaint, lineHeight: 16 },
     empty: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.xl },
     emptyIllustration: { width: 184, height: 143, marginBottom: spacing.lg },
-    emptyRule: { width: 28, height: 2, backgroundColor: colors.accent, marginBottom: spacing.lg },
+    // 장식 막대는 회색 — 빈 상태 아래의 행동 버튼이 화면의 유일한 강조가 되게(UX 철칙 Von Restorff).
+    emptyRule: { width: 28, height: 2, backgroundColor: colors.lineStrong, marginBottom: spacing.lg },
     emptyTitle: { ...typeScale.titleSerif, fontSize: 18, color: colors.text, textAlign: 'center' },
     emptyDescription: {
       ...typeScale.body,
