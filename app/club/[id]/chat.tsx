@@ -1,32 +1,28 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text,
-  TextInput, View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubCommunityApi, type ClubChatMessage } from '@/api/endpoints';
-import { kstTime } from '@/components/clubLog';
+import { clubCommunityApi } from '@/api/endpoints';
+import {
+  ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, chatListContent,
+} from '@/components/chat/ChatParts';
 import { NoteSheet } from '@/components/note/NoteSheet';
-import { Button, Card, EmptyState, Loading } from '@/components/ui';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
+import { Button, Card, Loading } from '@/components/ui';
+import { layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline } from '@/theme/tokens';
 
 /**
  * 클럽 채팅 — 클럽 홈 '채팅' 탭의 본문. 잠겨 있으면 책갈피로 여는 안내, 열리면 말풍선 목록과 입력 줄.
- * 상대 말은 종이(surface)에 헤어라인 말풍선, 내 말은 잉크 반전. 민트는 쓰지 않는다 —
- * 보내기도 잉크 네모에 선 아이콘이다. 이름·시각은 모노.
+ * 말풍선·입력 줄·보내기는 1:1 대화방과 같은 부품(ChatParts)이다 — 상대 말은 종이에 헤어라인,
+ * 내 말은 잉크 반전, 민트는 쓰지 않는다.
  */
 export function ClubChatBody() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clubId = Number(id);
   const qc = useQueryClient();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
   const [showGift, setShowGift] = useState(false);
   // 이 본문은 클럽 머리(표지·숫자 띠·탭) 아래에 끼워져 있다. KeyboardAvoidingView 는 자기 위치를
@@ -66,7 +62,6 @@ export function ClubChatBody() {
     },
   });
   const items = useMemo(() => pages.data?.pages.flatMap((p) => p.messages) ?? [], [pages.data]);
-  const canSend = draft.trim().length > 0 && !send.isPending;
 
   const giftSheet = (
     <NoteSheet visible={showGift} title="채팅 이용권 선물" onClose={() => setShowGift(false)}>
@@ -156,85 +151,33 @@ export function ClubChatBody() {
           inverted
           data={items}
           keyExtractor={(m) => String(m.id)}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={chatListContent}
           onEndReached={() => pages.hasNextPage && pages.fetchNextPage()}
-          renderItem={({ item }) => <Bubble message={item} />}
-          ListEmptyComponent={
-            // inverted 목록은 빈 상태도 뒤집혀 그려지므로 한 번 더 뒤집는다.
-            <View style={styles.flip}>
-              <EmptyState title="아직 대화가 없어요" description="첫 마디를 남겨 보세요." />
-            </View>
-          }
+          renderItem={({ item }) => (
+            <ChatBubble mine={item.mine} body={item.body} sender={item.senderNickname} createdAt={item.createdAt} />
+          )}
+          ListEmptyComponent={<ChatEmpty description="첫 마디를 남겨 보세요." />}
         />
-        <View
-          style={[
-            styles.inputBar,
-            {
-              borderTopColor: colors.line,
-              backgroundColor: colors.bg,
-              paddingBottom: Math.max(insets.bottom, spacing.md),
-            },
-          ]}
-        >
-          <TextInput
+        {send.error ? <ChatError message={errorText(send.error, '메시지를 보내지 못했어요.')} /> : null}
+        <ChatInputBar>
+          <ChatInput
             value={draft}
-            onChangeText={setDraft}
-            placeholder="메시지 보내기"
-            placeholderTextColor={colors.textFaint}
-            multiline
-            maxLength={1000}
-            style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]}
+            onChangeText={(next) => {
+              setDraft(next);
+              // 1:1 대화방처럼 다시 쓰기 시작하면 실패 문구를 거둔다.
+              if (send.isError) send.reset();
+            }}
           />
-          <Pressable
+          <ChatSendButton
             onPress={() => {
               const body = draft.trim();
               if (body) send.mutate(body);
             }}
-            disabled={!canSend}
-            accessibilityRole="button"
-            accessibilityLabel="보내기"
-            style={({ pressed }) => [
-              styles.send,
-              { backgroundColor: canSend ? colors.ink : colors.surfaceRaised },
-              pressed && canSend ? pressedStyle : null,
-            ]}
-          >
-            {send.isPending ? (
-              <ActivityIndicator size="small" color={colors.onInk} />
-            ) : (
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={canSend ? colors.onInk : colors.textFaint}>
-                <Path d="M12 19V5M6 11l6-6 6 6" {...iconStroke} />
-              </Svg>
-            )}
-          </Pressable>
-        </View>
+            disabled={draft.trim().length === 0}
+            loading={send.isPending}
+          />
+        </ChatInputBar>
       </KeyboardAvoidingView>
-    </View>
-  );
-}
-
-/** 말풍선 한 장 — 상대는 종이에 헤어라인, 나는 잉크 반전. 이름·시각은 모노. */
-function Bubble({ message }: { message: ClubChatMessage }) {
-  const { colors } = useTheme();
-  const mine = message.mine;
-  return (
-    <View style={[styles.row, mine && styles.rowMine]}>
-      <View
-        style={[
-          styles.bubble,
-          mine
-            ? { backgroundColor: colors.ink }
-            : { backgroundColor: colors.surface, borderWidth: hairline, borderColor: colors.line },
-        ]}
-      >
-        {!mine ? (
-          <Text style={[styles.who, { color: colors.textFaint }]}>{message.senderNickname}</Text>
-        ) : null}
-        <Text style={[typeScale.body, { color: mine ? colors.onInk : colors.text }]}>{message.body}</Text>
-        <Text style={[styles.time, { color: mine ? colors.mid : colors.textFaint }]}>
-          {kstTime(message.createdAt)}
-        </Text>
-      </View>
     </View>
   );
 }
@@ -254,38 +197,6 @@ const styles = StyleSheet.create({
   },
   lock: { ...layout.content, flex: 1, justifyContent: 'center', padding: spacing.lg },
   lockTitle: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
-  list: { ...layout.content, padding: spacing.lg, gap: spacing.md },
-  flip: { transform: [{ scaleY: -1 }] },
-  row: { flexDirection: 'row' },
-  rowMine: { justifyContent: 'flex-end' },
-  bubble: {
-    maxWidth: '78%',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radius.sm,
-    gap: 3,
-  },
-  who: { fontFamily: mono.medium, fontSize: 9.5, letterSpacing: 0.4 },
-  time: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.3, alignSelf: 'flex-end', marginTop: 2 },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderTopWidth: hairline,
-  },
-  input: {
-    ...typeScale.body,
-    flex: 1,
-    minHeight: 48,
-    maxHeight: 120,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderWidth: hairline,
-    borderRadius: radius.sm,
-  },
-  send: { width: 48, height: 48, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   giftRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

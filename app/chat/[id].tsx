@@ -3,18 +3,21 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable,
-  Image, ScrollView, StyleSheet, Text, TextInput, View,
+  Image, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatMessage } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { BOOKEY_STICKER_PACKS, findBookeyChatSticker } from '@/components/chat/bookeyStickers';
+import {
+  ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, ChatTime, chatListContent,
+} from '@/components/chat/ChatParts';
 import { FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, pressedStyle, radius, sans, spacing, useTheme } from '@/theme';
 
 /** 새 메시지 폴링 주기(ms) — 실시간 인프라 없이 시작한다 (§13-11 결정). */
 const POLL_MS = 4000;
@@ -22,12 +25,12 @@ const POLL_MS = 4000;
 /**
  * 1:1 대화방 (§14.3) — 엽서 답장이 오간 사이만. 메시지는 최신순으로 받아 inverted 리스트로 그린다.
  * 위로 스크롤하면 beforeId 커서로 과거 메시지를 더 불러온다.
+ * 말풍선·입력 줄·보내기는 클럽 채팅과 같은 부품(ChatParts)이고, 이모티콘만 이 방의 것이다.
  */
 export default function ChatRoomScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const chatId = Number(id);
   const [draft, setDraft] = useState('');
@@ -132,12 +135,12 @@ export default function ChatRoomScreen() {
           data={items}
           inverted
           keyExtractor={(message) => String(message.id)}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={chatListContent}
           onEndReachedThreshold={0.4}
           onEndReached={() => {
             if (messages.hasNextPage && !messages.isFetchingNextPage) messages.fetchNextPage();
           }}
-          renderItem={({ item }) => <Bubble message={item} />}
+          renderItem={({ item }) => <Message message={item} />}
           ListFooterComponent={
             messages.isFetchingNextPage ? (
               <View style={styles.loading}>
@@ -146,29 +149,18 @@ export default function ChatRoomScreen() {
             ) : null
           }
           ListEmptyComponent={
-            messages.isLoading ? null : (
-              // inverted 리스트라 위아래가 뒤집힌다 — 빈 상태는 단순 문구만 둔다.
-              <Text style={[typeScale.caption, styles.empty, { color: colors.textFaint }]}>
-                엽서를 주고받은 사이입니다. 첫 인사를 건네보세요.
-              </Text>
-            )
+            messages.isLoading ? null : <ChatEmpty description="엽서를 주고받은 사이예요. 첫 인사를 건네 보세요." />
           }
         />
 
-        {error ? (
-          <Text
-            style={[typeScale.caption, { color: colors.danger, paddingHorizontal: spacing.lg }]}
-            accessibilityRole="alert"
-          >
-            {error}
-          </Text>
-        ) : null}
+        {error ? <ChatError message={error} /> : null}
 
         {stickersOpen ? (
           <View style={[styles.stickerPanel, { borderTopColor: colors.line, backgroundColor: colors.surface }]}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
               contentContainerStyle={styles.stickerPackList}
             >
               {BOOKEY_STICKER_PACKS.map((pack) => {
@@ -180,18 +172,20 @@ export default function ChatRoomScreen() {
                     accessibilityRole="tab"
                     accessibilityLabel={`${pack.name} 이모티콘`}
                     accessibilityState={{ selected }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.stickerPackTab,
+                      // 고른 묶음은 다른 선택 상태처럼 잉크로 뒤집는다.
                       {
-                        borderColor: selected ? colors.accent : colors.line,
-                        backgroundColor: selected ? colors.accentSoft : colors.bg,
+                        borderColor: selected ? colors.ink : colors.line,
+                        backgroundColor: selected ? colors.ink : colors.bg,
                       },
+                      pressed ? pressedStyle : null,
                     ]}
                   >
                     <Image source={pack.thumbnail} style={styles.stickerPackThumb} resizeMode="contain" />
                     <Text
                       numberOfLines={1}
-                      style={[styles.stickerPackName, { color: selected ? colors.accent : colors.textMuted }]}
+                      style={[styles.stickerPackName, { color: selected ? colors.onInk : colors.textMuted }]}
                     >
                       {pack.name}
                     </Text>
@@ -199,7 +193,12 @@ export default function ChatRoomScreen() {
                 );
               })}
             </ScrollView>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stickerList}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.stickerList}
+            >
               {selectedStickerPack.stickers.map((sticker) => (
                 <Pressable
                   key={sticker.code}
@@ -210,7 +209,7 @@ export default function ChatRoomScreen() {
                   style={({ pressed }) => [
                     styles.stickerCell,
                     { borderColor: colors.line },
-                    pressed ? styles.pressed : null,
+                    pressed ? pressedStyle : null,
                   ]}
                 >
                   <Image source={sticker.source} style={styles.stickerThumb} resizeMode="contain" />
@@ -220,90 +219,60 @@ export default function ChatRoomScreen() {
           </View>
         ) : null}
 
-        <View style={[
-          styles.inputRow,
-          {
-            borderTopColor: colors.line,
-            backgroundColor: colors.bg,
-            paddingBottom: Math.max(insets.bottom, spacing.md),
-          },
-        ]}>
+        <ChatInputBar>
           <Pressable
             onPress={() => setStickersOpen((open) => !open)}
             accessibilityRole="button"
             accessibilityLabel={stickersOpen ? '이모티콘 닫기' : '이모티콘 열기'}
             accessibilityState={{ expanded: stickersOpen }}
-            style={[styles.stickerButton, {
-              borderColor: stickersOpen ? colors.accent : colors.lineStrong,
-              backgroundColor: stickersOpen ? colors.accentSoft : colors.surface,
-            }]}
+            style={({ pressed }) => [
+              styles.stickerButton,
+              // 열린 동안은 토글 선택 상태처럼 잉크로 뒤집는다.
+              {
+                borderColor: stickersOpen ? colors.ink : colors.line,
+                backgroundColor: stickersOpen ? colors.ink : colors.surface,
+              },
+              pressed ? pressedStyle : null,
+            ]}
           >
-            <Text style={[styles.stickerButtonText, { color: stickersOpen ? colors.accent : colors.textMuted }]}>☺</Text>
+            <Svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={stickersOpen ? colors.onInk : colors.textMuted}
+            >
+              <Circle cx={12} cy={12} r={9} {...iconStroke} />
+              <Path d="M9 9.5v1M15 9.5v1M8.5 14.5c1.9 2.2 5.1 2.2 7 0" {...iconStroke} />
+            </Svg>
           </Pressable>
-          <TextInput
-            style={[styles.input, {
-              borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text,
-            }]}
-            value={draft}
-            onChangeText={(next) => { setDraft(next); setError(null); }}
-            placeholder="메시지 보내기"
-            placeholderTextColor={colors.textFaint}
-            multiline
-            maxLength={1000}
-            accessibilityLabel="메시지 입력"
-          />
-          <Pressable
-            onPress={submit}
-            disabled={draft.trim().length === 0 || send.isPending}
-            accessibilityRole="button"
-            accessibilityLabel="보내기"
-            style={[styles.sendButton, {
-              backgroundColor: draft.trim().length === 0 ? colors.surface : colors.accent,
-            }]}
-          >
-            {send.isPending ? (
-              <ActivityIndicator size="small" color={colors.onAccent} />
-            ) : (
-              <Text style={[typeScale.bodyStrong, {
-                color: draft.trim().length === 0 ? colors.textFaint : colors.onAccent,
-              }]}>
-                ↑
-              </Text>
-            )}
-          </Pressable>
-        </View>
+          <ChatInput value={draft} onChangeText={(next) => { setDraft(next); setError(null); }} />
+          <ChatSendButton onPress={submit} disabled={draft.trim().length === 0} loading={send.isPending} />
+        </ChatInputBar>
       </KeyboardAvoidingView>
     </PaperScreen>
   );
 }
 
-function Bubble({ message }: { message: ChatMessage }) {
-  const { colors } = useTheme();
-  const mine = message.mine;
+/**
+ * 메시지 한 줄 — 글은 공용 말풍선, 이모티콘은 말풍선 없이 그림만. 상대 이름은 머리에 있어 비운다.
+ * 이모티콘에도 말풍선과 같은 자리에 시각을 단다.
+ */
+function Message({ message }: { message: ChatMessage }) {
+  const mine = message.mine === true;
   const sticker = findBookeyChatSticker(message.body);
+  if (!sticker) return <ChatBubble mine={mine} body={message.body ?? ''} createdAt={message.createdAt} />;
   return (
-    <View style={[styles.bubbleRow, mine ? styles.bubbleRowMine : null]}>
-      {sticker ? (
+    <View style={[styles.stickerRow, mine ? styles.stickerRowMine : null]}>
+      <View>
         <Image
           source={sticker.source}
           style={styles.messageSticker}
           resizeMode="contain"
           accessibilityLabel={sticker.label}
         />
-      ) : (
-        <View
-          style={[
-            styles.bubble,
-            mine
-              ? { backgroundColor: colors.accent, borderBottomRightRadius: 4 }
-              : { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
-          ]}
-        >
-          <Text style={[styles.bubbleText, { color: mine ? colors.onAccent : colors.text }]}>
-            {message.body}
-          </Text>
-        </View>
-      )}
+        <ChatTime createdAt={message.createdAt} />
+      </View>
     </View>
   );
 }
@@ -311,25 +280,9 @@ function Bubble({ message }: { message: ChatMessage }) {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   headerAction: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
-  list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.xs },
-  empty: { textAlign: 'center', paddingVertical: spacing.xl },
   loading: { padding: spacing.md, alignItems: 'center' },
-  bubbleRow: { flexDirection: 'row', justifyContent: 'flex-start' },
-  bubbleRowMine: { justifyContent: 'flex-end' },
-  bubble: {
-    maxWidth: '78%',
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  bubbleText: { fontFamily: sans.regular, fontSize: 15, lineHeight: 21 },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderTopWidth: hairline,
-  },
+  stickerRow: { flexDirection: 'row', justifyContent: 'flex-start' },
+  stickerRowMine: { justifyContent: 'flex-end' },
   stickerPanel: {
     borderTopWidth: hairline,
     paddingTop: spacing.sm,
@@ -358,30 +311,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stickerThumb: { width: 66, height: 66 },
+  // 보내기와 같은 48pt 네모 — 입력 줄 양 끝이 같은 크기로 맞선다.
   stickerButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     borderWidth: hairline,
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stickerButtonText: { fontSize: 22, lineHeight: 28 },
   messageSticker: { width: 156, height: 156 },
-  pressed: { opacity: 0.72 },
-  input: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 120,
-    borderRadius: radius.lg,
-    borderWidth: hairline,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontFamily: sans.regular,
-    fontSize: 15,
-  },
-  sendButton: {
-    width: 40, height: 40, borderRadius: radius.sm,
-    alignItems: 'center', justifyContent: 'center',
-  },
 });
