@@ -1,18 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
+import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
-import { confirmAsync, notify } from '@/components/club';
+import { CLUB_DESCRIPTION_MAX, confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
 import {
   Button, EmptyState, Eyebrow, Field, FootAction, KeyValue, Loading, Rule, Segmented, Tag, Toggle, linkLabel,
 } from '@/components/ui';
-import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 const VISIBILITIES: { value: ClubVisibility; label: string; description: string }[] = [
@@ -117,6 +119,38 @@ function SettingsForm({ club }: { club: ClubHome }) {
     },
     onError: (e) => fail(e, '넘기지 못했습니다.'),
   });
+  // 배경 사진 — 고르면 줄이고 JPEG 로 바꿔 바로 올린다. 이전 사진은 서버가 지운다.
+  const applyClub = (updated: ClubHome) => {
+    queryClient.setQueryData(['club', clubId], updated);
+    queryClient.invalidateQueries({ queryKey: ['clubs'] });
+  };
+  const backgroundFail = (e: unknown) =>
+    notify(
+      e instanceof ApiError && e.code === 'STORAGE_DISABLED'
+        ? '사진 저장소가 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.'
+        : e instanceof ApiError ? e.message : '배경 사진을 바꾸지 못했어요.',
+    );
+  const uploadBackground = useMutation({
+    mutationFn: async () => {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 1,
+      });
+      if (result.canceled || !result.assets[0]) return null;
+      return clubApi.uploadBackground(clubId, await prepareImage(result.assets[0]));
+    },
+    onSuccess: (updated) => {
+      if (updated) applyClub(updated);
+    },
+    onError: backgroundFail,
+  });
+  const removeBackground = useMutation({
+    mutationFn: () => clubApi.removeBackground(clubId),
+    onSuccess: applyClub,
+    onError: backgroundFail,
+  });
   const end = useMutation({
     mutationFn: () => clubApi.end(clubId),
     onSuccess: () => {
@@ -127,6 +161,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
   });
 
   const infoDirty = name.trim() !== club.name || description.trim() !== (club.description ?? '');
+  // 예전에 길게 쓴 소개는 한 줄 소개 길이로 줄여야 저장된다.
+  const descriptionTooLong = description.trim().length > CLUB_DESCRIPTION_MAX;
+  const backgroundBusy = uploadBackground.isPending || removeBackground.isPending;
   const others = club.members.filter((m) => !m.isMe);
   const expandable = club.seatPolicy && club.memberLimit < club.seatPolicy.maxLimit;
 
@@ -151,17 +188,17 @@ function SettingsForm({ club }: { club: ClubHome }) {
         <Section title="기본 정보">
           <Field label="클럽 이름" value={name} onChangeText={setName} maxLength={60} placeholder="예: 회사 독서 클럽" />
           <Field
-            label="소개"
+            label="한 줄 소개"
+            hint={`${description.trim().length}/${CLUB_DESCRIPTION_MAX}자 · 클럽 홈 맨 위에 보여요`}
+            error={descriptionTooLong ? `${CLUB_DESCRIPTION_MAX}자 안으로 줄여 주세요.` : null}
             value={description}
             onChangeText={setDescription}
-            maxLength={1000}
-            multiline
-            placeholder="어떤 클럽인지 한 줄로"
+            placeholder="예: 토요일 새벽마다 한 권씩 함께 읽어요"
           />
           <Button
             label="저장"
             size="sm"
-            disabled={!infoDirty || name.trim().length === 0}
+            disabled={!infoDirty || name.trim().length === 0 || descriptionTooLong}
             loading={update.isPending}
             onPress={() =>
               update.mutate(
@@ -169,6 +206,45 @@ function SettingsForm({ club }: { club: ClubHome }) {
                 { onSuccess: () => notify('저장했어요.') },
               )}
           />
+        </Section>
+
+        {/* 배경 사진 — 클럽 홈 머리에 깔린다. 미리보기는 머리와 같은 16:9 */}
+        <Section title="배경 사진" gap={spacing.sm}>
+          <View style={[styles.backdrop, { borderColor: colors.line, backgroundColor: colors.surfaceRaised }]}>
+            {club.backgroundUrl ? (
+              <Image
+                source={{ uri: club.backgroundUrl }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>사진이 없으면 종이 바탕이에요.</Text>
+            )}
+          </View>
+          <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+            글씨가 잘 보이도록 사진 위에 종이색을 옅게 덮어요.
+          </Text>
+          <View style={styles.backdropActions}>
+            {club.backgroundUrl ? (
+              <Button
+                label="빼기"
+                variant="outline"
+                size="sm"
+                disabled={backgroundBusy}
+                loading={removeBackground.isPending}
+                onPress={() => removeBackground.mutate()}
+              />
+            ) : null}
+            <Button
+              label={club.backgroundUrl ? '사진 바꾸기' : '사진 고르기'}
+              variant="outline"
+              size="sm"
+              disabled={backgroundBusy}
+              loading={uploadBackground.isPending}
+              onPress={() => uploadBackground.mutate()}
+            />
+          </View>
         </Section>
 
         <Section title="공개 범위" gap={spacing.sm}>
@@ -324,6 +400,16 @@ const styles = StyleSheet.create({
   title: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 30 },
   bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   section: { borderTopWidth: hairline, paddingTop: spacing.lg },
+  // 배경 사진 미리보기 — 클럽 홈 머리와 같은 16:9. 사진이 없으면 가운데 안내 한 줄.
+  backdrop: {
+    aspectRatio: 16 / 9,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backdropActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },

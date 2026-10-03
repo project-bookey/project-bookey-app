@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { CLUB_DESCRIPTION_MAX } from '@/components/club';
 import { Button, Eyebrow, Field, Segmented, Toggle } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
@@ -68,11 +69,12 @@ export default function ClubCreateScreen() {
               maxLength={60}
             />
             <Field
-              label="소개 (선택)"
+              label="한 줄 소개 (선택)"
+              hint={`${description.length}/${CLUB_DESCRIPTION_MAX}자 · 클럽 홈 맨 위에 보여요`}
               value={description}
               onChangeText={setDescription}
-              placeholder="어떤 클럽인지 한 줄로"
-              multiline
+              placeholder="예: 토요일 새벽마다 한 권씩 함께 읽어요"
+              maxLength={CLUB_DESCRIPTION_MAX}
             />
           </View>
 
