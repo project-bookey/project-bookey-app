@@ -47,13 +47,17 @@ const emptyForm = () => ({
  * 누르면 목록 위에 새 모임 폼이 펼쳐진다. 모임마다 읽을 책을 고를 수 있고(선택), 다가오는 모임의 책이
  * 클럽의 지금 읽는 책이 된다 — 진척 · 스포일러 가림 · 지금 읽는 중이 그 책을 본다.
  */
-export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
+export function ClubMeetingsBody({ isHost, initialOpen = false }: {
+  isHost: boolean;
+  /** 클럽 홈의 '모임 만들기'로 들어오면 새 모임 폼을 펼친 채로 연다. */
+  initialOpen?: boolean;
+}) {
   const { id } = useLocalSearchParams<{ id: string }>();
   const clubId = Number(id);
   const router = useRouter();
   const qc = useQueryClient();
   const { colors } = useTheme();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen && isHost);
   const [showDate, setShowDate] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [showAddress, setShowAddress] = useState(false);

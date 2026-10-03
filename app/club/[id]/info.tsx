@@ -16,7 +16,7 @@ import { iconStroke, layout, pressedStyle, spacing, typeScale, useTheme } from '
 import { mono } from '@/theme/tokens';
 
 /**
- * 클럽 정보 — 클럽 홈의 ⋯ 와 멤버 아바타에서 들어온다. 홈은 소식 · 모임 · 노트만 남기고,
+ * 클럽 정보 — 클럽 홈의 ⋯ 와 홈의 '함께하는 사람'에서 들어온다. 홈은 소개 · 모임 · 노트 중심으로 두고,
  * 함께 읽는 사람(지금 읽는 책의 진척 · 찌르기) · 이번 주 카드 · 초대 코드 · 나가기는 여기로 모았다.
  * 운영(코드 재발급 · 자리 · 멤버 · 종료)은 여전히 호스트 전용 설정(/club/[id]/settings)이다.
  */
