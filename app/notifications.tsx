@@ -7,11 +7,15 @@ import { Trash2 } from 'lucide-react-native';
 import { notificationApi } from '@/api/endpoints';
 import type { Notification, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { formatRelative } from '@/components/ui';
+import { FootAction, formatRelative } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { notificationTarget } from '@/lib/notificationTarget';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 알림 목록 — 항목을 누르면 열람 처리하고, 알림이 가리키는 화면으로 간다. */
+/**
+ * 알림 목록 — 항목을 누르면 열람 처리하고, 알림이 가리키는 화면으로 간다.
+ * 지우기는 밀어서 휴지통을 누르거나, 시각 옆 '삭제'를 두 번 누른다 — 제스처만으로 되는 기능은 두지 않는다.
+ */
 export default function NotificationsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
@@ -38,6 +42,16 @@ export default function NotificationsScreen() {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
+
+  const deleteConfirm = useDeleteConfirm<number>();
+  const pressDelete = (id: number) => {
+    if (deleteConfirm.confirm === id) {
+      deleteConfirm.disarm();
+      remove.mutate(id);
+    } else {
+      deleteConfirm.arm(id);
+    }
+  };
 
   const tap = (item: Notification) => {
     if (!item.openedAt) open.mutate(item.id);
@@ -78,7 +92,7 @@ export default function NotificationsScreen() {
                     style={({ pressed }) => [
                       styles.deleteAction,
                       { backgroundColor: colors.danger },
-                      pressed ? { opacity: 0.72 } : null,
+                      pressed ? pressedStyle : null,
                     ]}
                   >
                     <Trash2 size={27} strokeWidth={2.2} color="#fff" />
@@ -88,11 +102,17 @@ export default function NotificationsScreen() {
             >
               <Pressable onPress={() => tap(item)} style={[styles.row, { backgroundColor: colors.bg }]}>
                 <View style={styles.rowHead}>
-                  {!item.openedAt ? <View style={[styles.dot, { backgroundColor: colors.accent }]} /> : null}
+                  {!item.openedAt ? <View style={[styles.dot, { backgroundColor: colors.ink }]} /> : null}
                   <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
                   <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
                     {formatRelative(item.sentAt ?? item.scheduledAt)}
                   </Text>
+                  <FootAction
+                    label={deleteConfirm.confirm === item.id ? '한 번 더' : '삭제'}
+                    onPress={() => pressDelete(item.id)}
+                    tone={deleteConfirm.confirm === item.id ? 'danger' : 'faint'}
+                    accessibilityLabel={deleteConfirm.confirm === item.id ? `${item.title} 알림 삭제 확인` : `${item.title} 알림 삭제`}
+                  />
                 </View>
                 <Text style={[styles.body, { color: colors.textMuted }]}>{item.body}</Text>
               </Pressable>
@@ -113,5 +133,5 @@ const styles = StyleSheet.create({
   body: { ...typeScale.body, fontSize: 15, lineHeight: 22 },
   dot: { width: 6, height: 6, borderRadius: radius.round },
   deleteTray: { width: 84, alignItems: 'center', justifyContent: 'center' },
-  deleteAction: { width: 62, height: 62, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  deleteAction: { width: 62, height: 62, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
 });

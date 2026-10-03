@@ -1,7 +1,7 @@
 import { Alert, Platform } from 'react-native';
 
 /**
- * 클럽 화면 공용 대화상자 — 웹은 브라우저 기본, 네이티브는 Alert.
+ * 공용 대화상자(클럽 화면에서 시작해 설정의 계정 삭제도 쓴다) — 웹은 브라우저 기본, 네이티브는 Alert.
  * 컴포넌트를 띄우지 않고 Promise 로 답을 받으므로 mutation 앞에 그대로 await 한다.
  */
 

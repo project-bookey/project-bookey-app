@@ -262,10 +262,12 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
         ) : null}
         {onDelete ? (
           <View style={styles.footRight}>
+            {/* 확인 상태를 색만으로 알리지 않는다 — 다른 삭제(댓글·엽서·채팅)처럼 '한 번 더'를 글자로 띄운다. */}
             <DetailIconAction
               icon="trash"
               onPress={onDelete}
               danger={confirming}
+              caption={confirming ? '한 번 더' : undefined}
               accessibilityLabel={confirming ? '삭제 확인, 한 번 더 누르기' : '삭제'}
             />
           </View>
@@ -285,9 +287,11 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   );
 }
 
-function DetailIconAction({ icon, count, active = false, danger = false, onPress, accessibilityLabel }: {
+function DetailIconAction({ icon, count, caption, active = false, danger = false, onPress, accessibilityLabel }: {
   icon: 'heart' | 'eye' | 'trash';
   count?: number;
+  /** 글리프 옆 글자 — 삭제 확인 상태의 '한 번 더'. */
+  caption?: string;
   active?: boolean;
   danger?: boolean;
   onPress?: () => void;
@@ -304,6 +308,7 @@ function DetailIconAction({ icon, count, active = false, danger = false, onPress
     <>
       {glyph}
       {count !== undefined ? <Text style={[styles.actionCount, { color }]}>{count}</Text> : null}
+      {caption ? <Text style={[styles.actionCount, { color }]}>{caption}</Text> : null}
     </>
   );
 
