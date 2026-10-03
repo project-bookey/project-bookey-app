@@ -60,7 +60,10 @@ import type {
 } from "./types";
 
 export const authApi = {
-  /** 소셜 로그인 — 이미 연동된 계정만 통과한다. 신규 가입은 이메일 가입(인증 코드) 후 연동으로만 가능. */
+  /**
+   * 소셜 로그인 — 연동된 계정은 로그인하고, 처음 보는 소셜 계정은 바로 가입시킨다(newUser=true).
+   * 이메일이 기존 계정과 같으면 합치지 않고 EMAIL_ALREADY_EXISTS — 이메일 가입자는 설정에서 연동해 둔다.
+   */
   socialLogin: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string) =>
     api<TokenResponse>("/api/v1/auth/social", {
       method: "POST",
@@ -72,6 +75,9 @@ export const authApi = {
       method: "POST",
       body: { provider, token },
     }),
+  /** 연동 해제 — 비밀번호 없는 계정의 마지막 연동이면 서버가 LAST_LOGIN_METHOD 로 막는다. */
+  unlinkSocial: (provider: "GOOGLE" | "APPLE" | "KAKAO") =>
+    api<Me>(`/api/v1/auth/social/link/${provider}`, { method: "DELETE" }),
   emailLogin: (email: string, password: string) =>
     api<TokenResponse>("/api/v1/auth/login", {
       method: "POST",
