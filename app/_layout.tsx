@@ -75,6 +75,7 @@ export default function RootLayout() {
             <Stack.Screen name="library" options={{ title: '서재' }} />
             <Stack.Screen name="book-search" options={{ title: '도서 탐색' }} />
             <Stack.Screen name="login" options={{ title: '로그인' }} />
+            <Stack.Screen name="password-reset" options={{ title: '비밀번호 찾기' }} />
             <Stack.Screen name="onboarding" options={{ title: '환영합니다' }} />
             <Stack.Screen name="profile-photo" options={{ title: '프로필 사진' }} />
             <Stack.Screen name="profile-edit" options={{ title: '프로필 편집' }} />

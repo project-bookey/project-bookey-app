@@ -10,8 +10,8 @@ import { measureTourTarget, TourRect } from './TourTarget';
 const PAD = 8;
 const SHADE = 'rgba(0, 0, 0, 0.72)';
 
-/** 둘러보기를 시작하지 않는 화면 — 계정을 막 만들고 지나가는 단계들. */
-const TOUR_DEFERRED_ROUTES: readonly string[] = ['/login', '/onboarding', '/profile-photo'];
+/** 둘러보기를 시작하지 않는 화면 — 로그인·가입·비밀번호 찾기처럼 계정 문을 지나가는 단계들. */
+const TOUR_DEFERRED_ROUTES: readonly string[] = ['/login', '/password-reset', '/onboarding', '/profile-photo'];
 
 export function AppTourOverlay() {
   const router = useRouter();

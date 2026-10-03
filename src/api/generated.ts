@@ -1080,6 +1080,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 비밀번호 재설정 — 코드가 맞으면 새 비밀번호로 바꾸고 다른 기기는 로그아웃한 뒤 로그인시킨다 */
+        post: operations["resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 비밀번호 재설정 코드 발급 — 가입된 이메일로 6자리 코드를 보낸다 */
+        post: operations["requestPasswordResetCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -3916,10 +3950,11 @@ export interface components {
         RefreshRequest: {
             refreshToken: string;
         };
-        EmailLoginRequest: {
+        PasswordResetRequest: {
             /** Format: email */
             email: string;
-            password: string;
+            code: string;
+            newPassword: string;
         };
         EmailCodeRequest: {
             /** Format: email */
@@ -3929,6 +3964,11 @@ export interface components {
             /** Format: int64 */
             expiresInSec: number;
             devCode?: string;
+        };
+        EmailLoginRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
         };
         AttendanceView: {
             checkedInToday: boolean;
@@ -5003,9 +5043,10 @@ export type SchemaSocialLoginRequest = components['schemas']['SocialLoginRequest
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaEmailSignupRequest = components['schemas']['EmailSignupRequest'];
 export type SchemaRefreshRequest = components['schemas']['RefreshRequest'];
-export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
+export type SchemaPasswordResetRequest = components['schemas']['PasswordResetRequest'];
 export type SchemaEmailCodeRequest = components['schemas']['EmailCodeRequest'];
 export type SchemaEmailCodeResponse = components['schemas']['EmailCodeResponse'];
+export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
 export type SchemaAttendanceView = components['schemas']['AttendanceView'];
 export type SchemaWalletAdjustRequest = components['schemas']['WalletAdjustRequest'];
 export type SchemaSubscriptionGrantRequest = components['schemas']['SubscriptionGrantRequest'];
@@ -7029,6 +7070,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TokenResponse"];
+                };
+            };
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TokenResponse"];
+                };
+            };
+        };
+    };
+    requestPasswordResetCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmailCodeResponse"];
                 };
             };
         };
