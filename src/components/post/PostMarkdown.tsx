@@ -131,6 +131,8 @@ class CollageRenderer extends Renderer implements RendererInterface {
   }
 
   image(uri: string, alt?: string, _style?: ImageStyle, title?: string): ReactNode {
+    // 글 줄 사이에 낀 사진 표시(`image:`·`upload:`)처럼 열 수 없는 주소는 그리지 않는다 — 제 줄에 선 사진은 PostBody 가 그린다.
+    if (!isHttpUrl(uri)) return null;
     return (
       <Image
         key={this.getKey()}

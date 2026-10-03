@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -16,9 +16,13 @@ import type { PickedBook } from '@/components/book/BookPicker';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
+import type { PhotoSource } from '@/components/post/PostPhoto';
 import {
   POST_TITLE_MAX, defaultVisibility, visibilityCaption, visibilityOptions,
 } from '@/components/post/postFormat';
+import {
+  finalizePhotoLines, photoMarker, placeLoosePhotos, removePhotoLines, type PhotoRef,
+} from '@/components/post/postPhotos';
 import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/post/postQuotes';
 import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
@@ -159,7 +163,12 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
   const [title, setTitle] = useState(post?.title ?? '');
   // 옛 글은 밑줄 표시와 표시 없이 엮여만 있던 밑줄을 문장 조각 글로 바꿔 시작한다 — 초안을 만들 때 한 번만(마운트 시드).
   // 저장하면 밑줄 연결은 풀리고(quoteIds 빈 목록) 문장은 본문의 글로 남는다.
-  const [seed] = useState(() => (post ? postBodyOf(post) : { text: '', moved: 0 }));
+  // 사진을 따로 붙이던 옛 글은 그 사진을 글 맨 앞의 사진 줄로 넣어 시작한다 — 상세가 본문 앞에 그리던 자리와 같다.
+  const [seed] = useState(() => {
+    const quotes = post ? postBodyOf(post) : { text: '', moved: 0 };
+    const photos = post ? placeLoosePhotos(quotes.text, post.images) : { text: quotes.text, placed: 0 };
+    return { text: photos.text, moved: quotes.moved, placedPhotos: photos.placed };
+  });
   const [bodyMd, setBodyMd] = useState(seed.text);
   const [mode, setMode] = useState<'WRITE' | 'PREVIEW'>('WRITE');
   const inClub = clubId != null;
@@ -173,19 +182,52 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
   const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(null);
   const uploads = usePhotoUploads(post?.images ?? [], POST_IMAGE_MAX);
 
-  // 시트에서 옮겨 적은 문장을 커서 자리에 조각 글(`>` 묶음)로 넣는다 — 그다음부터는 본문의 글이라 고치기·빼기도 본문에서 한다.
-  const insertQuote = () => {
-    const block = quoteBlock(quoteDraft.body, pageSource(quoteDraft.pageValue));
-    const { text, cursor } = insertBlock(bodyMd, caret ?? bodyMd.length, block);
+  // 사진 고르기는 비동기다 — 창이 닫힌 뒤에도 최신 본문·커서에 넣도록 ref 로 본다.
+  const latest = useRef({ bodyMd, caret });
+  latest.current = { bodyMd, caret };
+
+  // 커서 자리에 묶음(문장 조각·사진 줄)을 넣는다. 본문을 갈아 끼우면 실제 캐럿은 글 끝으로 튄다 —
+  // 넣은 묶음 다음 자리로 되돌려 이어 쓰기와 다음에 넣을 자리를 화면과 맞춘다.
+  const insertAtCaret = (block: string) => {
+    const { bodyMd: current, caret: at } = latest.current;
+    const { text, cursor } = insertBlock(current, at ?? current.length, block);
     setBodyMd(text);
     setCaret(cursor);
-    // 본문을 갈아 끼우면 실제 캐럿은 글 끝으로 튄다 — 넣은 조각 다음 자리로 되돌려 이어 쓰기와 다음에 넣을 자리를 화면과 맞춘다.
     setPendingSelection({ start: cursor, end: cursor });
+  };
+
+  // 시트에서 옮겨 적은 문장을 커서 자리에 조각 글(`>` 묶음)로 넣는다 — 그다음부터는 본문의 글이라 고치기·빼기도 본문에서 한다.
+  const insertQuote = () => {
+    insertAtCaret(quoteBlock(quoteDraft.body, pageSource(quoteDraft.pageValue)));
     quoteDraft.setContent('');
     quoteDraft.setPageText('');
     // 닫기는 여기서 한다 — 열림 상태를 이 화면이 쥐고 있고, 넣기와 닫기가 한 흐름이라 한자리에서 끝낸다.
     setQuoting(false);
   };
+
+  // 사진을 골라 커서 자리에 사진 줄로 넣는다 — 상세에서도 그 자리에 선다. 올라가기를 기다리지 않고 자리부터 잡는다.
+  const insertPhotos = async () => {
+    const keys = await uploads.pick();
+    if (keys.length === 0) return;
+    insertAtCaret(keys.map((key) => photoMarker({ kind: 'upload', key })).join('\n\n'));
+  };
+
+  // 사진을 떼면 본문의 그 사진 줄도 함께 걷는다 — 올라가는 중(`upload:`)이든 이미 붙어 있던 사진(`image:`)이든.
+  const removePhoto = (key: string) => {
+    const id = uploads.photos.find((photo) => photo.key === key)?.image?.id;
+    uploads.remove(key);
+    setBodyMd((md) => removePhotoLines(md, (ref) => (ref.kind === 'upload' ? ref.key === key : ref.id === id)));
+  };
+
+  // 미리보기의 사진 줄 → 타일. 올라가는 중이면 고른 파일을, 올라갔으면 서버 사진을 그린다.
+  const photoOf = (ref: PhotoRef): PhotoSource | null => {
+    const photo = uploads.photos.find((p) => (ref.kind === 'upload' ? p.key === ref.key : p.image?.id === ref.id));
+    const uri = photo?.image?.url ?? photo?.localUri;
+    if (!photo || !uri) return null;
+    return { uri, width: photo.image?.width ?? photo.width, height: photo.image?.height ?? photo.height };
+  };
+  // 고르기 창이 떠 있거나, 서버가 사진을 못 받거나, 장수가 찼으면 '+ 사진'을 잠근다.
+  const photoLocked = uploads.picking || !uploads.retryable || uploads.photos.length >= POST_IMAGE_MAX;
 
   // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
   // 실패한 사진은 imageIds 에 안 들어가므로 그대로 올리면 사진 없이 실린다.
@@ -195,13 +237,15 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
     mutationFn: () => {
       // 공개 범위는 늘 명시한다 — 서버 기본값에 기대지 않는다.
       // 밑줄은 엮지 않는다 — 문장은 본문의 글이다. 고치기에서도 빈 목록을 보내 옛 글의 밑줄 연결을 푼다.
+      // 사진 줄은 서버 사진 id 로 굳히고, 사진은 본문에 나온 차례대로 붙인다(첫 사진이 카드 포스터가 된다).
+      const photos = finalizePhotoLines(bodyMd, uploads.photos);
       const base = {
         bookId: book?.bookId,
         title: title.trim(),
-        bodyMd,
+        bodyMd: photos.bodyMd,
         visibility,
         tags: [],
-        imageIds: uploads.imageIds,
+        imageIds: photos.imageIds,
         quoteIds: [],
       };
       return editing
@@ -304,6 +348,12 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                     아래 모아 두었던 문장 {seed.moved}개를 본문 끝으로 옮겼어요 · 원하는 자리로 옮겨 보세요
                   </Text>
                 ) : null}
+                {/* 사진을 따로 붙이던 옛 글을 열었을 때만 — 그 사진을 사진 줄로 글 맨 앞에 넣었다고 알린다. */}
+                {seed.placedPhotos > 0 ? (
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+                    사진 {seed.placedPhotos}장을 본문 맨 앞에 넣었어요 · 원하는 자리로 옮겨 보세요
+                  </Text>
+                ) : null}
                 {/* 문장 조각은 `>` 묶음이다 — 아래 '+ 문장'으로 넣거나 직접 써도 같다. */}
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                   **굵게** · _기울임_ · # 제목 · - 목록 · {'>'} 문장
@@ -312,7 +362,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
             ) : (
               <Card>
                 {bodyMd.trim() ? (
-                  <PostBody md={bodyMd} />
+                  <PostBody md={bodyMd} photoOf={photoOf} />
                 ) : (
                   <Text style={[typeScale.caption, { color: colors.textFaint }]}>미리볼 내용이 없어요</Text>
                 )}
@@ -320,20 +370,21 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
             )}
           </View>
 
-          {/* ④ 사진 */}
-          <View style={styles.section}>
-            <Eyebrow>사진 {uploads.photos.length}/{POST_IMAGE_MAX}</Eyebrow>
-            <PhotoStrip
-              photos={uploads.photos}
-              onPick={uploads.pick}
-              onRetry={uploads.retry}
-              onRemove={uploads.remove}
-              max={POST_IMAGE_MAX}
-              disabled={uploads.picking || !uploads.retryable}
-              retryable={uploads.retryable}
-              notice={uploads.notice}
-            />
-          </View>
+          {/* ④ 사진 — 넣기는 하단 띠의 '+ 사진'(커서 자리)이 맡는다. 여기는 붙은 사진의 올라가는 상태·다시·떼기를
+              보는 자리라, 붙은 사진도 알릴 것도 없으면 숨긴다. 떼면 본문의 사진 줄도 함께 빠진다. */}
+          {uploads.photos.length > 0 || uploads.notice ? (
+            <View style={styles.section}>
+              <Eyebrow>사진 {uploads.photos.length}/{POST_IMAGE_MAX}</Eyebrow>
+              <PhotoStrip
+                photos={uploads.photos}
+                onRetry={uploads.retry}
+                onRemove={removePhoto}
+                max={POST_IMAGE_MAX}
+                retryable={uploads.retryable}
+                notice={uploads.notice}
+              />
+            </View>
+          ) : null}
 
           {/* ⑤ 공개 범위 */}
           <View style={styles.section}>
@@ -346,7 +397,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
         {/*
           하단 띠 — 댓글 입력 바와 같은 자리(ScrollView 의 형제)라 키보드가 뜨면 그 위에 붙고,
           글이 길어져도 늘 손에 닿는다. 제출은 엄지가 닿는 여기 오른쪽에 둔다(UX 철칙 Fitts).
-          '+ 문장'은 커서 자리에 문장을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
+          '+ 문장'·'+ 사진'은 커서 자리에 문장 조각·사진을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
           실패 안내도 제출 버튼 바로 위에 붙인다(UX 철칙 Proximity).
         */}
         <View
@@ -364,19 +415,26 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
           ) : null}
           <View style={styles.bottomRow}>
             {mode === 'WRITE' ? (
-              <>
+              <View style={styles.tools}>
                 <Pressable
                   onPress={() => setQuoting(true)}
                   accessibilityRole="button"
                   accessibilityLabel="문장 넣기"
-                  style={({ pressed }) => [styles.insertQuote, pressed ? pressedStyle : null]}
+                  style={({ pressed }) => [styles.tool, pressed ? pressedStyle : null]}
                 >
                   <Text style={[typeScale.monoLabel, { color: colors.text }]}>+ 문장</Text>
                 </Pressable>
-                <Text numberOfLines={1} style={[typeScale.caption, styles.quoteHint, { color: colors.textFaint }]}>
-                  책 속 문장을 옮겨 적어 넣어요
-                </Text>
-              </>
+                <Pressable
+                  onPress={insertPhotos}
+                  disabled={photoLocked}
+                  accessibilityRole="button"
+                  accessibilityLabel="사진 넣기"
+                  accessibilityState={{ disabled: photoLocked }}
+                  style={({ pressed }) => [styles.tool, pressed ? pressedStyle : null]}
+                >
+                  <Text style={[typeScale.monoLabel, { color: photoLocked ? colors.textFaint : colors.text }]}>+ 사진</Text>
+                </Pressable>
+              </View>
             ) : null}
             <Button
               label={submitLabel}
@@ -424,10 +482,10 @@ const styles = StyleSheet.create({
   },
   // 모노 한 줄 — 44pt 상자로 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
   unpick: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginVertical: -spacing.sm },
+  // 커서 자리에 넣는 도구 둘 — 터치 상자(좌우로 sm 씩 넓힌다)끼리 sm 이상 떨어지게 xl 간격.
+  tools: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
   // 11px 모노 라벨이라 글자 상자만으로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  insertQuote: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
-  // 좁은 화면에서는 안내가 버튼에 밀려 줄어든다(한 줄 말줄임).
-  quoteHint: { flexShrink: 1, marginLeft: spacing.md, marginRight: spacing.md },
+  tool: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
   // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
   retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   skeleton: { ...layout.content, padding: spacing.lg },
