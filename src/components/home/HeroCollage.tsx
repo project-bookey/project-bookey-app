@@ -212,14 +212,14 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
       {/* ③ 시작한 달 표제 + CTA + 메모 조각 — 한 레이어로 묶어 가장 적게 밀린다(레이어 3개 제한) */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, paperStyle]}>
         {shelf ? (
-          // 잡지 챕터 표제 — 민트 아이브로우, 세리프 두 줄, 구역 네비와 같은 민트 밑줄 토막.
+          // 잡지 챕터 표제 — 뮤트 아이브로우, 세리프 두 줄, 괘선 밑줄 토막. 히어로의 악센트는 CTA 하나뿐이다.
           <View
             pointerEvents="none"
             style={[styles.shelf, { left: Math.round(W * G.ctaLeftRatio), top: Math.round(G.shelfTop * k) }]}
           >
-            <Text style={[typeScale.monoEyebrow, styles.shelfEyebrow, { color: colors.accent }]}>{shelf.eyebrow}</Text>
+            <Text style={[typeScale.monoEyebrow, styles.shelfEyebrow, { color: colors.textMuted }]}>{shelf.eyebrow}</Text>
             <Text style={[styles.shelfTitle, { color: colors.text }]}>{shelf.title}</Text>
-            <View style={[styles.shelfRule, { backgroundColor: colors.accent }]} />
+            <View style={[styles.shelfRule, { backgroundColor: colors.lineStrong }]} />
           </View>
         ) : null}
         <View style={[styles.ctaRow, { left: Math.round(W * G.ctaLeftRatio), right: ctaRight, top: ctaTop }]}>
@@ -281,9 +281,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cta: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.lg + 2,
-    paddingVertical: spacing.md - 2,
+    paddingHorizontal: spacing.lg,
   },
   shelf: { position: 'absolute', transform: [{ rotate: '-2deg' }] },
   shelfEyebrow: { fontSize: 9 },

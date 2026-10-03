@@ -95,7 +95,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="책 검색"
           >
-            <SearchGlyph color={colors.accent} />
+            <SearchGlyph color={colors.textMuted} />
             <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
           </Pressable>
         </TourTarget>

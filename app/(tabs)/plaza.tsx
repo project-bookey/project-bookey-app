@@ -60,7 +60,7 @@ export default function PlazaScreen() {
   const header = (
     <View style={styles.header}>
       <TourTarget id="plaza-actions" style={styles.chipRow}>
-        {/* 다른 구역 상단 탭과 같은 강조색 버튼 — 독후감 · 완독 자랑 순. */}
+        {/* 다른 구역 상단 탭과 같은 캡슐 탭 — 독후감 · 완독 자랑 순. */}
         <CapsuleTabs
           items={[
             { value: 'POST', label: '독후감' },
@@ -76,7 +76,7 @@ export default function PlazaScreen() {
             onPress={() => router.push('/post/new')}
             accessibilityRole="button"
             accessibilityLabel="독후감 쓰기"
-            style={[styles.composeButton, { borderColor: colors.accent }]}
+            style={({ pressed }) => [styles.composeButton, { borderColor: colors.accent }, pressed && pressedStyle]}
           >
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 독후감</Text>
           </Pressable>
@@ -205,16 +205,18 @@ function FinishCard({ item, index, mine, onOpenBook }: {
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: 104, gap: spacing.lg },
   header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs },
+  // 탭과 쓰기 버튼은 서로 다른 동작 — 오터치를 막게 sm 이상 띄운다.
   chipRow: {
-    gap: spacing.xs,
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
   composeButton: {
     alignSelf: 'flex-end',
+    minHeight: 44,
+    justifyContent: 'center',
     borderWidth: hairline,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
 
   card: { marginHorizontal: spacing.lg, gap: spacing.md },

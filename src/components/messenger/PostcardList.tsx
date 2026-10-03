@@ -130,13 +130,22 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
               <PersonGlyph size={AVATAR_SIZE} color={colors.textFaint} />
             </View>
           )}
-          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
+          <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.personName, { color: colors.text }]}>
             {inbox ? `${counterpartName}에게서` : `${counterpartName}에게`}
           </Text>
         </Pressable>
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-          {formatRelative(card.createdAt)}
-        </Text>
+        {/* 삭제는 시간 옆 머리글로 — 카드 아래 답장 버튼과 떨어뜨려 파괴적 동작을 오터치하지 않게 한다. */}
+        <View style={styles.headMeta}>
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+            {formatRelative(card.createdAt)}
+          </Text>
+          <FootAction
+            label={confirmingDelete ? '한 번 더' : '삭제'}
+            onPress={pressDelete}
+            tone={confirmingDelete ? 'danger' : 'faint'}
+            accessibilityLabel={confirmingDelete ? '엽서 삭제 확인' : '엽서 삭제'}
+          />
+        </View>
       </View>
 
       {card.postTitle ? (
@@ -197,22 +206,16 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
           </View>
         ) : (
           <View style={styles.actions}>
+            {/* 받은 엽서마다 붙는 버튼이라 outline — primary 는 열린 답장 칸의 보내기 하나뿐이다. */}
             <Button
               label={card.stampAttached ? '무료로 답장하기' : '답장하기 (우표 1개)'}
+              variant="outline"
               size="sm"
               onPress={() => setReplying(true)}
             />
           </View>
         )
       ) : null}
-      <View style={styles.deleteRow}>
-        <FootAction
-          label={confirmingDelete ? '한 번 더' : '삭제'}
-          onPress={pressDelete}
-          tone={confirmingDelete ? 'danger' : 'faint'}
-          accessibilityLabel={confirmingDelete ? '엽서 삭제 확인' : '엽서 삭제'}
-        />
-      </View>
     </Card>
   );
 }
@@ -221,8 +224,11 @@ const styles = StyleSheet.create({
   // 좌우 여백은 다른 구역 목록(클럽)과 같은 lg — 위 칸 전환 버튼과 가장자리를 맞춘다.
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: NAV_CLEARANCE },
   wallet: { marginBottom: spacing.md },
-  rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  // 긴 닉네임은 말줄임 — 오른쪽 시간·삭제를 밀어내지 않는다.
+  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
+  personName: { flexShrink: 1 },
+  headMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   // 아바타는 앱 공통 크기(광장 카드·홈 '오늘의 글'과 같은 AVATAR_SIZE) — 여기서만 작으면 다른 사람처럼 보인다.
   avatar: {
     width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
@@ -244,5 +250,4 @@ const styles = StyleSheet.create({
   },
   counter: { alignSelf: 'flex-end' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
-  deleteRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.sm },
 });

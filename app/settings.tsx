@@ -135,63 +135,71 @@ export default function SettingsScreen() {
             </Text>
           </Card>
 
-          <View style={{ gap: spacing.sm }}>
-            <Rule />
-            <Button
-              label="앱 사용법 다시 보기"
-              variant="ghost"
-              onPress={startTour}
-            />
-            <Button
-              label="개인정보처리방침"
-              variant="ghost"
-              onPress={() => void Linking.openURL(`${LEGAL_URL}#privacy`)}
-            />
-            <Button
-              label="이용약관"
-              variant="ghost"
-              onPress={() => void Linking.openURL(`${LEGAL_URL}#terms`)}
-            />
-            <Button
-              label="고객지원 · 계정 삭제 안내"
-              variant="ghost"
-              onPress={() => void Linking.openURL(`${LEGAL_URL}#deletion`)}
-            />
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>API {API_BASE_URL}</Text>
-            <Button
-              label="로그아웃"
-              variant="ghost"
-              onPress={async () => {
-                await logout();
-                router.replace('/login');
-              }}
-            />
-            <Button
-              label="계정 영구 삭제"
-              variant="ghost"
-              onPress={() => {
-                Alert.alert(
-                  '계정을 삭제할까요?',
-                  '프로필과 로그인 정보가 영구 삭제되며 복구할 수 없습니다. 스토어 구독은 별도로 취소해야 합니다.',
-                  [
-                    { text: '취소', style: 'cancel' },
-                    {
-                      text: '영구 삭제',
-                      style: 'destructive',
-                      onPress: async () => {
-                        try {
-                          await deleteAccount();
-                          queryClient.clear();
-                          router.replace('/login');
-                        } catch {
-                          Alert.alert('계정 삭제 실패', '잠시 후 다시 시도해 주세요.');
-                        }
+          {/* 도움말·약관 묶음과 계정 묶음(로그아웃·삭제)은 xl 로 갈라 놓는다 — 파괴적 동작을 오터치하지 않게. */}
+          <View style={styles.footer}>
+            <View style={styles.links}>
+              <Rule />
+              <Button
+                label="앱 사용법 다시 보기"
+                variant="ghost"
+                onPress={startTour}
+              />
+              <Button
+                label="개인정보처리방침"
+                variant="ghost"
+                onPress={() => void Linking.openURL(`${LEGAL_URL}#privacy`)}
+              />
+              <Button
+                label="이용약관"
+                variant="ghost"
+                onPress={() => void Linking.openURL(`${LEGAL_URL}#terms`)}
+              />
+              <Button
+                label="고객지원 · 계정 삭제 안내"
+                variant="ghost"
+                onPress={() => void Linking.openURL(`${LEGAL_URL}#deletion`)}
+              />
+              {/* 접속 서버 확인용 — 개발 빌드에서만 보인다. */}
+              {__DEV__ ? (
+                <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>API {API_BASE_URL}</Text>
+              ) : null}
+            </View>
+            <View style={styles.account}>
+              <Button
+                label="로그아웃"
+                variant="ghost"
+                onPress={async () => {
+                  await logout();
+                  router.replace('/login');
+                }}
+              />
+              <Button
+                label="계정 영구 삭제"
+                variant="danger"
+                onPress={() => {
+                  Alert.alert(
+                    '계정을 삭제할까요?',
+                    '프로필과 로그인 정보가 영구 삭제되며 복구할 수 없습니다. 스토어 구독은 별도로 취소해야 합니다.',
+                    [
+                      { text: '취소', style: 'cancel' },
+                      {
+                        text: '영구 삭제',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            await deleteAccount();
+                            queryClient.clear();
+                            router.replace('/login');
+                          } catch {
+                            Alert.alert('계정 삭제 실패', '잠시 후 다시 시도해 주세요.');
+                          }
+                        },
                       },
-                    },
-                  ],
-                );
-              }}
-            />
+                    ],
+                  );
+                }}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -216,4 +224,7 @@ const styles = StyleSheet.create({
   radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },
   switchRow: { paddingVertical: spacing.sm },
+  footer: { gap: spacing.xl },
+  links: { gap: spacing.sm },
+  account: { gap: spacing.md },
 });

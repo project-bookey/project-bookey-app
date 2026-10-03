@@ -86,10 +86,10 @@ export function ClubRow() {
                 </Text>
               </Text>
               <View style={[styles.badge, {
-                backgroundColor: item.status === 'RECRUITING' ? colors.accentSoft : colors.surfaceRaised,
+                backgroundColor: item.status === 'RECRUITING' ? colors.ink : colors.surfaceRaised,
               }]}>
                 <Text style={[typeScale.monoEyebrow, {
-                  color: item.status === 'RECRUITING' ? colors.accent : colors.textMuted,
+                  color: item.status === 'RECRUITING' ? colors.onInk : colors.textMuted,
                 }]}>
                   {item.status === 'RECRUITING' ? '모집 중' : '진행 중'}
                 </Text>

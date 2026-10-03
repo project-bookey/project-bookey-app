@@ -36,7 +36,7 @@ export function AttendanceCard() {
   return (
     <View style={[styles.card, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}>
       <View style={styles.copy}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>DAILY CHECK-IN</Text>
+        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>DAILY CHECK-IN</Text>
         <Text style={[styles.title, { color: colors.text }]}>
           {completed
             ? '이번 달 출석판을 모두 채웠어요'
@@ -103,11 +103,12 @@ export function AttendanceCard() {
                   key={day}
                   style={[
                     styles.day,
-                    { borderColor: filled ? colors.accent : colors.line },
-                    filled && { backgroundColor: colors.accentSoft },
+                    // 채운 날은 도장처럼 잉크로 — 악센트는 출석하기 버튼 몫이다.
+                    { borderColor: filled ? colors.ink : colors.line },
+                    filled && { backgroundColor: colors.ink },
                   ]}
                 >
-                  <Text style={[styles.dayText, { color: filled ? colors.accent : colors.textFaint }]}>
+                  <Text style={[styles.dayText, { color: filled ? colors.onInk : colors.textFaint }]}>
                     {reward ?? day}
                   </Text>
                 </View>
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
   title: { ...typeScale.bodyStrong, fontSize: 17 },
   button: {
     minWidth: 92,
-    minHeight: 42,
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     borderRadius: radius.sm,
     alignItems: 'center',
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
   pressed: pressedStyle,
   expandButton: {
     width: '100%',
-    minHeight: 36,
+    minHeight: 44,
     borderTopWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',

@@ -11,7 +11,7 @@ import type { BookSummary, ReadingStatus } from '@/api/types';
 import { Chip, MemoScrap, PaperScreen, SearchGlyph, TiltCover } from '@/components/collage';
 import { BookRow, RowBook } from '@/components/home/BookRow';
 import type { ColorTokens } from '@/theme';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 // 웹 전용: 브라우저 기본 포커스 링 제거 — outline-style이 auto인 한 outline-width:0은 무시된다.
@@ -108,11 +108,11 @@ export default function SearchScreen() {
             styles.searchBar,
             {
               backgroundColor: colors.surfaceRaised,
-              borderColor: focused ? colors.accent : 'transparent',
+              borderColor: focused ? colors.ink : 'transparent',
             },
           ]}
         >
-          <SearchGlyph color={colors.accent} />
+          <SearchGlyph color={colors.textMuted} />
           <TextInput
             ref={inputRef}
             value={input}
@@ -126,13 +126,21 @@ export default function SearchScreen() {
             style={[styles.input, webNoOutline, { color: colors.text }]}
           />
         </View>
+        {/* 헤더 없는 전체 화면이라 나갈 길을 검색바 옆에 둔다 — iOS 검색 화면의 '취소' 관례. */}
+        <Pressable
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.cancel, pressed && pressedStyle]}
+        >
+          <Text style={[typeScale.label, { color: colors.textMuted }]}>취소</Text>
+        </Pressable>
       </View>
 
       {/* autoFocus로 키보드가 열린 상태에서도 책 탭이 먹히도록 — 기본값 'never'는 첫 탭을 키보드 닫기로만 소모한다 */}
       {!searching ? (
         <ScrollView contentContainerStyle={styles.explore} keyboardShouldPersistTaps="handled">
           <View style={styles.moodSection}>
-            <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>상황으로</Text>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>상황으로</Text>
             <View style={styles.moodChips}>
               {MOOD_QUERIES.map((mood) => (
                 <Chip
@@ -232,7 +240,7 @@ function TodayPick({ book, onPress }: { book: BookSummary; onPress: () => void }
       <MemoScrap rotate={-1.5} style={styles.todayCard}>
         <View style={styles.todayHeader}>
           <Text style={[styles.todayTitle, { color: colors.text }]}>오늘의 한 칸</Text>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>랜덤</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>랜덤</Text>
         </View>
         <View style={styles.todayBody}>
           <TiltCover
@@ -252,7 +260,7 @@ function TodayPick({ book, onPress }: { book: BookSummary; onPress: () => void }
               {book.author ?? '저자 미상'}
               {book.totalPages ? ` · ${book.totalPages}쪽` : ''}
             </Text>
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{timeLine}</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{timeLine}</Text>
           </View>
         </View>
       </MemoScrap>
@@ -324,15 +332,24 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
 }
 
 const styles = StyleSheet.create({
-  searchBarWrap: { ...layout.content, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  searchBarWrap: {
+    ...layout.content,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     borderRadius: radius.sm,
-    borderWidth: 1,
+    borderWidth: hairline,
     paddingHorizontal: spacing.md,
   },
+  cancel: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   input: { flex: 1, fontSize: 15, paddingVertical: spacing.md },
   explore: { ...layout.content, gap: spacing.xl, paddingBottom: 104, paddingTop: spacing.sm },
   moodSection: { gap: spacing.sm, paddingHorizontal: spacing.lg },
