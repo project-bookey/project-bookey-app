@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   todayHeader: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   todayTitle: { fontFamily: serif.bold, fontSize: 17, lineHeight: 24 },
   todayBody: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
-  todayInfo: { flex: 1, gap: 4, paddingTop: spacing.xs },
+  todayInfo: { flex: 1, gap: spacing.xs, paddingTop: spacing.xs },
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104 },
   row: {
     flexDirection: 'row',

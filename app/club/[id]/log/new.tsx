@@ -250,7 +250,7 @@ function SummaryCell({ label, value, colors }: {
   colors: ReturnType<typeof useTheme>['colors'];
 }) {
   return (
-    <View style={{ flex: 1, gap: 4 }}>
+    <View style={{ flex: 1, gap: spacing.xs }}>
       <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
       <Text style={[styles.summaryValue, { color: colors.text }]}>{value}</Text>
     </View>

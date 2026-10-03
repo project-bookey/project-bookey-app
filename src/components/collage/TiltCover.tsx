@@ -86,7 +86,7 @@ const FALLBACK_COMPACT_W = 56;
 function fallbackMetrics(width: number) {
   if (width < FALLBACK_COMPACT_W) {
     const fontSize = Math.max(8, Math.round(width / 6.5));
-    return { fontSize, lineHeight: fontSize + 3, padding: 4, gap: 0, rule: false };
+    return { fontSize, lineHeight: fontSize + 3, padding: spacing.xs, gap: 0, rule: false };
   }
   return {
     fontSize: Math.max(11, Math.round(width / 7)),

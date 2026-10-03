@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   // 카드 박스 안이라 부모 본문 왼쪽 끝까지 맞출 필요가 없다.
   replies: {
     marginTop: spacing.sm,
-    marginLeft: 12,
+    marginLeft: spacing.md,
     paddingLeft: 10,
     borderLeftWidth: 2,
     gap: spacing.sm,

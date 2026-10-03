@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   },
   ownerActions: { flexDirection: 'row', gap: spacing.sm },
   talks: { gap: spacing.sm },
-  talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: 4 },
+  talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: spacing.xs },
   talkHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   talkBody: { fontFamily: serif.regular, fontSize: 15, lineHeight: 22 },
   composer: {

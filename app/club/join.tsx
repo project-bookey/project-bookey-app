@@ -88,7 +88,7 @@ export default function ClubJoinScreen() {
           <View style={[styles.section, { borderTopColor: colors.line }]}>
             <View style={styles.previewHead}>
               <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={52} tilt={0} entering={false} />
-              <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flex: 1, gap: spacing.xs }}>
                 <Text style={[styles.clubName, { color: colors.text }]}>{club.name}</Text>
                 <Text style={[styles.bookLine, { color: colors.textMuted }]}>
                   {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}

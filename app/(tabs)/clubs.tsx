@@ -6,7 +6,7 @@ import { FlatList, StyleSheet } from 'react-native';
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { ClubCard } from '@/components/club';
-import { PaperScreen } from '@/components/collage';
+import { NAV_CLEARANCE, PaperScreen } from '@/components/collage';
 import { Button, EmptyState, Loading, linkLabel } from '@/components/ui';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { layout, spacing } from '@/theme';
@@ -81,5 +81,5 @@ const styles = StyleSheet.create({
   actions: { ...layout.content, flexDirection: 'row', gap: spacing.sm, padding: spacing.lg },
   action: { flex: 1 },
   // 카드 목록 — 구분선 대신 간격으로 띄운다. 아래는 하단 SectionNav 높이만큼 비운다.
-  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104, gap: spacing.md },
+  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: NAV_CLEARANCE, gap: spacing.md },
 });

@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/theme';
-import { hairline, mono, radius, sans, serif, typeScale } from '@/theme/tokens';
+import { hairline, mono, radius, sans, serif, spacing, typeScale } from '@/theme/tokens';
 
 /**
  * 시안(126×189) 기준 비율. 사진판 여백·책등 폭·띠지 위치는 표지 크기에 비례한다.
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   plateFallbackTitle: { fontFamily: serif.bold, textAlign: 'center' },
   spine: { position: 'absolute', left: 0, top: 0, bottom: 0 },
   bandShade: { position: 'absolute', left: 0, right: 0, height: 8 },
-  band: { position: 'absolute', left: 0, right: 0, justifyContent: 'center', paddingRight: 8 },
+  band: { position: 'absolute', left: 0, right: 0, justifyContent: 'center', paddingRight: spacing.sm },
   bandSpine: { position: 'absolute', left: 0, top: 0, bottom: 0 },
   bandTitle: { fontFamily: serif.extraBold },
   bandMeta: { fontFamily: mono.medium, letterSpacing: 1, marginTop: 2, opacity: 0.75 },

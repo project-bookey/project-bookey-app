@@ -1133,7 +1133,7 @@ const styles = StyleSheet.create({
   trackTouch: { height: 32, justifyContent: 'center' },
   trackActive: { height: 10 },
   fill: { height: '100%', borderRadius: radius.sm },
-  thumb: { position: 'absolute', top: '50%', width: 8, height: 22, marginTop: -11, marginLeft: -4, borderRadius: radius.sm },
+  thumb: { position: 'absolute', top: '50%', width: 8, height: 22, marginTop: -11, marginLeft: -spacing.xs, borderRadius: radius.sm },
 
   verifyHead: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap' },
   sessionRow: {

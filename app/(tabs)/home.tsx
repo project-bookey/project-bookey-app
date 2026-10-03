@@ -7,7 +7,7 @@ import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native
 import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
 import type { ReadingRecord } from '@/api/types';
-import { PaperScreen, SearchGlyph } from '@/components/collage';
+import { NAV_CLEARANCE, PaperScreen, SearchGlyph } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { NoticePopup } from '@/components/home/NoticePopup';
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   container: {
     ...layout.content,
     paddingTop: spacing.md,
-    paddingBottom: 104,
+    paddingBottom: NAV_CLEARANCE,
     gap: spacing.xl,
   },
   searchBar: {

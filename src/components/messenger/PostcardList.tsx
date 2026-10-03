@@ -7,15 +7,13 @@ import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import type { PostcardView } from '@/api/types';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
+import { NAV_CLEARANCE } from '@/components/collage';
 import { Button, Card, EmptyState, FootAction, Tag, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
 import { hairline, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
 const MAX_GRAPHEMES = 16;
-
-/** 하단 구역 탭(SectionNav)이 목록 위에 떠 있어 그만큼 아래를 비운다 — 서가 홈과 같은 값. */
-const NAV_CLEARANCE = 104;
 
 export type PostcardBox = 'INBOX' | 'SENT';
 

@@ -457,7 +457,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     buttonLabelPrimary: { color: colors.onAccent },
     buttonLabelDanger: { color: colors.danger },
     tag: {
-      paddingHorizontal: 8,
+      paddingHorizontal: spacing.sm,
       paddingVertical: 3,
       borderRadius: radius.sm,
       backgroundColor: colors.surfaceRaised,

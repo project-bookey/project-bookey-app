@@ -140,7 +140,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
         {/* 머리 — 클럽 홈과 같은 활자·괘선 언어: 명조 이름 + 모노 책·저자 줄 */}
         <View style={styles.header}>
           <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={44} tilt={0} entering={false} />
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1, gap: spacing.xs }}>
             <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{club.name}</Text>
             <Text style={[styles.bookLine, { color: colors.textMuted }]} numberOfLines={1}>
               {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}

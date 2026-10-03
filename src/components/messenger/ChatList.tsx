@@ -8,6 +8,7 @@ import { chatApi } from '@/api/endpoints';
 import type { ChatSummary } from '@/api/types';
 import { chatMessagePreview } from '@/components/chat/bookeyStickers';
 import { PersonGlyph } from '@/components/Avatar';
+import { NAV_CLEARANCE } from '@/components/collage';
 import { EmptyState, FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -15,8 +16,6 @@ import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme'
 /** 하단 구역 탭(SectionNav)이 목록 위에 떠 있어 그만큼 아래를 비운다 — 서가 홈과 같은 값. */
 /** 채팅 상대 사진 지름(px) — 목록 행이 커서 작성자 아바타(AVATAR_SIZE)보다 한 단 크다. */
 const AVATAR = 44;
-
-const NAV_CLEARANCE = 104;
 
 /**
  * 채팅 목록 (§14.3) — 엽서 답장이 오간 사이만. 마지막 메시지 최신순, 15초마다 갱신.

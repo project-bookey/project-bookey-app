@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
-    gap: 4,
+    gap: spacing.xs,
   },
   pickValue: { fontFamily: mono.semiBold, fontSize: 15 },
   placeRow: { paddingVertical: spacing.sm, gap: 2, borderBottomWidth: hairline },

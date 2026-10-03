@@ -10,7 +10,7 @@ import { chatApi, libraryApi, postApi, profileApi, statsApi, walletApi } from '@
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { Post, ReadingRecord } from '@/api/types';
 import {
-  MemoScrap, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
+  MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/Avatar';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
@@ -862,7 +862,7 @@ function cellColor(ratio: number, colors: ColorTokens): string {
 
 const styles = StyleSheet.create({
   // 묶음(프로필·오늘·기록) 사이는 xxl, 묶음 안은 md — 상자나 선 없이 간격만으로 세 덩이가 갈린다.
-  container: { ...layout.content, gap: spacing.xxl, paddingBottom: 104, paddingTop: spacing.lg },
+  container: { ...layout.content, gap: spacing.xxl, paddingBottom: NAV_CLEARANCE, paddingTop: spacing.lg },
   group: { gap: spacing.md },
   block: { paddingHorizontal: spacing.lg },
 
@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     marginTop: spacing.md,
     justifyContent: 'flex-end',
   },

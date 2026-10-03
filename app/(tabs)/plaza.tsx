@@ -6,7 +6,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { plazaApi } from '@/api/endpoints';
 import type { PlazaItem } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
-import { PaperScreen, TiltCover } from '@/components/collage';
+import { NAV_CLEARANCE, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { Card, EmptyState, formatRelative, linkLabel } from '@/components/ui';
 import { TourTarget } from '@/components/tour/TourTarget';
@@ -203,7 +203,7 @@ function FinishCard({ item, index, mine, onOpenBook }: {
 }
 
 const styles = StyleSheet.create({
-  list: { ...layout.content, paddingBottom: 104, gap: spacing.lg },
+  list: { ...layout.content, paddingBottom: NAV_CLEARANCE, gap: spacing.lg },
   header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs },
   // 탭과 쓰기 버튼은 서로 다른 동작 — 오터치를 막게 sm 이상 띄운다.
   chipRow: {

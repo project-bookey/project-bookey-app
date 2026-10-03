@@ -52,7 +52,7 @@ export default function ClubResultScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <TiltCover uri={data.book?.coverUrl} title={data.book?.title} width={56} tilt={0} entering={false} />
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1, gap: spacing.xs }}>
             <Eyebrow>클럽 결산</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>{data.name}</Text>
             <Text style={[styles.bookLine, { color: colors.textMuted }]}>
