@@ -22,7 +22,7 @@ import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { VERIFICATION_LABEL } from '@/components/review/verification';
 import { Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
-import { getLagStyle, hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { getLagStyle, hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
 
 /** 시안 2c(390px) 기준 히어로 지오메트리 — 세로·표지 폭만 실제 폭에 비례 환산한다. */
@@ -242,9 +242,10 @@ export default function BookDetailScreen() {
                 </View>
               ) : null}
               {actionFailed ? (
-                <Text style={[typeScale.caption, { color: colors.warn }]}>
-                  처리하지 못했어요 · 다시 시도
-                </Text>
+                <RetryLine
+                  colors={colors}
+                  onRetry={() => (finish.isError ? finish.mutate() : abandon.mutate())}
+                />
               ) : null}
             </Card>
           ) : null}
@@ -586,10 +587,8 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
           </>
         ) : null}
       </View>
-      {failed ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>
-          처리하지 못했어요 · 다시 시도
-        </Text>
+      {failed && add.variables ? (
+        <RetryLine colors={colors} onRetry={() => add.mutate(add.variables!)} />
       ) : null}
     </View>
       <Modal
@@ -714,6 +713,22 @@ function TableOfContents({ text, colors }: { text: string; colors: ColorTokens }
 }
 
 /** 내 진척 수정기 — 큰 숫자 탭(정밀 입력) + 진행 바 드래그/탭(대략 조절)으로 현재 페이지를 고친다. */
+/** 실패 안내 + 다시 시도 — 글자만 '다시 시도'라고 쓰고 눌리지 않던 것을 실제 버튼(44pt)으로. */
+function RetryLine({ colors, onRetry }: { colors: ColorTokens; onRetry: () => void }) {
+  return (
+    <Pressable
+      onPress={onRetry}
+      accessibilityRole="button"
+      accessibilityLabel="다시 시도"
+      style={({ pressed }) => [styles.retryLine, pressed && pressedStyle]}
+    >
+      <Text style={[typeScale.caption, { color: colors.warn }]}>
+        처리하지 못했어요 · <Text style={{ textDecorationLine: 'underline' }}>{linkLabel('다시 시도', 'action')}</Text>
+      </Text>
+    </Pressable>
+  );
+}
+
 function ProgressEditor({ rid, progress, colors }: {
   rid: number;
   progress: NonNullable<ReadingRecord['progress']>;
@@ -824,11 +839,13 @@ function ProgressEditor({ rid, progress, colors }: {
             }]}
           />
         ) : (
+          // 고칠 수 있는 칸이라는 걸 겉모습으로 알린다 — 입력 중과 같은 밑줄(뮤트)을 늘 그어 둔다(UX 철칙 Jakob).
           <Pressable
             onPress={startEdit}
             accessibilityRole="button"
             accessibilityLabel="현재 페이지 수정"
             hitSlop={8}
+            style={({ pressed }) => [styles.bigNumberEditable, { borderBottomColor: colors.lineStrong }, pressed && pressedStyle]}
           >
             <Text style={[styles.bigNumber, { color: colors.text }]}>{page}</Text>
           </Pressable>
@@ -860,8 +877,12 @@ function ProgressEditor({ rid, progress, colors }: {
         ) : null}
       </View>
 
-      {save.isError && !save.isPending ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>처리하지 못했어요 · 다시 시도</Text>
+      {/* 막대 끌기는 숫자 고치기와 같은 일 — 제스처만으로 되는 기능처럼 보이지 않게 두 길을 함께 알린다. */}
+      {total > 0 ? (
+        <Text style={[typeScale.caption, { color: colors.textFaint }]}>숫자를 누르거나 막대를 밀어 쪽수를 고쳐요</Text>
+      ) : null}
+      {save.isError && !save.isPending && save.variables != null ? (
+        <RetryLine colors={colors} onRetry={() => save.mutate(save.variables!)} />
       ) : null}
     </>
   );
@@ -1066,6 +1087,7 @@ const styles = StyleSheet.create({
   // 10px 글자만으로는 손가락이 닿지 않는다 — 44pt 상자를 주고, 늘어난 높이만큼 위 여백은 뺀다.
   moreLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', marginTop: -spacing.sm },
   dangerGap: { marginTop: spacing.md },
+  retryLine: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   cta: {
     position: 'absolute',
     left: 0,
@@ -1129,6 +1151,7 @@ const styles = StyleSheet.create({
   progressNumbers: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs },
   bigNumber: { fontFamily: mono.semiBold, fontSize: 34 },
   bigNumberInput: { padding: 0, width: 92, borderBottomWidth: hairline },
+  bigNumberEditable: { borderBottomWidth: hairline },
   track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
   trackTouch: { height: 32, justifyContent: 'center' },
   trackActive: { height: 10 },
