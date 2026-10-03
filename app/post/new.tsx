@@ -232,7 +232,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
     <PaperScreen>
       <SubHeader category={editing ? '독후감 고치기' : '독후감 쓰기'} />
 
-      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(댓글 스레드와 같은 이유). */}
+      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다. */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
           {/* ① 책 — 없어도 된다. */}
