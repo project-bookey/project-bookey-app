@@ -4,7 +4,7 @@ import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useRouter } from 'expo-router';
 
 import type { Banner } from '@/api/types';
-import { radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
 import { InlineMarkdownText } from './InlineMarkdownText';
 
 const DISMISSED_KEY = 'bookey.dismissedNoticeId';
@@ -48,12 +48,8 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]}>
-          <View style={styles.header}>
-            <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>NOTICE</Text>
-            <Pressable onPress={dismiss} accessibilityRole="button" accessibilityLabel="공지 닫기" hitSlop={10}>
-              <Text style={[styles.close, { color: colors.textFaint }]}>×</Text>
-            </Pressable>
-          </View>
+          {/* 닫는 길은 아래 '닫기' 하나 — 위 × 까지 두면 같은 동작의 입구가 둘이다(UX 철칙 Hick). */}
+          <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>NOTICE</Text>
           <Text style={[typeScale.titleSerif, { color: colors.text }]}>
             <InlineMarkdownText text={notice.title} strongStyle={styles.titleStrong} />
           </Text>
@@ -63,11 +59,24 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
             </Text>
           ) : null}
           <View style={styles.actions}>
-            <Pressable onPress={dismiss} style={[styles.button, { borderColor: colors.lineStrong }]}>
+            <Pressable
+              onPress={dismiss}
+              accessibilityRole="button"
+              accessibilityLabel="공지 닫기"
+              style={({ pressed }) => [styles.button, { borderColor: colors.lineStrong }, pressed && pressedStyle]}
+            >
               <Text style={[typeScale.label, { color: colors.textMuted }]}>닫기</Text>
             </Pressable>
             {notice.linkUrl ? (
-              <Pressable onPress={openLink} style={[styles.button, { backgroundColor: colors.accent }]}>
+              <Pressable
+                onPress={openLink}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: colors.accent, borderColor: colors.accent },
+                  pressed && pressedStyle,
+                ]}
+              >
                 <Text style={[typeScale.label, { color: colors.onAccent }]}>자세히 보기</Text>
               </Pressable>
             ) : null}
@@ -89,16 +98,22 @@ const styles = StyleSheet.create({
   dialog: {
     width: '100%',
     maxWidth: 420,
-    borderWidth: 1,
+    borderWidth: hairline,
     borderRadius: radius.lg,
     padding: spacing.xl,
     gap: spacing.md,
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  close: { fontSize: 28, lineHeight: 28 },
   subtitle: { marginTop: spacing.xs },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
-  button: { minWidth: 64, alignItems: 'center', borderWidth: 1, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  button: {
+    minWidth: 64,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+  },
   titleStrong: { fontFamily: serif.extraBold },
   subtitleStrong: { fontFamily: sans.semiBold },
 });

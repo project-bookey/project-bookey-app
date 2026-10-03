@@ -293,7 +293,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
                     placeholder="기록에 남아요"
                   />
                   <View style={styles.rowButtons}>
-                    <Button label="취소" size="sm" variant="ghost" onPress={() => setKickTarget(null)} />
+                    <Button label="취소" size="sm" variant="outline" onPress={() => setKickTarget(null)} />
                     <Button
                       label="내보내기"
                       size="sm"
@@ -351,7 +351,8 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },
-  memberRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
+  // 행 높이를 동작의 터치 상자(위아래 hitSlop 포함 약 56pt)보다 넉넉히 — 이웃 멤버 행의 동작과 겹치지 않게.
+  memberRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingVertical: spacing.sm },
   // FootAction 은 글자 밖으로 양옆 14pt(여백 6 + hitSlop 8)씩 터치 영역이 넓어진다 — 둘이 겹치지 않고
   // sm 이상 떨어지도록 28 + 8 = 36(xxl)을 띄운다. 파괴적인 '내보내기'가 '호스트 넘기기' 탭에 걸리지 않게.
   memberActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxl },

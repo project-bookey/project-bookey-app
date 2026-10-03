@@ -4,7 +4,7 @@ import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/store/auth';
 import { APP_TOUR_STEPS, useAppTour } from '@/store/appTour';
-import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { measureTourTarget, TourRect } from './TourTarget';
 
 const PAD = 8;
@@ -76,16 +76,21 @@ export function AppTourOverlay() {
         backgroundColor: colors.surfaceRaised,
         borderColor: colors.lineStrong,
       }]}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{step + 1} / {APP_TOUR_STEPS.length}</Text>
+        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{step + 1} / {APP_TOUR_STEPS.length}</Text>
         <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
         <Text style={[typeScale.body, { color: colors.textMuted }]}>{item.body}</Text>
         <View style={styles.actions}>
-          <Pressable onPress={() => void close()} style={styles.skip}>
+          <Pressable
+            onPress={() => void close()}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.skip, pressed && pressedStyle]}
+          >
             <Text style={[typeScale.label, { color: colors.textMuted }]}>건너뛰기</Text>
           </Pressable>
           <Pressable
             onPress={() => { if (finish) void close(); else next(); }}
-            style={[styles.next, { backgroundColor: colors.accent }]}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.next, { backgroundColor: colors.accent }, pressed && pressedStyle]}
           >
             <Text style={[typeScale.label, { color: colors.onAccent }]}>{finish ? '마치기' : '다음'}</Text>
           </Pressable>
@@ -99,9 +104,9 @@ const styles = StyleSheet.create({
   overlay: { zIndex: 9999, elevation: 9999 },
   shade: { position: 'absolute', backgroundColor: SHADE },
   focus: { position: 'absolute', borderWidth: 2, borderRadius: radius.lg },
-  tooltip: { position: 'absolute', borderWidth: 1, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
+  tooltip: { position: 'absolute', borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   title: { ...typeScale.titleSerif, fontSize: 20 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
-  skip: { padding: spacing.sm },
-  next: { minWidth: 82, minHeight: 42, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  skip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm },
+  next: { minWidth: 82, minHeight: 44, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
 });
