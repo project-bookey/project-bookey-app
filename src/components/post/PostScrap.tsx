@@ -4,7 +4,7 @@ import type { Post } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
 import { ScrapAuthor } from '@/components/home/ScrapAuthor';
 import { META_LH, META_SIZE, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
-import { VISIBILITY_LABEL } from '@/components/post/PostCard';
+import { VISIBILITY_LABEL } from '@/components/post/PostByline';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /**

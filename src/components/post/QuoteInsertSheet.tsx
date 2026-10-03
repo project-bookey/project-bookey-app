@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { NoteSheet } from '@/components/note/NoteSheet';
 import { QuoteDraftFields, type useQuoteDraft } from '@/components/post/QuoteDraftFields';
-import { pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button } from '@/components/ui';
+import { typeScale, useTheme } from '@/theme';
 
 /**
  * 문장 넣기 시트 — 독후감 본문 커서 자리에 넣을 문장을 그 자리에서 옮겨 적는다.
@@ -18,7 +19,6 @@ export function QuoteInsertSheet({ draft, onInsert, onClose }: {
   onClose: () => void;
 }) {
   const { colors } = useTheme();
-  const disabled = !draft.canSubmit;
 
   return (
     <NoteSheet visible title="문장 넣기" onClose={onClose}>
@@ -27,22 +27,15 @@ export function QuoteInsertSheet({ draft, onInsert, onClose }: {
         autoFocus
         // 시트에는 스크롤이 없다 — 칸이 자라 넣기 버튼을 밀어내지 않게 노트 편집 시트의 글 칸과 같은 상한을 둔다.
         contentMaxHeight={180}
+        // 시트의 유일한 주요 버튼 — 메타 줄 오른쪽 끝에 붙는다.
         trailing={(
-          <Pressable
+          <Button
+            label="넣기"
+            size="sm"
             onPress={onInsert}
-            disabled={disabled}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="본문에 넣기"
-            accessibilityState={{ disabled }}
-            style={({ pressed }) => [
-              styles.submit,
-              { backgroundColor: colors.accent, opacity: disabled ? 0.35 : 1 },
-              pressed ? pressedStyle : null,
-            ]}
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>넣기</Text>
-          </Pressable>
+            disabled={!draft.canSubmit}
+            style={styles.submit}
+          />
         )}
       />
       <Text style={[typeScale.caption, { color: colors.textFaint }]}>
@@ -53,11 +46,5 @@ export function QuoteInsertSheet({ draft, onInsert, onClose }: {
 }
 
 const styles = StyleSheet.create({
-  // 강조색 네모 버튼 — 메타 줄 오른쪽 끝에 붙는다.
-  submit: {
-    marginLeft: 'auto',
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-  },
+  submit: { marginLeft: 'auto' },
 });

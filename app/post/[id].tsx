@@ -2,23 +2,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Heart, Pencil, Trash2 } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { LikeAction } from '@/components/post/LikeAction';
 import { PostBody } from '@/components/post/PostBody';
-import { VISIBILITY_LABEL } from '@/components/post/PostCard';
+import { PostByline } from '@/components/post/PostByline';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
-import { Avatar } from '@/components/Avatar';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { EmptyState, FootAction, Tag, formatRelative, linkLabel } from '@/components/ui';
+import { EmptyState, FootAction, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-import { pressedStyle } from '@/theme/tokens';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 독후감 상세 — 광장 독후감 카드·책 상세·내 독후감에서 들어온다.
@@ -154,7 +152,6 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
   const router = useRouter();
   const { colors } = useTheme();
   const hasBook = post.bookId != null;
-  const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
   // 옛 글이 밑줄로 엮어 둔 문장(표시 자리·글 끝)도 본문의 문장 조각으로 그린다 — 밑줄 상세로 가는 길은 없다.
   const body = useMemo(() => postBodyOf(post).text, [post]);
 
@@ -172,51 +169,37 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
               onPress={() => router.push(`/book/${post.bookId}`)}
               accessibilityRole="button"
               accessibilityLabel={`${post.bookTitle} 상세`}
-              style={styles.bookLink}
+              style={({ pressed }) => [styles.inlineLink, pressed ? pressedStyle : null]}
             >
-              <Text numberOfLines={1} style={[typeScale.monoLabel, styles.bookLinkText, { color: colors.accent }]}>
+              <Text numberOfLines={1} style={[typeScale.monoLabel, styles.inlineLinkText, { color: colors.accent }]}>
                 {linkLabel(post.bookTitle ?? '책')}
               </Text>
             </Pressable>
           ) : (
-            <Text style={[typeScale.monoLabel, styles.bookLinkText, { color: colors.textFaint }]}>책 없음</Text>
+            <Text style={[typeScale.monoLabel, styles.inlineLinkText, { color: colors.textFaint }]}>책 없음</Text>
           )}
         </View>
       </View>
 
-      {/* ② 바이라인 — 작성자 · 올린 때 · 조회. 본인의 비공개·링크 글에는 공개 범위를 밝힌다 */}
-      <View style={styles.byline}>
-        {/* 작성자를 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
-        <Pressable
-          onPress={() => router.push(`/user/${post.authorId}`)}
-          disabled={post.mine}
-          accessibilityRole={post.mine ? undefined : 'button'}
-          accessibilityLabel={post.mine ? undefined : `${post.authorNickname} 프로필 열기`}
-          style={({ pressed }) => [styles.bylineAuthor, pressed ? pressedStyle : null]}
-        >
-          <Avatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
-          <View style={styles.bylineText}>
-            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-              {post.authorNickname}
-            </Text>
-            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-              {formatRelative(post.publishedAt ?? post.createdAt)}
-            </Text>
-          </View>
-        </Pressable>
-        {/* 클럽만 글은 누가 보든 밝힌다(보는 사람도 그 클럽 멤버다). 비공개·링크는 본인에게만. */}
-        {visibilityLabel && (post.mine || post.visibility === 'CLUB') ? <Tag label={visibilityLabel} /> : null}
-      </View>
+      {/* ② 바이라인 — 작성자 · 올린 때. 공개 범위는 메타에 붙인다:
+          클럽만 글은 누가 보든 밝히고(보는 사람도 그 클럽 멤버다), 비공개·링크는 본인에게만. 내 이름은 누르지 않는다. */}
+      <PostByline
+        post={post}
+        showVisibility={post.mine || post.visibility === 'CLUB'}
+        onPress={post.mine ? undefined : () => router.push(`/user/${post.authorId}`)}
+      />
 
-      {/* 클럽 독후감이면 어느 클럽의 글인지 — 누르면 그 클럽 홈으로 */}
+      {/* 클럽 독후감이면 어느 클럽의 글인지 — 책 링크와 같은 꼴의 보조 링크(뮤트)로, 누르면 그 클럽 홈으로 */}
       {post.clubId != null && post.clubName ? (
         <Pressable
           onPress={() => router.push({ pathname: '/club/[id]', params: { id: String(post.clubId) } })}
           accessibilityRole="button"
           accessibilityLabel={`${post.clubName} 클럽으로 가기`}
-          style={({ pressed }) => [styles.clubLink, pressed ? pressedStyle : null]}
+          style={({ pressed }) => [styles.inlineLink, pressed ? pressedStyle : null]}
         >
-          <Tag label={`클럽 · ${post.clubName}`} />
+          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.inlineLinkText, { color: colors.textMuted }]}>
+            {linkLabel(`클럽 · ${post.clubName}`)}
+          </Text>
         </Pressable>
       ) : null}
 
@@ -241,17 +224,11 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
       {/* ④ 본문 — 글 사이에 옮겨 적은 문장 조각이 끼어든다 */}
       <PostBody md={body} />
 
-      {/* ⑤ 액션 행 — 독후감 카드 푸터와 같은 배치. 댓글은 없다(§14.1) */}
+      {/* ⑤ 액션 행 — 독후감 카드 푸터와 같은 배치·같은 하트. 댓글은 없다(§14.1) */}
       <View style={styles.footRow}>
-        <DetailIconAction
-          icon="heart"
-          count={post.likeCount}
-          active={post.likedByMe}
-          onPress={onLike}
-          accessibilityLabel={`좋아요 ${post.likeCount}`}
-        />
+        <LikeAction count={post.likeCount} liked={post.likedByMe} onPress={onLike} />
         {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
-        <Text style={[styles.viewCount, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
+        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
         {/* 엽서 칸이 열리면 그 안의 '엽서 보내기'가 주요 버튼이다 — 같은 라벨이 둘 보이지 않게 여기는 '닫기'로. */}
         {onTogglePostcard ? (
           <FootAction
@@ -264,22 +241,21 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
         {onDelete || onEdit ? (
           <View style={styles.footRight}>
             {onEdit ? (
-              <DetailIconAction icon="pencil" onPress={onEdit} accessibilityLabel="독후감 고치기" />
+              <FootAction label="고치기" onPress={onEdit} accessibilityLabel="독후감 고치기" />
             ) : null}
-            {/* 확인 상태를 색만으로 알리지 않는다 — 다른 삭제(댓글·엽서·채팅)처럼 '한 번 더'를 글자로 띄운다. */}
+            {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'(엽서·채팅·알림과 같은 FootAction). */}
             {onDelete ? (
-              <DetailIconAction
-                icon="trash"
+              <FootAction
+                label={confirming ? '한 번 더' : '삭제'}
                 onPress={onDelete}
-                danger={confirming}
-                caption={confirming ? '한 번 더' : undefined}
-                accessibilityLabel={confirming ? '삭제 확인, 한 번 더 누르기' : '삭제'}
+                tone={confirming ? 'danger' : 'faint'}
+                accessibilityLabel={confirming ? '독후감 삭제 확인' : '독후감 삭제'}
               />
             ) : null}
           </View>
         ) : null}
       </View>
-      {error ? <Text style={[typeScale.caption, { color: colors.warn }]}>{error}</Text> : null}
+      {error ? <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text> : null}
       {postcardOpen ? (
         <PostcardComposer
           toUserId={post.authorId}
@@ -293,94 +269,30 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
   );
 }
 
-function DetailIconAction({ icon, count, caption, active = false, danger = false, onPress, accessibilityLabel }: {
-  icon: 'heart' | 'pencil' | 'trash';
-  count?: number;
-  /** 글리프 옆 글자 — 삭제 확인 상태의 '한 번 더'. */
-  caption?: string;
-  active?: boolean;
-  danger?: boolean;
-  onPress?: () => void;
-  accessibilityLabel: string;
-}) {
-  const { colors } = useTheme();
-  const color = danger ? colors.danger : active ? colors.accent : colors.textMuted;
-  const glyph = icon === 'heart'
-    ? <Heart size={24} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />
-    : icon === 'pencil'
-      ? <Pencil size={23} strokeWidth={2.1} color={color} />
-      : <Trash2 size={24} strokeWidth={2.1} color={color} />;
-  const content = (
-    <>
-      {glyph}
-      {count !== undefined ? <Text style={[styles.actionCount, { color }]}>{count}</Text> : null}
-      {caption ? <Text style={[styles.actionCount, { color }]}>{caption}</Text> : null}
-    </>
-  );
-
-  if (!onPress) {
-    return <View accessible accessibilityLabel={accessibilityLabel} style={styles.iconAction}>{content}</View>;
-  }
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={icon === 'heart' ? { selected: active } : undefined}
-      accessibilityLabel={accessibilityLabel}
-      hitSlop={10}
-      style={({ pressed }) => [
-        styles.iconAction,
-        danger ? { backgroundColor: colors.dangerSoft } : null,
-        pressed ? pressedStyle : null,
-      ]}
-    >
-      {content}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  screenBody: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  // 본문 폭은 작성 화면·목록과 같다 — 태블릿·웹에서 글이 화면 끝까지 퍼지지 않게.
+  screenBody: { ...layout.content, padding: spacing.lg, paddingBottom: spacing.xxl },
   skeleton: { height: 240, borderRadius: radius.md },
 
   article: { gap: spacing.lg },
   // 기울인 표지가 왼쪽·위로 삐져나오는 만큼 숨을 둔다.
   hero: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg, paddingLeft: spacing.xs, paddingTop: spacing.xs },
   heroText: { flex: 1, gap: spacing.xs },
-  title: { ...typeScale.displaySerif, fontSize: 30, lineHeight: 38 },
-  // 모노 한 줄 — 10px 활자라 글자 상자만으로는 손가락이 닿지 않는다. 여백으로 36px 까지 넓히고
-  // 같은 만큼 음수 마진으로 되돌려 히어로의 리듬은 그대로 둔다(푸터 액션과 같은 규율).
-  bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.md, marginVertical: -spacing.sm },
-  bookLinkText: { fontSize: 13, letterSpacing: 0.4 },
-
-  byline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  bylineAuthor: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  bylineText: { flex: 1 },
-  // 바이라인 조판은 홈 '오늘의 글'(ScrapAuthor)·광장 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
-  nickname: { fontSize: 17, lineHeight: 23 },
-  meta: { fontSize: 12, letterSpacing: 0.3, lineHeight: 17, marginTop: 2 },
+  // 표제 크기는 클럽 홈 표제와 같다.
+  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
+  // 모노 한 줄 링크(책·클럽) — 13px 활자라 글자 상자만으로는 손가락이 닿지 않는다. 44pt 상자로 키우고
+  // 같은 만큼 음수 마진으로 되돌려 둘레의 리듬은 그대로 둔다.
+  inlineLink: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginVertical: -spacing.md },
+  inlineLinkText: { fontSize: 13, letterSpacing: 0.4 },
 
   // 기울인 인화지 모서리가 잘리지 않게 사방으로 숨을 둔다.
   photos: { gap: spacing.md, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
   photo: { width: PHOTO, height: PHOTO, borderRadius: radius.sm, borderWidth: hairline },
 
-  clubLink: { alignSelf: 'flex-start', paddingVertical: spacing.xs, marginVertical: -spacing.xs },
-
-  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
-  // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에, 터치 상자(hitSlop 10)가 겹치지 않게 xl 간격.
+  // 카드 푸터와 같은 간격.
+  footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에, 터치 상자가 sm 이상 떨어지게 xl 간격.
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
   // 오류 상태의 다시 시도 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
   retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
-  iconAction: {
-    minWidth: 44,
-    minHeight: 44,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.round,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  actionCount: { ...typeScale.monoNumeral, fontSize: 14 },
-  viewCount: { ...typeScale.monoLabel },
 });

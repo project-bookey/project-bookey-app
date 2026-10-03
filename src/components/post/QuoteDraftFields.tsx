@@ -83,7 +83,7 @@ export function QuoteDraftFields({ draft, trailing, autoFocus, contentMaxHeight 
       </View>
 
       {!pageValid ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>쪽수는 1 이상의 숫자로 적어 주세요.</Text>
+        <Text style={[typeScale.caption, { color: colors.danger }]}>쪽수는 1 이상의 숫자로 적어 주세요.</Text>
       ) : null}
     </>
   );

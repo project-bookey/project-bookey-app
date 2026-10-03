@@ -1,19 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Heart } from 'lucide-react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
-import { Avatar } from '@/components/Avatar';
-import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
+import { LikeAction } from '@/components/post/LikeAction';
+import { PostByline } from '@/components/post/PostByline';
+import { Card, FootAction } from '@/components/ui';
 import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-import { pressedStyle } from '@/theme/tokens';
 
 /** 포스터 사진 높이(px) — 카드 머리를 채우고 그 위에 표제까지 얹는다. */
 const POSTER_H = 208;
-
-/** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. 상세 바이라인도 같이 쓴다. */
-export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '클럽만' } as const;
 
 /**
  * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다.
@@ -34,15 +30,14 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
   tilt: number;
   onOpen: () => void;
   onLike: () => void;
-  /** 있으면 푸터 오른쪽에 '책 보기 →'. 책 없는 글에는 넘기지 않는다. */
+  /** 있으면 푸터 오른쪽에 '책 보기 ›'. 책 없는 글에는 넘기지 않는다. */
   onOpenBook?: () => void;
   /** 있으면 작성자 줄을 눌러 유저 마이페이지로 (§14.1 — 피드에서 사람으로). */
   onOpenAuthor?: () => void;
-  /** 내 독후감처럼 공개 범위를 밝혀야 하는 목록에서만 켠다. */
+  /** 내 독후감처럼 공개 범위를 밝혀야 하는 목록에서만 켠다 — 작성자 줄 메타에 붙는다. */
   showVisibility?: boolean;
 }) {
   const { colors } = useTheme();
-  const visibilityLabel = post.visibility === 'PUBLIC' ? null : VISIBILITY_LABEL[post.visibility];
 
   return (
     <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
@@ -59,39 +54,14 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
 
       {/* 카드가 사진을 물고 있어 패딩이 0 이다 — 활자 쪽만 제 여백을 갖는다. */}
       <View style={styles.pad}>
-        {/* 작성자 줄을 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
-        <View style={styles.authorLine}>
-          <Pressable
-            onPress={onOpenAuthor}
-            disabled={!onOpenAuthor}
-            accessibilityRole={onOpenAuthor ? 'button' : undefined}
-            accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
-            style={styles.authorRow}
-          >
-            <Avatar uri={post.authorAvatarUrl} nickname={post.authorNickname} />
-            <View style={styles.authorText}>
-              <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-                {post.authorNickname}
-              </Text>
-              <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
-                {formatRelative(post.publishedAt ?? post.createdAt)}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
+        <PostByline post={post} showVisibility={showVisibility} onPress={onOpenAuthor} />
 
         <View style={styles.footRow}>
-          <CardIconAction
-            icon="heart"
-            count={post.likeCount}
-            active={post.likedByMe}
-            onPress={onLike}
-            accessibilityLabel={`좋아요 ${post.likeCount}`}
-          />
+          <LikeAction count={post.likeCount} liked={post.likedByMe} onPress={onLike} />
           {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
-          <Text style={[styles.viewCount, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
-          <View style={styles.footRight}>
-            {onOpenBook ? (
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
+          {onOpenBook ? (
+            <View style={styles.footRight}>
               <FootAction
                 label="책 보기"
                 kind="nav"
@@ -99,43 +69,11 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
                 tone="accent"
                 accessibilityLabel={`${post.bookTitle ?? '책'} 상세`}
               />
-            ) : null}
-            {showVisibility && visibilityLabel ? <Tag label={visibilityLabel} /> : null}
-          </View>
+            </View>
+          ) : null}
         </View>
       </View>
     </Card>
-  );
-}
-
-function CardIconAction({ count, active = false, onPress, accessibilityLabel }: {
-  icon: 'heart';
-  count: number;
-  active?: boolean;
-  onPress?: () => void;
-  accessibilityLabel: string;
-}) {
-  const { colors } = useTheme();
-  const color = active ? colors.accent : colors.textMuted;
-  const glyph = <Heart size={22} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />;
-  const content = (
-    <>
-      {glyph}
-      <Text style={[styles.actionCount, { color }]}>{count}</Text>
-    </>
-  );
-  if (!onPress) return <View accessible accessibilityLabel={accessibilityLabel} style={styles.iconAction}>{content}</View>;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      accessibilityLabel={accessibilityLabel}
-      hitSlop={8}
-      style={({ pressed }) => [styles.iconAction, pressed ? pressedStyle : null]}
-    >
-      {content}
-    </Pressable>
   );
 }
 
@@ -158,7 +96,8 @@ function PosterHead({ post }: { post: Post }) {
           <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={56} tilt={-3} entering={false} />
         ) : null}
         <View style={styles.plainHeadText}>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.accent }]}>
+          {/* 책 이름은 링크가 아니다(카드는 독후감으로, 책은 발치의 '책 보기'로 간다) — 악센트를 쓰지 않는다. */}
+          <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.textFaint }]}>
             {bookLabel}
           </Text>
           <Text numberOfLines={2} style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>
@@ -195,10 +134,10 @@ function PosterHead({ post }: { post: Post }) {
       ) : null}
 
       <View style={styles.posterText}>
-        <Text numberOfLines={1} style={[typeScale.monoLabel, { color: darkColors.accent }]}>
+        {/* 사진 위 글씨는 모드와 무관하게 밝은 잉크로 읽는다 — 뒤에 깔린 것이 늘 어두운 사진이다. */}
+        <Text numberOfLines={1} style={[typeScale.monoLabel, { color: darkColors.textMuted }]}>
           {bookLabel}
         </Text>
-        {/* 사진 위 글씨는 모드와 무관하게 밝은 잉크로 읽는다 — 뒤에 깔린 것이 늘 어두운 사진이다. */}
         <Text numberOfLines={2} style={[typeScale.titleSerif, styles.title, { color: darkColors.text }]}>
           {post.title}
         </Text>
@@ -242,13 +181,6 @@ const styles = StyleSheet.create({
   excerpt: { fontSize: 16, lineHeight: 25 },
   pad: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
 
-  authorLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  authorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  authorText: { flex: 1 },
-  // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
-  nickname: { fontSize: 16, lineHeight: 22 },
-  where: { fontSize: 12, letterSpacing: 0.3, lineHeight: 17, marginTop: 2 },
-
   // 좋아요·조회·책 보기 — 댓글은 없다(§14.1). 숫자가 커지면 한 줄에 못 담는다.
   // Card 가 overflow:hidden 이라 넘치면 소리 없이 잘리므로, 넘칠 때만 다음 줄로 내린다.
   // 줄 사이(rowGap)는 액션의 음수 세로 마진(-6·-6)만큼 먹히므로 한 단계 크게 잡는다.
@@ -259,16 +191,5 @@ const styles = StyleSheet.create({
     columnGap: spacing.lg,
     rowGap: spacing.xl,
   },
-  footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  iconAction: {
-    minHeight: 40,
-    minWidth: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    marginVertical: -spacing.xs,
-  },
-  actionCount: { ...typeScale.monoNumeral, fontSize: 13 },
-  viewCount: { ...typeScale.monoLabel },
+  footRight: { marginLeft: 'auto' },
 });
