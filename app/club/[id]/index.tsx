@@ -64,7 +64,7 @@ import {
   percent,
 } from "@/components/ui";
 import type { ColorTokens } from "@/theme";
-import { hairline, iconStroke, layout, radius, spacing, typeScale, useTheme } from "@/theme";
+import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono } from "@/theme/tokens";
 
 const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "notes"];
@@ -377,13 +377,14 @@ export default function ClubHomeScreen() {
           />
         ) : null}
 
-        {/* 요일 스트립 — 날을 고르면 그날의 조각으로 바뀐다 */}
-        <View style={{ gap: spacing.sm }}>
+        {/* 요일 스트립 — 날을 고르면 그날의 조각으로 바뀐다.
+            주 이동 링크는 44pt 상자라 글자 위아래 여백이 곧 스트립과의 간격이다(따로 gap 을 두지 않는다). */}
+        <View>
           <View style={styles.weekNav}>
             <Pressable
               onPress={() => setDate(addDays(monday, -7))}
-              hitSlop={8}
               accessibilityRole="button"
+              style={({ pressed }) => [styles.weekNavButton, pressed && pressedStyle]}
             >
               <Text style={[styles.weekNavLabel, { color: colors.textMuted }]}>
                 ‹ 지난주
@@ -396,10 +397,11 @@ export default function ClubHomeScreen() {
                   params: { id: String(clubId), weekOf: monday },
                 })
               }
-              hitSlop={8}
               accessibilityRole="button"
+              style={({ pressed }) => [styles.weekNavButton, pressed && pressedStyle]}
             >
-              <Text style={[styles.weekNavLabel, { color: colors.accent }]}>
+              {/* 악센트는 아래 '한 조각 남기기' 몫 — 링크는 본문 잉크로 */}
+              <Text style={[styles.weekNavLabel, { color: colors.text }]}>
                 주간 카드
               </Text>
             </Pressable>
@@ -410,8 +412,8 @@ export default function ClubHomeScreen() {
                     addDays(monday, 7) > today ? today : addDays(monday, 7),
                   )
                 }
-                hitSlop={8}
                 accessibilityRole="button"
+                style={({ pressed }) => [styles.weekNavButton, pressed && pressedStyle]}
               >
                 <Text
                   style={[styles.weekNavLabel, { color: colors.textMuted }]}
@@ -421,9 +423,11 @@ export default function ClubHomeScreen() {
               </Pressable>
             ) : (
               // 자리만 지켜 '주간 카드'가 늘 가운데에 오게 한다.
-              <Text style={[styles.weekNavLabel, { color: "transparent" }]}>
-                다음주 ›
-              </Text>
+              <View style={styles.weekNavButton}>
+                <Text style={[styles.weekNavLabel, { color: "transparent" }]}>
+                  다음주 ›
+                </Text>
+              </View>
             )}
           </View>
           <WeekStrip
@@ -496,7 +500,7 @@ export default function ClubHomeScreen() {
                     {data.nextCheckpoint.title}
                   </Text>
                   <Numeral
-                    style={[styles.checkpointTarget, { color: colors.accent }]}
+                    style={[styles.checkpointTarget, { color: colors.text }]}
                   >
                     ~{data.nextCheckpoint.targetPage}쪽
                   </Numeral>
@@ -534,22 +538,23 @@ export default function ClubHomeScreen() {
               onPress={() => router.push(`/club/${clubId}/result`)}
             />
           ) : null}
-          <Button
-            label="클럽 나가기"
-            variant="ghost"
-            size="sm"
-            loading={leave.isPending}
-            onPress={async () => {
-              if (
-                await confirmAsync(
-                  "클럽에서 나갈까요? 남긴 조각과 글은 그대로 남아요.",
-                  "나가기",
-                )
-              )
-                leave.mutate();
-            }}
-          />
         </View>
+
+        {/* 파괴적 동작 — 초대 코드 묶음과 섹션 간격(xl)으로 떼어 두고, 아래 고정 CTA와도 하단 여백만큼 떨어진다 */}
+        <Button
+          label="클럽 나가기"
+          variant="danger"
+          loading={leave.isPending}
+          onPress={async () => {
+            if (
+              await confirmAsync(
+                "클럽에서 나갈까요? 남긴 조각과 글은 그대로 남아요.",
+                "나가기",
+              )
+            )
+              leave.mutate();
+          }}
+        />
       </ScrollView>
 
       {!ended ? (
@@ -721,9 +726,10 @@ function CheckpointGrid({
               style={[
                 styles.gridMark,
                 { borderColor: colors.line, backgroundColor: colors.surface },
+                // 달성은 '켜짐' 상태 — 도장처럼 잉크로 반전한다(악센트는 CTA 몫).
                 state === "met" && {
-                  backgroundColor: colors.accent,
-                  borderColor: colors.accent,
+                  backgroundColor: colors.ink,
+                  borderColor: colors.ink,
                 },
                 state === "missed" && { borderColor: colors.danger },
               ]}
@@ -732,7 +738,7 @@ function CheckpointGrid({
                 style={[
                   styles.gridMarkText,
                   { color: colors.textFaint },
-                  state === "met" && { color: colors.onAccent },
+                  state === "met" && { color: colors.onInk },
                   state === "missed" && { color: colors.danger },
                 ]}
               >
@@ -793,6 +799,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  // 11px 글자만으로는 손가락이 닿지 않아 44pt 상자로 키운다(UX 철칙 Fitts).
+  weekNavButton: { minHeight: 44, minWidth: 44, justifyContent: "center" },
   weekNavLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
   board: { flexDirection: "row", gap: spacing.lg, alignItems: "flex-start" },
   column: { flex: 1, gap: spacing.xl },

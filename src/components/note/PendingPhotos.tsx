@@ -35,5 +35,6 @@ export function PendingPhotos({ items, scale, onRetry, onRemove }: {
 
 const styles = StyleSheet.create({
   failed: { marginTop: spacing.xs, gap: spacing.xs },
-  actions: { flexDirection: 'row', gap: spacing.xs },
+  // 지우기는 되돌릴 수 없다 — 다시와 붙여 두지 않는다.
+  actions: { flexDirection: 'row', gap: spacing.lg },
 });

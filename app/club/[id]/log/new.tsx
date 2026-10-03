@@ -150,7 +150,7 @@ export default function ClubLogNewScreen() {
               colors={colors}
             />
             <View style={[styles.vRule, { backgroundColor: colors.line }]} />
-            <SummaryCell label="오늘 조각" value={`${nth}번째`} colors={colors} accent />
+            <SummaryCell label="오늘 조각" value={`${nth}번째`} colors={colors} />
           </Card>
         ) : null}
 
@@ -162,7 +162,8 @@ export default function ClubLogNewScreen() {
             ) : (
               <View style={[styles.photo, styles.viewfinder, { backgroundColor: colors.surfaceDeep }]}>
                 {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
-                  <View key={corner} style={[styles.corner, styles[corner], { borderColor: colors.accent }]} />
+                  // 장식 모서리 — 악센트는 '클럽 보드에 붙이기' 몫이라 뮤트 잉크로
+                  <View key={corner} style={[styles.corner, styles[corner], { borderColor: colors.textMuted }]} />
                 ))}
                 <Text style={[styles.viewfinderText, { color: colors.textMuted }]}>지금 눈앞을 한 장</Text>
               </View>
@@ -176,7 +177,8 @@ export default function ClubLogNewScreen() {
           </View>
 
           <View style={styles.pickRow}>
-            <Button label="촬영" size="sm" onPress={() => pick('camera')} />
+            {/* 주요 버튼은 아래 '클럽 보드에 붙이기' 하나 — 사진 고르기는 모두 outline */}
+            <Button label="촬영" size="sm" variant="outline" onPress={() => pick('camera')} />
             <Button label="앨범에서 고르기" size="sm" variant="outline" onPress={() => pick('library')} />
             {photo ? <Button label="사진 빼기" size="sm" variant="outline" onPress={() => setPhoto(null)} /> : null}
           </View>
@@ -242,16 +244,15 @@ export default function ClubLogNewScreen() {
   );
 }
 
-function SummaryCell({ label, value, colors, accent }: {
+function SummaryCell({ label, value, colors }: {
   label: string;
   value: string;
   colors: ReturnType<typeof useTheme>['colors'];
-  accent?: boolean;
 }) {
   return (
     <View style={{ flex: 1, gap: 4 }}>
       <Text style={[typeScale.caption, { color: colors.textFaint }]}>{label}</Text>
-      <Text style={[styles.summaryValue, { color: accent ? colors.accent : colors.text }]}>{value}</Text>
+      <Text style={[styles.summaryValue, { color: colors.text }]}>{value}</Text>
     </View>
   );
 }

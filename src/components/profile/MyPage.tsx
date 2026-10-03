@@ -36,6 +36,13 @@ const SHELF_COVER_W = 100;
 const HEATMAP_DAYS = 90;
 /** 남의 공개 독후감을 한 번에 받는 편수. */
 const POSTS_PAGE = 10;
+/**
+ * 팔로워·팔로잉 터치 상자 — 12px 글줄(≈14)에 위 14·아래 16 을 더해 44pt 를 넘긴다.
+ * 위는 닉네임 옆 연필 버튼의 hitSlop 아래에서 멈추고, 아래는 섹션 간격(24) 안에 머문다.
+ */
+const SOCIAL_HIT_SLOP = { top: 14, bottom: 16, left: 8, right: 8 };
+/** 서재 '전체보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14. 아래는 선반 표지 위에서 멈춘다. */
+const SHELF_ALL_HIT_SLOP = { top: 16, bottom: 14, left: 8, right: spacing.lg };
 
 /**
  * 마이페이지 — '나' 탭(mine)과 다른 사람의 페이지(/user/[id])가 같은 판을 쓴다.
@@ -156,9 +163,10 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
             style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
           >
             {avatar}
-            {/* 사진 모서리에 붙는 민트 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다. */}
-            <View style={[styles.avatarBadge, { backgroundColor: colors.accent, borderColor: colors.bg }]}>
-              <PlusGlyph size={12} stroke={2.5} color={colors.onAccent} />
+            {/* 사진 모서리에 붙는 잉크 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다.
+                이 화면 위쪽의 악센트는 출석하기 버튼 하나뿐이다. */}
+            <View style={[styles.avatarBadge, { backgroundColor: colors.ink, borderColor: colors.bg }]}>
+              <PlusGlyph size={12} stroke={2.5} color={colors.onInk} />
             </View>
           </Pressable>
         ) : (
@@ -177,7 +185,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 hitSlop={8}
                 style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
               >
-                <PencilLine color={colors.accent} />
+                <PencilLine color={colors.textMuted} />
               </Pressable>
             ) : null}
           </View>
@@ -192,7 +200,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 onPress={() => openFollows('FOLLOWER')}
                 accessibilityRole="button"
                 accessibilityLabel={`팔로워 ${followerCount}명 목록`}
-                hitSlop={8}
+                hitSlop={SOCIAL_HIT_SLOP}
                 style={({ pressed }) => pressed && styles.pressed}
               >
                 <SocialCount label="팔로워" value={followerCount} />
@@ -202,7 +210,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 onPress={() => openFollows('FOLLOWING')}
                 accessibilityRole="button"
                 accessibilityLabel={`팔로잉 ${followingCount}명 목록`}
-                hitSlop={8}
+                hitSlop={SOCIAL_HIT_SLOP}
                 style={({ pressed }) => pressed && styles.pressed}
               >
                 <SocialCount label="팔로잉" value={followingCount} />
@@ -312,9 +320,10 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
           {mine ? (
             <Pressable
               onPress={() => router.push('/library')}
-              hitSlop={8}
+              hitSlop={SHELF_ALL_HIT_SLOP}
               accessibilityRole="button"
               accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
+              style={({ pressed }) => pressed && styles.pressed}
             >
               <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
                 {libraryTotal}권 · {linkLabel('전체보기')}
@@ -472,7 +481,7 @@ function MyWalletRow() {
         <MemoScrap rotate={-0.8} style={styles.walletMemo}>
           <View style={styles.walletHead}>
             <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지갑</Text>
-            <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('교환·구독')}</Text>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{linkLabel('교환·구독')}</Text>
           </View>
           <View style={styles.walletRow}>
             <WalletCell value={wallet.data?.bookmarkBalance ?? 0} label="책갈피" />

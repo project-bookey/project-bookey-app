@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ClubPost } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
 import { useTheme } from '@/theme';
-import { hairline, mono, radius, serif, spacing, tiltFor, typeScale } from '@/theme/tokens';
+import { hairline, mono, pressedStyle, radius, serif, spacing, tiltFor, typeScale } from '@/theme/tokens';
 import { kstTime } from './dates';
 import { linkLabel } from '@/components/ui';
 
@@ -54,10 +54,11 @@ export function LogScrap({ log, index, myPage, selected, onOpen, onToggleReactio
             onPress={() => onReact(kind)}
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
-            style={[
+            style={({ pressed }) => [
               styles.reaction,
               { borderColor: colors.line, backgroundColor: colors.bg },
               on && { backgroundColor: colors.ink, borderColor: colors.ink },
+              pressed && pressedStyle,
             ]}
           >
             <Text style={[typeScale.monoLabel, { color: on ? colors.onInk : colors.textMuted }]}>{label}</Text>
@@ -167,8 +168,17 @@ const styles = StyleSheet.create({
   caption: { fontFamily: serif.regular, fontSize: 13, lineHeight: 18, marginTop: spacing.sm },
   meta: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.4, marginTop: spacing.xs },
   revealHint: { ...typeScale.label, fontSize: 11, marginTop: spacing.sm },
-  reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.md },
-  reaction: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  // 반응 칩은 44pt 터치 상자, 칩 사이는 sm 이상 — 좁은 보드 칸에선 두 줄로 접힌다.
+  reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  reaction: {
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+  },
   lockShackle: {
     width: 12,
     height: 9,

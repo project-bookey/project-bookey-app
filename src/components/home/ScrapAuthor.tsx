@@ -51,13 +51,13 @@ export function ScrapAuthor({ nickname, avatarUrl, where, kind, stat }: {
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {nickname}
           </Text>
-          <Tag label={kind} fg={colors.accent} bg={colors.accentSoft} />
+          <Tag label={kind} fg={colors.textMuted} bg={colors.surfaceRaised} />
         </View>
         <View style={styles.line2}>
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
             {where}
           </Text>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.stat, { color: colors.accent }]}>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.stat, { color: colors.textMuted }]}>
             {stat}
           </Text>
         </View>

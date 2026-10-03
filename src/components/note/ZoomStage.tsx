@@ -525,10 +525,11 @@ const styles = StyleSheet.create({
   viewport: { overflow: 'hidden' },
   content: { position: 'absolute', left: 0, top: 0 },
   controls: { position: 'absolute', right: spacing.sm, bottom: spacing.sm },
-  cluster: { flexDirection: 'row', gap: spacing.xs },
+  // 손가락 기준 44pt 상자, 버튼 사이는 sm — 캔버스 위에 떠 있어 hitSlop 대신 실제 크기로 키운다.
+  cluster: { flexDirection: 'row', gap: spacing.sm },
   btn: {
-    height: 32,
-    minWidth: 32,
+    height: 44,
+    minWidth: 44,
     borderWidth: hairline,
     borderRadius: radius.sm,
     alignItems: 'center',

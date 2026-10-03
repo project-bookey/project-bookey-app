@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import type { Banner } from '@/api/types';
-import { darkColors, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, hairline, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 import { InlineMarkdownText } from './InlineMarkdownText';
 
 const CARD_H = 108;
@@ -63,8 +63,9 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
                 </>
               ) : null}
               <View style={styles.cardBody}>
-                <View style={[styles.tag, { backgroundColor: darkColors.accent }]}>
-                  <Text style={[typeScale.monoEyebrow, { color: darkColors.onAccent }]}>EVENT</Text>
+                {/* 홈의 악센트는 히어로 CTA 몫 — 태그는 잉크 도장으로 둔다. */}
+                <View style={[styles.tag, { backgroundColor: darkColors.ink }]}>
+                  <Text style={[typeScale.monoEyebrow, { color: darkColors.onInk }]}>EVENT</Text>
                 </View>
                 <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: darkColors.text }]}>
                   <InlineMarkdownText text={item.title} strongStyle={styles.titleStrong} />
@@ -88,7 +89,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
               style={[
                 styles.dot,
                 i === page
-                  ? { width: 12, backgroundColor: colors.accent }
+                  ? { width: 12, backgroundColor: colors.ink }
                   : { backgroundColor: colors.lineStrong },
               ]}
             />
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   placeholder: {
     height: CARD_H,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: hairline,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',

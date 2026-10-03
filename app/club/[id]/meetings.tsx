@@ -135,7 +135,8 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
       <View style={[styles.head, { borderBottomColor: colors.line }]}>
         <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 · {meetings.length}개</Text>
         {isHost ? (
-          <Button label={open ? '닫기' : '모임 만들기'} size="sm" variant="ghost" onPress={() => setOpen((v) => !v)} />
+          // 호스트가 이 탭에서 하는 주요 행동 — 글자 링크가 아니라 테두리 버튼으로 크게(악센트는 폼의 '모임 열기' 몫).
+          <Button label={open ? '닫기' : '모임 만들기'} variant="outline" onPress={() => setOpen((v) => !v)} />
         ) : null}
       </View>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">

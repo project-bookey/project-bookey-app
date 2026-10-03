@@ -10,7 +10,7 @@ import {
 } from '@/components/clubLog';
 import { Button, Loading } from '@/components/ui';
 import { sharePng } from '@/lib/sharePng';
-import { layout, spacing, typeScale, useTheme } from '@/theme';
+import { layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 /** 내보내는 이미지 크기 — 인스타 스토리 1080×1920. */
@@ -64,11 +64,19 @@ export default function ClubLogWeekScreen() {
       <SubHeader category="이번 주 카드" />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.weekNav}>
-          <Pressable onPress={() => setMonday(addDays(monday, -7))} hitSlop={8} accessibilityRole="button">
+          <Pressable
+            onPress={() => setMonday(addDays(monday, -7))}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
+          >
             <Text style={[styles.navLabel, { color: colors.textMuted }]}>‹ 지난주</Text>
           </Pressable>
           {monday < thisMonday ? (
-            <Pressable onPress={() => setMonday(addDays(monday, 7))} hitSlop={8} accessibilityRole="button">
+            <Pressable
+              onPress={() => setMonday(addDays(monday, 7))}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
+            >
               <Text style={[styles.navLabel, { color: colors.textMuted }]}>다음주 ›</Text>
             </Pressable>
           ) : null}
@@ -111,6 +119,8 @@ export default function ClubLogWeekScreen() {
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
   weekNav: { flexDirection: 'row', justifyContent: 'space-between' },
+  // 11px 글자만으로는 손가락이 닿지 않아 44pt 상자로 키운다(UX 철칙 Fitts).
+  navButton: { minHeight: 44, minWidth: 44, justifyContent: 'center' },
   navLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
   cardWrap: { alignItems: 'center' },
   hint: { textAlign: 'center' },

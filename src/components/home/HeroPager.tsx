@@ -100,7 +100,7 @@ export function HeroPager({
             key={r.id}
             style={[
               styles.dot,
-              i === active ? { width: 12, backgroundColor: colors.accent } : { backgroundColor: colors.lineStrong },
+              i === active ? { width: 12, backgroundColor: colors.ink } : { backgroundColor: colors.lineStrong },
             ]}
           />
         ))}

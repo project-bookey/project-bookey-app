@@ -30,6 +30,12 @@ const MAX_OFFSET = Math.max(...rowOffsetY);
 const BADGE_BLEED = 16;
 /** 기울어진 표지의 위쪽 모서리가 올라오는 양(96×144, 최대 6°). */
 const TILT_BLEED = 5;
+/**
+ * '전체보기' 터치 상자 — 11px 글자(≈15)에 위 20·아래 12 를 더해 44pt 를 넘긴다.
+ * 아래는 머리글과 표지 줄 사이 간격(8) 안에서 멈춰 표지 터치와 겹치지 않고,
+ * 위는 섹션 사이 간격(24) 안에 머문다.
+ */
+const ALL_HIT_SLOP = { top: 20, bottom: 12, left: 12, right: spacing.lg };
 
 /**
  * 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressAdd가 있으면 + 타일, 없으면 유령 표지.
@@ -37,7 +43,7 @@ const TILT_BLEED = 5;
  */
 export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressAdd }: {
   title: string;
-  /** 제목 옆 모노 악센트 라벨 (예: LIVE) */
+  /** 제목 옆 모노 라벨 (예: LIVE) */
   label?: string;
   books: RowBook[];
   loading?: boolean;
@@ -69,11 +75,17 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
         <View style={styles.headTitle}>
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>{title}</Text>
           {label ? (
-            <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{label}</Text>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{label}</Text>
           ) : null}
         </View>
         {onPressAll && !empty ? (
-          <Pressable onPress={onPressAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
+          <Pressable
+            onPress={onPressAll}
+            hitSlop={ALL_HIT_SLOP}
+            style={({ pressed }) => (pressed ? pressedStyle : null)}
+            accessibilityRole="button"
+            accessibilityLabel="전체보기"
+          >
             <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('전체보기')}</Text>
           </Pressable>
         ) : null}
@@ -177,8 +189,8 @@ function RowItem({ item, index, rowTitle, staggered, onPress }: {
         accessibilityLabel={item.author ? `${item.title}, ${item.author}` : item.title}
       >
         {item.rank != null ? (
-          <View pointerEvents="none" style={[styles.rank, { backgroundColor: colors.accent }]}>
-            <Text style={[typeScale.monoNumeral, { color: colors.onAccent }]}>{item.rank}</Text>
+          <View pointerEvents="none" style={[styles.rank, { backgroundColor: colors.ink }]}>
+            <Text style={[typeScale.monoNumeral, { color: colors.onInk }]}>{item.rank}</Text>
           </View>
         ) : null}
         {item.progress != null ? (

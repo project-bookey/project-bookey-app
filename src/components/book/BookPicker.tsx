@@ -161,7 +161,8 @@ export function BookPicker({ picker, autoFocus }: {
                 accessibilityRole="button"
                 accessibilityState={{ selected: isPicked }}
                 accessibilityLabel={candidate.title}
-                style={[styles.pick, { borderColor: isPicked ? colors.accent : 'transparent' }]}
+                // 고른 책은 잉크 테두리 — 선택 상태는 잉크, 악센트는 화면의 제출 버튼 몫.
+                style={[styles.pick, { borderColor: isPicked ? colors.ink : 'transparent' }]}
               >
                 <TiltCover
                   uri={candidate.coverUrl}
@@ -182,12 +183,12 @@ export function BookPicker({ picker, autoFocus }: {
       {hint ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{hint}</Text> : null}
       {/* 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패는 실패라고 말하고 다시 시도를 준다. */}
       {searchError ? (
-        <Pressable onPress={retrySearch} hitSlop={8} accessibilityRole="button">
+        <Pressable onPress={retrySearch} accessibilityRole="button" style={styles.retry}>
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · {linkLabel('다시 시도', 'action')}</Text>
         </Pressable>
       ) : null}
       {readingError ? (
-        <Pressable onPress={retryReading} hitSlop={8} accessibilityRole="button">
+        <Pressable onPress={retryReading} accessibilityRole="button" style={styles.retry}>
           <Text style={[typeScale.monoLabel, { color: colors.accent }]}>내 서재의 책을 불러오지 못했어요 · {linkLabel('다시 시도', 'action')}</Text>
         </Pressable>
       ) : null}
@@ -214,4 +215,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   pickedLine: { marginTop: -spacing.xs },
+  // 11px 모노 한 줄이라 글자 상자로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 44pt 상자로 키운다.
+  retry: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
 });
