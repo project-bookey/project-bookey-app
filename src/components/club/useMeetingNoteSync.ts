@@ -44,6 +44,9 @@ const PEER_TTL_MS = 25_000;
 const ACK_TIMEOUT_MS = 8_000;
 const RETRY_MS = 2_000;
 const BACKOFF_MAX_MS = 15_000;
+/** '저장하고 나가기' 가 남은 편집이 다 갈 때까지 기다리는 최대 시간. */
+const DRAIN_TIMEOUT_MS = 10_000;
+const DRAIN_TICK_MS = 150;
 /** 인증 실패로 닫혔을 때의 이유 — 토큰을 갱신해 다시 붙는다. */
 const TOKEN_CODES = new Set(['EXPIRED_TOKEN', 'INVALID_TOKEN']);
 /** 다시 보내도 결과가 같은 실패 — 그 묶음은 버리고 서버 상태로 맞춘다. */
@@ -111,8 +114,8 @@ export function useMeetingNoteSync({ clubId, meetingId, editor, initialVersion, 
   editor: NoteEditor;
   initialVersion: number;
   readOnly: boolean;
-  /** 서버가 읽기 전용이라고 알려 왔을 때(클럽이 끝났거나 모임이 취소됨). */
-  onReadOnly: () => void;
+  /** 서버가 읽기 전용이라고 알려 왔을 때 — 'closed' 면 노트를 마무리했다, 아니면 클럽이 끝났거나 모임이 취소됐다. */
+  onReadOnly: (reason?: 'closed') => void;
   getPresence: () => MeetingNotePresence;
 }) {
   const [clientId] = useState(newId);
@@ -157,7 +160,7 @@ export function useMeetingNoteSync({ clubId, meetingId, editor, initialVersion, 
     try {
       const note = await meetingNoteApi.get(clubId, meetingId);
       if (!alive.current) return;
-      if (note.readOnly && !latest.current.readOnly) latest.current.onReadOnly();
+      if (note.readOnly && !latest.current.readOnly) latest.current.onReadOnly(note.closedAt ? 'closed' : undefined);
       // 서버 문서 위에 아직 서버에 닿지 않은 내 묶음, 그 위에 아직 묶지 않은 내 편집.
       let base = parseMeetingNoteDoc(note.document);
       for (const batch of outbox.current) base = applyOps(base, batch.ops);
@@ -292,6 +295,21 @@ export function useMeetingNoteSync({ clubId, meetingId, editor, initialVersion, 
     void pump();
   }, [pump]);
 
+  /**
+   * 남은 편집을 다 보낼 때까지 기다린다 — '저장하고 나가기' · '마무리' 전에 부른다.
+   * 다 갔으면 true, 시간 안에 못 보냈으면(오프라인 등) false. 읽기 전용이 돼 버린 편집은 서버가 받지 않으므로 기다리지 않는다.
+   */
+  const drain = useCallback(async (): Promise<boolean> => {
+    flush();
+    const until = Date.now() + DRAIN_TIMEOUT_MS;
+    while (outbox.current.length > 0 || pumping.current) {
+      if (!alive.current || Date.now() > until) return outbox.current.length === 0;
+      if (!pumping.current) void pump();
+      await new Promise((resolve) => setTimeout(resolve, DRAIN_TICK_MS));
+    }
+    return true;
+  }, [flush, pump]);
+
   // 문서가 바뀌면(내 편집이든 남의 편집이든) 잠깐 모았다가 차이만 보낸다 — 남의 편집이면 차이가 없어 아무것도 안 간다.
   useEffect(() => {
     if (readOnly || editor.doc === syncedRef.current || sendTimer.current) return;
@@ -380,6 +398,12 @@ export function useMeetingNoteSync({ clubId, meetingId, editor, initialVersion, 
             seenAt: Date.now(),
           };
           setPeers((prev) => ({ ...prev, [peer.peer]: peer }));
+          return;
+        }
+        case 'closed': {
+          // 모임을 연 사람이 노트를 마무리했다 — 아직 안 간 내 편집은 서버가 받지 않는다.
+          outbox.current = [];
+          if (!latest.current.readOnly) latest.current.onReadOnly('closed');
           return;
         }
         case 'leave': {
@@ -522,5 +546,5 @@ export function useMeetingNoteSync({ clubId, meetingId, editor, initialVersion, 
     };
   }, [clubId, meetingId, clientId, applyRemote, flush, pump, resync]);
 
-  return { status, saving, peers: Object.values(peers), flush, resync };
+  return { status, saving, peers: Object.values(peers), flush, drain, resync };
 }

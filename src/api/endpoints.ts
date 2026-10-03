@@ -751,6 +751,9 @@ export const meetingNoteApi = {
       `/api/v1/clubs/${clubId}/meetings/${meetingId}/note/ops`,
       { method: "POST", body: { ops, clientId } },
     ),
+  /** 마무리 — 모임을 연 사람(또는 호스트)만. 마무리하면 모두 읽기만 된다. 남은 편집을 다 보낸 뒤 부른다. */
+  close: (clubId: number, meetingId: number) =>
+    api<MeetingNote>(`/api/v1/clubs/${clubId}/meetings/${meetingId}/note/close`, { method: "POST" }),
   /** 사진 업로드 — 응답 id 를 photo 요소의 imageId 로 넣어 보내야 노트에 붙는다. */
   uploadImage: (clubId: number, meetingId: number, form: FormData) =>
     api<MeetingNoteImage>(

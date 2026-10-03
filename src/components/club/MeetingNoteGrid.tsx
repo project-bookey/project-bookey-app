@@ -23,7 +23,8 @@ const CONTRIBUTOR_MAX = 3;
 
 /**
  * 클럽 모임 노트 — 클럽 홈 '노트' 탭. 인스타 프로필처럼 3열 정사각 격자, 칸 하나가 모임 하나의 공유 노트.
- * 칸에는 대형노트에서 쓴 구역을 정사각으로 잘라 보이고, 왼쪽 위에 모임 날짜, 왼쪽 아래에 함께 쓴 멤버를 얹는다.
+ * 칸에는 대형노트에서 쓴 구역을 정사각으로 잘라 보이고, 왼쪽 위에 모임 날짜, 왼쪽 아래에 함께 쓴 멤버,
+ * 아직 마무리하지 않은 노트는 오른쪽 위에 '작성 중'을 얹는다(마무리는 모임을 연 사람이 노트 화면에서 한다).
  * 칸을 누르면 그 노트를 연다. 노트는 모임 상세(또는 함께 독서 종료)에서 처음 생긴다 — 여기엔 새로 만들기 버튼이 없다.
  */
 export function MeetingNoteGrid({ clubId, onOpenMeetings }: { clubId: number; onOpenMeetings?: () => void }) {
@@ -103,7 +104,7 @@ function MeetingNoteCell({ note, size, onPress }: { note: MeetingNote; size: num
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${note.meetingTitle ?? '모임'} 노트${date ? `, ${date}` : ''}, ${note.contributors.length}명이 함께 씀`}
+      accessibilityLabel={`${note.meetingTitle ?? '모임'} 노트${date ? `, ${date}` : ''}, ${note.contributors.length}명이 함께 씀${note.closedAt ? '' : ', 작성 중'}`}
       style={({ pressed }) => [styles.cell, { width: size, height: size, borderColor: colors.line, backgroundColor: colors.surface }, pressed ? pressedStyle : null]}
     >
       <NoteDocThumb doc={doc} width={size} ratio={1} />
@@ -112,6 +113,11 @@ function MeetingNoteCell({ note, size, onPress }: { note: MeetingNote; size: num
           <Text style={[typeScale.monoLabel, styles.dateText, { color: colors.text }]}>{date}</Text>
         </View>
       ) : null}
+      {note.closedAt ? null : (
+        <View pointerEvents="none" style={[styles.draft, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <Text style={[typeScale.monoLabel, styles.dateText, { color: colors.textMuted }]}>작성 중</Text>
+        </View>
+      )}
       {contributors.length > 0 ? (
         <View pointerEvents="none" style={styles.people}>
           {contributors.map((p, i) => (
@@ -148,6 +154,15 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
   },
   dateText: { fontSize: 10 },
+  draft: {
+    position: 'absolute',
+    right: spacing.xs,
+    top: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+  },
   people: { position: 'absolute', left: spacing.xs, bottom: spacing.xs, flexDirection: 'row' },
   avatar: { borderWidth: 1.5, borderRadius: radius.round },
   more: { paddingVertical: spacing.md },

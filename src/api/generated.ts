@@ -691,6 +691,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/meetings/{meetingId}/note/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 모임 노트 마무리 — 모임을 연 사람(또는 호스트)만. 마무리하면 모두 읽기만 된다 */
+        post: operations["closeMeetingNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/meetings/{meetingId}/attendees/me": {
         parameters: {
             query?: never;
@@ -3680,6 +3697,39 @@ export interface components {
             /** Format: int32 */
             height?: number;
         };
+        /** @description 모임 공유 노트 — 모임 하나에 대형노트 한 권. 아직 아무도 쓰지 않았으면 id 는 null, version 0, 빈 문서 */
+        MeetingNoteView: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            clubId: number;
+            /** Format: int64 */
+            meetingId: number;
+            meetingTitle?: string;
+            /** Format: date-time */
+            meetingStartsAt?: string;
+            /** @description 대형노트 문서 {v, paper, kind:'large', elements[]} — 앱이 소유한 JSON */
+            document: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            version: number;
+            /** Format: int32 */
+            elementCount: number;
+            /** @description 노트에 손댄 멤버 — 처음 손댄 순 */
+            contributors: components["schemas"]["MeetingAttendeeView"][];
+            /** Format: date-time */
+            updatedAt?: string;
+            /** @description 끝난 클럽·취소된 모임·마무리한 노트면 true — 읽기만 된다 */
+            readOnly: boolean;
+            /**
+             * Format: date-time
+             * @description 마무리한 시각 — 아직 마무리하지 않았으면 null
+             */
+            closedAt?: string;
+            /** @description 보는 사람이 이 노트를 마무리할 수 있는지 — 모임을 연 사람(또는 호스트)이고 아직 쓸 수 있는 노트일 때 */
+            canClose: boolean;
+        };
         KickRequest: {
             /** Format: int64 */
             userId: number;
@@ -4493,32 +4543,6 @@ export interface components {
             /** Format: double */
             longitude: number;
         };
-        /** @description 모임 공유 노트 — 모임 하나에 대형노트 한 권. 아직 아무도 쓰지 않았으면 id 는 null, version 0, 빈 문서 */
-        MeetingNoteView: {
-            /** Format: int64 */
-            id?: number;
-            /** Format: int64 */
-            clubId: number;
-            /** Format: int64 */
-            meetingId: number;
-            meetingTitle?: string;
-            /** Format: date-time */
-            meetingStartsAt?: string;
-            /** @description 대형노트 문서 {v, paper, kind:'large', elements[]} — 앱이 소유한 JSON */
-            document: {
-                [key: string]: unknown;
-            };
-            /** Format: int32 */
-            version: number;
-            /** Format: int32 */
-            elementCount: number;
-            /** @description 노트에 손댄 멤버 — 처음 손댄 순 */
-            contributors: components["schemas"]["MeetingAttendeeView"][];
-            /** Format: date-time */
-            updatedAt?: string;
-            /** @description 끝난 클럽·취소된 모임이면 true — 읽기만 된다 */
-            readOnly: boolean;
-        };
         PageResponseMeetingNoteView: {
             content?: components["schemas"]["MeetingNoteView"][];
             /** Format: int32 */
@@ -4955,6 +4979,7 @@ export type SchemaNudgeRequest = components['schemas']['NudgeRequest'];
 export type SchemaApplyMeetingNoteOpsRequest = components['schemas']['ApplyMeetingNoteOpsRequest'];
 export type SchemaMeetingNoteOpsResult = components['schemas']['MeetingNoteOpsResult'];
 export type SchemaMeetingNoteImageView = components['schemas']['MeetingNoteImageView'];
+export type SchemaMeetingNoteView = components['schemas']['MeetingNoteView'];
 export type SchemaKickRequest = components['schemas']['KickRequest'];
 export type SchemaJoinPublicRequest = components['schemas']['JoinPublicRequest'];
 export type SchemaUnlockResult = components['schemas']['UnlockResult'];
@@ -5039,7 +5064,6 @@ export type SchemaPageResponseClubPostView = components['schemas']['PageResponse
 export type SchemaPlaceView = components['schemas']['PlaceView'];
 export type SchemaCoordinates = components['schemas']['Coordinates'];
 export type SchemaAddressView = components['schemas']['AddressView'];
-export type SchemaMeetingNoteView = components['schemas']['MeetingNoteView'];
 export type SchemaPageResponseMeetingNoteView = components['schemas']['PageResponseMeetingNoteView'];
 export type SchemaClubLogDayView = components['schemas']['ClubLogDayView'];
 export type SchemaClubLogSummary = components['schemas']['ClubLogSummary'];
@@ -6304,6 +6328,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MeetingNoteImageView"];
+                };
+            };
+        };
+    };
+    closeMeetingNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                meetingId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeetingNoteView"];
                 };
             };
         };

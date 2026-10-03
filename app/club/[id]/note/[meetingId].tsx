@@ -1,13 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Undo2 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { clubApi, meetingNoteApi } from '@/api/endpoints';
 import type { MeetingNote } from '@/api/types';
-import { notify } from '@/components/club';
+import { confirmAsync, notify } from '@/components/club';
 import {
   meetingNoteKey, meetingNotesKey, useMeetingNoteSync, type MeetingNotePeer, type MeetingNoteSyncStatus,
 } from '@/components/club/useMeetingNoteSync';
@@ -27,7 +28,7 @@ import { SelectionFrame } from '@/components/note/SelectionFrame';
 import { StickerSheet } from '@/components/note/StickerSheet';
 import { TextEditorSheet } from '@/components/note/TextEditorSheet';
 import { Avatar } from '@/components/Avatar';
-import { EmptyState, Loading, linkLabel } from '@/components/ui';
+import { Button, EmptyState, Loading, linkLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { layout, radius, serif, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
@@ -39,6 +40,14 @@ const CANVAS = canvasFor('large');
 const NOTE_IMAGE_MAX = 30;
 /** 함께 보는 사람 아바타는 이만큼만 겹쳐 보이고 나머지는 숫자로. */
 const PEER_AVATAR_MAX = 4;
+
+/** 읽기만 되는 까닭 — 마무리했거나, 클럽이 끝났거나 모임이 취소됐거나, 연결 중에 알게 돼 까닭을 모를 때. */
+type Lock = 'closed' | 'over' | 'unknown';
+const LOCK_TEXT: Record<Lock, string> = {
+  closed: '마무리한 노트예요. 읽기만 돼요.',
+  over: '끝난 클럽이나 취소된 모임의 노트는 읽기만 돼요.',
+  unknown: '이 노트는 이제 읽기만 돼요.',
+};
 
 /**
  * 모임 공유 노트 — 모임 하나에 대형노트 한 권, 클럽 멤버가 함께 꾸민다. 함께 독서를 끝내면 여기로 온다.
@@ -96,9 +105,13 @@ function Shell({ children }: { children: ReactNode }) {
 /**
  * 편집기 본체 — 대형노트 한 장을 줌 무대 위에 올리고, 노트 도구(보기·선택·펜·지우개 + 삽입)를 쓴다.
  * 위에는 모임 제목·함께 보는 사람·동기화 상태, 종이 위에는 다른 멤버가 보고 있는 곳을 이름표로 띄운다.
+ * 도구 줄 위에는 '저장하고 나가기'를 늘 두어 어떻게 나가는지 헤매지 않게 하고, 모임을 연 사람에게는
+ * '노트 마무리'를 함께 둔다 — 마무리하면 모두 읽기만 되고 노트 탭에 완성본으로 남는다.
  */
 function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetingId: number; note: MeetingNote }) {
   const { colors } = useTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [seed] = useState(() => parseMeetingNoteDoc(note.document));
   // 나가면 클럽 '노트' 탭 격자가 새 썸네일을 받게 한다.
@@ -106,7 +119,9 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
     void queryClient.invalidateQueries({ queryKey: meetingNotesKey(clubId) });
   }, [queryClient, clubId]);
   const editor = useNoteEditor(seed);
-  const [readOnly, setReadOnly] = useState(note.readOnly);
+  const [lock, setLock] = useState<Lock | null>(note.closedAt ? 'closed' : note.readOnly ? 'over' : null);
+  const readOnly = lock !== null;
+  const [busy, setBusy] = useState<'leaving' | 'closing' | null>(null);
 
   // 말풍선 화자 — 나, 또는 클럽 멤버 중에서(클럽 홈과 같은 캐시 키).
   const me = useAuth((s) => s.user);
@@ -140,10 +155,10 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
 
-  const onReadOnly = useCallback(() => {
-    setReadOnly(true);
+  const onReadOnly = useCallback((reason?: 'closed') => {
+    setLock(reason ?? 'unknown');
     setTool('hand');
-    notify('끝난 클럽이나 취소된 모임의 노트라 이제 읽기만 돼요.');
+    notify(reason === 'closed' ? '모임을 연 사람이 노트를 마무리했어요. 이제 읽기만 돼요.' : LOCK_TEXT.unknown);
   }, []);
   const toolRef = useRef(tool);
   toolRef.current = tool;
@@ -189,6 +204,47 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
     <EditableElementView key={el.id} element={applyPreview(el, preview, s, CANVAS)} scale={s} editable={selecting} handlers={handlers} />
   ), [preview, selecting, handlers]);
   const selected = readOnly ? null : selection.selected;
+
+  // 딥링크로 바로 들어와 돌아갈 곳이 없으면 클럽의 노트 탭으로.
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace({ pathname: '/club/[id]', params: { id: String(clubId), tab: 'notes' } });
+  };
+  const unsavedNotice = '아직 저장하지 못한 내용이 있어요. 연결을 확인하고 다시 눌러 주세요.';
+
+  /** 남은 편집을 다 보낸 걸 확인하고 나간다 — 연결이 끊겨 못 보냈으면 머문다. */
+  const saveAndLeave = async () => {
+    setBusy('leaving');
+    const saved = await sync.drain();
+    setBusy(null);
+    if (!saved) {
+      notify(unsavedNotice);
+      return;
+    }
+    goBack();
+  };
+
+  /** 마무리 — 확인을 받고, 남은 편집을 다 보낸 뒤 서버에 마무리를 알리고 나간다. */
+  const closeNote = async () => {
+    const ok = await confirmAsync('노트를 마무리할까요? 마무리하면 모두 더는 고칠 수 없고, 노트 탭에 완성본으로 남아요.', '마무리');
+    if (!ok) return;
+    setBusy('closing');
+    try {
+      if (!(await sync.drain())) {
+        notify(unsavedNotice);
+        return;
+      }
+      await meetingNoteApi.close(clubId, meetingId);
+      setLock('closed');
+      void queryClient.invalidateQueries({ queryKey: meetingNotesKey(clubId) });
+      notify('노트를 마무리했어요.');
+      goBack();
+    } catch (e) {
+      notify(e instanceof ApiError ? e.message : '노트를 마무리하지 못했어요.');
+    } finally {
+      setBusy(null);
+    }
+  };
 
   // 같은 사람이 여러 기기로 들어와도 아바타는 한 번만.
   const people = useMemo(() => {
@@ -269,20 +325,49 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
         <ZoomControls zoom={zoom} style={styles.zoomControls} />
       </View>
 
-      {readOnly ? (
-        <View style={[styles.readOnly, { borderTopColor: colors.line }]}>
-          <Text style={[typeScale.caption, { color: colors.textMuted }]}>끝난 클럽이나 취소된 모임의 노트는 읽기만 돼요.</Text>
+      {lock ? (
+        // 읽기만 될 때도 나가는 길을 글로 보여 준다 — 뒤로 화살표만으로는 찾기 어렵다.
+        <View
+          style={[
+            styles.readOnly,
+            { borderTopColor: colors.line, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+          ]}
+        >
+          <Text style={[typeScale.caption, styles.lockText, { color: colors.textMuted }]}>{LOCK_TEXT[lock]}</Text>
+          <Button label="나가기" variant="outline" size="sm" onPress={goBack} />
         </View>
       ) : (
-        <NoteToolbar
-          tool={tool}
-          onTool={setTool}
-          pen={pen}
-          onPen={(patch) => setPen((prev) => ({ ...prev, ...patch }))}
-          onInsert={inserts.insert}
-          photoDisabled={photos.disabled}
-          inserts={MEETING_NOTE_INSERTS}
-        />
+        <>
+          {/* 앱 공통 순서 [보조][주요] — 마무리할 수 있는 사람에게는 마무리가 주요, 나머지에게는 저장하고 나가기가 주요. */}
+          <View style={[styles.actions, { borderTopColor: colors.line }]}>
+            <Button
+              label="저장하고 나가기"
+              variant={note.canClose ? 'outline' : 'primary'}
+              loading={busy === 'leaving'}
+              disabled={busy !== null}
+              onPress={() => void saveAndLeave()}
+              style={styles.action}
+            />
+            {note.canClose ? (
+              <Button
+                label="노트 마무리"
+                loading={busy === 'closing'}
+                disabled={busy !== null}
+                onPress={() => void closeNote()}
+                style={styles.action}
+              />
+            ) : null}
+          </View>
+          <NoteToolbar
+            tool={tool}
+            onTool={setTool}
+            pen={pen}
+            onPen={(patch) => setPen((prev) => ({ ...prev, ...patch }))}
+            onInsert={inserts.insert}
+            photoDisabled={photos.disabled}
+            inserts={MEETING_NOTE_INSERTS}
+          />
+        </>
       )}
 
       <TextEditorSheet element={inserts.editing} members={members} onPatch={inserts.patchEditing} onClose={inserts.closeEditor} />
@@ -373,7 +458,26 @@ const styles = StyleSheet.create({
   avatar: { borderWidth: 2, borderRadius: radius.round },
   stage: { flex: 1 },
   zoomControls: { position: 'absolute', right: spacing.lg, bottom: spacing.sm },
-  readOnly: { ...layout.content, borderTopWidth: hairline, padding: spacing.lg, alignItems: 'center' },
+  readOnly: {
+    ...layout.content,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderTopWidth: hairline,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  lockText: { flex: 1 },
+  // 도구 줄 바로 위 — 두 버튼은 같은 폭, 서로 다른 동작이라 sm 이상 띄운다.
+  actions: {
+    ...layout.content,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    borderTopWidth: hairline,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  action: { flex: 1 },
   tag: {
     position: 'absolute',
     maxWidth: 120,
