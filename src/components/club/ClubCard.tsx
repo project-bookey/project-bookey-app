@@ -1,12 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
 import { Chip, StickyNote } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
+import { ClubBackdrop } from './ClubBackdrop';
 import { meetingDay } from './meetingTime';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-import { mono, serif } from '@/theme/tokens';
+import { mono } from '@/theme/tokens';
 
 const AVATAR = 24;
 const MAX_AVATARS = 4;
@@ -14,7 +15,7 @@ const BAND_H = 96;
 
 /**
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
- * 위 띠는 호스트가 올린 배경 사진(없으면 종이에 클럽 이름 첫 글자)과 다음 모임 스티키,
+ * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 다음 모임 스티키,
  * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람 · 다음 모임.
  * 카드 본문은 누르면 클럽 홈으로, 호스트에게만 붙는 '관리' 칩은 본문 Pressable 의 형제로 둬
  * 웹에서 button 안에 button 이 들어가지 않게 한다.
@@ -31,25 +32,14 @@ export function ClubCard({ club, onPress, onManage }: {
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={club.name}>
-        <View style={[styles.band, { backgroundColor: colors.paperAlt }]}>
-          {club.backgroundUrl ? (
-            <>
-              <Image
-                source={{ uri: club.backgroundUrl }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-                accessibilityIgnoresInvertColors
-              />
-              {/* 사진이 아래 본문으로 녹아들게 카드 표면색으로 덮는다 — 검은 스크림을 쓰지 않는다. */}
-              <LinearGradient
-                colors={[`${colors.surface}00`, colors.surface]}
-                locations={[0.35, 1]}
-                style={StyleSheet.absoluteFill}
-              />
-            </>
-          ) : (
-            <Text style={[styles.monogram, { color: colors.textFaint }]}>{club.name.slice(0, 1)}</Text>
-          )}
+        <View style={styles.band}>
+          <ClubBackdrop uri={club.backgroundUrl} seed={club.id} />
+          {/* 배경이 아래 본문으로 녹아들게 카드 표면색으로 덮는다 — 검은 스크림을 쓰지 않는다. */}
+          <LinearGradient
+            colors={[`${colors.surface}00`, colors.surface]}
+            locations={[0.35, 1]}
+            style={StyleSheet.absoluteFill}
+          />
           {note ? (
             <View style={styles.bandNote}>
               <StickyNote rotate={4} style={styles.note}>
@@ -125,8 +115,6 @@ function MembersLine({ members }: { members: ClubMemberBrief[] }) {
 const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: hairline, overflow: 'hidden' },
   band: { height: BAND_H, overflow: 'hidden' },
-  // 배경 사진이 없을 때 — 종이 위에 명조 첫 글자를 크게, 흐리게.
-  monogram: { position: 'absolute', left: spacing.lg, bottom: -6, fontFamily: serif.extraBold, fontSize: 64, lineHeight: 72 },
   bandNote: { position: 'absolute', right: spacing.lg, top: spacing.md },
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
