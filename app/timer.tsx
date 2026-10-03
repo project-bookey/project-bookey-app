@@ -312,29 +312,32 @@ export default function TimerScreen() {
         {running ? (
           <View style={styles.endForm}>
             <Rule />
-            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
-              몇 쪽까지 읽었나요?
-            </Text>
-            <View style={styles.pageRow}>
-              <TextInput
-                value={endPage}
-                onChangeText={(text) => {
-                  interactions.current += 1;
-                  setEndPage(text.replace(/[^0-9]/g, ''));
-                }}
-                keyboardType="number-pad"
-                maxLength={5}
-                inputAccessoryViewID={Platform.OS === 'ios' ? PAGE_INPUT_ACCESSORY_ID : undefined}
-                onSubmitEditing={Keyboard.dismiss}
-                style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
-                placeholder="0"
-                placeholderTextColor={colors.textFaint}
-              />
-              <Text style={[styles.pageSuffix, { color: colors.textMuted }]}>
-                {progress && progress.totalPages > 0 ? `/ ${progress.totalPages}쪽` : '쪽'}
+            {/* 질문·쪽수·오류는 한 묶음(sm) — 메모와 종료 버튼은 묶음 밖으로 띄운다(UX 철칙 Proximity). */}
+            <View style={styles.pageGroup}>
+              <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
+                몇 쪽까지 읽었나요?
               </Text>
+              <View style={styles.pageRow}>
+                <TextInput
+                  value={endPage}
+                  onChangeText={(text) => {
+                    interactions.current += 1;
+                    setEndPage(text.replace(/[^0-9]/g, ''));
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={5}
+                  inputAccessoryViewID={Platform.OS === 'ios' ? PAGE_INPUT_ACCESSORY_ID : undefined}
+                  onSubmitEditing={Keyboard.dismiss}
+                  style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
+                  placeholder="0"
+                  placeholderTextColor={colors.textFaint}
+                />
+                <Text style={[styles.pageSuffix, { color: colors.textMuted }]}>
+                  {progress && progress.totalPages > 0 ? `/ ${progress.totalPages}쪽` : '쪽'}
+                </Text>
+              </View>
+              {pageError ? <Text style={[styles.pageError, { color: colors.danger }]}>{pageError}</Text> : null}
             </View>
-            {pageError ? <Text style={[styles.pageError, { color: colors.danger }]}>{pageError}</Text> : null}
             <TextInput
               value={memo}
               onChangeText={setMemo}
@@ -348,6 +351,7 @@ export default function TimerScreen() {
             />
             <Button
               label="세션 종료"
+              style={styles.endButton}
               onPress={() => {
                 Keyboard.dismiss();
                 end.mutate();
@@ -423,7 +427,10 @@ const styles = StyleSheet.create({
   startArea: { gap: spacing.md },
   hint: { ...typeScale.caption, textAlign: 'center' },
   error: { ...typeScale.caption, lineHeight: 17 },
-  endForm: { gap: spacing.md },
+  endForm: { gap: spacing.lg },
+  pageGroup: { gap: spacing.sm },
+  // 종료는 입력들과 떼어 둔다 — 묶음 간격(lg)에 sm 을 더해 xl.
+  endButton: { marginTop: spacing.sm },
   pageRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   pageInput: {
     flex: 1,
@@ -451,5 +458,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
-  keyboardDone: { minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.sm },
+  keyboardDone: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm },
 });
