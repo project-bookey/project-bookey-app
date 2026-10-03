@@ -356,6 +356,6 @@ const styles = StyleSheet.create({
   // FootAction 은 글자 밖으로 양옆 14pt(여백 6 + hitSlop 8)씩 터치 영역이 넓어진다 — 둘이 겹치지 않고
   // sm 이상 떨어지도록 28 + 8 = 36(xxl)을 띄운다. 파괴적인 '내보내기'가 '호스트 넘기기' 탭에 걸리지 않게.
   memberActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxl },
-  kickForm: { gap: spacing.sm, paddingBottom: spacing.sm },
+  kickForm: { gap: spacing.md, paddingBottom: spacing.sm },
   rowButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
 });

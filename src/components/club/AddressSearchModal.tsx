@@ -93,7 +93,7 @@ export function AddressSearchModal({ clubId, visible, onClose, onSelect }: {
 }
 
 const styles = StyleSheet.create({
-  search: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  search: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.md },
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   row: { paddingVertical: spacing.md, gap: 2, borderBottomWidth: hairline },
 });

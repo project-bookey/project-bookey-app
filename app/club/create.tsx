@@ -253,24 +253,20 @@ export default function ClubCreateScreen() {
               <>
                 {/* ③ 이름·소개 — 한 묶음이라 md 로 붙이고, 아래 옵션과는 섹션 간격(xl)으로 띄운다. */}
                 <View style={styles.fields}>
-                  <View style={styles.fieldSlot}>
-                    <Field
-                      label="클럽 이름"
-                      value={name}
-                      onChangeText={setName}
-                      placeholder="예: 회사 독서 클럽"
-                      maxLength={60}
-                    />
-                  </View>
-                  <View style={styles.fieldSlot}>
-                    <Field
-                      label="소개 (선택)"
-                      value={description}
-                      onChangeText={setDescription}
-                      placeholder="어떤 클럽인지 한 줄로"
-                      multiline
-                    />
-                  </View>
+                  <Field
+                    label="클럽 이름"
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="예: 회사 독서 클럽"
+                    maxLength={60}
+                  />
+                  <Field
+                    label="소개 (선택)"
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="어떤 클럽인지 한 줄로"
+                    multiline
+                  />
                 </View>
 
                 {/* 옵션 — 카드 대신 위 괘선 한 줄로 나눈다 */}
@@ -335,7 +331,6 @@ const styles = StyleSheet.create({
   // Field 는 아래 여백(lg)을 스스로 갖는다 — 그대로 두면 묶음의 gap 과 겹쳐 같은 묶음 안이
   // 묶음 사이보다 멀어진다. 여백을 상쇄하고 간격은 묶음의 gap 하나로만 정한다.
   fields: { gap: spacing.md },
-  fieldSlot: { marginBottom: -spacing.lg },
   options: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
   // 내용만큼 자라다가 넘치면 남은 높이에 맞춰 줄고 안에서 스크롤한다.
   bookList: {

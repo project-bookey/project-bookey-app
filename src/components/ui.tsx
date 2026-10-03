@@ -179,8 +179,10 @@ export function Field({ label, hint, error, ...props }: TextInputProps & {
   error?: string | null;
 }) {
   const { styles, colors } = useStyles();
+  // 바깥 여백은 두지 않는다 — 칸 사이 간격은 쓰는 화면이 gap 으로 정한다. 여백을 품고 있으면 화면의 gap 과
+  // 겹쳐 같은 묶음의 칸끼리 다른 묶음보다 멀어진다(UX 철칙 Proximity).
   return (
-    <View style={styles.field}>
+    <View>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         placeholderTextColor={colors.textFaint}
@@ -472,7 +474,6 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     fill: { backgroundColor: colors.accent, height: '100%', borderRadius: radius.sm },
     numeral: { ...typeScale.monoNumeral, color: colors.text },
-    field: { marginBottom: spacing.lg },
     fieldLabel: { ...typeScale.monoEyebrow, color: colors.textMuted, marginBottom: spacing.sm },
     fieldHint: { ...typeScale.caption, color: colors.textFaint, marginTop: spacing.xs },
     fieldError: { ...typeScale.caption, color: colors.danger, marginTop: spacing.xs },
