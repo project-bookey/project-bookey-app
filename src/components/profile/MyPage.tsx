@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
   walletCell: { flex: 1, gap: 2 },
   walletValue: { fontSize: 17, lineHeight: 22 },
   walletLabel: { fontSize: 11 },
-  visitNote: { width: 92, justifyContent: 'center', gap: spacing.xs, paddingHorizontal: 10 },
+  visitNote: { width: 92, justifyContent: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm },
   visitCount: { fontSize: 18, lineHeight: 22 },
   visitText: { fontSize: 11, lineHeight: 15 },
   visitAction: { fontSize: 9, letterSpacing: 1, marginTop: 2 },

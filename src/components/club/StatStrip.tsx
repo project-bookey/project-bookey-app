@@ -34,7 +34,7 @@ export function StatStrip({ cells }: { cells: StatCell[] }) {
 
 const styles = StyleSheet.create({
   strip: { flexDirection: 'row', borderTopWidth: hairline, borderBottomWidth: hairline },
-  cell: { flex: 1, paddingVertical: 10, gap: 2 },
+  cell: { flex: 1, paddingVertical: spacing.md, gap: 2 },
   label: { ...typeScale.monoEyebrow, fontSize: 9 },
   value: { fontFamily: mono.semiBold, fontSize: 17, lineHeight: 22 },
   unit: { fontFamily: sans.semiBold, fontSize: 11 },

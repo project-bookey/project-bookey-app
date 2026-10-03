@@ -1142,7 +1142,7 @@ const styles = StyleSheet.create({
   },
   commitmentActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
 
-  statStrip: { flexDirection: 'row', gap: 18, borderTopWidth: hairline, paddingTop: spacing.lg },
+  statStrip: { flexDirection: 'row', gap: spacing.lg, borderTopWidth: hairline, paddingTop: spacing.lg },
   statCell: { gap: 3 },
   statDivider: { width: hairline },
   statValue: { fontFamily: mono.semiBold, fontSize: 19 },
@@ -1187,7 +1187,7 @@ const styles = StyleSheet.create({
   // 탭 헤더 우측 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다(두 탭 모두 같은 자리).
   // 늘린 좌우 여백만큼 음수 마진으로 되돌려 글자는 제목줄 끝에 그대로 맞춘다(FootAction 과 같은 규율).
   tabAction: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
-  tabRow: { flexDirection: 'row', gap: 18 },
+  tabRow: { flexDirection: 'row', gap: spacing.lg },
   tab: { gap: 6 },
   tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
   tabRule: { width: 22, height: 2 },
