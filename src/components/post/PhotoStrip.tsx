@@ -17,12 +17,15 @@ const REMOVE_PAD = (REMOVE_HIT - REMOVE) / 2;
 const REMOVE_HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 };
 
 /**
- * 사진 띠 — 점선 고스트 `+ 사진`(프로필 서가의 빈 칸과 같은 꼴) 뒤로 고른 사진이 인화지처럼 늘어선다.
+ * 사진 띠 — 고른 사진이 인화지처럼 늘어서고, 타일마다 올라가는 상태·다시·떼기를 보인다.
+ * `onPick` 을 넘기면 맨 앞에 점선 고스트 `+ 사진`(프로필 서가의 빈 칸과 같은 꼴)을 둔다 — 독후감 작성은 사진을
+ * 본문 커서 자리에 넣으므로 하단 띠의 '+ 사진'이 입구이고, 여기는 붙은 사진을 다루는 자리라 고스트를 두지 않는다.
  * 타일 위 버튼(다시·×)은 타일(View)의 자식이라 웹에서 버튼이 겹치지 않는다.
  */
 export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, retryable = true, notice }: {
   photos: PhotoUpload[];
-  onPick: () => void;
+  /** 있으면 맨 앞에 고르기 고스트 타일을 둔다. */
+  onPick?: () => void;
   onRetry: (key: string) => void;
   onRemove: (key: string) => void;
   max: number;
@@ -39,7 +42,7 @@ export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, r
   return (
     <View style={styles.wrap}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-        {!full ? (
+        {onPick && !full ? (
           <Pressable
             onPress={onPick}
             disabled={disabled}

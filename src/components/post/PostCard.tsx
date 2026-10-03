@@ -3,75 +3,73 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
+import { Avatar } from '@/components/Avatar';
 import { LikeAction } from '@/components/post/LikeAction';
-import { PostByline } from '@/components/post/PostByline';
-import { Card, FootAction } from '@/components/ui';
-import { darkColors, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { visibilityLabelOf } from '@/components/post/PostByline';
+import { Card, formatRelative } from '@/components/ui';
+import { darkColors, hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 포스터 사진 높이(px) — 카드 머리를 채우고 그 위에 표제까지 얹는다. */
 const POSTER_H = 208;
+/** 발치 작성자 아바타(px) — 발치 한 줄(44pt) 안에 들어가는 작은 크기. */
+const FOOT_AVATAR = 28;
 
 /**
- * 독후감 카드 — 광장 피드·책별 목록·내 독후감이 같은 카드를 쓴다.
+ * 독후감 카드 — 광장 피드·내 독후감이 같은 카드를 쓴다.
  *
- * '포스터' 꼴이다 — 첫 사진이 카드 머리를 통째로 채우고, 아래로 깔린 그라데이션 위에
- * 책 이름과 표제를 얹는다. 표지는 사진 오른쪽 위에 붙인 것처럼 걸친다. 그 아래로
- * 발췌 세 줄, 작성자 줄, 발치 액션이 온다.
+ * 머리는 '포스터'다 — 첫 사진이 카드 머리를 통째로 채우고, 아래로 깔린 그라데이션 위에
+ * 책 이름과 표제를 얹는다. 표지는 사진 오른쪽 위에 붙인 것처럼 걸친다. 사진이 없는 글은
+ * 포스터 자리를 검은 판으로 남기지 않고 표지를 세운 짧은 머리판으로 갈아 끼운다(PosterHead).
+ * 그 아래는 발췌 두 줄과, 머리카락 선으로 끊은 발치 한 줄(작성자 · 올린 때 … 조회 · 좋아요)이다.
+ * 카드는 기울이지 않는다 — 사진이 큰 카드라 기울이면 사진 모서리가 들쭉날쭉해 보인다.
  *
- * 사진이 없는 글은 포스터 자리를 검은 판으로 남기지 않는다 — 표지를 세운 짧은
- * 머리판으로 갈아 끼워 카드 키를 줄인다(아래 PosterHead 참고).
- *
- * 본문 행만 눌러 상세로 가고 푸터는 그 형제다 — 웹에서 버튼 안에 버튼이 들어가면 안 되기 때문이다.
+ * 머리·발췌만 눌러 상세로 가고 발치는 그 형제다 — 웹에서 버튼 안에 버튼이 들어가면 안 되기 때문이다.
  * 삭제는 여기 없다(상세에서만) — 목록에서 실수로 지우는 일을 만들지 않는다.
  */
-export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor, showVisibility = false }: {
+export function PostCard({ post, onOpen, onLike, onOpenAuthor, showVisibility = false }: {
   post: Post;
-  /** 카드 회전(도) — 붙여 둔 티를 내되 읽기를 방해하지 않을 만큼만. */
-  tilt: number;
   onOpen: () => void;
   onLike: () => void;
-  /** 있으면 푸터 오른쪽에 '책 보기 ›'. 책 없는 글에는 넘기지 않는다. */
-  onOpenBook?: () => void;
-  /** 있으면 작성자 줄을 눌러 유저 마이페이지로 (§14.1 — 피드에서 사람으로). */
+  /** 있으면 발치의 작성자를 눌러 유저 마이페이지로 (§14.1 — 피드에서 사람으로). */
   onOpenAuthor?: () => void;
-  /** 내 독후감처럼 공개 범위를 밝혀야 하는 목록에서만 켠다 — 작성자 줄 메타에 붙는다. */
+  /** 내 독후감처럼 공개 범위를 밝혀야 하는 목록에서만 켠다 — 발치의 올린 때 옆에 붙는다. */
   showVisibility?: boolean;
 }) {
   const { colors } = useTheme();
+  const when = formatRelative(post.publishedAt ?? post.createdAt);
+  const visibility = visibilityLabelOf(post, showVisibility);
 
   return (
-    <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
+    <Card style={styles.card}>
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="독후감 상세">
         <PosterHead post={post} />
         {post.excerpt.length > 0 ? (
-          <View style={styles.below}>
-            <Text numberOfLines={3} style={[typeScale.body, styles.excerpt, { color: colors.textMuted }]}>
-              {post.excerpt}
-            </Text>
-          </View>
+          <Text numberOfLines={2} style={[typeScale.body, styles.excerpt, { color: colors.textMuted }]}>
+            {post.excerpt}
+          </Text>
         ) : null}
       </Pressable>
 
-      {/* 카드가 사진을 물고 있어 패딩이 0 이다 — 활자 쪽만 제 여백을 갖는다. */}
-      <View style={styles.pad}>
-        <PostByline post={post} showVisibility={showVisibility} onPress={onOpenAuthor} />
-
-        <View style={styles.footRow}>
-          <LikeAction count={post.likeCount} liked={post.likedByMe} onPress={onLike} />
-          {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
-          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
-          {onOpenBook ? (
-            <View style={styles.footRight}>
-              <FootAction
-                label="책 보기"
-                kind="nav"
-                onPress={onOpenBook}
-                tone="accent"
-                accessibilityLabel={`${post.bookTitle ?? '책'} 상세`}
-              />
-            </View>
-          ) : null}
-        </View>
+      <View style={[styles.foot, { borderTopColor: colors.line }]}>
+        {/* 작성자를 누르면 그 사람의 마이페이지로 — 팔로우는 거기서 한다. */}
+        <Pressable
+          onPress={onOpenAuthor}
+          disabled={!onOpenAuthor}
+          accessibilityRole={onOpenAuthor ? 'button' : undefined}
+          accessibilityLabel={onOpenAuthor ? `${post.authorNickname} 프로필 열기` : undefined}
+          style={({ pressed }) => [styles.author, pressed ? pressedStyle : null]}
+        >
+          <Avatar uri={post.authorAvatarUrl} nickname={post.authorNickname} size={FOOT_AVATAR} />
+          <Text numberOfLines={1} style={[typeScale.label, styles.nickname, { color: colors.text }]}>
+            {post.authorNickname}
+          </Text>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
+            {visibility ? `${when} · ${visibility}` : when}
+          </Text>
+        </Pressable>
+        {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
+        <Text style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
+        <LikeAction count={post.likeCount} liked={post.likedByMe} onPress={onLike} />
       </View>
     </Card>
   );
@@ -148,7 +146,8 @@ function PosterHead({ post }: { post: Post }) {
 
 const styles = StyleSheet.create({
   // 사진이 카드 모서리까지 차오르도록 패딩을 0 으로 둔다 — Card 의 overflow:hidden 이 모서리를 깎는다.
-  card: { gap: spacing.md, padding: 0 },
+  // 칸 사이는 각 칸이 제 여백으로 띄운다.
+  card: { gap: 0, padding: 0 },
 
   poster: { height: POSTER_H, justifyContent: 'flex-end' },
   // 아래 절반만 덮는다 — 사진 윗부분은 그대로 보인다.
@@ -177,19 +176,20 @@ const styles = StyleSheet.create({
   plainHeadText: { flex: 1, gap: spacing.xs },
 
   title: { fontSize: 23, lineHeight: 31 },
-  below: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  excerpt: { fontSize: 16, lineHeight: 25 },
-  pad: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
+  excerpt: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, fontSize: 15, lineHeight: 23 },
 
-  // 좋아요·조회·책 보기 — 댓글은 없다(§14.1). 숫자가 커지면 한 줄에 못 담는다.
-  // Card 가 overflow:hidden 이라 넘치면 소리 없이 잘리므로, 넘칠 때만 다음 줄로 내린다.
-  // 줄 사이(rowGap)는 액션의 음수 세로 마진(-6·-6)만큼 먹히므로 한 단계 크게 잡는다.
-  footRow: {
+  // 발치 한 줄 — 머리카락 선으로 발췌와 끊는다. 작성자 쪽이 줄어들고 조회·좋아요는 제 폭을 지킨다.
+  foot: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    columnGap: spacing.lg,
-    rowGap: spacing.xl,
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 6,
+    borderTopWidth: hairline,
   },
-  footRight: { marginLeft: 'auto' },
+  // 작성자 — 44pt 상자로 키우고 같은 만큼 음수 마진으로 되돌려 발치 높이는 그대로 둔다.
+  author: { flex: 1, minWidth: 0, minHeight: 44, marginVertical: -6, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  nickname: { flexShrink: 1 },
+  meta: { fontSize: 10, letterSpacing: 0.4 },
 });

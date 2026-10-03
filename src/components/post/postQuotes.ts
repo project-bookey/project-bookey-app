@@ -1,5 +1,7 @@
 import type { BookQuote, Post } from '@/api/types';
 
+import { parsePhotoLine, type PhotoRef } from './postPhotos';
+
 /**
  * 독후감 본문 안의 문장 조각.
  *
@@ -17,7 +19,8 @@ import type { BookQuote, Post } from '@/api/types';
 
 export type BodySegment =
   | { kind: 'text'; text: string }
-  | { kind: 'quote'; text: string; source?: string };
+  | { kind: 'quote'; text: string; source?: string }
+  | { kind: 'photo'; ref: PhotoRef };
 
 /**
  * 조각 줄 — 줄 맨 앞의 `>` 만. 들여 쓴 `>`(목록 항목 안의 인용 등)는 조각으로 떼어 내지 않고 마크다운에 맡긴다 —
@@ -110,13 +113,14 @@ function toQuote(lines: string[]): BodySegment | null {
 }
 
 /**
- * 본문을 글 조각과 문장 조각으로 쪼갠다. 빈 글 조각과 빈 문장 조각은 버린다.
+ * 본문을 글 조각·문장 조각·사진으로 쪼갠다. 빈 글 조각과 빈 문장 조각은 버린다.
+ * 사진은 제 줄 하나가 통째로 사진 표시일 때만 사진이다(postPhotos) — 글 사이에 그 자리 그대로 선다.
  *
  * 마크다운 파서에 태우기 전에 쪼갠다 — 문장은 책에서 옮겨 적은 글자 그대로 보여야 해서(`*`·`1.` 같은 글자가
  * 강조·목록으로 바뀌면 안 된다) 조각 안은 마크다운으로 읽지 않는다. 코드 펜스 안의 `>` 는 조각이 아니다.
  * 마크다운의 '게으른 이어짐'(`>` 없이 이어지는 줄)은 조각에 넣지 않는다 — 그 줄부터는 다시 글이다.
  */
-export function splitQuoteBlocks(md: string): BodySegment[] {
+export function splitBodyBlocks(md: string): BodySegment[] {
   const segments: BodySegment[] = [];
   let text: string[] = [];
   let quote: string[] | null = null;
@@ -147,6 +151,12 @@ export function splitQuoteBlocks(md: string): BodySegment[] {
       continue;
     }
     flushQuote();
+    const photo = parsePhotoLine(line);
+    if (photo) {
+      flushText();
+      segments.push({ kind: 'photo', ref: photo });
+      continue;
+    }
     fence = FENCE_OPEN.exec(line)?.[1] ?? null;
     text.push(line);
   }

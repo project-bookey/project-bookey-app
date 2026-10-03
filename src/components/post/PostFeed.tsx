@@ -1,5 +1,4 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import type { ReactElement } from 'react';
 
 import { postApi } from '@/api/endpoints';
@@ -17,8 +16,6 @@ const PAGE_SIZE = 10;
  * 목록의 뼈대(스켈레톤·빈 상태·무한 스크롤·부분 실패 재시도)는 '내 독후감'과 나눠 쓴다(PostList).
  */
 export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactElement }) {
-  const router = useRouter();
-
   const feed = useInfiniteQuery({
     queryKey: postFeedKey,
     queryFn: ({ pageParam }) => postApi.feed('HOT', pageParam, PAGE_SIZE),
@@ -31,7 +28,6 @@ export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactEl
     <PostList
       query={feed}
       ListHeaderComponent={ListHeaderComponent}
-      onOpenBook={(bookId) => router.push(`/book/${bookId}`)}
       errorTitle="독후감을 불러오지 못했어요"
       emptyTitle="아직 독후감이 없어요"
       emptyDescription="첫 독후감을 남겨보세요."

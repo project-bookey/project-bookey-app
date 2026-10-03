@@ -10,10 +10,16 @@ import { IMAGE_PICKER_OPTIONS, prepareImage } from '@/api/upload';
 /** 글 하나에 붙일 수 있는 사진 장수 — 서버 상한과 같은 값. */
 export const POST_IMAGE_MAX = 10;
 
-/** 사진 타일 하나 — 고른 직후엔 로컬 uri 로 그리고, 올라가면 서버가 준 image 를 든다. */
+/**
+ * 사진 타일 하나 — 고른 직후엔 로컬 uri 로 그리고, 올라가면 서버가 준 image 를 든다.
+ * key 는 본문의 사진 줄(`upload:<key>`)에 그대로 들어가므로 영문·숫자·`-`·`_` 만 쓴다(postPhotos).
+ */
 export type PhotoUpload = {
   key: string;
   localUri?: string;
+  /** 고른 파일의 크기 — 올라가기 전 미리보기가 비율을 지키는 데 쓴다. */
+  width?: number;
+  height?: number;
   status: 'uploading' | 'done' | 'failed';
   image?: PostImage;
 };
@@ -40,7 +46,8 @@ const STORAGE_DISABLED = 'STORAGE_DISABLED';
  */
 export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   photos: PhotoUpload[];
-  pick: () => Promise<void>;
+  /** 사진을 골라 올리기 시작한다 — 고른 타일의 key 를 곧바로 돌려준다(올라가기를 기다리지 않는다). */
+  pick: () => Promise<string[]>;
   retry: (key: string) => void;
   remove: (key: string) => void;
   /** 올라가는 중인 사진이 하나라도 있으면 참. */
@@ -59,7 +66,7 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   );
   // 다시 올리기용 원본 자산 — 렌더와 무관하니 상태에 두지 않는다.
   const assets = useRef(new Map<string, PickedAsset>());
-  // 같은 파일을 두 번 골라도 키가 겹치지 않게 순번을 붙인다.
+  // 타일 키의 순번 — 같은 파일을 두 번 골라도 키가 겹치지 않는다.
   const seq = useRef(0);
   // 화면을 떠난 뒤 도착한 업로드 결과는 버린다. 웹은 고른 파일의 objectURL 도 이때 돌려준다.
   const alive = useRef(true);
@@ -107,10 +114,10 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
     }
   }, [patch]);
 
-  const pick = useCallback(async () => {
+  const pick = useCallback(async (): Promise<string[]> => {
     // 고르기 창이 이미 떠 있으면 무시한다 — 창이 겹치면 남은 장수 계산이 어긋난다.
-    if (pickingRef.current) return;
-    if (max - count.current <= 0) return;
+    if (pickingRef.current) return [];
+    if (max - count.current <= 0) return [];
     pickingRef.current = true;
     setPicking(true);
     // 창이 닫히는 순간 잠금을 푼다 — 올라가는 동안에도 더 고를 수 있어야 한다.
@@ -125,7 +132,7 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
           if (alive.current) setNotice(PERMISSION_NOTICE);
-          return;
+          return [];
         }
       }
       if (alive.current) setNotice(null);
@@ -133,20 +140,23 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
         ...IMAGE_PICKER_OPTIONS,
         selectionLimit: max - count.current,
       });
-      if (result.canceled) return;
+      if (result.canceled) return [];
       // 웹 파일 창은 selectionLimit 을 모른다 — 남은 장수만큼만 받는다.
       const chosen = result.assets.slice(0, Math.max(0, max - count.current));
-      if (chosen.length === 0) return;
+      if (chosen.length === 0) return [];
       tiles = chosen.map((asset): PhotoUpload => {
-        const key = `${asset.uri}#${seq.current++}`;
+        // 같은 파일을 두 번 골라도 겹치지 않는 순번 키 — 본문 사진 줄에 들어가도 되는 글자만 쓴다.
+        const key = `p${seq.current++}`;
         assets.current.set(key, { uri: asset.uri, width: asset.width, height: asset.height });
-        return { key, localUri: asset.uri, status: 'uploading' };
+        return { key, localUri: asset.uri, width: asset.width, height: asset.height, status: 'uploading' };
       });
       setPhotos((prev) => [...prev, ...tiles]);
     } finally {
       release();
     }
-    await Promise.all(tiles.map((tile) => upload(tile.key, assets.current.get(tile.key)!)));
+    // 올리기는 기다리지 않는다 — 부르는 쪽이 key 로 본문에 자리를 먼저 잡고, 타일은 제각기 올라간다.
+    for (const tile of tiles) void upload(tile.key, assets.current.get(tile.key)!);
+    return tiles.map((tile) => tile.key);
   }, [max, upload]);
 
   const retry = useCallback((key: string) => {

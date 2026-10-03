@@ -1,22 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
-import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { PaperScreen, SubHeader } from '@/components/collage';
 import { LikeAction } from '@/components/post/LikeAction';
 import { PostBody } from '@/components/post/PostBody';
 import { PostByline } from '@/components/post/PostByline';
+import { PostPhoto, type PhotoSource } from '@/components/post/PostPhoto';
+import { photoIdsIn, type PhotoRef } from '@/components/post/postPhotos';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { EmptyState, FootAction, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 독후감 상세 — 광장 독후감 카드·책 상세·내 독후감에서 들어온다.
@@ -126,12 +128,10 @@ export default function PostDetailScreen() {
   );
 }
 
-/** 사진 한 변(px) — 인화지를 가로로 늘어놓은 크기. 확대는 없다. */
-const PHOTO = 160;
-
 /**
- * 글 한 편 — 스레드의 header 로 들어간다.
- * 카드에 넣지 않고 종이 위에 바로 펼친다 — 긴 글이라 상자보다 지면이 읽기 편하고, 기울인 표지·사진의 그림자도 잘리지 않는다.
+ * 글 한 편 — 표제(책 · 제목) · 바이라인 · 본문 · 액션 행.
+ * 카드에 넣지 않고 종이 위에 반듯하게 펼친다 — 긴 글이라 상자보다 지면이 읽기 편하다. 기울이는 것은 없다.
+ * 사진은 따로 모아 두지 않는다 — 글을 쓰다 올린 자리(본문의 사진 줄)에 그대로 선다.
  */
 function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postcardOpen, onTogglePostcard, onClosePostcard }: {
   post: Post;
@@ -151,40 +151,45 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
 }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const hasBook = post.bookId != null;
   // 옛 글이 밑줄로 엮어 둔 문장(표시 자리·글 끝)도 본문의 문장 조각으로 그린다 — 밑줄 상세로 가는 길은 없다.
   const body = useMemo(() => postBodyOf(post).text, [post]);
+  // 본문의 사진 줄이 가리키는 사진과, 본문에 자리가 없는 사진(사진을 따로 붙이던 옛 글).
+  const { photoOf, loose } = useMemo(() => {
+    const byId = new Map(post.images.map((image) => [image.id, image] as const));
+    const placed = new Set(photoIdsIn(body));
+    return {
+      photoOf: (ref: PhotoRef): PhotoSource | null => {
+        const image = ref.kind === 'image' ? byId.get(ref.id) : undefined;
+        return image ? { uri: image.url, width: image.width, height: image.height } : null;
+      },
+      loose: post.images.filter((image) => !placed.has(image.id)),
+    };
+  }, [post.images, body]);
 
   return (
     <View style={styles.article}>
-      {/* ① 히어로 — 책에 매인 글은 표지를 세우고 제목 아래 책으로 가는 길을 둔다 */}
-      <View style={styles.hero}>
-        {hasBook ? (
-          <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={72} tilt={-3} entering={false} />
+      {/* ① 표제 — 책으로 가는 길을 제목 위에 한 줄로, 그 아래 제목 */}
+      <View style={styles.heading}>
+        {post.bookId != null ? (
+          <Pressable
+            onPress={() => router.push(`/book/${post.bookId}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`${post.bookTitle ?? '책'} 상세`}
+            style={({ pressed }) => [styles.inlineLink, pressed ? pressedStyle : null]}
+          >
+            <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.accent }]}>
+              {linkLabel(post.bookTitle ?? '책')}
+            </Text>
+          </Pressable>
         ) : null}
-        <View style={styles.heroText}>
-          <Text numberOfLines={3} style={[styles.title, { color: colors.text }]}>{post.title}</Text>
-          {hasBook ? (
-            <Pressable
-              onPress={() => router.push(`/book/${post.bookId}`)}
-              accessibilityRole="button"
-              accessibilityLabel={`${post.bookTitle} 상세`}
-              style={({ pressed }) => [styles.inlineLink, pressed ? pressedStyle : null]}
-            >
-              <Text numberOfLines={1} style={[typeScale.monoLabel, styles.inlineLinkText, { color: colors.accent }]}>
-                {linkLabel(post.bookTitle ?? '책')}
-              </Text>
-            </Pressable>
-          ) : (
-            <Text style={[typeScale.monoLabel, styles.inlineLinkText, { color: colors.textFaint }]}>책 없음</Text>
-          )}
-        </View>
+        <Text style={[styles.title, { color: colors.text }]}>{post.title}</Text>
       </View>
 
-      {/* ② 바이라인 — 작성자 · 올린 때. 공개 범위는 메타에 붙인다:
+      {/* ② 바이라인 — 작성자 · 올린 때 · 조회. 공개 범위도 메타에 붙인다:
           클럽만 글은 누가 보든 밝히고(보는 사람도 그 클럽 멤버다), 비공개·링크는 본인에게만. 내 이름은 누르지 않는다. */}
       <PostByline
         post={post}
+        showViews
         showVisibility={post.mine || post.visibility === 'CLUB'}
         onPress={post.mine ? undefined : () => router.push(`/user/${post.authorId}`)}
       />
@@ -197,46 +202,41 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
           accessibilityLabel={`${post.clubName} 클럽으로 가기`}
           style={({ pressed }) => [styles.inlineLink, pressed ? pressedStyle : null]}
         >
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.inlineLinkText, { color: colors.textMuted }]}>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.textMuted }]}>
             {linkLabel(`클럽 · ${post.clubName}`)}
           </Text>
         </Pressable>
       ) : null}
 
-      {/* ③ 사진 — 인화지를 가로로 늘어놓는다. 번갈아 살짝 기울여 붙인 티를 낸다 */}
-      {post.images.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photos}>
-          {post.images.map((image, i) => (
-            <Image
+      {/* ③ 본문 앞 사진 — 본문에 자리가 없는 사진만(사진을 따로 붙이던 옛 글). 예전처럼 본문 앞에 둔다 */}
+      {loose.length > 0 ? (
+        <View style={styles.loose}>
+          {loose.map((image, i) => (
+            <PostPhoto
               key={image.id}
-              source={{ uri: image.url }}
-              resizeMode="cover"
-              accessibilityLabel={`사진 ${i + 1}/${post.images.length}`}
-              style={[
-                styles.photo,
-                { borderColor: colors.line, transform: [{ rotate: `${i % 2 === 0 ? -1.5 : 1.5}deg` }] },
-              ]}
+              source={{ uri: image.url, width: image.width, height: image.height }}
+              label={`사진 ${i + 1}/${loose.length}`}
             />
           ))}
-        </ScrollView>
+        </View>
       ) : null}
 
-      {/* ④ 본문 — 글 사이에 옮겨 적은 문장 조각이 끼어든다 */}
-      <PostBody md={body} />
+      {/* ④ 본문 — 글 사이에 사진과 옮겨 적은 문장 조각이 쓴 자리 그대로 끼어든다 */}
+      <PostBody md={body} photoOf={photoOf} />
 
-      {/* ⑤ 액션 행 — 독후감 카드 푸터와 같은 배치·같은 하트. 댓글은 없다(§14.1) */}
+      {/* ⑤ 액션 행 — 왼쪽 좋아요(카드 발치와 같은 하트), 오른쪽 이 글로 할 일. 조회는 바이라인에 있다. 댓글은 없다(§14.1) */}
       <View style={styles.footRow}>
         <LikeAction count={post.likeCount} liked={post.likedByMe} onPress={onLike} />
-        {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
         {/* 엽서 칸이 열리면 그 안의 '엽서 보내기'가 주요 버튼이다 — 같은 라벨이 둘 보이지 않게 여기는 '닫기'로. */}
         {onTogglePostcard ? (
-          <FootAction
-            label={postcardOpen ? '엽서 닫기' : '엽서 보내기'}
-            onPress={onTogglePostcard}
-            tone={postcardOpen ? 'muted' : 'accent'}
-            accessibilityLabel={postcardOpen ? '엽서 쓰기 닫기' : `${post.authorNickname}에게 엽서 보내기`}
-          />
+          <View style={styles.footRight}>
+            <FootAction
+              label={postcardOpen ? '엽서 닫기' : '엽서 보내기'}
+              onPress={onTogglePostcard}
+              tone={postcardOpen ? 'muted' : 'accent'}
+              accessibilityLabel={postcardOpen ? '엽서 쓰기 닫기' : `${post.authorNickname}에게 엽서 보내기`}
+            />
+          </View>
         ) : null}
         {onDelete || onEdit ? (
           <View style={styles.footRight}>
@@ -275,21 +275,15 @@ const styles = StyleSheet.create({
   skeleton: { height: 240, borderRadius: radius.md },
 
   article: { gap: spacing.lg },
-  // 기울인 표지가 왼쪽·위로 삐져나오는 만큼 숨을 둔다.
-  hero: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg, paddingLeft: spacing.xs, paddingTop: spacing.xs },
-  heroText: { flex: 1, gap: spacing.xs },
-  // 표제 크기는 클럽 홈 표제와 같다.
-  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
-  // 모노 한 줄 링크(책·클럽) — 13px 활자라 글자 상자만으로는 손가락이 닿지 않는다. 44pt 상자로 키우고
+  // 책 링크와 제목은 한 묶음 — 그 사이는 묶음 안 간격.
+  heading: { gap: spacing.xs },
+  title: { ...typeScale.displaySerif, fontSize: 26, lineHeight: 34 },
+  // 모노 한 줄 링크(책·클럽) — 11px 활자라 글자 상자만으로는 손가락이 닿지 않는다. 44pt 상자로 키우고
   // 같은 만큼 음수 마진으로 되돌려 둘레의 리듬은 그대로 둔다.
   inlineLink: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginVertical: -spacing.md },
-  inlineLinkText: { fontSize: 13, letterSpacing: 0.4 },
+  // 본문 앞 사진끼리는 본문 블록 사이와 같은 간격.
+  loose: { gap: spacing.md },
 
-  // 기울인 인화지 모서리가 잘리지 않게 사방으로 숨을 둔다.
-  photos: { gap: spacing.md, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs },
-  photo: { width: PHOTO, height: PHOTO, borderRadius: radius.sm, borderWidth: hairline },
-
-  // 카드 푸터와 같은 간격.
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에, 터치 상자가 sm 이상 떨어지게 xl 간격.
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
