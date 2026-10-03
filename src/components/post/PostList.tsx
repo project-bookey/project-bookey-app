@@ -154,6 +154,6 @@ const styles = StyleSheet.create({
   skeletonList: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   skeleton: { height: 160, borderRadius: radius.md },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
-  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다.
-  retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
+  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
+  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

@@ -61,9 +61,9 @@ class CollageRenderer extends Renderer implements RendererInterface {
   }
 
   blockquote(children: ReactNode[]): ReactNode {
-    const { text, textMuted, accent } = this.colors;
+    const { text, textMuted, lineStrong } = this.colors;
     return (
-      <View key={this.getKey()} style={[styles.blockquote, { borderLeftColor: accent }]}>
+      <View key={this.getKey()} style={[styles.blockquote, { borderLeftColor: lineStrong }]}>
         {children.map((child) => tintText(child, text, textMuted))}
       </View>
     );
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   em: { fontStyle: 'italic' },
   del: { textDecorationLine: 'line-through' },
   link: { textDecorationLine: 'underline' },
-  // 문장 조각(PostBody)과 같은 왼쪽 악센트 선.
+  // 문장 조각(PostBody)과 같은 왼쪽 회색 선.
   blockquote: { borderLeftWidth: 2, paddingLeft: spacing.md, gap: spacing.md },
   list: { gap: spacing.xs },
   listRow: { flexDirection: 'row', alignItems: 'flex-start' },

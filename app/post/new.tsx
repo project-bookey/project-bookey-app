@@ -248,7 +248,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 accessibilityLabel="책 빼기"
                 style={({ pressed }) => [styles.unpick, pressed ? pressedStyle : null]}
               >
-                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 빼기 ×</Text>
+                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 빼기</Text>
               </Pressable>
             ) : null}
           </View>
@@ -295,7 +295,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                   placeholderTextColor={colors.textFaint}
                   accessibilityLabel="본문"
                   style={[styles.bodyInput, {
-                    backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
+                    backgroundColor: colors.surface, borderColor: colors.line, color: colors.text,
                   }]}
                 />
                 {/* 옛 글을 열었을 때만 — 아래에 모아 두던 밑줄을 본문 끝으로 옮겼다고 알린다. */}
@@ -360,7 +360,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
           ]}
         >
           {errorMessage ? (
-            <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
+            <Text style={[typeScale.caption, { color: colors.danger }]}>{errorMessage}</Text>
           ) : null}
           <View style={styles.bottomRow}>
             {mode === 'WRITE' ? (
@@ -410,7 +410,8 @@ const styles = StyleSheet.create({
   bottomRow: { flexDirection: 'row', alignItems: 'center' },
   // 화면의 유일한 악센트 — 띠 오른쪽 끝에 붙인다.
   submit: { marginLeft: 'auto' },
-  // 본문 칸 — 문장 넣기 시트의 문장 칸과 같은 활자(quote 토큰 15/25), 길게 쓰는 글이라 높이만 키운다.
+  // 본문 칸 — 바탕·테두리·모서리는 바로 위 제목 칸(Field)과 같다. 활자는 문장 넣기 시트의 문장 칸과 같은
+  // quote 토큰 15/25, 길게 쓰는 글이라 높이만 키운다.
   bodyInput: {
     minHeight: 220,
     borderWidth: hairline,

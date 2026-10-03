@@ -29,12 +29,12 @@ export function PostBody({ md }: { md: string }) {
   );
 }
 
-/** 문장 조각 하나 — 점선 메모 안 명조 문장 + 왼쪽 악센트 선 + 모노 출처 한 줄. */
+/** 문장 조각 하나 — 점선 메모 안 명조 문장 + 왼쪽 회색 선 + 모노 출처 한 줄. */
 function QuoteBlock({ text, source, rotate }: { text: string; source?: string; rotate: number }) {
   const { colors } = useTheme();
   return (
     <MemoScrap rotate={rotate}>
-      <Text selectable style={[styles.text, { color: colors.text, borderLeftColor: colors.accent }]}>
+      <Text selectable style={[styles.text, { color: colors.text, borderLeftColor: colors.lineStrong }]}>
         {text}
       </Text>
       {source ? (
@@ -48,8 +48,8 @@ function QuoteBlock({ text, source, rotate }: { text: string; source?: string; r
 
 const styles = StyleSheet.create({
   root: { gap: spacing.md },
-  // 인용 본문 — quote 토큰을 14/1.7 로 줄이고 왼쪽에 악센트 선을 세운다.
+  // 인용 본문 — quote 토큰을 14/1.7 로 줄이고 왼쪽에 선을 세운다. 선은 장식이라 회색이다(악센트는 행동·링크에만).
   text: { ...typeScale.quote, fontSize: 14, lineHeight: 24, borderLeftWidth: 2, paddingLeft: 11 },
-  // 출처 줄 — 9px 모노, 위 여백 sm.
-  source: { fontSize: 9, letterSpacing: 0.4, marginTop: spacing.sm },
+  // 출처 줄 — 10px 모노(앱의 메타 줄 최소 크기), 위 여백 sm.
+  source: { fontSize: 10, letterSpacing: 0.4, marginTop: spacing.sm },
 });

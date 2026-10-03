@@ -44,7 +44,8 @@ export function QuoteElement({ element, scale }: { element: QuoteEl; scale: numb
           lineHeight: fontSize * 1.65,
           color: colors.text,
           borderLeftWidth: Math.max(Q.bar * scale, 1),
-          borderLeftColor: colors.accent,
+          // 독후감 문장 조각과 같은 회색 선 — 장식에는 악센트를 쓰지 않는다.
+          borderLeftColor: colors.lineStrong,
           paddingLeft: Q.barGap * scale,
         }}
       >
