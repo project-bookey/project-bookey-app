@@ -16,7 +16,7 @@ export function AppTourOverlay() {
   const { colors } = useTheme();
   const userId = useAuth((state) => state.user?.id);
   const status = useAuth((state) => state.status);
-  const { active, step, startIfFirstLogin, next, stop, markSeen } = useAppTour();
+  const { active, step, startIfFirstLogin, next, prev, stop, markSeen } = useAppTour();
   const [rect, setRect] = useState<TourRect | null>(null);
   const item = APP_TOUR_STEPS[step];
 
@@ -87,6 +87,16 @@ export function AppTourOverlay() {
           >
             <Text style={[typeScale.label, { color: colors.textMuted }]}>건너뛰기</Text>
           </Pressable>
+          {/* 지난 설명을 다시 볼 길 — 앞으로만 갈 수 있는 둘러보기는 드물다(Jakob). 첫 단계엔 갈 곳이 없어 숨긴다. */}
+          {step > 0 ? (
+            <Pressable
+              onPress={prev}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.prev, { borderColor: colors.lineStrong }, pressed && pressedStyle]}
+            >
+              <Text style={[typeScale.label, { color: colors.text }]}>이전</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={() => { if (finish) void close(); else next(); }}
             accessibilityRole="button"
@@ -107,6 +117,15 @@ const styles = StyleSheet.create({
   tooltip: { position: 'absolute', borderWidth: hairline, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   title: { ...typeScale.titleSerif, fontSize: 20 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
-  skip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm },
+  // 건너뛰기는 왼쪽 끝으로 — 이전·다음 짝과 떨어뜨려 실수로 둘러보기를 끝내지 않게.
+  skip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm, marginRight: 'auto' },
+  prev: {
+    minWidth: 64,
+    minHeight: 44,
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   next: { minWidth: 82, minHeight: 44, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
 });

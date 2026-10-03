@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Eye, Heart } from 'lucide-react-native';
+import { Heart } from 'lucide-react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
@@ -88,7 +88,8 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
             onPress={onLike}
             accessibilityLabel={`좋아요 ${post.likeCount}`}
           />
-          <CardIconAction icon="eye" count={post.viewCount} accessibilityLabel={`조회 ${post.viewCount}`} />
+          {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
+          <Text style={[styles.viewCount, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
           <View style={styles.footRight}>
             {onOpenBook ? (
               <FootAction
@@ -107,8 +108,8 @@ export function PostCard({ post, tilt, onOpen, onLike, onOpenBook, onOpenAuthor,
   );
 }
 
-function CardIconAction({ icon, count, active = false, onPress, accessibilityLabel }: {
-  icon: 'heart' | 'eye';
+function CardIconAction({ count, active = false, onPress, accessibilityLabel }: {
+  icon: 'heart';
   count: number;
   active?: boolean;
   onPress?: () => void;
@@ -116,9 +117,7 @@ function CardIconAction({ icon, count, active = false, onPress, accessibilityLab
 }) {
   const { colors } = useTheme();
   const color = active ? colors.accent : colors.textMuted;
-  const glyph = icon === 'heart'
-    ? <Heart size={22} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />
-    : <Eye size={23} strokeWidth={2.1} color={color} />;
+  const glyph = <Heart size={22} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />;
   const content = (
     <>
       {glyph}
@@ -271,4 +270,5 @@ const styles = StyleSheet.create({
     marginVertical: -spacing.xs,
   },
   actionCount: { ...typeScale.monoNumeral, fontSize: 13 },
+  viewCount: { ...typeScale.monoLabel },
 });

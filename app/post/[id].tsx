@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Eye, Heart, Pencil, Trash2 } from 'lucide-react-native';
+import { Heart, Pencil, Trash2 } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
@@ -250,7 +250,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
           onPress={onLike}
           accessibilityLabel={`좋아요 ${post.likeCount}`}
         />
-        <DetailIconAction icon="eye" count={post.viewCount} accessibilityLabel={`조회 ${post.viewCount}`} />
+        {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
+        <Text style={[styles.viewCount, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
         {/* 엽서 칸이 열리면 그 안의 '엽서 보내기'가 주요 버튼이다 — 같은 라벨이 둘 보이지 않게 여기는 '닫기'로. */}
         {onTogglePostcard ? (
           <FootAction
@@ -293,7 +294,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
 }
 
 function DetailIconAction({ icon, count, caption, active = false, danger = false, onPress, accessibilityLabel }: {
-  icon: 'heart' | 'eye' | 'pencil' | 'trash';
+  icon: 'heart' | 'pencil' | 'trash';
   count?: number;
   /** 글리프 옆 글자 — 삭제 확인 상태의 '한 번 더'. */
   caption?: string;
@@ -306,11 +307,9 @@ function DetailIconAction({ icon, count, caption, active = false, danger = false
   const color = danger ? colors.danger : active ? colors.accent : colors.textMuted;
   const glyph = icon === 'heart'
     ? <Heart size={24} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />
-    : icon === 'eye'
-      ? <Eye size={25} strokeWidth={2.1} color={color} />
-      : icon === 'pencil'
-        ? <Pencil size={23} strokeWidth={2.1} color={color} />
-        : <Trash2 size={24} strokeWidth={2.1} color={color} />;
+    : icon === 'pencil'
+      ? <Pencil size={23} strokeWidth={2.1} color={color} />
+      : <Trash2 size={24} strokeWidth={2.1} color={color} />;
   const content = (
     <>
       {glyph}
@@ -383,4 +382,5 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actionCount: { ...typeScale.monoNumeral, fontSize: 14 },
+  viewCount: { ...typeScale.monoLabel },
 });
