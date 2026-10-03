@@ -67,18 +67,9 @@ export default function PostDetailScreen() {
     arm('post');
   };
 
-  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다.
-  const editAction = post.data?.mine ? (
-    <Pressable
-      onPress={() => router.push({ pathname: '/post/new', params: { id: String(postId) } })}
-      accessibilityRole="button"
-      accessibilityLabel="독후감 고치기"
-      hitSlop={8}
-      style={({ pressed }) => [styles.edit, pressed ? pressedStyle : null]}
-    >
-      <Pencil size={24} strokeWidth={2.2} color={colors.accent} />
-    </Pressable>
-  ) : undefined;
+  // 본인 글에만 '고치기' — 작성 화면을 수정 모드로 연다. 헤더가 아니라 '삭제' 옆(글 푸터)에 둔다:
+  // 내 글을 다루는 두 동작이 화면 양 끝으로 갈라져 있었다(UX 철칙 Proximity).
+  const openEdit = () => router.push({ pathname: '/post/new', params: { id: String(postId) } });
 
   const header = post.data ? (
     <PostArticle
@@ -87,6 +78,7 @@ export default function PostDetailScreen() {
       error={removeError}
       onLike={() => pressLike(postId)}
       onDelete={post.data.mine ? pressDeletePost : undefined}
+      onEdit={post.data.mine ? openEdit : undefined}
       postcardOpen={postcardOpen}
       onTogglePostcard={post.data.mine ? undefined : () => setPostcardOpen((open) => !open)}
       onClosePostcard={() => setPostcardOpen(false)}
@@ -113,7 +105,12 @@ export default function PostDetailScreen() {
         title="독후감을 불러오지 못했어요"
         description="잠시 후 다시 시도해 주세요."
         action={
-          <Pressable onPress={() => post.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
+          <Pressable
+            onPress={() => post.refetch()}
+            accessibilityRole="button"
+            accessibilityLabel="다시 시도"
+            style={({ pressed }) => [styles.retry, pressed ? pressedStyle : null]}
+          >
             <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
           </Pressable>
         }
@@ -123,7 +120,7 @@ export default function PostDetailScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="독후감" right={editAction} />
+      <SubHeader category="독후감" />
       <ScrollView contentContainerStyle={styles.screenBody}>
         {placeholder ?? header}
       </ScrollView>
@@ -138,7 +135,7 @@ const PHOTO = 160;
  * 글 한 편 — 스레드의 header 로 들어간다.
  * 카드에 넣지 않고 종이 위에 바로 펼친다 — 긴 글이라 상자보다 지면이 읽기 편하고, 기울인 표지·사진의 그림자도 잘리지 않는다.
  */
-function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, onTogglePostcard, onClosePostcard }: {
+function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postcardOpen, onTogglePostcard, onClosePostcard }: {
   post: Post;
   /** 삭제 재확인 상태 — 라벨이 '한 번 더'로 바뀐다. */
   confirming: boolean;
@@ -147,6 +144,8 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
   onLike: () => void;
   /** 본인 글에서만 넘긴다. */
   onDelete?: () => void;
+  /** 본인 글에서만 넘긴다 — 삭제 옆에 고치기를 둔다. */
+  onEdit?: () => void;
   postcardOpen: boolean;
   /** 남의 글에서만 넘긴다. */
   onTogglePostcard?: () => void;
@@ -252,24 +251,30 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
           accessibilityLabel={`좋아요 ${post.likeCount}`}
         />
         <DetailIconAction icon="eye" count={post.viewCount} accessibilityLabel={`조회 ${post.viewCount}`} />
+        {/* 엽서 칸이 열리면 그 안의 '엽서 보내기'가 주요 버튼이다 — 같은 라벨이 둘 보이지 않게 여기는 '닫기'로. */}
         {onTogglePostcard ? (
           <FootAction
-            label="엽서 보내기"
+            label={postcardOpen ? '엽서 닫기' : '엽서 보내기'}
             onPress={onTogglePostcard}
-            tone="accent"
-            accessibilityLabel={`${post.authorNickname}에게 엽서 보내기`}
+            tone={postcardOpen ? 'muted' : 'accent'}
+            accessibilityLabel={postcardOpen ? '엽서 쓰기 닫기' : `${post.authorNickname}에게 엽서 보내기`}
           />
         ) : null}
-        {onDelete ? (
+        {onDelete || onEdit ? (
           <View style={styles.footRight}>
+            {onEdit ? (
+              <DetailIconAction icon="pencil" onPress={onEdit} accessibilityLabel="독후감 고치기" />
+            ) : null}
             {/* 확인 상태를 색만으로 알리지 않는다 — 다른 삭제(댓글·엽서·채팅)처럼 '한 번 더'를 글자로 띄운다. */}
-            <DetailIconAction
-              icon="trash"
-              onPress={onDelete}
-              danger={confirming}
-              caption={confirming ? '한 번 더' : undefined}
-              accessibilityLabel={confirming ? '삭제 확인, 한 번 더 누르기' : '삭제'}
-            />
+            {onDelete ? (
+              <DetailIconAction
+                icon="trash"
+                onPress={onDelete}
+                danger={confirming}
+                caption={confirming ? '한 번 더' : undefined}
+                accessibilityLabel={confirming ? '삭제 확인, 한 번 더 누르기' : '삭제'}
+              />
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -288,7 +293,7 @@ function PostArticle({ post, confirming, error, onLike, onDelete, postcardOpen, 
 }
 
 function DetailIconAction({ icon, count, caption, active = false, danger = false, onPress, accessibilityLabel }: {
-  icon: 'heart' | 'eye' | 'trash';
+  icon: 'heart' | 'eye' | 'pencil' | 'trash';
   count?: number;
   /** 글리프 옆 글자 — 삭제 확인 상태의 '한 번 더'. */
   caption?: string;
@@ -303,7 +308,9 @@ function DetailIconAction({ icon, count, caption, active = false, danger = false
     ? <Heart size={24} strokeWidth={2.1} color={color} fill={active ? color : 'transparent'} />
     : icon === 'eye'
       ? <Eye size={25} strokeWidth={2.1} color={color} />
-      : <Trash2 size={24} strokeWidth={2.1} color={color} />;
+      : icon === 'pencil'
+        ? <Pencil size={23} strokeWidth={2.1} color={color} />
+        : <Trash2 size={24} strokeWidth={2.1} color={color} />;
   const content = (
     <>
       {glyph}
@@ -336,8 +343,6 @@ function DetailIconAction({ icon, count, caption, active = false, danger = false
 const styles = StyleSheet.create({
   screenBody: { padding: spacing.lg, paddingBottom: spacing.xxl },
   skeleton: { height: 240, borderRadius: radius.md },
-  // 헤더 우측 슬롯 — 웹은 hitSlop 을 무시하므로 여백으로 44px 상자를 만든다.
-  edit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   article: { gap: spacing.lg },
   // 기울인 표지가 왼쪽·위로 삐져나오는 만큼 숨을 둔다.
@@ -363,7 +368,10 @@ const styles = StyleSheet.create({
   clubLink: { alignSelf: 'flex-start', paddingVertical: spacing.xs, marginVertical: -spacing.xs },
 
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
-  footRight: { marginLeft: 'auto' },
+  // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에, 터치 상자(hitSlop 10)가 겹치지 않게 xl 간격.
+  footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
+  // 오류 상태의 다시 시도 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
+  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   iconAction: {
     minWidth: 44,
     minHeight: 44,
