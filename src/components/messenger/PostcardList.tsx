@@ -194,7 +194,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
               </Text>
             ) : null}
             <View style={styles.actions}>
-              <Button label="취소" variant="ghost" size="sm" onPress={() => setReplying(false)} />
+              <Button label="취소" variant="outline" size="sm" onPress={() => setReplying(false)} />
               <Button
                 label={card.stampAttached ? '무료로 답장' : '우표 1개로 답장'}
                 size="sm"
