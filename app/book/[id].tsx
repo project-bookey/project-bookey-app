@@ -511,17 +511,17 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
       accessibilityLabel="좋아요"
       style={[
         styles.likeButton,
-        // 켜짐은 잉크로 뒤집는다 — 악센트는 화면의 '독서 시작' 몫.
+        // 좋아요 켜짐은 초록 — 하트는 앱 전체에서 초록으로 둔다(사용자 결정 2026-10-03, CLAUDE.md 예외 목록).
         liked
-          ? { backgroundColor: colors.ink, borderColor: colors.ink }
+          ? { backgroundColor: colors.accent, borderColor: colors.accent }
           : { borderColor: colors.lineStrong },
         { opacity: like.isPending ? 0.6 : 1 },
       ]}
     >
-      <Text style={[styles.likeGlyph, { color: liked ? colors.onInk : colors.textMuted }]}>
+      <Text style={[styles.likeGlyph, { color: liked ? colors.onAccent : colors.textMuted }]}>
         {liked ? '♥' : '♡'}
       </Text>
-      <Text style={[typeScale.monoNumeral, { color: liked ? colors.onInk : colors.textMuted }]}>
+      <Text style={[typeScale.monoNumeral, { color: liked ? colors.onAccent : colors.textMuted }]}>
         {groupNumber(likeCount)}
       </Text>
     </Pressable>
