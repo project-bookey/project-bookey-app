@@ -1,11 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import type { ClubLogDayCount, ClubLogSummary, ReadingNow } from '@/api/types';
-import { StickyNote } from '@/components/collage';
-import { Button, formatDuration } from '@/components/ui';
+import type { ClubLogSummary, ReadingNow } from '@/api/types';
+import { Button } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
-import { dayOfMonth, weekdayLabel } from './dates';
+import { addDays, dayOfMonth, weekdayLabel } from './dates';
 
 /** 분 단위 경과 — '38분째'. 1분 미만은 '방금'. */
 function elapsedLabel(startedAt: string): string {
@@ -22,147 +21,56 @@ export function readersLabel(readers: ReadingNow[]): string {
   return `${readers[0].nickname} 님 외 ${readers.length - 1}명이`;
 }
 
-/** 지금 읽는 중 — 아바타 이니셜 겹침 + 문구 + (선택) 합류. 아무도 없으면 그리지 않는다. */
-export function ReadingNowCard({ readers, onJoin }: { readers: ReadingNow[]; onJoin?: () => void }) {
-  const { colors, cardShadow } = useTheme();
+/** 지금 읽는 중 — 소식 피드 맨 위의 한 줄. 점 · 문구 · 경과 · (선택) 합류. 아무도 없으면 그리지 않는다. */
+export function ReadingNowLine({ readers, onJoin }: { readers: ReadingNow[]; onJoin?: () => void }) {
+  const { colors } = useTheme();
   if (readers.length === 0) return null;
   const earliest = readers[0];
 
   return (
-    <View
-      style={[styles.nowCard, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}
-      accessibilityRole="summary"
-    >
-      <View style={styles.avatars}>
-        {readers.slice(0, 3).map((reader, i) => (
-          <View
-            key={reader.userId}
-            style={[
-              styles.avatar,
-              // 읽는 중 표시는 상태라 잉크 테두리 — 악센트는 화면의 CTA 몫.
-              { backgroundColor: colors.surfaceRaised, borderColor: colors.ink, marginLeft: i === 0 ? 0 : -8 },
-            ]}
-          >
-            <Text style={[typeScale.label, { color: colors.text, fontSize: 11 }]}>{reader.nickname.slice(0, 1)}</Text>
-          </View>
-        ))}
-      </View>
+    <View style={styles.nowLine} accessibilityRole="summary">
+      {/* 읽는 중 표시는 상태라 잉크 점 — 악센트는 화면의 CTA 몫. */}
+      <View style={[styles.liveDot, { backgroundColor: colors.ink }]} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[typeScale.label, { color: colors.text }]} numberOfLines={1}>
           {readersLabel(readers)} 지금 읽는 중
         </Text>
-        <Text style={[styles.monoCaption, { color: colors.textFaint }]}>{elapsedLabel(earliest.startedAt)}</Text>
+        <Text style={[styles.monoCaption, { color: colors.textMuted }]}>{elapsedLabel(earliest.startedAt)}</Text>
       </View>
       {onJoin ? <Button label="합류" size="sm" variant="outline" onPress={onJoin} /> : null}
     </View>
   );
 }
 
-/** 요일 스트립 — 조각 수만큼 점(최대 3), 고른 날은 잉크 반전 네모, 오늘 이후는 누를 수 없다. */
-export function WeekStrip({ days, selected, today, onSelect }: {
-  days: ClubLogDayCount[];
-  selected: string;
-  today: string;
-  onSelect: (date: string) => void;
-}) {
+/** '오늘' · '어제' · '10월 1일 수'. */
+export function feedDayLabel(date: string, today: string): string {
+  if (date === today) return '오늘';
+  if (date === addDays(today, -1)) return '어제';
+  return `${Number(date.slice(5, 7))}월 ${dayOfMonth(date)}일 ${weekdayLabel(date)}`;
+}
+
+/**
+ * 소식 피드의 날짜 구분 — 왼쪽 날짜, 가운데 괘선, 오른쪽 그날 합산('함께 212쪽 · 3명').
+ * 읽은 기록이 없는 날은 조각 수만.
+ */
+export function FeedDayHeader({ date, today, summary }: { date: string; today: string; summary: ClubLogSummary }) {
   const { colors } = useTheme();
+  const detail = summary.readerCount > 0
+    ? `함께 ${summary.pagesRead}쪽 · ${summary.readerCount}명`
+    : `조각 ${summary.logCount}개`;
   return (
-    <View style={styles.week}>
-      {days.map((day) => {
-        const active = day.date === selected;
-        const future = day.date > today;
-        const fg = active ? colors.onInk : future ? colors.textFaint : colors.textMuted;
-        return (
-          <Pressable
-            key={day.date}
-            onPress={() => onSelect(day.date)}
-            disabled={future}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active, disabled: future }}
-            accessibilityLabel={`${dayOfMonth(day.date)}일 조각 ${day.logCount}개`}
-            style={[styles.day, active && { backgroundColor: colors.ink }, future && { opacity: 0.4 }]}
-          >
-            <Text style={[styles.weekday, { color: active ? colors.onInk : colors.textFaint }]}>
-              {weekdayLabel(day.date)}
-            </Text>
-            <Text style={[styles.dayNumber, { color: fg }]}>{dayOfMonth(day.date)}</Text>
-            <View style={styles.dots}>
-              {Array.from({ length: Math.min(3, day.logCount) }, (_, i) => (
-                <View key={i} style={[styles.dot, { backgroundColor: active ? colors.onInk : colors.textMuted }]} />
-              ))}
-            </View>
-          </Pressable>
-        );
-      })}
+    <View style={styles.dayHead} accessibilityRole="header">
+      <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{feedDayLabel(date, today)}</Text>
+      <View style={[styles.dayRule, { backgroundColor: colors.line }]} />
+      <Text style={[styles.monoCaption, { color: colors.textMuted }]}>{detail}</Text>
     </View>
   );
 }
 
-/**
- * 오늘 합산 — '오늘 함께 212쪽 · 3명이 3시간 10분'. 읽은 기록이 없으면 조각 수만.
- * 기본은 민트 스티키, `ruled` 는 활자·괘선 판면용으로 잉크 괘선 아래 숫자만 세운다.
- */
-export function SummaryNote({ summary, label, rotate = -2, variant = 'sticky' }: {
-  summary: ClubLogSummary;
-  label: string;
-  rotate?: number;
-  variant?: 'sticky' | 'ruled';
-}) {
-  const { colors } = useTheme();
-  const detail = summary.readerCount > 0
-    ? `${summary.readerCount}명이 ${formatDuration(summary.durationSec)}`
-    : `조각 ${summary.logCount}개`;
-  if (variant === 'ruled') {
-    return (
-      <View style={[styles.ruledNote, { borderTopColor: colors.ink }]}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{label}</Text>
-        <Text style={[styles.notePages, { color: colors.text }]}>{summary.pagesRead}쪽</Text>
-        <Text style={[typeScale.caption, { color: colors.textMuted, fontSize: 11, lineHeight: 15 }]}>{detail}</Text>
-      </View>
-    );
-  }
-  return (
-    <StickyNote rotate={rotate}>
-      <Text style={[typeScale.monoEyebrow, { color: colors.onNote }]}>{label}</Text>
-      <Text style={[styles.notePages, { color: colors.onNote }]}>{summary.pagesRead}쪽</Text>
-      <Text style={[typeScale.caption, { color: colors.onNote, fontSize: 11, lineHeight: 15 }]}>{detail}</Text>
-    </StickyNote>
-  );
-}
-
 const styles = StyleSheet.create({
-  nowCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderWidth: hairline,
-    borderRadius: radius.lg,
-  },
-  avatars: { flexDirection: 'row' },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.round,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  nowLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44 },
+  liveDot: { width: 8, height: 8, borderRadius: radius.round },
   monoCaption: { fontFamily: mono.regular, fontSize: 11 },
-  week: { flexDirection: 'row', gap: spacing.xs },
-  day: {
-    flex: 1,
-    minHeight: 58,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    borderRadius: radius.sm,
-  },
-  weekday: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 1 },
-  dayNumber: { fontFamily: mono.semiBold, fontSize: 13 },
-  dots: { flexDirection: 'row', gap: 2, height: 4 },
-  dot: { width: 4, height: 4, borderRadius: radius.round },
-  notePages: { fontFamily: mono.semiBold, fontSize: 24, marginTop: spacing.xs },
-  ruledNote: { borderTopWidth: 2, paddingTop: spacing.sm, gap: 2 },
+  dayHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  dayRule: { flex: 1, height: hairline },
 });

@@ -25,12 +25,14 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
       return club('/club/[id]/log/week', typeof weekOf === 'string' ? { weekOf } : undefined);
     }
     case 'CLUB_NEW_POST': return club('/club/[id]');
-    case 'CLUB_NOTE_PAGE': return club('/club/[id]');
+    // 모임 노트는 클럽 홈 '모임' 탭의 모임 줄에 붙어 있다.
+    case 'CLUB_NOTE_PAGE': return club('/club/[id]', { tab: 'meetings' });
     case 'CLUB_ENDED': return club('/club/[id]/result');
-    case 'CLUB_CHECKPOINT_DUE':
+    // 순위·체크포인트 결과는 함께 읽는 사람과 체크포인트 격자가 있는 클럽 정보에서 본다.
     case 'CLUB_CHECKPOINT_RESULT':
     case 'CLUB_OVERTAKEN':
-    case 'CLUB_FALLBEHIND':
+    case 'CLUB_FALLBEHIND': return club('/club/[id]/info');
+    case 'CLUB_CHECKPOINT_DUE':
     case 'CLUB_NUDGE': return club('/club/[id]');
     case 'POST_LIKED':
     case 'POST_COMMENTED': return one('/post/[id]', 'postId');

@@ -24,7 +24,7 @@ const VISIBILITIES: { value: ClubVisibility; label: string; description: string 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * 클럽 설정 — 클럽을 연 사람(호스트)만. 목록의 '관리' 칩과 홈의 '관리'에서 들어온다.
+ * 클럽 설정 — 클럽을 연 사람(호스트)만. 목록의 '관리' 칩과 클럽 정보의 톱니에서 들어온다.
  * 멤버가 딥링크로 들어오면 클럽 홈으로 돌려보낸다(서버도 CLUB_NOT_HOST 로 막는다).
  */
 export default function ClubSettingsScreen() {
