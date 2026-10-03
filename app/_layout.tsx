@@ -83,6 +83,9 @@ export default function RootLayout() {
             <Stack.Screen name="bookmarks" options={{ title: '책갈피 구매' }} />
             <Stack.Screen name="wallet" options={{ title: '지갑' }} />
             <Stack.Screen name="settings" options={{ title: '설정' }} />
+            <Stack.Screen name="inquiry/index" options={{ title: '고객문의' }} />
+            <Stack.Screen name="inquiry/new" options={{ title: '문의하기' }} />
+            <Stack.Screen name="inquiry/[id]" options={{ title: '문의 내용' }} />
             <Stack.Screen name="subscription" options={{ title: '구독' }} />
             <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
             <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />

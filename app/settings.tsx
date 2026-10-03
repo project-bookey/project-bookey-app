@@ -156,6 +156,11 @@ export default function SettingsScreen() {
                 onPress={startTour}
               />
               <Button
+                label="고객문의"
+                variant="ghost"
+                onPress={() => router.push('/inquiry')}
+              />
+              <Button
                 label="개인정보처리방침"
                 variant="ghost"
                 onPress={() => void Linking.openURL(`${LEGAL_URL}#privacy`)}
@@ -165,8 +170,9 @@ export default function SettingsScreen() {
                 variant="ghost"
                 onPress={() => void Linking.openURL(`${LEGAL_URL}#terms`)}
               />
+              {/* 문의는 위 '고객문의'로 받는다 — 여기는 웹 안내문의 계정 삭제 절만 연다. */}
               <Button
-                label="고객지원 · 계정 삭제 안내"
+                label="계정 삭제 안내"
                 variant="ghost"
                 onPress={() => void Linking.openURL(`${LEGAL_URL}#deletion`)}
               />
