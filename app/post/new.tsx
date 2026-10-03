@@ -5,6 +5,7 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { bookApi, postApi } from '@/api/endpoints';
@@ -22,13 +23,13 @@ import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/po
 import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { Card, EmptyState, Eyebrow, Field, Segmented, linkLabel } from '@/components/ui';
+import { Button, Card, EmptyState, Eyebrow, Field, Segmented, linkLabel } from '@/components/ui';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 const TITLE_MAX = POST_TITLE_MAX;
-/** 하단 '문장' 띠의 대략 높이(36px 터치 상자 + 위아래 여백) — 본문 아래 여백을 이만큼 더 준다. */
-const QUOTE_BAR_HEIGHT = 60;
+/** 하단 띠의 대략 높이(46px 제출 버튼 + 위아래 여백) — 본문 아래 여백을 이만큼 더 준다. */
+const BOTTOM_BAR_HEIGHT = 70;
 
 /**
  * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글),
@@ -146,6 +147,7 @@ function Shell({ category, children }: { category: string; children: ReactNode }
 function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: PickedBook | null; clubId?: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const editing = post != null;
 
@@ -218,7 +220,6 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
       }
     },
   });
-  const disabled = !canSubmit || submit.isPending;
   const errorMessage = submit.isError && !submit.isPending
     ? submit.error instanceof ApiError ? submit.error.message : '올리지 못했어요 · 다시 시도'
     : null;
@@ -226,27 +227,10 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
   const visibilityChoices = visibilityOptions(inClub, post?.visibility);
 
   const submitLabel = editing ? '저장' : '올리기';
-  const submitPill = (
-    <Pressable
-      onPress={() => submit.mutate()}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={submitLabel}
-      accessibilityState={{ disabled }}
-      style={[styles.submit, { backgroundColor: colors.accent, opacity: disabled ? 0.35 : 1 }]}
-    >
-      <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
-        {submit.isPending ? (editing ? '저장 중…' : '올리는 중…') : submitLabel}
-      </Text>
-    </Pressable>
-  );
 
   return (
     <PaperScreen>
-      <SubHeader category={editing ? '독후감 고치기' : '독후감 쓰기'} right={submitPill} />
-      {errorMessage ? (
-        <Text style={[typeScale.caption, styles.error, { color: colors.warn }]}>{errorMessage}</Text>
-      ) : null}
+      <SubHeader category={editing ? '독후감 고치기' : '독후감 쓰기'} />
 
       {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(댓글 스레드와 같은 이유). */}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -262,9 +246,9 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 onPress={() => picker.pick(null)}
                 accessibilityRole="button"
                 accessibilityLabel="책 빼기"
-                style={styles.unpick}
+                style={({ pressed }) => [styles.unpick, pressed ? pressedStyle : null]}
               >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>책 빼기 ×</Text>
+                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 빼기 ×</Text>
               </Pressable>
             ) : null}
           </View>
@@ -360,25 +344,49 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
         </ScrollView>
 
         {/*
-          커서 자리에 문장을 끼워 넣는 띠 — 댓글 입력 바와 같은 자리(ScrollView 의 형제)라
-          키보드가 뜨면 그 위에 붙고, 글이 길어져도 늘 손에 닿는다. 문장은 시트에서 그 자리에서 옮겨 적는다.
-          미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
+          하단 띠 — 댓글 입력 바와 같은 자리(ScrollView 의 형제)라 키보드가 뜨면 그 위에 붙고,
+          글이 길어져도 늘 손에 닿는다. 제출은 엄지가 닿는 여기 오른쪽에 둔다(UX 철칙 Fitts).
+          '+ 문장'은 커서 자리에 문장을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
+          실패 안내도 제출 버튼 바로 위에 붙인다(UX 철칙 Proximity).
         */}
-        {mode === 'WRITE' ? (
-          <View style={[styles.quoteBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
-            <Pressable
-              onPress={() => setQuoting(true)}
-              accessibilityRole="button"
-              accessibilityLabel="문장 넣기"
-              style={({ pressed }) => [styles.insertQuote, pressed ? pressedStyle : null]}
-            >
-              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 문장</Text>
-            </Pressable>
-            <Text numberOfLines={1} style={[typeScale.caption, styles.quoteHint, { color: colors.textFaint }]}>
-              책 속 문장을 옮겨 적어 넣어요
-            </Text>
+        <View
+          style={[
+            styles.bottomBar,
+            {
+              backgroundColor: colors.bg,
+              borderTopColor: colors.line,
+              paddingBottom: Math.max(insets.bottom, spacing.lg),
+            },
+          ]}
+        >
+          {errorMessage ? (
+            <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
+          ) : null}
+          <View style={styles.bottomRow}>
+            {mode === 'WRITE' ? (
+              <>
+                <Pressable
+                  onPress={() => setQuoting(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="문장 넣기"
+                  style={({ pressed }) => [styles.insertQuote, pressed ? pressedStyle : null]}
+                >
+                  <Text style={[typeScale.monoLabel, { color: colors.text }]}>+ 문장</Text>
+                </Pressable>
+                <Text numberOfLines={1} style={[typeScale.caption, styles.quoteHint, { color: colors.textFaint }]}>
+                  책 속 문장을 옮겨 적어 넣어요
+                </Text>
+              </>
+            ) : null}
+            <Button
+              label={submitLabel}
+              onPress={() => submit.mutate()}
+              disabled={!canSubmit}
+              loading={submit.isPending}
+              style={styles.submit}
+            />
           </View>
-        ) : null}
+        </View>
       </KeyboardAvoidingView>
 
       {quoting ? <QuoteInsertSheet draft={quoteDraft} onInsert={insertQuote} onClose={() => setQuoting(false)} /> : null}
@@ -388,22 +396,20 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
 
 const styles = StyleSheet.create({
   // 아래 여백은 띠 높이만큼 더 둔다 — 키보드가 올라와 보이는 자리가 줄어도 마지막 칸을 띠 위로 밀어 올릴 수 있게.
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl + QUOTE_BAR_HEIGHT },
+  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl + BOTTOM_BAR_HEIGHT },
   section: { gap: spacing.md },
   // 하단 고정 띠 — 댓글 입력 바와 같은 만듦새(머리카락 선 · 본문 폭 · 종이 배경).
-  quoteBar: {
+  bottomBar: {
     ...layout.content,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    width: '100%',
+    gap: spacing.xs,
     borderTopWidth: hairline,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
   },
-  // 헤더 우측 제출 버튼 — 강조색 네모.
-  submit: { borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  error: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  bottomRow: { flexDirection: 'row', alignItems: 'center' },
+  // 화면의 유일한 악센트 — 띠 오른쪽 끝에 붙인다.
+  submit: { marginLeft: 'auto' },
   // 본문 칸 — 문장 넣기 시트의 문장 칸과 같은 활자(quote 토큰 15/25), 길게 쓰는 글이라 높이만 키운다.
   bodyInput: {
     minHeight: 220,
@@ -415,14 +421,14 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     textAlignVertical: 'top',
   },
-  // 모노 한 줄 — 여백으로 터치 상자를 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
-  unpick: { alignSelf: 'flex-start', paddingVertical: spacing.sm, marginVertical: -spacing.xs },
-  // 10px 모노 라벨이라 글자 상자만으로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 여백으로 키운다.
-  insertQuote: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
+  // 모노 한 줄 — 44pt 상자로 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
+  unpick: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginVertical: -spacing.sm },
+  // 11px 모노 라벨이라 글자 상자만으로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
+  insertQuote: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
   // 좁은 화면에서는 안내가 버튼에 밀려 줄어든다(한 줄 말줄임).
-  quoteHint: { flexShrink: 1, marginLeft: spacing.md },
-  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다.
-  retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
+  quoteHint: { flexShrink: 1, marginLeft: spacing.md, marginRight: spacing.md },
+  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
+  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   skeleton: { ...layout.content, padding: spacing.lg },
   skeletonBlock: { height: 240, borderRadius: radius.md },
 });
