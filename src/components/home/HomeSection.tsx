@@ -22,5 +22,5 @@ export function HomeSection({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   // 괘선 위·아래 여백을 비슷하게 — 위는 컨테이너 gap(24)+4=28, 아래는 제목까지 20(행간 여유 포함 ≈24).
   wrap: { paddingTop: spacing.xs },
-  rule: { height: hairline, marginHorizontal: spacing.lg, marginBottom: 20 },
+  rule: { height: hairline, marginHorizontal: spacing.lg, marginBottom: spacing.lg + spacing.xs },
 });

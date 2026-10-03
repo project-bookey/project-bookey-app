@@ -240,10 +240,10 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
               placeholder="어디까지 읽고 올지, 준비할 것"
               multiline
             />
-            <Button label="모임 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} />
+            <Button label="모임 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} style={styles.submit} />
             {!canCreate ? (
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                제목과 주소 검색 후 장소명을 확인하면 열 수 있어요.
+                제목과 장소를 정하면 열 수 있어요.
               </Text>
             ) : null}
             {create.error ? (
@@ -365,7 +365,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
   },
   container: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
-  form: { marginTop: spacing.lg, borderWidth: hairline, borderRadius: radius.sm, padding: spacing.lg, gap: spacing.sm },
+  form: { marginTop: spacing.lg, borderWidth: hairline, borderRadius: radius.sm, padding: spacing.lg, gap: spacing.md },
+  // 입력들과 떼어 둔다 — 폼 간격(md)에 md 를 더해 xl.
+  submit: { marginTop: spacing.md },
   pickRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   pick: {
     flex: 1,

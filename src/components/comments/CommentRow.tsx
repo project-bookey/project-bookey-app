@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  row: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   rowBody: { flex: 1, gap: 2 },
   // 닉네임은 홈 '오늘의 글'·광장 카드와 같은 15/20 — 아바타(AVATAR_SIZE)와 나란히 서서 누구 말인지 먼저 읽힌다.
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   replies: {
     marginTop: spacing.sm,
     marginLeft: spacing.md,
-    paddingLeft: 10,
+    paddingLeft: spacing.md,
     borderLeftWidth: 2,
     gap: spacing.sm,
   },

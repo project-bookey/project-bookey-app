@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
 
   authorLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  authorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  authorRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { fontSize: 16, lineHeight: 22 },

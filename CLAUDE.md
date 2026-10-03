@@ -73,6 +73,14 @@ The only link between this repo and the backend is the server-published OpenAPI 
 - **독서 시작**: 읽기를 시작·재개하는 버튼은 모두 `playLabel('독서 시작')`(홈 히어로는 '▶ 이어서'). 누르면 `/timer?recordId=…&autoStart=1`로 보내 타이머가 바로 잰다 — 타이머에서 한 번 더 누르게 하지 않는다.
 - **제스처**: 밀어서 지우기 같은 제스처에는 늘 눈에 보이는 버튼을 함께 둔다.
 
+### 사용자 결정으로 둔 예외 (2026-10-03)
+
+UX 철칙을 적용하다가도 아래는 바꾸지 않는다 — 사용자가 직접 정했다.
+
+- **초록(accent)을 유지하는 곳**: 하단 구역 탭(아이콘만, 활성은 초록 아이콘), 탭 밑줄 표시(클럽 홈·도서 상세의 리뷰/독후감 탭), 알림 숫자 배지, 좋아요 하트(켜짐 상태), 스티키 메모. CTA 와 같은 색이어도 '한 화면 하나만 강조'의 예외로 본다.
+- **가입 필수 약관**: 전문을 끝까지 읽어야 동의되는 지금 방식을 유지한다. 체크박스를 바로 누르게 바꾸지 않는다.
+- **토큰 밖 숫자 간격**: 리듬 간격(8px 이상)은 `spacing` 토큰(합도 허용: `spacing.lg + spacing.xs`)으로 쓴다. 1~6px 의 광학 보정(라벨↔값 2px 등)과, 다른 요소 크기에 맞춘 값(고정 CTA·탭 바에 가리지 않게 비우는 하단 여백, 핀 가운데 맞춤, 터치 상자를 넓히는 여백/음수 마진 짝)은 숫자를 그대로 쓴다.
+
 ## Design system
 
 The aesthetic is **collage desk** — books, memos and sticky notes scattered across a sheet of paper. Design spec: `docs/superpowers/specs/2026-09-01-collage-redesign-design.md`.
@@ -80,9 +88,9 @@ The aesthetic is **collage desk** — books, memos and sticky notes scattered ac
 Tokens live in `src/theme/` and are re-exported from `src/theme/index.ts`:
 
 - `palette.ts` — one semantic contract (`ColorTokens`) filled twice, `darkColors` / `lightColors`. Adding a key to only one palette fails typecheck, so the two can never drift. Read colors through `useTheme()`, never by importing a palette directly — that's how light mode breaks. Domain enums map to colors through the `getLagStyle(colors)` / `getPaceStyle(colors)` functions here (`statusLabel` is in `tokens.ts`).
-- `tokens.ts` — mode-independent values. Type is three families: Pretendard (sans, body/UI), NanumMyeongjo (serif, 표제·섹션 헤딩·인용), IBM Plex Mono (아이브로우·라벨·숫자 — Korean gets tight tracking, `letterSpacing` ≤ 1). Shape is **square paper cut** (2026-09-28): `radius.sm` (2) for chips, buttons, tags, inputs and book covers, `radius.md` (4) for cards, `radius.lg` (6) for sheets; `radius.round` only for avatars, dots and radios. There is no pill token — never write `borderRadius: 999` or a literal radius. Selection states (chips, segments, capsule tabs, toggles, calendar days, reactions, radios) invert to ink via `colors.ink`/`onInk`; `accent` is reserved for CTAs, progress and links — `Eyebrow` is always muted (there is no accent eyebrow), and in-place confirms (`ConfirmButton`) use ink, not accent. Line icons spread `iconStroke` (square caps, miter joins) and are drawn with react-native-svg — no emoji in chrome. There is no elevation: paper is separated by hairline borders only — `cardShadow`/`coverShadow` in `palette.ts` are intentionally empty (blur shadows and hard paper edges were both tried and rejected), so never add `shadow*`/`elevation`/`boxShadow` styles. Press feedback everywhere (Button, text links, chips, rows, icon buttons) is `pressedStyle` (opacity 0.72) — no spring scale, no translate, no ad-hoc opacity values. Link labels go through `linkLabel(label, kind)` in ui.tsx: navigation links end with " ›", in-place actions (더 보기, 다시 시도, 쓰기) carry no glyph, "→" is only a range separator (기간·쪽수), Button labels never carry glyphs, and "▶" comes from `playLabel` on read/resume CTAs only. Motion tokens for the collage feel: `tilt`/`tiltFor()` (cover rotation), `stagger` (entrance), `rowOffsetY` (row zigzag).
+- `tokens.ts` — mode-independent values. Type is three families: Pretendard (sans, body/UI), NanumMyeongjo (serif, 표제·섹션 헤딩·인용), IBM Plex Mono (아이브로우·라벨·숫자 — Korean gets tight tracking, `letterSpacing` ≤ 1). Shape is **square paper cut** (2026-09-28): `radius.sm` (2) for chips, buttons, tags, inputs and book covers, `radius.md` (4) for cards, `radius.lg` (6) for sheets; `radius.round` only for avatars, dots and radios. There is no pill token — never write `borderRadius: 999` or a literal radius. Selection states (chips, segments, capsule tabs, toggles, calendar days, reactions, radios) invert to ink via `colors.ink`/`onInk` (liked hearts and the active section/tab markers stay accent — see '사용자 결정으로 둔 예외'); `accent` is reserved for CTAs, progress and links — `Eyebrow` is always muted (there is no accent eyebrow), and in-place confirms (`ConfirmButton`) use ink, not accent. Line icons spread `iconStroke` (square caps, miter joins) and are drawn with react-native-svg — no emoji in chrome. There is no elevation: paper is separated by hairline borders only — `cardShadow`/`coverShadow` in `palette.ts` are intentionally empty (blur shadows and hard paper edges were both tried and rejected), so never add `shadow*`/`elevation`/`boxShadow` styles. Press feedback everywhere (Button, text links, chips, rows, icon buttons) is `pressedStyle` (opacity 0.72) — no spring scale, no translate, no ad-hoc opacity values. Link labels go through `linkLabel(label, kind)` in ui.tsx: navigation links end with " ›", in-place actions (더 보기, 다시 시도, 쓰기) carry no glyph, "→" is only a range separator (기간·쪽수), Button labels never carry glyphs, and "▶" comes from `playLabel` on read/resume CTAs only. Motion tokens for the collage feel: `tilt`/`tiltFor()` (cover rotation), `stagger` (entrance), `rowOffsetY` (row zigzag).
 
-Shared primitives are in `src/components/ui.tsx` (`Card`, `Button`, `Tag`, `ProgressBar`, `Field`, `Segmented`, ...) and the collage-specific ones in `src/components/collage/` — `PaperScreen` (dot-grid paper background), `TiltCover` (tilted book cover), `SectionNav` (floating glass bar — **icons only, active = accent (green) icon** inside a sliding glass marker; the bar's blur shadow and capsule radius are the deliberate exception to the no-shadow/no-pill rules. 사용자 결정(2026-10-03): 라벨을 붙이거나 활성 색을 잉크로 바꾸지 않는다 — UX 철칙 적용에서 예외), `SubHeader`, `MemoScrap`, `StickyNote`, `Chip`. Build new UI from these tokens and components — don't introduce ad-hoc colors, fonts, or radii.
+Shared primitives are in `src/components/ui.tsx` (`Card`, `Button`, `Tag`, `ProgressBar`, `Field`, `Segmented`, ...) and the collage-specific ones in `src/components/collage/` — `PaperScreen` (dot-grid paper background), `TiltCover` (tilted book cover), `SectionNav` (floating glass bar — **icons only, active = accent (green) icon** inside a sliding glass marker; the bar's blur shadow and capsule radius are the deliberate exception to the no-shadow/no-pill rules. 라벨을 붙이거나 활성 색을 잉크로 바꾸지 않는다 — 위 '사용자 결정으로 둔 예외'), `SubHeader`, `MemoScrap`, `StickyNote`, `Chip`. Build new UI from these tokens and components — don't introduce ad-hoc colors, fonts, or radii.
 
 ## 모바일 앱 디자인 원칙
 
@@ -92,7 +100,7 @@ bookey는 **휴대폰에서 한 손으로 쓰는 앱**이 1순위다. 웹(`npm r
 
 - 기준 폭은 **360~430pt 세로 화면**이다. 가장 좁은 360pt에서 글자가 잘리거나 두 줄로 깨지지 않는지 먼저 본다. 가로 모드는 고려하지 않는다.
 - 폭은 고정 px로 박지 말고 `flex`·퍼센트·`useWindowDimensions()`로 잡는다. 태블릿·웹에서 퍼지지 않도록 본문은 `layout.content`(maxWidth 560, 가운데 정렬)로 감싼다.
-- 좌우 여백·간격은 `spacing` 토큰만 쓴다. 한 화면 안에서 좌우 여백은 통일한다.
+- 좌우 여백·간격은 `spacing` 토큰만 쓴다(예외는 위 '사용자 결정으로 둔 예외'). 한 화면 안에서 좌우 여백은 통일한다. `Field`는 바깥 여백이 없다 — 칸 사이는 쓰는 화면이 `gap`으로 정한다.
 - 한국어 문구는 길어지기 쉽다 — 버튼·칩·탭 라벨은 짧게 쓰고, 넘칠 수 있는 텍스트에는 `numberOfLines` + 말줄임을 건다. 책 제목·닉네임처럼 사용자 입력 값은 항상 길 수 있다고 가정한다.
 
 ### 세이프에어리어·시스템 UI

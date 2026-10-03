@@ -95,7 +95,7 @@ export function ReviewCard({
 
 const styles = StyleSheet.create({
   card: { gap: spacing.md },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { lineHeight: 20 },

@@ -291,10 +291,10 @@ const styles = StyleSheet.create({
   shelfEyebrow: { fontSize: 9 },
   // 시안 23px 세리프 두 줄 — 노트 표제(21)보다 한 단 크게, 자간은 살짝 조인다.
   shelfTitle: { fontFamily: serif.extraBold, fontSize: 23, lineHeight: 26, marginTop: 5, letterSpacing: -0.2 },
-  shelfRule: { width: 26, height: 2, marginTop: 7 },
+  shelfRule: { width: 26, height: 2, marginTop: spacing.sm },
   // 한글이 섞이는 캡션이라 모노 아이브로우의 넓은 자간은 덜어낸다.
   streak: { flexShrink: 1, letterSpacing: 0.3, lineHeight: 14, transform: [{ rotate: '-3deg' }] },
-  memo: { paddingVertical: 9, paddingHorizontal: 11 },
+  memo: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
   memoQuote: { fontFamily: serif.regular, fontSize: 12, lineHeight: 18 },
   memoSign: { fontSize: 8, letterSpacing: 0.5, marginTop: 5 },
 });

@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
   bookLink: { alignSelf: 'flex-start', paddingVertical: spacing.md, marginVertical: -spacing.sm },
   bookLinkText: { fontSize: 13, letterSpacing: 0.4 },
 
-  byline: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  bylineAuthor: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  byline: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  bylineAuthor: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   bylineText: { flex: 1 },
   // 바이라인 조판은 홈 '오늘의 글'(ScrapAuthor)·광장 카드와 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { fontSize: 17, lineHeight: 23 },
