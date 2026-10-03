@@ -11,6 +11,7 @@ import {
   meetingClock12,
   meetingDateLong,
   meetingDay,
+  meetingFull,
   meetingState,
   meetingWeekday,
 } from '@/components/club/meetingTime';
@@ -119,6 +120,7 @@ export default function MeetingDetailScreen() {
   const statusLine =
     state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 모임이에요' : '취소된 모임입니다';
   const attendees = m.attendees ?? [];
+  const full = meetingFull(m);
   const running = current.data?.meetingId === mid;
   const otherRunning = Boolean(current.data && !running);
   const elapsed = running && current.data
@@ -147,7 +149,11 @@ export default function MeetingDetailScreen() {
           cells={[
             { label: '날짜', value: meetingDay(m.startsAt), unit: ` ${meetingWeekday(m.startsAt)}` },
             { label: '시간', value: meetingClock(m.startsAt) },
-            { label: '참여', value: String(m.attendeeCount), unit: '명' },
+            {
+              label: '참여',
+              value: String(m.attendeeCount),
+              unit: m.maxAttendees != null ? ` / ${m.maxAttendees}명` : '명',
+            },
           ]}
         />
 
@@ -210,9 +216,11 @@ export default function MeetingDetailScreen() {
             </Text>
           )}
           {state === 'open' ? (
+            // 정원이 차면 새로 참여할 수 없다 — 이미 참여한 사람은 취소할 수 있다.
             <Button
-              label={m.attending ? '참여 취소' : '이 모임에 참여하기'}
+              label={m.attending ? '참여 취소' : full ? '정원이 찼어요' : '이 모임에 참여하기'}
               variant={m.attending ? 'outline' : 'primary'}
+              disabled={!m.attending && full}
               onPress={() => attend.mutate()}
               loading={attend.isPending}
               style={{ marginTop: spacing.xs }}

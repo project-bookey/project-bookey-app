@@ -929,6 +929,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/{clubId}/background": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 클럽 배경 사진 올리기 (호스트) — 클럽 머리에 깔린다. 이전 사진은 지운다 */
+        post: operations["uploadBackground"];
+        /** 클럽 배경 사진 빼기 (호스트) — 종이 바탕으로 돌아간다 */
+        delete: operations["removeBackground"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/activity/start": {
         parameters: {
             query?: never;
@@ -3173,6 +3191,8 @@ export interface components {
             responseDeadline?: string;
             /** Format: int64 */
             bookId?: number;
+            /** Format: int32 */
+            maxAttendees?: number;
         };
         BookSummary: {
             /** Format: int64 */
@@ -3224,6 +3244,8 @@ export interface components {
             attendeeNicknames: string[];
             attendees: components["schemas"]["MeetingAttendeeView"][];
             book?: components["schemas"]["BookSummary"];
+            /** Format: int32 */
+            maxAttendees?: number;
         };
         InquiryAnswerRequest: {
             answer: string;
@@ -3893,6 +3915,7 @@ export interface components {
             allowNudge: boolean;
             /** Format: date-time */
             nextMeetingAt?: string;
+            backgroundUrl?: string;
         };
         ClubSeatPolicy: {
             /** Format: int32 */
@@ -4810,6 +4833,9 @@ export interface components {
             members: components["schemas"]["ClubMemberBrief"][];
             /** Format: date-time */
             nextMeetingAt?: string;
+            nextMeetingTitle?: string;
+            description?: string;
+            backgroundUrl?: string;
         };
         PageResponseClubSummaryView: {
             content?: components["schemas"]["ClubSummaryView"][];
@@ -4868,6 +4894,7 @@ export interface components {
             alreadyMember: boolean;
             joinable: boolean;
             joinBlockedReason?: string;
+            backgroundUrl?: string;
         };
         PageResponseClubPostView: {
             content?: components["schemas"]["ClubPostView"][];
@@ -7233,6 +7260,57 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["UnlockResult"];
+                };
+            };
+        };
+    };
+    uploadBackground: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubHomeView"];
+                };
+            };
+        };
+    };
+    removeBackground: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClubHomeView"];
                 };
             };
         };

@@ -329,6 +329,12 @@ export const clubApi = {
     allowNudge?: boolean;
   }) => api<ClubHome>("/api/v1/clubs", { method: "POST", body }),
   home: (clubId: number) => api<ClubHome>(`/api/v1/clubs/${clubId}`),
+  /** 배경 사진 올리기 (호스트) — 클럽 머리에 깔린다. 이전 사진은 서버가 지운다. */
+  uploadBackground: (clubId: number, form: FormData) =>
+    api<ClubHome>(`/api/v1/clubs/${clubId}/background`, { method: "POST", body: form }),
+  /** 배경 사진 빼기 (호스트) — 종이 바탕으로 돌아간다. */
+  removeBackground: (clubId: number) =>
+    api<ClubHome>(`/api/v1/clubs/${clubId}/background`, { method: "DELETE" }),
   rotateCode: (clubId: number) =>
     api<{ joinCode: string }>(`/api/v1/clubs/${clubId}/rotate-code`, {
       method: "POST",
@@ -630,6 +636,8 @@ export type ClubMeeting = {
   attendees: ClubMeetingAttendee[];
   /** 이 모임에서 읽을 책 — 고르지 않았으면 없다. 다가오는 모임의 책이 클럽의 지금 읽는 책이 된다. */
   book?: BookSummary;
+  /** 최대 인원 — 제한이 없으면 없다. 정원이 차면 서버가 MEETING_FULL 로 참여를 막는다. */
+  maxAttendees?: number;
 };
 export type ClubMeetingInput = {
   title: string;
@@ -644,6 +652,8 @@ export type ClubMeetingInput = {
   responseDeadline?: string;
   /** 이 모임에서 읽을 책(선택). */
   bookId?: number;
+  /** 최대 인원(선택, 2명 이상) — 비우면 제한 없이 받는다. */
+  maxAttendees?: number;
 };
 export type ClubPlace = {
   id: string;
