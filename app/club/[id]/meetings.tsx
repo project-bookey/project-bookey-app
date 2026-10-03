@@ -1,13 +1,14 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubCommunityApi, meetingNoteApi, type ClubMeeting, type ClubMeetingInput, type ClubPlace } from '@/api/endpoints';
-import type { MeetingNote } from '@/api/types';
+import { clubCommunityApi, type ClubMeeting, type ClubMeetingInput, type ClubPlace } from '@/api/endpoints';
+import type { BookSummary } from '@/api/types';
 import { AddressSearchModal, type AddressSelection } from '@/components/club/AddressSearchModal';
+import { MeetingBookPicker } from '@/components/club/MeetingBookPicker';
 import {
   MEETING_STATE_LABEL,
   formatPickDate,
@@ -18,9 +19,7 @@ import {
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
-import { meetingNotesKey } from '@/components/club/useMeetingNoteSync';
-import { parseMeetingNoteDoc } from '@/components/note';
-import { NoteDocThumb } from '@/components/note/NoteDocThumb';
+import { TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Eyebrow, Field, Loading, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -32,11 +31,6 @@ const freshDate = () => {
   value.setHours(19, 0, 0, 0);
   return value;
 };
-/** 모임 노트를 한 번에 받는 수 — 모임 줄마다 붙이므로 클럽의 모임 수만큼이면 된다. */
-const NOTES_PAGE = 50;
-/** 모임 줄 끝 노트 썸네일 한 변. */
-const NOTE_THUMB = 52;
-
 const emptyForm = () => ({
   title: '',
   description: '',
@@ -50,8 +44,8 @@ const emptyForm = () => ({
 /**
  * 모임 탭 — 클럽 홈 '모임' 탭의 본문. 위는 괘선 머리줄(개수 · 호스트의 만들기), 아래는 모임을
  * 활자·괘선 판면으로 한 줄씩(왼쪽 모노 날짜 칸, 오른쪽 명조 제목·장소·참여). 호스트가 '모임 만들기'를
- * 누르면 목록 위에 새 모임 폼이 펼쳐진다.
- * 모임 노트는 모임마다 하나라 따로 탭을 두지 않고, 노트가 생긴 모임 줄 끝에 썸네일로 붙인다.
+ * 누르면 목록 위에 새 모임 폼이 펼쳐진다. 모임마다 읽을 책을 고를 수 있고(선택), 다가오는 모임의 책이
+ * 클럽의 지금 읽는 책이 된다 — 진척 · 스포일러 가림 · 지금 읽는 중이 그 책을 본다.
  */
 export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -66,6 +60,8 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
   const [date, setDate] = useState(freshDate);
   const [time, setTime] = useState(freshDate);
   const [form, setForm] = useState(emptyForm);
+  const [book, setBook] = useState<BookSummary | null>(null);
+  const [showBooks, setShowBooks] = useState(false);
   const [placeQuery, setPlaceQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
@@ -77,15 +73,6 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
     queryKey: ['clubMeetings', clubId],
     queryFn: () => clubCommunityApi.meetings(clubId),
   });
-  // 노트 화면을 나오면 meetingNotesKey 를 무효화한다 — 그 아래 키라 썸네일도 새로 받는다.
-  const notes = useQuery({
-    queryKey: [...meetingNotesKey(clubId), 'byMeeting'],
-    queryFn: () => meetingNoteApi.clubNotes(clubId, 0, NOTES_PAGE),
-  });
-  const noteByMeeting = useMemo(
-    () => new Map((notes.data?.content ?? []).map((n) => [n.meetingId, n])),
-    [notes.data],
-  );
   const places = useQuery({
     queryKey: ['clubPlaces', clubId, debouncedQuery],
     queryFn: () => clubCommunityApi.searchPlaces(clubId, debouncedQuery),
@@ -96,10 +83,14 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
     onSuccess: () => {
       setOpen(false);
       setForm(emptyForm());
+      setBook(null);
       setPlaceQuery('');
       setDate(freshDate());
       setTime(freshDate());
       qc.invalidateQueries({ queryKey: ['clubMeetings', clubId] });
+      // 다가오는 모임의 책이 바뀌었을 수 있다 — 클럽 홈의 지금 읽는 책 · 진척을 다시 받는다.
+      qc.invalidateQueries({ queryKey: ['club', clubId] });
+      qc.invalidateQueries({ queryKey: ['clubs'] });
     },
   });
 
@@ -138,7 +129,12 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
   const submit = () => {
     const startsAt = new Date(date);
     startsAt.setHours(time.getHours(), time.getMinutes(), 0, 0);
-    create.mutate({ ...form, mapUrl: form.mapUrl || undefined, startsAt: startsAt.toISOString() });
+    create.mutate({
+      ...form,
+      mapUrl: form.mapUrl || undefined,
+      startsAt: startsAt.toISOString(),
+      bookId: book?.id,
+    });
   };
   const canCreate = Boolean(form.title.trim() && form.placeName.trim() && form.address.trim() && !create.isPending);
   const meetings = list.data ?? [];
@@ -150,6 +146,12 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
         visible={showAddress}
         onClose={() => setShowAddress(false)}
         onSelect={selectAddress}
+      />
+      <MeetingBookPicker
+        visible={showBooks}
+        selectedId={book?.id ?? null}
+        onSelect={setBook}
+        onClose={() => setShowBooks(false)}
       />
       <View style={[styles.head, { borderBottomColor: colors.line }]}>
         <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 · {meetings.length}개</Text>
@@ -200,6 +202,20 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
                 ) : null}
               </View>
             ) : null}
+
+            {/* 읽을 책(선택) — 고르면 이 모임이 다가올 때 클럽의 지금 읽는 책이 된다. */}
+            <Eyebrow>읽을 책 (선택)</Eyebrow>
+            {book ? (
+              <View style={styles.bookRow}>
+                <TiltCover uri={book.coverUrl} title={book.title} width={38} tilt={0} entering={false} />
+                <Text numberOfLines={2} style={[typeScale.label, styles.bookTitle, { color: colors.text }]}>
+                  {book.title}
+                </Text>
+                <Button label="바꾸기" variant="ghost" size="sm" onPress={() => setShowBooks(true)} />
+              </View>
+            ) : (
+              <Button label="서재에서 고르기" variant="outline" onPress={() => setShowBooks(true)} />
+            )}
 
             {/* 장소를 넣는 길은 하나 — 이름으로 찾으면 이름·주소·지도가 한 번에 채워진다.
                 주소 검색은 찾는 곳이 없을 때의 대안으로 아래 링크로 낮춘다(UX 철칙 Hick). */}
@@ -286,17 +302,10 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
               <MeetingRow
                 key={m.id}
                 meeting={m}
-                note={noteByMeeting.get(m.id)}
                 onPress={() =>
                   router.push({
                     pathname: '/club/[id]/meeting/[meetingId]',
                     params: { id: String(clubId), meetingId: String(m.id), host: isHost ? '1' : '0' },
-                  })
-                }
-                onOpenNote={() =>
-                  router.push({
-                    pathname: '/club/[id]/note/[meetingId]',
-                    params: { id: String(clubId), meetingId: String(m.id) },
                   })
                 }
               />
@@ -329,79 +338,54 @@ function PickBox({ label, value, onPress }: { label: string; value: string; onPr
 }
 
 /**
- * 모임 한 줄 — 왼쪽 모노 날짜 칸(10.1 / 목 19:30), 오른쪽 명조 제목 · 장소 · 참여자 아바타.
- * 지난 모임·취소는 글자를 죽인다. 줄 본문이 상세로 가는 링크라 별도 '자세히 보기'는 없다.
- * 노트가 있으면 끝에 썸네일을 붙인다 — 본문 Pressable 의 형제라 웹에서 button 안에 button 이 들어가지 않는다.
+ * 모임 한 줄 — 왼쪽 모노 날짜 칸(10.1 / 목 19:30), 오른쪽 명조 제목 · 읽을 책 · 장소 · 참여자 아바타.
+ * 지난 모임·취소는 글자를 죽인다. 줄 전체가 상세로 가는 링크라 별도 '자세히 보기'는 없다.
  */
-function MeetingRow({ meeting: m, note, onPress, onOpenNote }: {
-  meeting: ClubMeeting;
-  note?: MeetingNote;
-  onPress: () => void;
-  onOpenNote: () => void;
-}) {
+function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: () => void }) {
   const { colors } = useTheme();
   const state = meetingState(m);
   const dim = state !== 'open';
   const attendees = m.attendees ?? [];
   const stateColor = state === 'cancelled' ? colors.danger : state === 'past' ? colors.textFaint : colors.text;
   return (
-    <View style={[styles.row, { borderBottomColor: colors.line }]}>
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`${m.title} 모임 상세`}
-        style={({ pressed }) => [styles.rowMain, pressed ? pressedStyle : null]}
-      >
-        <View style={styles.dateCell}>
-          <Text style={[styles.dateDay, { color: dim ? colors.textFaint : colors.text }]}>{meetingDay(m.startsAt)}</Text>
-          <Text style={[styles.dateSub, { color: colors.textFaint }]}>
-            {meetingWeekday(m.startsAt)} {meetingClock(m.startsAt)}
-          </Text>
-        </View>
-        <View style={styles.rowBody}>
-          <View style={styles.rowHead}>
-            <Text numberOfLines={1} style={[styles.rowTitle, { color: dim ? colors.textMuted : colors.text }]}>
-              {m.title}
-            </Text>
-            <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{MEETING_STATE_LABEL[state]}</Text>
-          </View>
-          <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>{m.placeName}</Text>
-          <View style={styles.people}>
-            {attendees.length > 0 ? (
-              <View style={styles.avatars}>
-                {attendees.slice(0, 4).map((p, i) => (
-                  <View key={p.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -6, borderColor: colors.bg }]}>
-                    <Avatar uri={p.avatarUrl} nickname={p.nickname} size={20} />
-                  </View>
-                ))}
-              </View>
-            ) : null}
-            <Text style={[styles.peopleText, { color: colors.textFaint }]}>
-              {attendees.length > 0 ? `${m.attendeeCount}명 참여` : '아직 참여자 없음'}
-            </Text>
-          </View>
-        </View>
-      </Pressable>
-      {note ? <NoteThumb note={note} onPress={onOpenNote} /> : null}
-    </View>
-  );
-}
-
-/** 모임 노트 썸네일 — 대형노트에서 쓴 구역을 정사각으로 잘라 보이고, 아래에 '노트'. */
-function NoteThumb({ note, onPress }: { note: MeetingNote; onPress: () => void }) {
-  const { colors } = useTheme();
-  const doc = useMemo(() => parseMeetingNoteDoc(note.document), [note.document]);
-  return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${note.meetingTitle ?? '모임'} 노트, ${note.contributors.length}명이 함께 씀`}
-      style={({ pressed }) => [styles.noteThumbWrap, pressed ? pressedStyle : null]}
+      accessibilityLabel={`${m.title} 모임 상세`}
+      style={({ pressed }) => [styles.row, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
     >
-      <View style={[styles.noteThumb, { borderColor: colors.line, backgroundColor: colors.surface }]}>
-        <NoteDocThumb doc={doc} width={NOTE_THUMB} ratio={1} />
+      <View style={styles.dateCell}>
+        <Text style={[styles.dateDay, { color: dim ? colors.textFaint : colors.text }]}>{meetingDay(m.startsAt)}</Text>
+        <Text style={[styles.dateSub, { color: colors.textFaint }]}>
+          {meetingWeekday(m.startsAt)} {meetingClock(m.startsAt)}
+        </Text>
       </View>
-      <Text style={[styles.noteLabel, { color: colors.textMuted }]}>노트</Text>
+      <View style={styles.rowBody}>
+        <View style={styles.rowHead}>
+          <Text numberOfLines={1} style={[styles.rowTitle, { color: dim ? colors.textMuted : colors.text }]}>
+            {m.title}
+          </Text>
+          <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{MEETING_STATE_LABEL[state]}</Text>
+        </View>
+        {m.book ? (
+          <Text numberOfLines={1} style={[typeScale.caption, { color: colors.text }]}>읽을 책 · {m.book.title}</Text>
+        ) : null}
+        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>{m.placeName}</Text>
+        <View style={styles.people}>
+          {attendees.length > 0 ? (
+            <View style={styles.avatars}>
+              {attendees.slice(0, 4).map((p, i) => (
+                <View key={p.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -6, borderColor: colors.bg }]}>
+                  <Avatar uri={p.avatarUrl} nickname={p.nickname} size={20} />
+                </View>
+              ))}
+            </View>
+          ) : null}
+          <Text style={[styles.peopleText, { color: colors.textFaint }]}>
+            {attendees.length > 0 ? `${m.attendeeCount}명 참여` : '아직 참여자 없음'}
+          </Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -435,17 +419,10 @@ const styles = StyleSheet.create({
   placeRow: { paddingVertical: spacing.sm, gap: 2, borderBottomWidth: hairline },
   // 11px 모노 한 줄이라 여백으로 44pt 상자를 만든다(웹은 hitSlop 을 무시한다).
   addressLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderBottomWidth: hairline },
-  rowMain: { flex: 1, flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md },
-  noteThumbWrap: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
-  noteThumb: {
-    width: NOTE_THUMB,
-    height: NOTE_THUMB,
-    overflow: 'hidden',
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-  },
-  noteLabel: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 0.3 },
+  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
+  // 고른 책 — 표지 · 제목 · 바꾸기가 한 줄.
+  bookRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  bookTitle: { flex: 1 },
   dateCell: { width: 58, gap: 2, paddingTop: 2 },
   dateDay: { fontFamily: mono.semiBold, fontSize: 18, lineHeight: 22 },
   dateSub: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.3 },

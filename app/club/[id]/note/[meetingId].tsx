@@ -101,7 +101,7 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [seed] = useState(() => parseMeetingNoteDoc(note.document));
-  // 나가면 클럽 '모임' 탭의 모임 줄이 새 노트 썸네일을 받게 한다.
+  // 나가면 클럽 '노트' 탭 격자가 새 썸네일을 받게 한다.
   useEffect(() => () => {
     void queryClient.invalidateQueries({ queryKey: meetingNotesKey(clubId) });
   }, [queryClient, clubId]);

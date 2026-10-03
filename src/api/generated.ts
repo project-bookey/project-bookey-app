@@ -2928,6 +2928,24 @@ export interface components {
             mapUrl?: string;
             /** Format: date-time */
             responseDeadline?: string;
+            /** Format: int64 */
+            bookId?: number;
+        };
+        BookSummary: {
+            /** Format: int64 */
+            id: number;
+            isbn13?: string;
+            title: string;
+            author?: string;
+            publisher?: string;
+            /** Format: date */
+            publishedAt?: string;
+            /** Format: int32 */
+            totalPages?: number;
+            coverUrl?: string;
+            category?: string;
+            source: string;
+            needsPageInput: boolean;
         };
         MeetingAttendeeView: {
             /** Format: int64 */
@@ -2962,6 +2980,7 @@ export interface components {
             host: boolean;
             attendeeNicknames: string[];
             attendees: components["schemas"]["MeetingAttendeeView"][];
+            book?: components["schemas"]["BookSummary"];
         };
         BannerUpsertRequest: {
             /** @enum {string} */
@@ -3384,22 +3403,6 @@ export interface components {
             reread?: boolean;
             commitment?: string;
         };
-        BookSummary: {
-            /** Format: int64 */
-            id: number;
-            isbn13?: string;
-            title: string;
-            author?: string;
-            publisher?: string;
-            /** Format: date */
-            publishedAt?: string;
-            /** Format: int32 */
-            totalPages?: number;
-            coverUrl?: string;
-            category?: string;
-            source: string;
-            needsPageInput: boolean;
-        };
         ProgressView: {
             /** Format: int32 */
             currentPage: number;
@@ -3473,17 +3476,25 @@ export interface components {
             name: string;
             description?: string;
             /** Format: int64 */
-            bookId: number;
-            /** Format: date */
-            startsAt: string;
-            /** Format: date */
-            endsAt: string;
+            bookId?: number;
+            /**
+             * Format: date
+             * @deprecated
+             */
+            startsAt?: string;
+            /**
+             * Format: date
+             * @deprecated
+             */
+            endsAt?: string;
             /** @enum {string} */
             visibility?: "CODE_ONLY" | "LINK" | "PUBLIC";
             /** Format: int32 */
             memberLimit?: number;
             allowNudge?: boolean;
+            /** @deprecated */
             autoCheckpoints?: boolean;
+            /** @deprecated */
             checkpoints: components["schemas"]["CheckpointRequest"][];
         };
         CheckpointView: {
@@ -3518,8 +3529,11 @@ export interface components {
             /** Format: date */
             startsAt: string;
             /** Format: date */
-            endsAt: string;
-            /** Format: int64 */
+            endsAt?: string;
+            /**
+             * Format: int64
+             * @deprecated
+             */
             daysLeft: number;
             /** Format: int32 */
             memberCount: number;
@@ -3534,10 +3548,14 @@ export interface components {
             /** Format: double */
             averageCompletionRate?: number;
             members: components["schemas"]["MemberProgressView"][];
+            /** @deprecated */
             checkpoints: components["schemas"]["CheckpointView"][];
+            /** @deprecated */
             nextCheckpoint?: components["schemas"]["CheckpointView"];
             seatPolicy: components["schemas"]["ClubSeatPolicy"];
             allowNudge: boolean;
+            /** Format: date-time */
+            nextMeetingAt?: string;
         };
         ClubSeatPolicy: {
             /** Format: int32 */
@@ -3668,6 +3686,7 @@ export interface components {
             reason: string;
         };
         JoinPublicRequest: {
+            /** @deprecated */
             adoptTargetDate?: boolean;
             shareProgress?: boolean;
         };
@@ -3721,6 +3740,7 @@ export interface components {
         };
         JoinRequest: {
             code: string;
+            /** @deprecated */
             adoptTargetDate?: boolean;
             shareProgress?: boolean;
         };
@@ -4021,7 +4041,10 @@ export interface components {
             description?: string;
             /** @enum {string} */
             visibility?: "CODE_ONLY" | "LINK" | "PUBLIC";
-            /** Format: date */
+            /**
+             * Format: date
+             * @deprecated
+             */
             endsAt?: string;
             allowNudge?: boolean;
         };
@@ -4355,7 +4378,10 @@ export interface components {
             status: "RECRUITING" | "ACTIVE" | "ENDED" | "ARCHIVED";
             /** Format: int32 */
             memberCount: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @deprecated
+             */
             daysLeft: number;
             /** Format: double */
             myCompletionRate?: number;
@@ -4366,6 +4392,8 @@ export interface components {
             /** @enum {string} */
             myRole: "HOST" | "MODERATOR" | "MEMBER";
             members: components["schemas"]["ClubMemberBrief"][];
+            /** Format: date-time */
+            nextMeetingAt?: string;
         };
         PageResponseClubSummaryView: {
             content?: components["schemas"]["ClubSummaryView"][];
@@ -4418,7 +4446,7 @@ export interface components {
             /** Format: date */
             startsAt: string;
             /** Format: date */
-            endsAt: string;
+            endsAt?: string;
             /** @enum {string} */
             status: "RECRUITING" | "ACTIVE" | "ENDED" | "ARCHIVED";
             alreadyMember: boolean;
@@ -4791,7 +4819,7 @@ export interface components {
             /** Format: date */
             startsAt: string;
             /** Format: date */
-            endsAt: string;
+            endsAt?: string;
             /** Format: int64 */
             ownerId: number;
             ownerNickname?: string;
@@ -4872,6 +4900,7 @@ export interface components {
     pathItems: never;
 }
 export type SchemaUpsertMeetingRequest = components['schemas']['UpsertMeetingRequest'];
+export type SchemaBookSummary = components['schemas']['BookSummary'];
 export type SchemaMeetingAttendeeView = components['schemas']['MeetingAttendeeView'];
 export type SchemaMeetingView = components['schemas']['MeetingView'];
 export type SchemaBannerUpsertRequest = components['schemas']['BannerUpsertRequest'];
@@ -4905,7 +4934,6 @@ export type SchemaReplyPostcardRequest = components['schemas']['ReplyPostcardReq
 export type SchemaDeviceRegisterRequest = components['schemas']['DeviceRegisterRequest'];
 export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaAddBookRequest = components['schemas']['AddBookRequest'];
-export type SchemaBookSummary = components['schemas']['BookSummary'];
 export type SchemaProgressView = components['schemas']['ProgressView'];
 export type SchemaReadingRecordView = components['schemas']['ReadingRecordView'];
 export type SchemaFinishRequest = components['schemas']['FinishRequest'];

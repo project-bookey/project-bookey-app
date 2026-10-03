@@ -21,7 +21,6 @@ const VISIBILITIES: { value: ClubVisibility; label: string; description: string 
   { value: 'PUBLIC', label: '공개', description: '추천 클럽에 노출되고 누구나 참가할 수 있어요.' },
 ];
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * 클럽 설정 — 클럽을 연 사람(호스트)만. 목록의 '관리' 칩과 클럽 정보의 톱니에서 들어온다.
@@ -74,7 +73,6 @@ function SettingsForm({ club }: { club: ClubHome }) {
 
   const [name, setName] = useState(club.name);
   const [description, setDescription] = useState(club.description ?? '');
-  const [endsAt, setEndsAt] = useState(club.endsAt);
   const [kickTarget, setKickTarget] = useState<MemberProgress | null>(null);
   const [kickReason, setKickReason] = useState('');
 
@@ -129,7 +127,6 @@ function SettingsForm({ club }: { club: ClubHome }) {
   });
 
   const infoDirty = name.trim() !== club.name || description.trim() !== (club.description ?? '');
-  const endsAtValid = DATE_RE.test(endsAt) && endsAt >= club.startsAt;
   const others = club.members.filter((m) => !m.isMe);
   const expandable = club.seatPolicy && club.memberLimit < club.seatPolicy.maxLimit;
 
@@ -185,29 +182,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
           </Text>
         </Section>
 
-        <Section title="기간 · 찌르기">
-          <KeyValue label="시작일" value={club.startsAt} />
-          <Rule />
-          <View style={styles.inlineField}>
-            <View style={{ flex: 1 }}>
-              <Field
-                label="종료일"
-                value={endsAt}
-                onChangeText={setEndsAt}
-                placeholder="YYYY-MM-DD"
-                autoCapitalize="none"
-                error={endsAt !== club.endsAt && !endsAtValid ? '시작일 이후 날짜를 YYYY-MM-DD 로 적어주세요.' : null}
-              />
-            </View>
-            <Button
-              label="저장"
-              size="sm"
-              variant="outline"
-              disabled={endsAt === club.endsAt || !endsAtValid}
-              loading={update.isPending}
-              onPress={() => update.mutate({ endsAt }, { onSuccess: () => notify('종료일을 바꿨어요.') })}
-            />
-          </View>
+        {/* 클럽은 기간 없이 이어진다 — 연 날만 적어 두고, 끝내려면 아래 '클럽 종료'. */}
+        <Section title="시작 · 찌르기">
+          <KeyValue label="연 날" value={club.startsAt} />
           <Rule />
           <Toggle
             label="찌르기 허용"
@@ -347,7 +324,6 @@ const styles = StyleSheet.create({
   title: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 30 },
   bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   section: { borderTopWidth: hairline, paddingTop: spacing.lg },
-  inlineField: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },

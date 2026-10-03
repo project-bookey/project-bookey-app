@@ -8,14 +8,12 @@ import type {
   ChatMessage,
   ChatMessages,
   ChatSummary,
-  Checkpoint,
   ClubHome,
   ClubLogDay,
   ClubLogDayCount,
   ClubLogWeek,
   ClubPost,
   ClubPreview,
-  ClubResult,
   ClubSeatResult,
   ClubSummary,
   ClubVisibility,
@@ -292,7 +290,7 @@ export const clubApi = {
     api<ClubPreview>(`/api/v1/clubs/${clubId}/preview`),
   join: (
     code: string,
-    body: { adoptTargetDate: boolean; shareProgress: boolean },
+    body: { shareProgress: boolean },
   ) =>
     api<ClubHome>("/api/v1/clubs/join", {
       method: "POST",
@@ -300,21 +298,17 @@ export const clubApi = {
     }),
   joinPublic: (
     clubId: number,
-    body: { adoptTargetDate: boolean; shareProgress: boolean },
+    body: { shareProgress: boolean },
   ) => api<ClubHome>(`/api/v1/clubs/${clubId}/join`, { method: "POST", body }),
+  /** 클럽 만들기 — 기간 없이 이어지고 책은 모임마다 고르므로 이름 · 정원 · 공개 범위만 보낸다. */
   create: (body: {
     name: string;
     description?: string;
-    bookId: number;
-    startsAt: string;
-    endsAt: string;
     visibility?: string;
     memberLimit?: number;
-    autoCheckpoints?: boolean;
     allowNudge?: boolean;
   }) => api<ClubHome>("/api/v1/clubs", { method: "POST", body }),
   home: (clubId: number) => api<ClubHome>(`/api/v1/clubs/${clubId}`),
-  result: (clubId: number) => api<ClubResult>(`/api/v1/clubs/${clubId}/result`),
   rotateCode: (clubId: number) =>
     api<{ joinCode: string }>(`/api/v1/clubs/${clubId}/rotate-code`, {
       method: "POST",
@@ -330,7 +324,6 @@ export const clubApi = {
       name?: string;
       description?: string;
       visibility?: ClubVisibility;
-      endsAt?: string;
       allowNudge?: boolean;
     },
   ) => api<ClubHome>(`/api/v1/clubs/${clubId}`, { method: "PATCH", body }),
@@ -615,6 +608,8 @@ export type ClubMeeting = {
   host: boolean;
   attendeeNicknames: string[];
   attendees: ClubMeetingAttendee[];
+  /** 이 모임에서 읽을 책 — 고르지 않았으면 없다. 다가오는 모임의 책이 클럽의 지금 읽는 책이 된다. */
+  book?: BookSummary;
 };
 export type ClubMeetingInput = {
   title: string;
@@ -627,6 +622,8 @@ export type ClubMeetingInput = {
   longitude?: number;
   mapUrl?: string;
   responseDeadline?: string;
+  /** 이 모임에서 읽을 책(선택). */
+  bookId?: number;
 };
 export type ClubPlace = {
   id: string;
@@ -875,4 +872,3 @@ export const postApi = {
     api<PostImage>("/api/v1/posts/images", { method: "POST", body: form }),
 };
 
-export type { Checkpoint };

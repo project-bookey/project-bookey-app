@@ -16,7 +16,6 @@ import {
 import { ApiError } from "@/api/client";
 import { clubApi, clubCommunityApi } from "@/api/endpoints";
 import type {
-  Checkpoint,
   ClubHome,
   ClubLogSummary,
   ClubPost,
@@ -29,6 +28,7 @@ import {
   clubTabOf,
   notify,
 } from "@/components/club";
+import { MeetingNoteGrid } from "@/components/club/MeetingNoteGrid";
 import { meetingDay } from "@/components/club/meetingTime";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubMeetingsBody } from "./meetings";
@@ -60,10 +60,10 @@ import {
   linkLabel,
   percent,
 } from "@/components/ui";
-import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from "@/theme";
+import { iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono, sans } from "@/theme/tokens";
 
-const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "meetings"];
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "meetings", "notes"];
 /** 머리의 멤버 아바타 — 이만큼 겹쳐 보이고 나머지는 +n. */
 const HEAD_AVATARS = 4;
 
@@ -73,11 +73,12 @@ type FeedRow =
   | { key: string; kind: "log"; log: ClubPost };
 
 /**
- * 클럽 홈 (§12.2) — 머리(이름 · 책 · D-day · 내 진척 · 멤버)와 소식 · 모임 두 탭.
+ * 클럽 홈 (§12.2) — 머리(이름 · 지금 읽는 책 · 내 진척 · 다음 모임 · 멤버)와 소식 · 모임 · 노트 세 탭.
+ * 클럽은 기간 없이 이어지고, 다가오는 모임의 책이 지금 읽는 책이 된다(서버가 맞춘다).
  * 소식은 멤버들이 남긴 조각을 날짜별로 이어 붙인 한 줄 피드다(요일 스트립·주 이동 없이 내려 보며 지난날로).
  * 채팅은 탭이 아니라 헤더 말풍선(안 읽음 배지)으로 여는 전체 화면(/club/[id]/chat)이다 — 키보드가 올라와도
  * 머리·탭에 자리를 뺏기지 않고, 옆으로 밀어 탭이 바뀌며 쓰던 글이 날아가지 않게.
- * 함께 읽는 사람 · 체크포인트 · 초대 코드 · 나가기는 ⋯ 의 클럽 정보(/club/[id]/info)로,
+ * 함께 읽는 사람 · 이번 주 카드 · 초대 코드 · 나가기는 ⋯ 의 클럽 정보(/club/[id]/info)로,
  * 운영은 호스트 전용 설정(/club/[id]/settings)으로 뺐다.
  */
 export default function ClubHomeScreen() {
@@ -103,7 +104,6 @@ export default function ClubHomeScreen() {
   // 당겨서 새로고침 표시는 손으로 당겼을 때만 — 반응·펼쳐 보기 뒤 피드를 다시 받을 때는 띄우지 않는다.
   const [refreshing, setRefreshing] = useState(false);
   const [shareProgress, setShareProgress] = useState(true);
-  const [adoptTarget, setAdoptTarget] = useState(true);
 
   const club = useQuery({
     queryKey: ["club", clubId],
@@ -162,10 +162,7 @@ export default function ClubHomeScreen() {
 
   const join = useMutation({
     mutationFn: () =>
-      clubApi.joinPublic(clubId, {
-        adoptTargetDate: adoptTarget,
-        shareProgress,
-      }),
+      clubApi.joinPublic(clubId, { shareProgress }),
     onSuccess: (joined) => {
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
       queryClient.invalidateQueries({ queryKey: ["club", "preview", clubId] });
@@ -189,9 +186,7 @@ export default function ClubHomeScreen() {
       return (
         <PublicClubPreview
           club={preview.data}
-          adoptTarget={adoptTarget}
           shareProgress={shareProgress}
-          onAdoptTargetChange={setAdoptTarget}
           onShareProgressChange={setShareProgress}
           onJoin={() => join.mutate()}
           joining={join.isPending}
@@ -216,10 +211,12 @@ export default function ClubHomeScreen() {
     : me?.completionRate != null
       ? `내 진척 ${percent(me.completionRate)}`
       : null;
+  // 지금 읽는 책 · 내 진척 · 다음 모임 — 책을 고른 모임이 아직 없으면 '읽을 책 미정'.
   const metaLine = [
-    data.book?.title,
-    ended ? "종료" : `D-${Math.max(0, data.daysLeft)}`,
-    myProgress,
+    ended ? "종료" : null,
+    data.book?.title ?? "읽을 책 미정",
+    data.book ? myProgress : null,
+    data.nextMeetingAt ? `다음 모임 ${meetingDay(data.nextMeetingAt)}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -323,18 +320,22 @@ export default function ClubHomeScreen() {
               }}
               onEndReachedThreshold={0.5}
               ListHeaderComponent={
-                readers.length > 0 || data.nextCheckpoint ? (
-                  <View style={styles.feedTop}>
-                    <ReadingNowLine
-                      readers={readers}
-                      onJoin={
-                        myRecord && !ended
-                          ? () => router.push(`/timer?recordId=${myRecord.id}`)
-                          : undefined
-                      }
-                    />
-                    {data.nextCheckpoint ? <CheckpointLine checkpoint={data.nextCheckpoint} /> : null}
-                  </View>
+                readers.length > 0 ? (
+                  <ReadingNowLine
+                    readers={readers}
+                    onJoin={
+                      myRecord && !ended
+                        ? () => router.push(`/timer?recordId=${myRecord.id}`)
+                        : undefined
+                    }
+                  />
+                ) : !data.book && !ended ? (
+                  // 읽을 책이 아직 없을 때 — 무엇을 하면 되는지 한 줄로 알려 준다.
+                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                    {data.myRole === "HOST"
+                      ? "모임을 열며 읽을 책을 고르면 함께 읽기가 시작돼요."
+                      : "호스트가 모임을 열며 읽을 책을 고르면 함께 읽기가 시작돼요."}
+                  </Text>
                 ) : null
               }
               renderItem={({ item, index }) =>
@@ -415,26 +416,11 @@ export default function ClubHomeScreen() {
           </>
         ) : null}
         {tab === "meetings" ? <ClubMeetingsBody isHost={data.myRole === "HOST"} /> : null}
+        {tab === "notes" ? (
+          <MeetingNoteGrid clubId={clubId} onOpenMeetings={() => setTab("meetings")} />
+        ) : null}
       </SwipeableTabs>
     </PaperScreen>
-  );
-}
-
-/** 다음 체크포인트 — 소식 맨 위 괘선 사이 한 줄. 지난 체크포인트 격자는 클럽 정보에 있다. */
-function CheckpointLine({ checkpoint }: { checkpoint: Checkpoint }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.checkpoint, { borderColor: colors.line }]}>
-      <Eyebrow>다음 체크포인트</Eyebrow>
-      <View style={styles.checkpointRow}>
-        <Text numberOfLines={1} style={[typeScale.label, { color: colors.text, flexShrink: 1 }]}>
-          {checkpoint.title} · {checkpoint.targetPage}쪽까지
-        </Text>
-        <Text style={[styles.metaLine, { color: colors.textMuted }]}>
-          {meetingDay(checkpoint.dueAt)} 마감 · {checkpoint.achievedCount}/{checkpoint.memberCount}명
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -443,25 +429,15 @@ function bookLine(book?: { title?: string; author?: string } | null): string {
   return [book?.title, book?.author].filter(Boolean).join(" · ");
 }
 
-/** 08-31 → 8/31 */
-function compactDate(iso: string): string {
-  const [, month, day] = iso.split("-");
-  return `${Number(month)}/${Number(day)}`;
-}
-
 function PublicClubPreview({
   club,
-  adoptTarget,
   shareProgress,
-  onAdoptTargetChange,
   onShareProgressChange,
   onJoin,
   joining,
 }: {
   club: ClubPreview;
-  adoptTarget: boolean;
   shareProgress: boolean;
-  onAdoptTargetChange: (value: boolean) => void;
   onShareProgressChange: (value: boolean) => void;
   onJoin: () => void;
   joining: boolean;
@@ -487,7 +463,7 @@ function PublicClubPreview({
               {club.name}
             </Text>
             <Text style={[styles.bookLine, { color: colors.textMuted }]}>
-              {bookLine(club.book)}
+              {club.book ? `지금 읽는 책 · ${bookLine(club.book)}` : "읽을 책 미정"}
             </Text>
             <View style={styles.headerTags}>
               <Tag label={`${club.memberCount}/${club.memberLimit}명`} />
@@ -523,11 +499,6 @@ function PublicClubPreview({
             label="인원"
             value={`${club.memberCount} / ${club.memberLimit}`}
           />
-          <Rule />
-          <KeyValue
-            label="기간"
-            value={`${compactDate(club.startsAt)}-${compactDate(club.endsAt)}`}
-          />
         </Card>
 
         {club.joinable ? (
@@ -538,12 +509,6 @@ function PublicClubPreview({
               description="끄면 리더보드에 비공개로 표시되고 클럽 평균 계산에서 빠집니다."
               value={shareProgress}
               onChange={onShareProgressChange}
-            />
-            <Toggle
-              label="클럽 목표일을 내 목표로"
-              description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
-              value={adoptTarget}
-              onChange={onAdoptTargetChange}
             />
           </Card>
         ) : club.joinBlockedReason ? (
@@ -613,20 +578,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     gap: spacing.lg,
   },
-  feedTop: { gap: spacing.sm },
   dayGap: { marginTop: spacing.lg },
-  checkpoint: {
-    gap: 2,
-    paddingVertical: spacing.sm,
-    borderTopWidth: hairline,
-    borderBottomWidth: hairline,
-  },
-  checkpointRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
   cta: {
     position: "absolute",
     left: 0,
