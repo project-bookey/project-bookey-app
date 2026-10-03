@@ -94,8 +94,8 @@ export function MeetingNoteGrid({ clubId, onOpenMeetings }: { clubId: number; on
   );
 }
 
-/** 격자 한 칸 — 정사각 썸네일, 왼쪽 위 날짜 쪽지, 왼쪽 아래 함께 쓴 멤버. */
-function MeetingNoteCell({ note, size, onPress }: { note: MeetingNote; size: number; onPress: () => void }) {
+/** 격자 한 칸 — 정사각 썸네일, 왼쪽 위 날짜 쪽지, 왼쪽 아래 함께 쓴 멤버. 클럽 홈의 '최근 노트'도 이 칸을 쓴다. */
+export function MeetingNoteCell({ note, size, onPress }: { note: MeetingNote; size: number; onPress: () => void }) {
   const { colors } = useTheme();
   const doc = useMemo(() => parseMeetingNoteDoc(note.document), [note.document]);
   const contributors = note.contributors.slice(0, CONTRIBUTOR_MAX);
