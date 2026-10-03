@@ -14,7 +14,7 @@ const PAGE_SIZE = 10;
 export type FollowBox = 'FOLLOWING' | 'FOLLOWER';
 
 /**
- * 나의 팔로우 (§14.3) — 내가 팔로우하는 사람과 나를 팔로우하는 사람. 예전 /follows 화면을 '나' 화면 안으로 옮겼다.
+ * 나의 팔로우 (§14.3) — 나를 팔로우하는 사람과 내가 팔로우하는 사람. 예전 /follows 화면을 '나' 화면 안으로 옮겼다.
  * 줄을 누르면 그 사람의 마이페이지로 가고, 팔로우·취소·엽서·채팅은 모두 거기서 한다.
  * 탭 상태는 '나' 화면이 쥔다 — 위쪽 팔로워·팔로잉 숫자를 누르면 이 섹션으로 내려오며 탭이 바뀐다.
  */
@@ -42,9 +42,10 @@ export function FollowSection({ box, onChangeBox }: {
   });
 
   const items = list.data?.pages.flatMap((page) => page.content ?? []) ?? [];
+  // 프로필 줄과 같은 순서(팔로워 → 팔로잉) — 숫자를 누르고 내려왔을 때 탭 자리가 엇갈리지 않게.
   const options: { value: FollowBox; label: string }[] = [
-    { value: 'FOLLOWING', label: `팔로잉 ${myProfile.data?.followingCount ?? 0}` },
     { value: 'FOLLOWER', label: `팔로워 ${myProfile.data?.followerCount ?? 0}` },
+    { value: 'FOLLOWING', label: `팔로잉 ${myProfile.data?.followingCount ?? 0}` },
   ];
 
   return (

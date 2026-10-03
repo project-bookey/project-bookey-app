@@ -1,20 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { PersonGlyph } from '@/components/Avatar';
 import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
-import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-
-/** 프로필 사진 판 지름(px) — 이 화면에서만 크게 본다(목록의 AVATAR_SIZE 와는 다른 자리). */
-const AVATAR = 112;
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'PREFER_NOT_TO_SAY', label: '선택 안 함' },
@@ -86,23 +82,8 @@ export default function ProfileEditScreen() {
     <PaperScreen>
       <SubHeader category="프로필 편집" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.container}>
+        {/* 사진은 여기서 바꾸지 않는다 — '나' 화면의 아바타를 누르는 길 하나로 모았다. */}
         <View style={styles.block}>
-          <Pressable
-            onPress={() => router.push({ pathname: '/profile-photo', params: { returnTo: 'profile' } })}
-            accessibilityRole="button"
-            accessibilityLabel="프로필 사진 수정"
-            style={({ pressed }) => [styles.photoBlock, pressed && styles.pressed]}
-          >
-            <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised, borderColor: colors.line }]}>
-              {user?.avatarUrl ? (
-                <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} resizeMode="cover" />
-              ) : (
-                <PersonGlyph size={AVATAR} color={colors.textFaint} />
-              )}
-            </View>
-            <Text style={[typeScale.bodyStrong, { color: colors.accent }]}>사진 수정</Text>
-          </Pressable>
-
           <Card>
             <Eyebrow>닉네임</Eyebrow>
             <TextInput
@@ -173,26 +154,8 @@ export default function ProfileEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, paddingBottom: spacing.xxl, gap: spacing.xl },
+  container: { ...layout.content, paddingTop: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl },
   block: { paddingHorizontal: spacing.lg, gap: spacing.lg },
-  photoBlock: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  avatar: {
-    width: AVATAR,
-    height: AVATAR,
-    borderRadius: AVATAR / 2,
-    borderWidth: hairline,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: { width: '100%', height: '100%' },
-  avatarInitial: { ...typeScale.titleSerif, fontSize: 38, lineHeight: 44 },
   field: { gap: spacing.sm, marginTop: spacing.md },
   input: {
     minHeight: 48,
@@ -211,5 +174,4 @@ const styles = StyleSheet.create({
   },
   counter: { marginTop: spacing.xs, textAlign: 'right' },
   error: { marginTop: spacing.sm, lineHeight: 18 },
-  pressed: pressedStyle,
 });
