@@ -10,6 +10,9 @@ import { measureTourTarget, TourRect } from './TourTarget';
 const PAD = 8;
 const SHADE = 'rgba(0, 0, 0, 0.72)';
 
+/** 둘러보기를 시작하지 않는 화면 — 계정을 막 만들고 지나가는 단계들. */
+const TOUR_DEFERRED_ROUTES: readonly string[] = ['/login', '/onboarding', '/profile-photo'];
+
 export function AppTourOverlay() {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,9 +23,12 @@ export function AppTourOverlay() {
   const [rect, setRect] = useState<TourRect | null>(null);
   const item = APP_TOUR_STEPS[step];
 
+  // 가입 직후 프로필 기본 정보 단계(/profile-photo)·로그인·온보딩 화면에선 둘러보기를 미룬다 — 시작하자마자
+  // 첫 단계 화면(/home)으로 옮겨 가 그 단계를 덮어 버린다. 홈 등 앱 안으로 들어오면 그때 시작한다.
   useEffect(() => {
-    if (status === 'authenticated' && userId != null) void startIfFirstLogin(userId);
-  }, [status, userId, startIfFirstLogin]);
+    if (status !== 'authenticated' || userId == null || TOUR_DEFERRED_ROUTES.includes(pathname)) return;
+    void startIfFirstLogin(userId);
+  }, [status, userId, pathname, startIfFirstLogin]);
 
   useEffect(() => {
     if (!active) return;

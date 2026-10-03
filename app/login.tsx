@@ -38,7 +38,7 @@ const BUTTON_HEIGHT = 48;
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
  * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 소셜 버튼은 연동된 계정의 로그인 전용(신규 가입 불가).
  * 가입 인증은 서버 설정(signup-config)을 따른다 — IDENTITY, EMAIL_CODE 또는 NONE.
- * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 바로 홈으로 넘어간다.
+ * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 프로필 기본 정보 단계(/profile-photo)를 거쳐 홈으로 간다.
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -113,7 +113,8 @@ export default function LoginScreen() {
     socialLogin('GOOGLE', idToken)
       .then(async (newUser) => {
         if (newUser) {
-          await applyOnboardingPicks();
+          await finishSignup();
+          return;
         }
         router.replace('/home');
       })
@@ -155,6 +156,15 @@ export default function LoginScreen() {
       await Promise.allSettled(jobs);
     }
     onboardingPicks.clear();
+  };
+
+  /**
+   * 새 계정의 마무리 — 온보딩 선택을 반영하고 프로필 기본 정보(성별·생년월일·사진) 단계로 보낸다.
+   * 그 화면에서 '나중에 하기'로 바로 홈에 갈 수 있다. 기존 계정 로그인은 곧장 홈으로 간다.
+   */
+  const finishSignup = async () => {
+    await applyOnboardingPicks();
+    router.replace('/profile-photo');
   };
 
   /** 본인인증 시작 — 개발 스텁이면 즉시 통과, 실서비스는 포트원 SDK 연동 지점. */
@@ -208,8 +218,7 @@ export default function LoginScreen() {
             privacyVersion: LEGAL_VERSION,
           },
         );
-        await applyOnboardingPicks();
-        router.replace('/home');
+        await finishSignup();
       } else {
         await emailLogin(email.trim(), password);
         router.replace('/home');
@@ -238,7 +247,8 @@ export default function LoginScreen() {
       }
       const newUser = await socialLogin('APPLE', credential.identityToken);
       if (newUser) {
-        await applyOnboardingPicks();
+        await finishSignup();
+        return;
       }
       router.replace('/home');
     } catch (e) {
@@ -262,7 +272,8 @@ export default function LoginScreen() {
       if (!accessToken) return; // 사용자가 취소
       const newUser = await socialLogin('KAKAO', accessToken);
       if (newUser) {
-        await applyOnboardingPicks();
+        await finishSignup();
+        return;
       }
       router.replace('/home');
     } catch (e) {
