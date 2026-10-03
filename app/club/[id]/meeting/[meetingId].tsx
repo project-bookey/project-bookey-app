@@ -22,7 +22,7 @@ import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle, sans } from '@/theme/tokens';
 
 /**
- * 모임 상세 — 예전 골격(굵은 제목 · 큰 민트 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
+ * 모임 상세 — 예전 골격(굵은 제목 · 큰 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
  * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
  * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
@@ -128,6 +128,8 @@ export default function MeetingDetailScreen() {
     const q = m.latitude != null && m.longitude != null ? `${m.latitude},${m.longitude}` : m.address;
     void Linking.openURL(m.mapUrl ?? `https://maps.google.com/?q=${encodeURIComponent(q)}`);
   };
+  // 주요 행동은 한 번에 하나 — 참여 전엔 '참여하기', 참여 뒤엔 '독서 실행'이 악센트 버튼이 된다.
+  const joinFirst = state === 'open' && !m.attending;
   const heading = (label: string) => <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{label}</Text>;
 
   return (
@@ -149,10 +151,10 @@ export default function MeetingDetailScreen() {
           ]}
         />
 
-        {/* 날짜 카드 — 예전처럼 가운데 큰 민트 시간 */}
+        {/* 날짜 카드 — 가운데 큰 시간. 악센트는 아래 주요 버튼 몫이라 본문 잉크로 */}
         <Card style={{ alignItems: 'center', gap: 6 }}>
           <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{meetingDateLong(m.startsAt)}</Text>
-          <Text style={[styles.time, { color: colors.accent }]}>{meetingClock12(m.startsAt)}</Text>
+          <Text style={[styles.time, { color: colors.text }]}>{meetingClock12(m.startsAt)}</Text>
           {m.endsAt ? (
             <Text style={[typeScale.caption, { color: colors.textFaint }]}>{meetingClock12(m.endsAt)}까지</Text>
           ) : null}
@@ -213,7 +215,7 @@ export default function MeetingDetailScreen() {
           </Text>
           <Button
             label={running ? '독서 종료' : '독서 실행'}
-            variant={running ? 'danger' : 'primary'}
+            variant={running ? 'danger' : joinFirst ? 'outline' : 'primary'}
             disabled={otherRunning || state !== 'open'}
             onPress={() => (running ? end.mutate() : start.mutate())}
             loading={start.isPending || end.isPending}
@@ -233,14 +235,16 @@ export default function MeetingDetailScreen() {
             accessibilityLabel="모임 노트 열기"
             style={({ pressed }) => [styles.link, pressed ? pressedStyle : null]}
           >
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('모임 노트', 'nav')}</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('모임 노트', 'nav')}</Text>
           </Pressable>
         </Card>
 
         {isHost && state === 'open' ? (
+          // 파괴적 동작 — 주요 버튼들과 섹션 간격(xl) 이상 떼어 둔다.
           <Button
             label="모임 취소"
-            variant="ghost"
+            variant="danger"
+            style={{ marginTop: spacing.xl }}
             loading={cancel.isPending}
             onPress={async () => {
               if (await confirmAsync('이 모임을 취소할까요? 참여자에게도 취소로 보여요.', '모임 취소')) cancel.mutate();
@@ -257,7 +261,7 @@ const styles = StyleSheet.create({
   // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 Pretendard ExtraBold 토큰으로.
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
   time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
-  link: { minHeight: 36, justifyContent: 'center', alignSelf: 'flex-start' },
+  link: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',

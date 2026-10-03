@@ -51,16 +51,17 @@ export function MemberStrip({ members, readingNowIds, logCounts, selectedUserId,
             accessibilityLabel={`${member.nickname}${member.isMe ? ' (나)' : ''} ${status}${live ? ', 지금 읽는 중' : ''}${count > 0 ? `, 조각 ${count}개` : ''}`}
             style={[
               styles.chip,
-              { borderColor: selected ? colors.accent : 'transparent' },
+              // 선택·나·읽는 중 표시는 상태라 잉크로 — 악센트는 진척 막대(진행) 몫이다.
+              { borderColor: selected ? colors.ink : 'transparent' },
               selected && { backgroundColor: colors.surfaceRaised },
             ]}
           >
             <View>
-              <View style={[styles.avatarRing, { borderColor: member.isMe ? colors.accent : 'transparent' }]}>
+              <View style={[styles.avatarRing, { borderColor: member.isMe ? colors.ink : 'transparent' }]}>
                 <Avatar uri={member.avatarUrl} nickname={member.nickname} size={AVATAR} />
               </View>
               {live ? (
-                <View style={[styles.liveDot, { backgroundColor: colors.accent, borderColor: colors.bg }]} />
+                <View style={[styles.liveDot, { backgroundColor: colors.ink, borderColor: colors.bg }]} />
               ) : null}
             </View>
             <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
@@ -147,7 +148,8 @@ export function MemberDetail({ member, nudging, onNudge, onClose }: {
 }
 
 const styles = StyleSheet.create({
-  strip: { gap: spacing.xs, paddingVertical: 2 },
+  // 칩끼리는 터치 대상이라 sm 이상 띄운다(오터치 방지).
+  strip: { gap: spacing.sm, paddingVertical: 2 },
   chip: {
     width: CHIP_W,
     alignItems: 'center',

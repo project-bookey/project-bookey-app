@@ -12,7 +12,7 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
 import { Button, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
 /** 한 줄 길이 — 서버의 조각 본문 상한과 같은 값. */
@@ -223,10 +223,11 @@ export default function ClubLogScrapScreen() {
                     onPress={() => react.mutate(kind)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.reaction,
                       { borderColor: colors.line, backgroundColor: colors.bg },
                       on && { backgroundColor: colors.ink, borderColor: colors.ink },
+                      pressed && pressedStyle,
                     ]}
                   >
                     <Text style={[typeScale.monoLabel, { color: on ? colors.onInk : colors.textMuted }]}>{label}</Text>
@@ -282,7 +283,8 @@ export default function ClubLogScrapScreen() {
           ) : null}
         </ScrollView>
 
-        {!data.masked && !ended ? (
+        {/* 고치는 동안엔 '저장'이 이 화면의 주요 행동 — 한 마디 입력줄(또 하나의 악센트 버튼)은 접어 둔다 */}
+        {!data.masked && !ended && !editing ? (
           <View style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.line }]}>
             <TextInput
               value={talk}
@@ -356,8 +358,17 @@ const styles = StyleSheet.create({
   pageField: { gap: spacing.xs },
   pageInput: { borderBottomWidth: hairline, paddingVertical: spacing.xs, fontFamily: mono.regular, fontSize: 15 },
   editActions: { flexDirection: 'row', gap: spacing.sm },
-  reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  reaction: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  // 반응 칩은 44pt 터치 상자, 칩 사이는 sm 이상 띄워 오터치를 막는다(UX 철칙 Fitts).
+  reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  reaction: {
+    minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+  },
   ownerActions: { flexDirection: 'row', gap: spacing.sm },
   talks: { gap: spacing.sm },
   talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: 4 },

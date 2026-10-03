@@ -39,7 +39,8 @@ export function ReadingNowCard({ readers, onJoin }: { readers: ReadingNow[]; onJ
             key={reader.userId}
             style={[
               styles.avatar,
-              { backgroundColor: colors.surfaceRaised, borderColor: colors.accent, marginLeft: i === 0 ? 0 : -8 },
+              // 읽는 중 표시는 상태라 잉크 테두리 — 악센트는 화면의 CTA 몫.
+              { backgroundColor: colors.surfaceRaised, borderColor: colors.ink, marginLeft: i === 0 ? 0 : -8 },
             ]}
           >
             <Text style={[typeScale.label, { color: colors.text, fontSize: 11 }]}>{reader.nickname.slice(0, 1)}</Text>
@@ -87,7 +88,7 @@ export function WeekStrip({ days, selected, today, onSelect }: {
             <Text style={[styles.dayNumber, { color: fg }]}>{dayOfMonth(day.date)}</Text>
             <View style={styles.dots}>
               {Array.from({ length: Math.min(3, day.logCount) }, (_, i) => (
-                <View key={i} style={[styles.dot, { backgroundColor: active ? colors.onInk : colors.accent }]} />
+                <View key={i} style={[styles.dot, { backgroundColor: active ? colors.onInk : colors.textMuted }]} />
               ))}
             </View>
           </Pressable>
@@ -114,7 +115,7 @@ export function SummaryNote({ summary, label, rotate = -2, variant = 'sticky' }:
   if (variant === 'ruled') {
     return (
       <View style={[styles.ruledNote, { borderTopColor: colors.ink }]}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{label}</Text>
+        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{label}</Text>
         <Text style={[styles.notePages, { color: colors.text }]}>{summary.pagesRead}쪽</Text>
         <Text style={[typeScale.caption, { color: colors.textMuted, fontSize: 11, lineHeight: 15 }]}>{detail}</Text>
       </View>
