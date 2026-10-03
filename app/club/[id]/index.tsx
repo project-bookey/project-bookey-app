@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ellipsis, MessageSquare } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -19,6 +18,7 @@ import { clubApi, clubCommunityApi, meetingNoteApi, type ClubMeeting } from "@/a
 import type { ClubHome, ClubPreview } from "@/api/types";
 import { Avatar } from "@/components/Avatar";
 import {
+  ClubBackdrop,
   ClubTabs,
   type ClubTabKey,
   clubTabOf,
@@ -191,23 +191,14 @@ export default function ClubHomeScreen() {
 
   return (
     <PaperScreen>
-      {/* 머리 — 배경 사진이 있으면 헤더 줄까지 깔고, 글씨가 읽히도록 아래로 갈수록 종이색으로 덮는다 */}
+      {/* 머리 — 배경(호스트가 올린 사진, 없으면 기본 배경)을 헤더 줄까지 깔고, 글씨가 읽히도록 아래로 갈수록 종이색으로 덮는다 */}
       <View>
-        {data.backgroundUrl ? (
-          <>
-            <Image
-              source={{ uri: data.backgroundUrl }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
-            />
-            <LinearGradient
-              colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
-              locations={[0, 0.55, 1]}
-              style={StyleSheet.absoluteFill}
-            />
-          </>
-        ) : null}
+        <ClubBackdrop uri={data.backgroundUrl} seed={data.id} />
+        <LinearGradient
+          colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
+          locations={[0, 0.55, 1]}
+          style={StyleSheet.absoluteFill}
+        />
         <SubHeader
           category="클럽"
           right={
@@ -242,9 +233,20 @@ export default function ClubHomeScreen() {
         {/* 명조 이름 · 모노 한 줄 · 한 줄 소개 · 함께하는 사람. 소개가 없으면 호스트에게만 적으러 가는 링크 */}
         <View style={styles.top}>
           <View style={{ gap: spacing.xs }}>
-            <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
-              {data.name}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text numberOfLines={2} style={[styles.name, styles.flex, { color: colors.text }]}>
+                {data.name}
+              </Text>
+              {/* 클럽을 연 사람만 — 이름 · 한 줄 소개 · 배경을 고치는 설정으로 */}
+              {isHost ? (
+                <Button
+                  label="정보 수정"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => router.push(`/club/${clubId}/settings`)}
+                />
+              ) : null}
+            </View>
             <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
               {metaLine}
             </Text>
@@ -707,6 +709,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
   },
+  nameRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
   name: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 32 },
   metaLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   body: { flex: 1 },

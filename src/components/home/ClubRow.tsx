@@ -1,16 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubPreview } from '@/api/types';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
-import { mono, serif } from '@/theme/tokens';
+import { mono } from '@/theme/tokens';
+import { ClubBackdrop } from '@/components/club';
 import { linkLabel } from '@/components/ui';
 
 /**
  * 홈 추천 클럽 행 — 공개 클럽 카드 + 맨 끝 '+ 클럽 만들기' 타일.
- * 클럽은 책 한 권에 묶이지 않으므로 카드 위 띠는 책 표지 대신 클럽 배경 사진(없으면 이름 첫 글자), 아래는 이름 · 한 줄 소개 · 인원.
+ * 클럽은 책 한 권에 묶이지 않으므로 카드 위 띠는 책 표지 대신 클럽 배경(사진, 없으면 기본 배경), 아래는 이름 · 한 줄 소개 · 인원.
  * 탭 제거 후 유일한 클럽 생성 진입점이므로 0건·오류여도 섹션을 유지한다.
  */
 export function ClubRow() {
@@ -69,17 +70,8 @@ export function ClubRow() {
             accessibilityLabel={item.name}
             style={[styles.card, { backgroundColor: colors.surface }]}
           >
-            <View style={[styles.band, { backgroundColor: colors.paperAlt }]}>
-              {item.backgroundUrl ? (
-                <Image
-                  source={{ uri: item.backgroundUrl }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
-                  accessibilityIgnoresInvertColors
-                />
-              ) : (
-                <Text style={[styles.monogram, { color: colors.textFaint }]}>{item.name.slice(0, 1)}</Text>
-              )}
+            <View style={styles.band}>
+              <ClubBackdrop uri={item.backgroundUrl} seed={item.id} />
             </View>
             <Text numberOfLines={1} style={[typeScale.bodyStrong, { color: colors.text }]}>{item.name}</Text>
             {item.description ? (
@@ -124,9 +116,8 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   skeletonRow: { flexDirection: 'row', gap: spacing.sm },
   card: { width: 150, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
-  // 카드 폭에 맞춘 띠 — 배경 사진이 없으면 종이에 명조 첫 글자.
+  // 카드 폭에 맞춘 띠 — 배경 사진이 없으면 기본 배경(ClubBackdrop).
   band: { height: 64, borderRadius: radius.sm, overflow: 'hidden', marginBottom: spacing.xs },
-  monogram: { position: 'absolute', left: spacing.sm, bottom: -6, fontFamily: serif.extraBold, fontSize: 44, lineHeight: 52 },
   createTile: {
     borderWidth: 1,
     borderStyle: 'dashed',
