@@ -40,6 +40,8 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'POSTCARD_RECEIVED': return { href: { pathname: '/messenger', params: { pane: 'inbox' } }, section: true };
     case 'POSTCARD_REPLIED': return { href: { pathname: '/messenger', params: { pane: 'sent' } }, section: true };
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
+    // 고객문의 답변 — 그 문의 화면에서 답을 읽는다.
+    case 'INQUIRY_ANSWERED': return one('/inquiry/[id]', 'inquiryId');
     case 'FOLLOWED':
     case 'FOLLOW_CONNECTED': return one('/user/[id]', 'userId');
     case 'HABIT':

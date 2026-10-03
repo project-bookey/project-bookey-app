@@ -173,7 +173,7 @@ export function Numeral({ children, style }: { children: ReactNode; style?: obje
   return <Text style={[styles.numeral, style]}>{children}</Text>;
 }
 
-export function Field({ label, hint, error, ...props }: TextInputProps & {
+export function Field({ label, hint, error, style, ...props }: TextInputProps & {
   label: string;
   hint?: string;
   error?: string | null;
@@ -186,7 +186,7 @@ export function Field({ label, hint, error, ...props }: TextInputProps & {
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         placeholderTextColor={colors.textFaint}
-        style={[styles.input, error ? styles.inputError : null]}
+        style={[styles.input, error ? styles.inputError : null, style]}
         {...props}
       />
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}

@@ -17,13 +17,19 @@ import type {
   ClubSeatResult,
   ClubSummary,
   ClubVisibility,
+  CreateInquiry,
   CreatePost,
   CreateReviewComment,
   EmailCodeResponse,
   ExchangeTarget,
+  Faq,
   FeedSort,
   FollowingIdsView,
   FollowUserView,
+  Inquiry,
+  InquiryCategoryOption,
+  InquiryImage,
+  InquirySummary,
   LibrarySummary,
   LikerView,
   Me,
@@ -899,3 +905,22 @@ export const postApi = {
     api<PostImage>("/api/v1/posts/images", { method: "POST", body: form }),
 };
 
+/** 고객문의(1:1) — 유형·사진 업로드·작성·내 문의·삭제. 답변은 어드민이 달고 알림(INQUIRY_ANSWERED)으로 온다. */
+export const inquiryApi = {
+  categories: () => api<InquiryCategoryOption[]>("/api/v1/inquiries/categories"),
+  list: (page = 0, size = 20) =>
+    api<Page<InquirySummary>>("/api/v1/inquiries", { query: { page, size } }),
+  get: (inquiryId: number) => api<Inquiry>(`/api/v1/inquiries/${inquiryId}`),
+  create: (body: CreateInquiry) =>
+    api<Inquiry>("/api/v1/inquiries", { method: "POST", body }),
+  remove: (inquiryId: number) =>
+    api<void>(`/api/v1/inquiries/${inquiryId}`, { method: "DELETE" }),
+  /** 사진 업로드 — multipart. 문의에 붙이지 않은 사진은 24시간 뒤 서버가 지운다. */
+  uploadImage: (form: FormData) =>
+    api<InquiryImage>("/api/v1/inquiries/images", { method: "POST", body: form }),
+};
+
+/** 자주 묻는 질문 — 노출 중인 것만 정렬 순으로. 어드민에서 고친다. */
+export const faqApi = {
+  list: () => api<Faq[]>("/api/v1/faqs"),
+};

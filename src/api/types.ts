@@ -114,3 +114,15 @@ export type PostImage = Schemas['PostImageView'];
 export type PostLike = Schemas['PostLikeView'];
 export type PostComment = Schemas['PostCommentView'];
 export type CreatePostComment = Schemas['CreatePostCommentRequest'];
+
+// ── 고객문의 · FAQ ───────────────────────────────────────
+/** 문의 한 건과 답변 — 1문 1답. 답변한 관리자는 내려오지 않는다(앱은 '북키 답변'으로만 보여 준다). */
+export type Inquiry = Schemas['InquiryView'];
+export type InquirySummary = Schemas['InquirySummaryView'];
+export type InquiryStatus = Inquiry['status'];
+export type InquiryCategory = Inquiry['category'];
+/** 작성 화면의 유형 칩 — 서버 순서 그대로, 맨 앞이 기본값. */
+export type InquiryCategoryOption = Schemas['InquiryCategoryView'];
+export type InquiryImage = Schemas['InquiryImageView'];
+export type CreateInquiry = Schemas['CreateInquiryRequest'];
+export type Faq = Schemas['FaqView'];

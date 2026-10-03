@@ -24,6 +24,12 @@ export type PhotoUpload = {
   image?: PostImage;
 };
 
+/**
+ * 사진 올리기 함수 — prepareImage 가 만든 multipart 폼을 받아 서버가 준 사진을 돌려준다.
+ * 독후감은 `postApi.uploadImage`, 고객문의는 `inquiryApi.uploadImage`(같은 모양의 사진을 돌려준다).
+ */
+export type ImageUpload = (form: FormData) => Promise<PostImage>;
+
 /** 다시 올릴 때 필요한 만큼만 남긴 자산. */
 type PickedAsset = { uri: string; width?: number; height?: number };
 
@@ -38,13 +44,17 @@ const UPLOAD_NOTICE = '사진을 올리지 못했어요 · 다시 시도';
 const STORAGE_DISABLED = 'STORAGE_DISABLED';
 
 /**
- * 독후감 사진 업로드 — 고르기·병렬 업로드·다시 올리기·떼기.
+ * 사진 업로드 — 고르기·병렬 업로드·다시 올리기·떼기. 독후감 쓰기와 고객문의가 나눠 쓴다(`uploadImage` 로 갈린다).
  *
  * 사진은 고르는 즉시 한 장씩 따로 올린다(useMutation 이 아니라 Promise 병렬) — 열 장을 고르면 열 타일이
  * 동시에 돌고, 하나가 실패해도 나머지는 그대로 붙는다. 뗀 사진은 서버에 지우라고 하지 않는다 —
  * 글에 안 붙은 사진은 24시간 뒤 배치가 회수한다. `initial` 은 수정 화면이 넘기는, 이미 붙어 있던 사진이다.
  */
-export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
+export function usePhotoUploads(
+  initial: PostImage[],
+  max = POST_IMAGE_MAX,
+  uploadImage: ImageUpload = postApi.uploadImage,
+): {
   photos: PhotoUpload[];
   /** 사진을 골라 올리기 시작한다 — 고른 타일의 key 를 곧바로 돌려준다(올라가기를 기다리지 않는다). */
   pick: () => Promise<string[]>;
@@ -99,7 +109,7 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
   const upload = useCallback(async (key: string, asset: PickedAsset) => {
     try {
       const form = await prepareImage(asset);
-      const image = await postApi.uploadImage(form);
+      const image = await uploadImage(form);
       if (!alive.current) return;
       patch(key, { status: 'done', image });
       // 한 장이라도 올라갔으면 앞선 실패 이야기는 지운다 — 서버 저장소가 다시 켜진 경우다.
@@ -112,7 +122,7 @@ export function usePhotoUploads(initial: PostImage[], max = POST_IMAGE_MAX): {
       setNotice(error instanceof ApiError ? error.message : UPLOAD_NOTICE);
       if (error instanceof ApiError && error.code === STORAGE_DISABLED) setRetryable(false);
     }
-  }, [patch]);
+  }, [patch, uploadImage]);
 
   const pick = useCallback(async (): Promise<string[]> => {
     // 고르기 창이 이미 떠 있으면 무시한다 — 창이 겹치면 남은 장수 계산이 어긋난다.

@@ -287,11 +287,16 @@ export default function BookDetailScreen() {
                   {verification.data.flags
                     .map((flag) => VERIFICATION_FLAG_LABEL[flag] ?? '독서 기록을 추가로 확인해야 해요')
                     .join(', ')}{' '}
+                  {/* 앱 안 고객문의로 — 책 제목을 미리 적어 둔 채 작성 화면을 연다. */}
                   <Text
                     accessibilityRole="link"
-                    onPress={() => Linking.openURL(
-                      'mailto:support@bookey.site?subject=%EC%99%84%EB%8F%85%20%EA%B8%B0%EB%A1%9D%20%EC%A6%9D%EB%AA%85%20%EB%AC%B8%EC%9D%98',
-                    ).catch(() => {})}
+                    onPress={() => router.push({
+                      pathname: '/inquiry/new',
+                      params: {
+                        category: 'USAGE',
+                        body: `${info?.title ? `《${info.title}》 ` : ''}완독 기록 증명 문의\n\n`,
+                      },
+                    })}
                     style={{ color: colors.accent, textDecorationLine: 'underline' }}
                   >
                     관리자에게 문의하기
