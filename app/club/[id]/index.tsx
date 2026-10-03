@@ -25,7 +25,14 @@ import {
   notify,
 } from "@/components/club";
 import { MeetingNoteCell, MeetingNoteGrid } from "@/components/club/MeetingNoteGrid";
-import { meetingClock, meetingDay, meetingState, meetingWeekday } from "@/components/club/meetingTime";
+import {
+  attendeeLabel,
+  isTodayOrLater,
+  meetingClock,
+  meetingDay,
+  meetingFull,
+  meetingWeekday,
+} from "@/components/club/meetingTime";
 import { meetingNotesKey } from "@/components/club/useMeetingNoteSync";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubMeetingsBody } from "./meetings";
@@ -33,6 +40,7 @@ import {
   LogLine,
   ReadingNowLine,
   clubLogKeys,
+  todayKst,
   useClubLogFeed,
   useMyClubRecord,
 } from "@/components/clubLog";
@@ -63,12 +71,14 @@ const INTRO_LINES = 2;
 /** 홈에 보여 줄 최근 노트 · 읽기 조각 수. */
 const RECENT_NOTES = 3;
 const RECENT_LOGS = 3;
+/** 홈에 보여 줄 다가오는 모임 수 — 넘으면 '모두 보기'로 모임 탭에. */
+const UPCOMING_MAX = 4;
 
 /**
  * 클럽 홈 (§12.2) — 머리와 홈 · 모임 · 노트 세 탭.
  * 머리는 탭을 바꿔도 그대로 남는 클럽의 얼굴이다: 이름 · 호스트 · 멤버 수 · 공개, 한 줄 소개, 함께하는 사람
  * (겹친 프로필, 누르면 클럽 정보). 호스트가 올린 배경 사진이 있으면 헤더 줄까지 깔고 아래로 갈수록 종이색으로 덮는다.
- * 홈 탭은 다음 모임(참여하기) → 최근 노트 → 읽기 조각(지금 읽는 책이 있을 때만) 순서로 쌓는다.
+ * 홈 탭은 다가오는 모임(오늘부터 앞으로, 참여하기) → 최근 노트 → 읽기 조각(지금 읽는 책이 있을 때만) 순서로 쌓는다.
  * 클럽은 기간 없이 이어지고, 다가오는 모임의 책이 지금 읽는 책이 된다(서버가 맞춘다).
  * 채팅은 탭이 아니라 헤더 말풍선(안 읽음 배지)으로 여는 전체 화면(/club/[id]/chat)이다.
  * 이번 주 카드 · 초대 코드 · 나가기는 ⋯ 의 클럽 정보(/club/[id]/info)로, 운영은 호스트 전용 설정으로 뺐다.
@@ -299,8 +309,8 @@ export default function ClubHomeScreen() {
 }
 
 /**
- * 홈 탭 — 다음 모임 · 최근 노트 · 읽기 조각(소개 · 함께하는 사람은 탭 위 머리에 있다).
- * 주요 행동은 다음 모임의 '이 모임에 참여하기' 하나뿐이다(UX 철칙 Von Restorff) — 나머지는 링크·테두리 버튼.
+ * 홈 탭 — 다가오는 모임 · 최근 노트 · 읽기 조각(소개 · 함께하는 사람은 탭 위 머리에 있다).
+ * 모임이 여러 개 보일 수 있어 참여하기도 테두리 버튼으로 둔다 — 강조색으로 채운 버튼은 이 탭에 없다(UX 철칙 Von Restorff).
  */
 function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
   club: ClubHome;
@@ -323,11 +333,11 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
     queryKey: ["clubMeetings", clubId],
     queryFn: () => clubCommunityApi.meetings(clubId),
   });
-  // 모임은 시작 순으로 온다 — 아직 시작하지 않은 첫 모임이 다음 모임이다.
-  const next = useMemo(
-    () => (meetings.data ?? []).find((m) => meetingState(m) === "open") ?? null,
-    [meetings.data],
-  );
+  // 오늘부터 앞으로의 열린 모임 — 지난 모임은 빼고, 오늘 이미 시작한 모임은 그날 들어갈 수 있어 남긴다(시작 순).
+  const upcoming = useMemo(() => {
+    const today = todayKst();
+    return (meetings.data ?? []).filter((m) => isTodayOrLater(m, today));
+  }, [meetings.data]);
   // 노트 화면을 나오면 meetingNotesKey 를 무효화한다 — 그 아래 키라 최근 노트도 새로 받는다.
   const notes = useQuery({
     queryKey: [...meetingNotesKey(clubId), "recent"],
@@ -351,7 +361,11 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
   const attend = useMutation({
     mutationFn: (meeting: ClubMeeting) => clubCommunityApi.attend(clubId, meeting.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["clubMeetings", clubId] }),
-    onError: (e) => notify(e instanceof ApiError ? e.message : "참여하지 못했어요."),
+    onError: (e) => {
+      notify(e instanceof ApiError ? e.message : "참여하지 못했어요.");
+      // 정원이 방금 찼을 수 있다 — 참여 인원을 새로 받는다.
+      void queryClient.invalidateQueries({ queryKey: ["clubMeetings", clubId] });
+    },
   });
 
   const refresh = async () => {
@@ -368,7 +382,6 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
 
   const contentWidth = Math.min(width, layout.content.maxWidth) - spacing.lg * 2;
   const noteSize = Math.floor((contentWidth - spacing.xs * (RECENT_NOTES - 1)) / RECENT_NOTES);
-  const deadlinePassed = next?.responseDeadline != null && new Date(next.responseDeadline).getTime() < Date.now();
   const writeLog = () =>
     router.push({
       pathname: "/club/[id]/log/new",
@@ -383,53 +396,45 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
       contentContainerStyle={styles.home}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
     >
-      {/* 다음 모임 — 카드 본문은 모임 상세로, 참여하기는 본문의 형제(웹에서 button 안에 button 이 들어가지 않게) */}
+      {/* 다가오는 모임 — 오늘부터 앞으로 들어가거나 참여할 수 있는 모임. 많으면 몇 개만, 나머지는 모임 탭 */}
       <View style={styles.section}>
-        <Eyebrow>다음 모임</Eyebrow>
+        <View style={styles.sectionHead}>
+          <Eyebrow>{upcoming.length > 0 ? `다가오는 모임 · ${upcoming.length}` : "다가오는 모임"}</Eyebrow>
+          {upcoming.length > UPCOMING_MAX ? (
+            <Pressable
+              onPress={() => onOpenMeetings(false)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.headLink, pressed && pressedStyle]}
+            >
+              <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("모두 보기")}</Text>
+            </Pressable>
+          ) : null}
+        </View>
         {meetings.isLoading ? (
           <Loading />
-        ) : next ? (
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/club/[id]/meeting/[meetingId]",
-                  params: { id: String(clubId), meetingId: String(next.id), host: isHost ? "1" : "0" },
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={`${next.title} 모임 상세`}
-              style={({ pressed }) => [styles.cardBody, pressed && pressedStyle]}
-            >
-              <Text style={[styles.when, { color: colors.text }]}>
-                {meetingDay(next.startsAt)} {meetingWeekday(next.startsAt)} · {meetingClock(next.startsAt)}
-              </Text>
-              <Text numberOfLines={2} style={[styles.meetingTitle, { color: colors.text }]}>
-                {next.title}
-              </Text>
-              {next.book ? (
-                <View style={styles.bookRow}>
-                  <TiltCover uri={next.book.coverUrl} title={next.book.title} width={28} tilt={0} entering={false} />
-                  <Text numberOfLines={1} style={[typeScale.caption, styles.flex, { color: colors.text }]}>
-                    읽을 책 · {next.book.title}
-                  </Text>
-                </View>
-              ) : null}
-              <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
-                {next.placeName} · 참여 {next.attendeeCount}명
-              </Text>
-            </Pressable>
-            {next.attending ? (
-              <Text style={[styles.attending, { color: colors.text }]}>참여해요 · 바꾸려면 모임 상세에서</Text>
-            ) : !deadlinePassed && !ended ? (
-              <Button label="이 모임에 참여하기" loading={attend.isPending} onPress={() => attend.mutate(next)} />
-            ) : null}
+        ) : upcoming.length > 0 ? (
+          <View style={styles.meetingList}>
+            {upcoming.slice(0, UPCOMING_MAX).map((meeting) => (
+              <UpcomingMeeting
+                key={meeting.id}
+                meeting={meeting}
+                ended={ended}
+                joining={attend.isPending && attend.variables?.id === meeting.id}
+                onOpen={() =>
+                  router.push({
+                    pathname: "/club/[id]/meeting/[meetingId]",
+                    params: { id: String(clubId), meetingId: String(meeting.id), host: isHost ? "1" : "0" },
+                  })
+                }
+                onJoin={() => attend.mutate(meeting)}
+              />
+            ))}
           </View>
         ) : (
           <View style={styles.emptyMeeting}>
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>
               {isHost
-                ? "아직 잡힌 모임이 없어요. 모임을 열며 읽을 책도 고를 수 있어요."
+                ? "아직 잡힌 모임이 없어요. 모임을 열며 읽을 책과 최대 인원을 정할 수 있어요."
                 : "아직 잡힌 모임이 없어요. 호스트가 모임을 열면 여기에 보여요."}
             </Text>
             {isHost && !ended ? (
@@ -500,6 +505,67 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
         </View>
       ) : null}
     </ScrollView>
+  );
+}
+
+/**
+ * 다가오는 모임 한 장 — 본문(날짜 · 제목 · 읽을 책 · 장소 · 참여 인원)은 모임 상세로, 오른쪽은 참여 상태.
+ * 참여 버튼은 본문의 형제라 웹에서 button 안에 button 이 들어가지 않는다. 여러 장이 함께 보이므로
+ * 참여하기는 테두리 버튼으로 낮춘다(UX 철칙 Von Restorff — 강조색 버튼은 화면에 하나).
+ */
+function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
+  meeting: ClubMeeting;
+  ended: boolean;
+  joining: boolean;
+  onOpen: () => void;
+  onJoin: () => void;
+}) {
+  const { colors } = useTheme();
+  const started = new Date(m.startsAt).getTime() <= Date.now();
+  const deadlinePassed = m.responseDeadline != null && new Date(m.responseDeadline).getTime() < Date.now();
+  const full = meetingFull(m);
+  const status = m.attending
+    ? "참여해요"
+    : started
+      ? "진행 중"
+      : full
+        ? "정원 마감"
+        : deadlinePassed
+          ? "응답 마감"
+          : null;
+
+  return (
+    <View style={[styles.card, styles.meetingCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${m.title} 모임 상세`}
+        style={({ pressed }) => [styles.cardBody, styles.flex, pressed && pressedStyle]}
+      >
+        <Text style={[styles.when, { color: colors.text }]}>
+          {meetingDay(m.startsAt)} {meetingWeekday(m.startsAt)} · {meetingClock(m.startsAt)}
+        </Text>
+        <Text numberOfLines={2} style={[styles.meetingTitle, { color: colors.text }]}>
+          {m.title}
+        </Text>
+        {m.book ? (
+          <View style={styles.bookRow}>
+            <TiltCover uri={m.book.coverUrl} title={m.book.title} width={24} tilt={0} entering={false} />
+            <Text numberOfLines={1} style={[typeScale.caption, styles.flex, { color: colors.text }]}>
+              읽을 책 · {m.book.title}
+            </Text>
+          </View>
+        ) : null}
+        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
+          {m.placeName} · {attendeeLabel(m)}
+        </Text>
+      </Pressable>
+      {status ? (
+        <Text style={[styles.attending, { color: m.attending ? colors.text : colors.textMuted }]}>{status}</Text>
+      ) : !ended ? (
+        <Button label="참여하기" variant="outline" size="sm" loading={joining} onPress={onJoin} />
+      ) : null}
+    </View>
   );
 }
 
@@ -663,9 +729,12 @@ const styles = StyleSheet.create({
   avatars: { flexDirection: "row" },
   avatarWrap: { borderRadius: radius.round, borderWidth: 2 },
   card: { borderWidth: hairline, borderRadius: radius.md, padding: spacing.lg, gap: spacing.md },
+  // 다가오는 모임 — 본문 옆에 참여 상태를 세운다. 카드 사이는 sm.
+  meetingList: { gap: spacing.sm },
+  meetingCard: { flexDirection: "row", alignItems: "center", padding: spacing.md },
   cardBody: { gap: spacing.xs },
   when: { fontFamily: mono.semiBold, fontSize: 13 },
-  meetingTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 25 },
+  meetingTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
   bookRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs },
   attending: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.3 },
   emptyMeeting: { gap: spacing.md },

@@ -2,21 +2,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
-import { Chip, StickyNote, TiltCover } from '@/components/collage';
+import { Chip, StickyNote } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
-import { Numeral, ProgressBar, percent } from '@/components/ui';
 import { meetingDay } from './meetingTime';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-import { mono } from '@/theme/tokens';
+import { mono, serif } from '@/theme/tokens';
 
 const AVATAR = 24;
 const MAX_AVATARS = 4;
-const BAND_H = 128;
+const BAND_H = 96;
 
 /**
- * 내 클럽 카드(포스터 띠) — 표지·책·함께 읽는 사람이 한눈에 들어오게.
- * 위 띠는 표지를 흐려 깐 배경 위에 기울인 표지와 다음 모임 스티키, 아래 본문은 이름 · 지금 읽는 책 · 사람 · 내 진척.
- * 클럽은 기간 없이 이어지므로 D-day 대신 다음 모임 날짜를 붙이고, 읽을 책이 아직 없으면 진척 줄을 뺀다.
+ * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
+ * 위 띠는 호스트가 올린 배경 사진(없으면 종이에 클럽 이름 첫 글자)과 다음 모임 스티키,
+ * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람 · 다음 모임.
  * 카드 본문은 누르면 클럽 홈으로, 호스트에게만 붙는 '관리' 칩은 본문 Pressable 의 형제로 둬
  * 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
@@ -28,27 +27,29 @@ export function ClubCard({ club, onPress, onManage }: {
   const { colors, cardShadow } = useTheme();
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
   const note = ended ? '종료' : club.nextMeetingAt ? `모임 ${meetingDay(club.nextMeetingAt)}` : null;
-  const bookLine = club.book
-    ? [club.book.title, club.book.author].filter(Boolean).join(' · ')
-    : '읽을 책 미정';
-  const cover = club.book?.coverUrl ?? club.coverUrl;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={club.name}>
-        <View style={[styles.band, { backgroundColor: colors.surfaceRaised }]}>
-          {cover ? (
-            <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={18} />
-          ) : null}
-          {/* 검은 스크림 대신 카드 표면색으로 녹아들게 — 라이트 모드에서 띠가 회색으로 무거워지지 않는다. */}
-          <LinearGradient
-            colors={[`${colors.surface}66`, colors.surface]}
-            locations={[0, 1]}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.bandCover}>
-            <TiltCover uri={cover} title={club.book?.title} width={76} tilt={-4} entering={false} />
-          </View>
+        <View style={[styles.band, { backgroundColor: colors.paperAlt }]}>
+          {club.backgroundUrl ? (
+            <>
+              <Image
+                source={{ uri: club.backgroundUrl }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+                accessibilityIgnoresInvertColors
+              />
+              {/* 사진이 아래 본문으로 녹아들게 카드 표면색으로 덮는다 — 검은 스크림을 쓰지 않는다. */}
+              <LinearGradient
+                colors={[`${colors.surface}00`, colors.surface]}
+                locations={[0.35, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+            </>
+          ) : (
+            <Text style={[styles.monogram, { color: colors.textFaint }]}>{club.name.slice(0, 1)}</Text>
+          )}
           {note ? (
             <View style={styles.bandNote}>
               <StickyNote rotate={4} style={styles.note}>
@@ -62,16 +63,14 @@ export function ClubCard({ club, onPress, onManage }: {
           <Text numberOfLines={1} style={[styles.name, { color: colors.text }, onManage && styles.nameWithManage]}>
             {club.name}
           </Text>
-          <Text numberOfLines={1} style={[styles.book, { color: colors.textMuted }]}>{bookLine}</Text>
+          {club.description ? (
+            <Text numberOfLines={2} style={[styles.intro, { color: colors.textMuted }]}>{club.description}</Text>
+          ) : null}
           <MembersLine members={club.members ?? []} />
-          {club.book ? (
-            <View style={styles.progressLine}>
-              <View style={{ flex: 1 }}>
-                <ProgressBar value={club.myCompletionRate} height={5} />
-              </View>
-              <Numeral style={[styles.pct, { color: colors.text }]}>{percent(club.myCompletionRate)}</Numeral>
-              <Text style={[styles.avg, { color: colors.textFaint }]}>평균 {percent(club.averageCompletionRate)}</Text>
-            </View>
+          {!ended && club.nextMeetingTitle ? (
+            <Text numberOfLines={1} style={[styles.next, { color: colors.textMuted }]}>
+              다음 모임 · {club.nextMeetingTitle}
+            </Text>
           ) : null}
         </View>
       </Pressable>
@@ -126,7 +125,8 @@ function MembersLine({ members }: { members: ClubMemberBrief[] }) {
 const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: hairline, overflow: 'hidden' },
   band: { height: BAND_H, overflow: 'hidden' },
-  bandCover: { position: 'absolute', left: spacing.lg, top: spacing.md },
+  // 배경 사진이 없을 때 — 종이 위에 명조 첫 글자를 크게, 흐리게.
+  monogram: { position: 'absolute', left: spacing.lg, bottom: -6, fontFamily: serif.extraBold, fontSize: 64, lineHeight: 72 },
   bandNote: { position: 'absolute', right: spacing.lg, top: spacing.md },
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
@@ -135,7 +135,8 @@ const styles = StyleSheet.create({
   manage: { position: 'absolute', top: BAND_H - 40, right: spacing.lg },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
   nameWithManage: { paddingRight: 64 },
-  book: { ...typeScale.caption },
+  intro: { ...typeScale.caption, lineHeight: 18 },
+  next: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3, marginTop: 2 },
   membersLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
   avatars: { flexDirection: 'row' },
   avatarWrap: { borderRadius: radius.round, borderWidth: 2 },
@@ -151,7 +152,4 @@ const styles = StyleSheet.create({
   liveLine: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   liveMark: { width: 6, height: 6, borderRadius: radius.round },
   liveText: { fontFamily: mono.medium, fontSize: 10.5, letterSpacing: 0.3 },
-  progressLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
-  pct: { fontSize: 11 },
-  avg: { fontFamily: mono.regular, fontSize: 10.5 },
 });

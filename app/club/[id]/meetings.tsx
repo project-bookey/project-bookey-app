@@ -11,11 +11,13 @@ import { AddressSearchModal, type AddressSelection } from '@/components/club/Add
 import { MeetingBookPicker } from '@/components/club/MeetingBookPicker';
 import {
   MEETING_STATE_LABEL,
+  attendeeLabel,
   formatPickDate,
   formatPickTime,
   meetingClock,
   meetingDay,
   meetingState,
+  meetingFull,
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
@@ -39,7 +41,11 @@ const emptyForm = () => ({
   mapUrl: '',
   latitude: undefined as number | undefined,
   longitude: undefined as number | undefined,
+  /** 최대 인원 입력 — 비우면 제한 없음. */
+  maxAttendees: '',
 });
+/** 최대 인원 하한 — 혼자 하는 모임은 없다. 서버도 2명부터 받는다. */
+const MIN_ATTENDEES = 2;
 
 /**
  * 모임 탭 — 클럽 홈 '모임' 탭의 본문. 위는 괘선 머리줄(개수 · 호스트의 만들기), 아래는 모임을
@@ -138,9 +144,16 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
       mapUrl: form.mapUrl || undefined,
       startsAt: startsAt.toISOString(),
       bookId: book?.id,
+      maxAttendees: maxAttendees ?? undefined,
     });
   };
-  const canCreate = Boolean(form.title.trim() && form.placeName.trim() && form.address.trim() && !create.isPending);
+  // 최대 인원 — 비우면 제한 없음, 적었으면 2 이상의 정수여야 한다.
+  const maxText = form.maxAttendees.trim();
+  const maxAttendees = maxText ? Number(maxText) : null;
+  const maxInvalid = maxAttendees != null && (!Number.isInteger(maxAttendees) || maxAttendees < MIN_ATTENDEES);
+  const canCreate = Boolean(
+    form.title.trim() && form.placeName.trim() && form.address.trim() && !maxInvalid && !create.isPending,
+  );
   const meetings = list.data ?? [];
 
   return (
@@ -273,6 +286,16 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
             ) : null}
             {form.latitude != null ? <PlaceMap latitude={form.latitude} longitude={form.longitude} /> : null}
             <Field
+              label="최대 인원 (선택)"
+              hint="비우면 제한 없이 받아요. 정원이 차면 더 참여할 수 없어요."
+              error={maxInvalid ? `${MIN_ATTENDEES}명 이상의 숫자로 적어 주세요.` : null}
+              value={form.maxAttendees}
+              onChangeText={(maxAttendees) => setForm((f) => ({ ...f, maxAttendees: maxAttendees.replace(/[^0-9]/g, '') }))}
+              placeholder="예: 8"
+              keyboardType="number-pad"
+              maxLength={4}
+            />
+            <Field
               label="설명 (선택)"
               value={form.description}
               onChangeText={(description) => setForm((f) => ({ ...f, description }))}
@@ -351,6 +374,8 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
   const dim = state !== 'open';
   const attendees = m.attendees ?? [];
   const stateColor = state === 'cancelled' ? colors.danger : state === 'past' ? colors.textFaint : colors.text;
+  // 열린 모임이라도 정원이 찼으면 '정원 마감'으로 알린다.
+  const stateLabel = state === 'open' && meetingFull(m) ? '정원 마감' : MEETING_STATE_LABEL[state];
   return (
     <Pressable
       onPress={onPress}
@@ -369,7 +394,7 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
           <Text numberOfLines={1} style={[styles.rowTitle, { color: dim ? colors.textMuted : colors.text }]}>
             {m.title}
           </Text>
-          <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{MEETING_STATE_LABEL[state]}</Text>
+          <Text style={[typeScale.monoEyebrow, { color: stateColor }]}>{stateLabel}</Text>
         </View>
         {m.book ? (
           <Text numberOfLines={1} style={[typeScale.caption, { color: colors.text }]}>읽을 책 · {m.book.title}</Text>
@@ -386,7 +411,7 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
             </View>
           ) : null}
           <Text style={[styles.peopleText, { color: colors.textFaint }]}>
-            {attendees.length > 0 ? `${m.attendeeCount}명 참여` : '아직 참여자 없음'}
+            {attendees.length > 0 || m.maxAttendees != null ? attendeeLabel(m) : '아직 참여자 없음'}
           </Text>
         </View>
       </View>

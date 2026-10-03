@@ -2999,6 +2999,8 @@ export interface components {
             responseDeadline?: string;
             /** Format: int64 */
             bookId?: number;
+            /** Format: int32 */
+            maxAttendees?: number;
         };
         BookSummary: {
             /** Format: int64 */
@@ -3050,6 +3052,8 @@ export interface components {
             attendeeNicknames: string[];
             attendees: components["schemas"]["MeetingAttendeeView"][];
             book?: components["schemas"]["BookSummary"];
+            /** Format: int32 */
+            maxAttendees?: number;
         };
         BannerUpsertRequest: {
             /** @enum {string} */
@@ -4503,6 +4507,9 @@ export interface components {
             members: components["schemas"]["ClubMemberBrief"][];
             /** Format: date-time */
             nextMeetingAt?: string;
+            nextMeetingTitle?: string;
+            description?: string;
+            backgroundUrl?: string;
         };
         PageResponseClubSummaryView: {
             content?: components["schemas"]["ClubSummaryView"][];

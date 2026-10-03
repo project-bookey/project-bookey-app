@@ -74,6 +74,29 @@ export function formatPickTime(date: Date): string {
   return `${p.hour}:${p.minute}`;
 }
 
+/** 모임 날짜 'YYYY-MM-DD'(KST) — 오늘 이후의 모임을 가를 때 쓴다. */
+export function meetingDateKey(iso: string): string {
+  const p = parts(new Date(iso));
+  return `${p.year}-${p.month.padStart(2, '0')}-${p.day.padStart(2, '0')}`;
+}
+
+/** 오늘(KST) 이후의 열린 모임 — 오늘 이미 시작한 모임도 그날은 들어갈 수 있어 넣는다. today 는 'YYYY-MM-DD'. */
+export function isTodayOrLater(meeting: { status: string; startsAt: string }, today: string): boolean {
+  return meeting.status === 'OPEN' && meetingDateKey(meeting.startsAt) >= today;
+}
+
+/** 정원이 찼는지 — 최대 인원을 정하지 않았으면 늘 false. */
+export function meetingFull(meeting: { attendeeCount: number; maxAttendees?: number | null }): boolean {
+  return meeting.maxAttendees != null && meeting.attendeeCount >= meeting.maxAttendees;
+}
+
+/** '참여 4/8명' — 최대 인원이 없으면 '참여 4명'. */
+export function attendeeLabel(meeting: { attendeeCount: number; maxAttendees?: number | null }): string {
+  return meeting.maxAttendees != null
+    ? `참여 ${meeting.attendeeCount}/${meeting.maxAttendees}명`
+    : `참여 ${meeting.attendeeCount}명`;
+}
+
 export type MeetingState = 'open' | 'past' | 'cancelled';
 
 /** 서버 status 에 '지난 모임'을 얹는다 — 열려 있어도 시작 시각이 지났으면 past. */
