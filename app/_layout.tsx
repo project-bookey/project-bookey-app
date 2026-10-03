@@ -87,6 +87,7 @@ export default function RootLayout() {
             <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
             <Stack.Screen name="club/create" options={{ title: '클럽 만들기' }} />
             <Stack.Screen name="club/[id]/index" options={{ title: '클럽' }} />
+            <Stack.Screen name="club/[id]/info" options={{ title: '클럽 정보' }} />
             <Stack.Screen name="club/[id]/result" options={{ title: '결산' }} />
             <Stack.Screen name="club/[id]/seats" options={{ title: '자리 늘리기' }} />
             <Stack.Screen name="club/[id]/settings" options={{ title: '클럽 설정' }} />

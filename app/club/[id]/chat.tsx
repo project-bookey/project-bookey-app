@@ -25,7 +25,7 @@ export function ClubChatBody() {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [showGift, setShowGift] = useState(false);
-  // 이 본문은 클럽 머리(표지·숫자 띠·탭) 아래에 끼워져 있다. KeyboardAvoidingView 는 자기 위치를
+  // 이 본문은 클럽 머리(이름·탭) 아래에 끼워져 있다. KeyboardAvoidingView 는 자기 위치를
   // 부모 기준으로만 알아서, 화면 위에서 얼마나 내려와 있는지를 오프셋으로 알려 줘야 키보드가
   // 입력 줄을 가리지 않는다.
   const wrapRef = useRef<View>(null);

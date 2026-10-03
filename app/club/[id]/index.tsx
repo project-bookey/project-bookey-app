@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Settings } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { Ellipsis } from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,33 +18,28 @@ import { clubApi } from "@/api/endpoints";
 import type {
   Checkpoint,
   ClubHome,
+  ClubLogSummary,
   ClubPost,
   ClubPreview,
-  NudgeMessageKey,
 } from "@/api/types";
+import { Avatar } from "@/components/Avatar";
 import {
   ClubTabs,
   type ClubTabKey,
   clubTabOf,
-  MemberDetail,
-  MemberStrip,
-  StatStrip,
-  confirmAsync,
   notify,
 } from "@/components/club";
-import { MeetingNoteGrid } from "@/components/club/MeetingNoteGrid";
+import { meetingDay } from "@/components/club/meetingTime";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
 import { ClubChatBody } from "./chat";
 import { ClubMeetingsBody } from "./meetings";
 import {
+  FeedDayHeader,
   LogScrap,
-  ReadingNowCard,
-  SummaryNote,
-  WeekStrip,
-  addDays,
+  ReadingNowLine,
   clubLogKeys,
-  mondayOf,
   todayKst,
+  useClubLogFeed,
   useMyClubRecord,
 } from "@/components/clubLog";
 import {
@@ -54,25 +51,33 @@ import {
 import {
   Button,
   Card,
+  EmptyState,
   Eyebrow,
   KeyValue,
   Loading,
-  Numeral,
   Rule,
   Tag,
   Toggle,
+  linkLabel,
   percent,
 } from "@/components/ui";
-import type { ColorTokens } from "@/theme";
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from "@/theme";
 import { mono } from "@/theme/tokens";
 
-const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings", "notes"];
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings"];
+/** 머리의 멤버 아바타 — 이만큼 겹쳐 보이고 나머지는 +n. */
+const HEAD_AVATARS = 4;
+
+/** 소식 피드 한 줄 — 날짜 구분 또는 조각 하나. */
+type FeedRow =
+  | { key: string; kind: "day"; date: string; summary: ClubLogSummary }
+  | { key: string; kind: "log"; log: ClubPost };
 
 /**
- * 클럽 홈 (§12.2) — 누르면 바로 서로의 읽기로그가 보이는 보드.
- * 위에서부터 함께 읽는 사람(진척 스트립) · 지금 읽는 중 · 요일 스트립 · 그날의 조각 콜라주 · 체크포인트.
- * 초대 코드 재발급·자리·멤버·종료 같은 운영은 호스트 전용 설정(/club/[id]/settings)으로 뺐다.
+ * 클럽 홈 (§12.2) — 머리(이름 · 책 · D-day · 내 진척 · 멤버)와 소식 · 채팅 · 모임 세 탭.
+ * 소식은 멤버들이 남긴 조각을 날짜별로 이어 붙인 한 줄 피드다(요일 스트립·주 이동 없이 내려 보며 지난날로).
+ * 함께 읽는 사람 · 체크포인트 · 초대 코드 · 나가기는 ⋯ 의 클럽 정보(/club/[id]/info)로,
+ * 운영은 호스트 전용 설정(/club/[id]/settings)으로 뺐다.
  */
 export default function ClubHomeScreen() {
   const router = useRouter();
@@ -87,12 +92,11 @@ export default function ClubHomeScreen() {
     if (next) setTab(next);
   }, [tabParam]);
   const today = todayKst();
-  const [date, setDate] = useState(today);
   const [openReactions, setOpenReactions] = useState<number | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  // 당겨서 새로고침 표시는 손으로 당겼을 때만 — 반응·펼쳐 보기 뒤 피드를 다시 받을 때는 띄우지 않는다.
+  const [refreshing, setRefreshing] = useState(false);
   const [shareProgress, setShareProgress] = useState(true);
   const [adoptTarget, setAdoptTarget] = useState(true);
-  const monday = mondayOf(date);
 
   const club = useQuery({
     queryKey: ["club", clubId],
@@ -110,23 +114,25 @@ export default function ClubHomeScreen() {
 
   // 읽기로그는 멤버에게만 열린다 — 홈이 오기 전엔 부르지 않는다(비멤버는 403).
   const isMember = !!club.data;
-  const day = useQuery({
-    queryKey: clubLogKeys.day(clubId, date),
-    queryFn: () => clubApi.logs(clubId, date),
-    enabled: isMember,
-  });
-  const week = useQuery({
-    queryKey: clubLogKeys.days(clubId, monday),
-    queryFn: () => clubApi.logDays(clubId, monday, addDays(monday, 6)),
-    enabled: isMember,
-  });
+  const feed = useClubLogFeed(clubId, club.data?.startsAt.slice(0, 10), isMember);
   const readingNow = useQuery({
     queryKey: clubLogKeys.readingNow(clubId),
     queryFn: () => clubApi.readingNow(clubId),
-    enabled: isMember && date === today,
+    enabled: isMember,
     refetchInterval: 30_000,
   });
   const myRecord = useMyClubRecord(club.data);
+
+  const rows = useMemo<FeedRow[]>(
+    () =>
+      (feed.data?.pages ?? [])
+        .flatMap((page) => page.days)
+        .flatMap((day): FeedRow[] => [
+          { key: `d-${day.date}`, kind: "day", date: day.date, summary: day.summary },
+          ...day.logs.map((log): FeedRow => ({ key: `l-${log.id}`, kind: "log", log })),
+        ]),
+    [feed.data],
+  );
 
   const refreshLogs = () =>
     queryClient.invalidateQueries({ queryKey: clubLogKeys.all(clubId) });
@@ -154,27 +160,6 @@ export default function ClubHomeScreen() {
     },
     onError: (e) =>
       notify(e instanceof ApiError ? e.message : "참가하지 못했습니다."),
-  });
-
-  const nudge = useMutation({
-    mutationFn: ({ userId, key }: { userId: number; key: NudgeMessageKey }) =>
-      clubApi.nudge(clubId, userId, key),
-    onSuccess: (result) => {
-      setSelectedUserId(null);
-      notify(`찌르기를 보냈어요. 오늘 ${result.remainingToday}번 남았습니다.`);
-    },
-    onError: (e) =>
-      notify(e instanceof ApiError ? e.message : "보내지 못했습니다."),
-  });
-
-  const leave = useMutation({
-    mutationFn: () => clubApi.leave(clubId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clubs"] });
-      router.replace("/clubs");
-    },
-    onError: (e) =>
-      notify(e instanceof ApiError ? e.message : "나가지 못했습니다."),
   });
 
   if (club.isLoading && !preview.data) {
@@ -211,31 +196,24 @@ export default function ClubHomeScreen() {
 
   const data: ClubHome = club.data;
   const ended = data.status === "ENDED" || data.status === "ARCHIVED";
-  const isHost = data.myRole === "HOST";
   const me = data.members.find((m) => m.isMe);
-  const selectedMember =
-    data.members.find((m) => m.userId === selectedUserId) ?? null;
+  const myProgress = me?.finished
+    ? "완독"
+    : me?.completionRate != null
+      ? `내 진척 ${percent(me.completionRate)}`
+      : null;
+  const metaLine = [
+    data.book?.title,
+    ended ? "종료" : `D-${Math.max(0, data.daysLeft)}`,
+    myProgress,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const extraMembers = data.memberCount - Math.min(HEAD_AVATARS, data.members.length);
+  const readers = readingNow.data ?? [];
+  const lastPage = feed.data?.pages[feed.data.pages.length - 1];
 
-  const logs = day.data?.logs ?? [];
-  const summary = day.data?.summary;
-  const authors = new Set(logs.map((l) => l.authorId)).size;
-  const readingNowIds = new Set((readingNow.data ?? []).map((r) => r.userId));
-  const logCounts = new Map<number, number>();
-  logs.forEach((l) =>
-    logCounts.set(l.authorId, (logCounts.get(l.authorId) ?? 0) + 1),
-  );
-  const isToday = date === today;
-  const dayLabel = isToday
-    ? "오늘"
-    : `${Number(date.slice(5, 7))}월 ${Number(date.slice(8, 10))}일`;
-
-  // 두 줄 지그재그 — 오른쪽 줄 맨 위에는 합산 스티키를 먼저 붙인다.
-  const left: { log: ClubPost; index: number }[] = [];
-  const right: { log: ClubPost; index: number }[] = [];
-  logs.forEach((log, index) =>
-    (index % 2 === 0 ? left : right).push({ log, index }),
-  );
-
+  const openInfo = () => router.push(`/club/${clubId}/info`);
   const writeLog = () =>
     router.push({
       pathname: "/club/[id]/log/new",
@@ -244,336 +222,187 @@ export default function ClubHomeScreen() {
         ...(me?.currentPage != null ? { endPage: String(me.currentPage) } : {}),
       },
     });
-
-  // 활자·괘선 판면 — 조각을 기울이거나 지그재그로 흩뜨리지 않고 줄을 맞춰 붙인다.
-  const renderScrap = ({ log, index }: { log: ClubPost; index: number }) => (
-    <View key={log.id}>
-      <LogScrap
-        log={log}
-        index={index}
-        flat
-        myPage={me?.currentPage}
-        selected={openReactions === log.id}
-        onOpen={() =>
-          router.push({
-            pathname: "/club/[id]/log/[postId]",
-            params: { id: String(clubId), postId: String(log.id) },
-          })
-        }
-        onToggleReactions={() =>
-          setOpenReactions((cur) => (cur === log.id ? null : log.id))
-        }
-        onReveal={() => reveal.mutate(log.id)}
-        onReact={(kind) => react.mutate({ postId: log.id, kind })}
-      />
-    </View>
-  );
+  const refresh = async () => {
+    setRefreshing(true);
+    await Promise.all([feed.refetch(), club.refetch(), readingNow.refetch()]);
+    setRefreshing(false);
+  };
 
   return (
     <PaperScreen>
       <SubHeader
         category="클럽"
         right={
-          isHost ? (
-            <Pressable
-              onPress={() => router.push(`/club/${clubId}/settings`)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="클럽 관리"
-              style={styles.menuButton}
-            >
-              <Settings size={22} color={colors.text} {...iconStroke} />
-            </Pressable>
-          ) : undefined
+          <Pressable
+            onPress={openInfo}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="클럽 정보"
+            style={styles.menuButton}
+          >
+            <Ellipsis size={22} color={colors.text} {...iconStroke} />
+          </Pressable>
         }
       />
+      {/* 머리 — 명조 이름 한 줄과 모노 요약 한 줄, 오른쪽 멤버 아바타(누르면 클럽 정보) */}
       <View style={styles.top}>
-        {/* 머리 — 큰 명조 이름과 모노 책 줄, 태그 상자 대신 괘선 사이 숫자 띠(활자·괘선 판면) */}
-        <View style={{ gap: spacing.md }}>
-          <View style={styles.header}>
-            <TiltCover
-              uri={data.book?.coverUrl}
-              title={data.book?.title}
-              width={58}
-              tilt={0}
-              entering={false}
-            />
-            <View style={{ flex: 1, gap: 6, justifyContent: "center" }}>
-              <Text style={[styles.title, { color: colors.text }]}>
-                {data.name}
-              </Text>
-              <Text style={[styles.bookLine, { color: colors.textMuted }]}>
-                {bookLine(data.book)}
-              </Text>
+        <View style={{ flex: 1, gap: spacing.xs }}>
+          <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
+            {data.name}
+          </Text>
+          <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
+            {metaLine}
+          </Text>
+        </View>
+        <Pressable
+          onPress={openInfo}
+          accessibilityRole="button"
+          accessibilityLabel={`멤버 ${data.memberCount}명 보기`}
+          style={({ pressed }) => [styles.members, pressed && pressedStyle]}
+        >
+          {data.members.slice(0, HEAD_AVATARS).map((m, i) => (
+            <View
+              key={m.userId}
+              style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.bg }]}
+            >
+              <Avatar uri={m.avatarUrl} nickname={m.nickname} size={28} />
             </View>
-          </View>
-          <StatStrip
-            cells={[
-              { label: "역할", value: isHost ? "호스트" : "멤버" },
-              {
-                label: "인원",
-                value: String(data.memberCount),
-                unit: ` / ${data.memberLimit}명`,
-              },
-              {
-                label: ended ? "상태" : "남은 날",
-                value: ended ? "종료" : `D-${Math.max(0, data.daysLeft)}`,
-              },
-            ]}
-          />
-        </View>
-
-        {/* 함께 읽는 사람 — 서로의 진척을 먼저, 누르면 그 사람의 자세한 진척과 찌르기 */}
-        <View style={{ gap: spacing.sm }}>
-          <View style={styles.sectionHead}>
-            <Eyebrow>함께 읽는 사람</Eyebrow>
-            <Text style={[styles.count, { color: colors.textMuted }]}>
-              평균 {percent(data.averageCompletionRate)} · 내 순위 {data.myRank}
-              /{data.memberCount}
-            </Text>
-          </View>
-          <MemberStrip
-            members={data.members}
-            readingNowIds={readingNowIds}
-            logCounts={logCounts}
-            selectedUserId={selectedUserId}
-            onSelect={(member) =>
-              setSelectedUserId((cur) =>
-                cur === member.userId ? null : member.userId,
-              )
-            }
-          />
-          {selectedMember ? (
-            <MemberDetail
-              member={selectedMember}
-              nudging={nudge.isPending}
-              onNudge={
-                ended
-                  ? undefined
-                  : (userId, key) => nudge.mutate({ userId, key })
-              }
-              onClose={() => setSelectedUserId(null)}
-            />
+          ))}
+          {extraMembers > 0 ? (
+            <Text style={[styles.more, { color: colors.textMuted }]}>+{extraMembers}</Text>
           ) : null}
-        </View>
-
+        </Pressable>
       </View>
 
-      {/* 클럽 탭 — 함께 읽는 사람 아래. 누르면 아래 영역만 바뀐다 */}
       <ClubTabs clubId={clubId} active={tab} onSelect={setTab} />
 
       <SwipeableTabs values={CLUB_TAB_VALUES} value={tab} onChange={setTab} style={styles.body}>
         {tab === "home" ? (
           <>
-        <ScrollView contentContainerStyle={styles.container}>
-        {isToday ? (
-          <ReadingNowCard
-            readers={readingNow.data ?? []}
-            onJoin={
-              myRecord && !ended
-                ? () => router.push(`/timer?recordId=${myRecord.id}`)
-                : undefined
-            }
-          />
-        ) : null}
-
-        {/* 요일 스트립 — 날을 고르면 그날의 조각으로 바뀐다.
-            주 이동 링크는 44pt 상자라 글자 위아래 여백이 곧 스트립과의 간격이다(따로 gap 을 두지 않는다). */}
-        <View>
-          <View style={styles.weekNav}>
-            <Pressable
-              onPress={() => setDate(addDays(monday, -7))}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.weekNavButton, pressed && pressedStyle]}
-            >
-              <Text style={[styles.weekNavLabel, { color: colors.textMuted }]}>
-                ‹ 지난주
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() =>
-                router.push({
-                  pathname: "/club/[id]/log/week",
-                  params: { id: String(clubId), weekOf: monday },
-                })
+            <FlatList
+              data={rows}
+              keyExtractor={(row) => row.key}
+              contentContainerStyle={styles.feed}
+              refreshing={refreshing}
+              onRefresh={refresh}
+              onEndReached={() => {
+                if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();
+              }}
+              onEndReachedThreshold={0.5}
+              ListHeaderComponent={
+                readers.length > 0 || data.nextCheckpoint ? (
+                  <View style={styles.feedTop}>
+                    <ReadingNowLine
+                      readers={readers}
+                      onJoin={
+                        myRecord && !ended
+                          ? () => router.push(`/timer?recordId=${myRecord.id}`)
+                          : undefined
+                      }
+                    />
+                    {data.nextCheckpoint ? <CheckpointLine checkpoint={data.nextCheckpoint} /> : null}
+                  </View>
+                ) : null
               }
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.weekNavButton, pressed && pressedStyle]}
-            >
-              {/* 악센트는 아래 '한 조각 남기기' 몫 — 링크는 본문 잉크로 */}
-              <Text style={[styles.weekNavLabel, { color: colors.text }]}>
-                주간 카드
-              </Text>
-            </Pressable>
-            {monday < mondayOf(today) ? (
-              <Pressable
-                onPress={() =>
-                  setDate(
-                    addDays(monday, 7) > today ? today : addDays(monday, 7),
-                  )
-                }
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.weekNavButton, pressed && pressedStyle]}
-              >
-                <Text
-                  style={[styles.weekNavLabel, { color: colors.textMuted }]}
-                >
-                  다음주 ›
-                </Text>
-              </Pressable>
-            ) : (
-              // 자리만 지켜 '주간 카드'가 늘 가운데에 오게 한다.
-              <View style={styles.weekNavButton}>
-                <Text style={[styles.weekNavLabel, { color: "transparent" }]}>
-                  다음주 ›
-                </Text>
-              </View>
-            )}
-          </View>
-          <WeekStrip
-            days={week.data ?? []}
-            selected={date}
-            today={today}
-            onSelect={setDate}
-          />
-        </View>
-
-        {/* 그날의 조각 — 두 줄 지그재그 콜라주 */}
-        <View style={{ gap: spacing.md }}>
-          <View style={styles.sectionHead}>
-            <Eyebrow>{dayLabel}의 조각</Eyebrow>
-            <Text style={[styles.count, { color: colors.textMuted }]}>
-              {logs.length}조각{authors > 0 ? ` · ${authors}명` : ""}
-            </Text>
-          </View>
-
-          {day.isLoading ? (
-            <Loading />
-          ) : logs.length === 0 ? (
-            <MemoScrap variant="ruled">
-              <Text
-                style={[
-                  typeScale.quote,
-                  { color: colors.text, fontSize: 16, lineHeight: 26 },
-                ]}
-              >
-                {isToday
-                  ? "아직 오늘의 조각이 없어요."
-                  : "이날은 남긴 조각이 없어요."}
-              </Text>
-              <Text
-                style={[
-                  typeScale.caption,
-                  { color: colors.textFaint, marginTop: spacing.xs },
-                ]}
-              >
-                읽기를 마치면 사진 한 장과 한 줄로 남길 수 있어요.
-              </Text>
-            </MemoScrap>
-          ) : (
-            <View style={styles.board}>
-              <View style={styles.column}>{left.map(renderScrap)}</View>
-              <View style={[styles.column, { paddingTop: spacing.xl }]}>
-                {summary &&
-                (summary.pagesRead > 0 || summary.readerCount > 0) ? (
-                  <SummaryNote
-                    summary={summary}
-                    label={isToday ? "오늘 함께" : "이날 함께"}
-                    variant="ruled"
+              renderItem={({ item, index }) =>
+                item.kind === "day" ? (
+                  // 날짜가 바뀌는 곳은 조각 사이(lg)보다 한 번 더 띄운다.
+                  <View style={index > 0 ? styles.dayGap : undefined}>
+                    <FeedDayHeader date={item.date} today={today} summary={item.summary} />
+                  </View>
+                ) : (
+                  <LogScrap
+                    log={item.log}
+                    myPage={me?.currentPage}
+                    selected={openReactions === item.log.id}
+                    onOpen={() =>
+                      router.push({
+                        pathname: "/club/[id]/log/[postId]",
+                        params: { id: String(clubId), postId: String(item.log.id) },
+                      })
+                    }
+                    onToggleReactions={() =>
+                      setOpenReactions((cur) => (cur === item.log.id ? null : item.log.id))
+                    }
+                    onReveal={() => reveal.mutate(item.log.id)}
+                    onReact={(kind) => react.mutate({ postId: item.log.id, kind })}
                   />
-                ) : null}
-                {right.map(renderScrap)}
-              </View>
-            </View>
-          )}
-        </View>
-
-        {data.nextCheckpoint || data.checkpoints.length > 0 ? (
-          <View style={{ gap: spacing.sm }}>
-            <Eyebrow>체크포인트</Eyebrow>
-            {data.nextCheckpoint ? (
-              <Card style={{ gap: spacing.xs }}>
-                <View style={styles.checkpointHead}>
-                  <Text
-                    style={[styles.checkpointTitle, { color: colors.text }]}
-                  >
-                    {data.nextCheckpoint.title}
-                  </Text>
-                  <Numeral
-                    style={[styles.checkpointTarget, { color: colors.text }]}
-                  >
-                    ~{data.nextCheckpoint.targetPage}쪽
-                  </Numeral>
-                </View>
-                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                  마감{" "}
-                  {new Date(data.nextCheckpoint.dueAt).toLocaleDateString(
-                    "ko-KR",
-                  )}{" "}
-                  · {data.nextCheckpoint.achievedCount}/
-                  {data.nextCheckpoint.memberCount}명 달성
-                </Text>
-              </Card>
-            ) : null}
-            {data.checkpoints.length > 0 ? (
-              <CheckpointGrid checkpoints={data.checkpoints} colors={colors} />
-            ) : null}
-          </View>
-        ) : null}
-
-        <View style={{ gap: spacing.sm }}>
-          <Rule />
-          <View style={styles.codeRow}>
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-              초대 코드
-            </Text>
-            <Text style={[styles.code, { color: colors.textMuted }]}>
-              {data.joinCode}
-            </Text>
-          </View>
-          {ended ? (
-            <Button
-              label="클럽 결산 보기"
-              variant="outline"
-              onPress={() => router.push(`/club/${clubId}/result`)}
+                )
+              }
+              ListEmptyComponent={
+                feed.isLoading ? (
+                  <Loading />
+                ) : feed.isError ? (
+                  <EmptyState
+                    title="소식을 불러오지 못했어요"
+                    description={feed.error instanceof ApiError ? feed.error.message : undefined}
+                    action={
+                      <Button
+                        label={linkLabel("다시 시도", "action")}
+                        variant="outline"
+                        onPress={() => feed.refetch()}
+                      />
+                    }
+                  />
+                ) : (
+                  <MemoScrap variant="ruled">
+                    <Text style={[typeScale.quote, { color: colors.text, fontSize: 16, lineHeight: 26 }]}>
+                      아직 남긴 조각이 없어요.
+                    </Text>
+                    <Text style={[typeScale.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+                      읽기를 마치면 사진 한 장과 한 줄로 남길 수 있어요.
+                    </Text>
+                  </MemoScrap>
+                )
+              }
+              ListFooterComponent={
+                feed.isFetchingNextPage ? (
+                  <ActivityIndicator size="small" color={colors.textMuted} />
+                ) : feed.hasNextPage && lastPage && lastPage.days.length === 0 ? (
+                  // 조각이 없는 기간이 길면 끝에 닿아도 다음 페이지가 오지 않으니 손으로 더 받는다.
+                  <Button
+                    label={linkLabel("지난 조각 더 보기", "action")}
+                    variant="ghost"
+                    onPress={() => void feed.fetchNextPage()}
+                  />
+                ) : null
+              }
             />
-          ) : null}
-        </View>
 
-        {/* 파괴적 동작 — 초대 코드 묶음과 섹션 간격(xl)으로 떼어 두고, 아래 고정 CTA와도 하단 여백만큼 떨어진다 */}
-        <Button
-          label="클럽 나가기"
-          variant="danger"
-          loading={leave.isPending}
-          onPress={async () => {
-            if (
-              await confirmAsync(
-                "클럽에서 나갈까요? 남긴 조각과 글은 그대로 남아요.",
-                "나가기",
-              )
-            )
-              leave.mutate();
-          }}
-        />
-      </ScrollView>
-
-      {!ended ? (
-        // 종이가 CTA 뒤로 흐려지며 사라지게 — 불투명 띠로 도트 질감을 자르지 않는다.
-        <LinearGradient
-          colors={[`${colors.bg}00`, colors.bg]}
-          locations={[0, 0.45]}
-          style={styles.cta}
-        >
-          <Button label="한 조각 남기기" onPress={writeLog} />
-        </LinearGradient>
-      ) : null}
+            {!ended ? (
+              // 종이가 CTA 뒤로 흐려지며 사라지게 — 불투명 띠로 도트 질감을 자르지 않는다.
+              <LinearGradient
+                colors={[`${colors.bg}00`, colors.bg]}
+                locations={[0, 0.45]}
+                style={styles.cta}
+              >
+                <Button label="한 조각 남기기" onPress={writeLog} />
+              </LinearGradient>
+            ) : null}
           </>
         ) : null}
         {tab === "chat" ? <ClubChatBody /> : null}
-        {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} /> : null}
-        {tab === "notes" ? <MeetingNoteGrid clubId={clubId} onOpenMeetings={() => setTab("meetings")} /> : null}
+        {tab === "meetings" ? <ClubMeetingsBody isHost={data.myRole === "HOST"} /> : null}
       </SwipeableTabs>
     </PaperScreen>
+  );
+}
+
+/** 다음 체크포인트 — 소식 맨 위 괘선 사이 한 줄. 지난 체크포인트 격자는 클럽 정보에 있다. */
+function CheckpointLine({ checkpoint }: { checkpoint: Checkpoint }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.checkpoint, { borderColor: colors.line }]}>
+      <Eyebrow>다음 체크포인트</Eyebrow>
+      <View style={styles.checkpointRow}>
+        <Text numberOfLines={1} style={[typeScale.label, { color: colors.text, flexShrink: 1 }]}>
+          {checkpoint.title} · {checkpoint.targetPage}쪽까지
+        </Text>
+        <Text style={[styles.metaLine, { color: colors.textMuted }]}>
+          {meetingDay(checkpoint.dueAt)} 마감 · {checkpoint.achievedCount}/{checkpoint.memberCount}명
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -705,66 +534,8 @@ function PublicClubPreview({
   );
 }
 
-function CheckpointGrid({
-  checkpoints,
-  colors,
-}: {
-  checkpoints: Checkpoint[];
-  colors: ColorTokens;
-}) {
-  return (
-    <View style={styles.grid}>
-      {checkpoints.map((cp) => {
-        const state = !cp.evaluated
-          ? "pending"
-          : cp.myAchieved
-            ? "met"
-            : "missed";
-        return (
-          <View key={cp.id} style={styles.gridCell}>
-            <View
-              style={[
-                styles.gridMark,
-                { borderColor: colors.line, backgroundColor: colors.surface },
-                // 달성은 '켜짐' 상태 — 도장처럼 잉크로 반전한다(악센트는 CTA 몫).
-                state === "met" && {
-                  backgroundColor: colors.ink,
-                  borderColor: colors.ink,
-                },
-                state === "missed" && { borderColor: colors.danger },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.gridMarkText,
-                  { color: colors.textFaint },
-                  state === "met" && { color: colors.onInk },
-                  state === "missed" && { color: colors.danger },
-                ]}
-              >
-                {state === "met" ? "✓" : state === "missed" ? "×" : "·"}
-              </Text>
-            </View>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              {cp.seq}주
-            </Text>
-            <Numeral style={[styles.gridPage, { color: colors.textFaint }]}>
-              {cp.targetPage}
-            </Numeral>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
-  container: {
-    ...layout.content,
-    padding: spacing.lg,
-    gap: spacing.xl,
-    paddingBottom: 120,
-  },
   menuButton: {
     width: 40,
     height: 40,
@@ -773,62 +544,43 @@ const styles = StyleSheet.create({
   },
   top: {
     ...layout.content,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.xl,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
   },
+  name: { ...typeScale.displaySerif, fontSize: 22, lineHeight: 30 },
+  metaLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  // 아바타 줄 전체가 하나의 버튼 — 44pt 높이를 지킨다(UX 철칙 Fitts).
+  members: { flexDirection: "row", alignItems: "center", minHeight: 44 },
+  avatarWrap: { borderRadius: radius.round, borderWidth: 2 },
+  more: { fontFamily: mono.semiBold, fontSize: 11, marginLeft: spacing.xs },
   body: { flex: 1 },
-  header: { flexDirection: "row", gap: spacing.md },
-  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
-  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
-  headerTags: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    flexWrap: "wrap",
+  // 조각 사이는 lg, 조각 안(머리 줄 · 사진 · 한 줄)은 sm — 그룹 안 간격이 늘 더 좁다(UX 철칙 Proximity).
+  // 아래는 고정 CTA 에 가리지 않을 만큼 비운다.
+  feed: {
+    ...layout.content,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 120,
+    gap: spacing.lg,
   },
-  sectionHead: {
+  feedTop: { gap: spacing.sm },
+  dayGap: { marginTop: spacing.lg },
+  checkpoint: {
+    gap: 2,
+    paddingVertical: spacing.sm,
+    borderTopWidth: hairline,
+    borderBottomWidth: hairline,
+  },
+  checkpointRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "baseline",
-  },
-  count: { fontFamily: mono.regular, fontSize: 11 },
-  weekNav: {
-    flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    gap: spacing.sm,
   },
-  // 11px 글자만으로는 손가락이 닿지 않아 44pt 상자로 키운다(UX 철칙 Fitts).
-  weekNavButton: { minHeight: 44, minWidth: 44, justifyContent: "center" },
-  weekNavLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
-  board: { flexDirection: "row", gap: spacing.lg, alignItems: "flex-start" },
-  column: { flex: 1, gap: spacing.xl },
-  checkpointHead: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-  },
-  checkpointTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
-  checkpointTarget: { fontSize: 14 },
-  codeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  code: { fontFamily: mono.semiBold, fontSize: 14, letterSpacing: 3 },
-  grid: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
-  gridCell: { alignItems: "center", gap: spacing.xs, width: 52 },
-  gridMark: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.md,
-    borderWidth: hairline,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gridMarkText: { fontFamily: mono.semiBold, fontSize: 14 },
-  gridPage: { fontSize: 10 },
   cta: {
     position: "absolute",
     left: 0,
@@ -837,6 +589,22 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xl,
+  },
+  // 아래는 비멤버가 보는 추천 클럽 미리보기.
+  container: {
+    ...layout.content,
+    padding: spacing.lg,
+    gap: spacing.xl,
+    paddingBottom: 120,
+  },
+  header: { flexDirection: "row", gap: spacing.md },
+  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
+  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  headerTags: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    flexWrap: "wrap",
   },
   error: { ...typeScale.body, padding: spacing.lg },
 });
