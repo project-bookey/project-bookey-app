@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ellipsis } from "lucide-react-native";
+import { Ellipsis, MessageSquare } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,7 +14,7 @@ import {
 } from "react-native";
 
 import { ApiError } from "@/api/client";
-import { clubApi } from "@/api/endpoints";
+import { clubApi, clubCommunityApi } from "@/api/endpoints";
 import type {
   Checkpoint,
   ClubHome,
@@ -31,7 +31,6 @@ import {
 } from "@/components/club";
 import { meetingDay } from "@/components/club/meetingTime";
 import { SwipeableTabs } from "@/components/SwipeableTabs";
-import { ClubChatBody } from "./chat";
 import { ClubMeetingsBody } from "./meetings";
 import {
   FeedDayHeader,
@@ -62,9 +61,9 @@ import {
   percent,
 } from "@/components/ui";
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from "@/theme";
-import { mono } from "@/theme/tokens";
+import { mono, sans } from "@/theme/tokens";
 
-const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "chat", "meetings"];
+const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "meetings"];
 /** 머리의 멤버 아바타 — 이만큼 겹쳐 보이고 나머지는 +n. */
 const HEAD_AVATARS = 4;
 
@@ -74,8 +73,10 @@ type FeedRow =
   | { key: string; kind: "log"; log: ClubPost };
 
 /**
- * 클럽 홈 (§12.2) — 머리(이름 · 책 · D-day · 내 진척 · 멤버)와 소식 · 채팅 · 모임 세 탭.
+ * 클럽 홈 (§12.2) — 머리(이름 · 책 · D-day · 내 진척 · 멤버)와 소식 · 모임 두 탭.
  * 소식은 멤버들이 남긴 조각을 날짜별로 이어 붙인 한 줄 피드다(요일 스트립·주 이동 없이 내려 보며 지난날로).
+ * 채팅은 탭이 아니라 헤더 말풍선(안 읽음 배지)으로 여는 전체 화면(/club/[id]/chat)이다 — 키보드가 올라와도
+ * 머리·탭에 자리를 뺏기지 않고, 옆으로 밀어 탭이 바뀌며 쓰던 글이 날아가지 않게.
  * 함께 읽는 사람 · 체크포인트 · 초대 코드 · 나가기는 ⋯ 의 클럽 정보(/club/[id]/info)로,
  * 운영은 호스트 전용 설정(/club/[id]/settings)으로 뺐다.
  */
@@ -88,9 +89,15 @@ export default function ClubHomeScreen() {
   // 탭은 화면 이동 없이 아래 영역만 바꾼다. 딥링크(?tab=)로 들어오면 그 탭으로 연다.
   const [tab, setTab] = useState<ClubTabKey>(clubTabOf(tabParam) ?? "home");
   useEffect(() => {
+    // 예전 ?tab=chat 링크 — 홈을 깔고 그 위에 채팅 화면을 연다(뒤로 가면 홈).
+    if (tabParam === "chat") {
+      router.setParams({ tab: undefined });
+      router.push({ pathname: "/club/[id]/chat", params: { id } });
+      return;
+    }
     const next = clubTabOf(tabParam);
     if (next) setTab(next);
-  }, [tabParam]);
+  }, [tabParam, id, router]);
   const today = todayKst();
   const [openReactions, setOpenReactions] = useState<number | null>(null);
   // 당겨서 새로고침 표시는 손으로 당겼을 때만 — 반응·펼쳐 보기 뒤 피드를 다시 받을 때는 띄우지 않는다.
@@ -122,6 +129,13 @@ export default function ClubHomeScreen() {
     refetchInterval: 30_000,
   });
   const myRecord = useMyClubRecord(club.data);
+  // 헤더 말풍선의 안 읽음 배지 — 채팅 화면을 나오면 그쪽에서 무효화해 다시 받는다.
+  const chatState = useQuery({
+    queryKey: ["clubChat", clubId, "state"],
+    queryFn: () => clubCommunityApi.chatState(clubId),
+    enabled: isMember,
+    refetchInterval: 30_000,
+  });
 
   const rows = useMemo<FeedRow[]>(
     () =>
@@ -213,7 +227,9 @@ export default function ClubHomeScreen() {
   const readers = readingNow.data ?? [];
   const lastPage = feed.data?.pages[feed.data.pages.length - 1];
 
+  const unreadChat = chatState.data?.unreadCount ?? 0;
   const openInfo = () => router.push(`/club/${clubId}/info`);
+  const openChat = () => router.push(`/club/${clubId}/chat`);
   const writeLog = () =>
     router.push({
       pathname: "/club/[id]/log/new",
@@ -233,15 +249,32 @@ export default function ClubHomeScreen() {
       <SubHeader
         category="클럽"
         right={
-          <Pressable
-            onPress={openInfo}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="클럽 정보"
-            style={styles.menuButton}
-          >
-            <Ellipsis size={22} color={colors.text} {...iconStroke} />
-          </Pressable>
+          // 두 아이콘은 44pt 상자를 sm 만큼 떼어 둔다(오터치 방지).
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={openChat}
+              accessibilityRole="button"
+              accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
+              style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
+            >
+              <MessageSquare size={22} color={colors.text} {...iconStroke} />
+              {unreadChat > 0 ? (
+                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+                  <Text style={[styles.badgeText, { color: colors.onAccent }]}>
+                    {unreadChat > 9 ? "9+" : unreadChat}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              onPress={openInfo}
+              accessibilityRole="button"
+              accessibilityLabel="클럽 정보"
+              style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
+            >
+              <Ellipsis size={22} color={colors.text} {...iconStroke} />
+            </Pressable>
+          </View>
         }
       />
       {/* 머리 — 명조 이름 한 줄과 모노 요약 한 줄, 오른쪽 멤버 아바타(누르면 클럽 정보) */}
@@ -381,7 +414,6 @@ export default function ClubHomeScreen() {
             ) : null}
           </>
         ) : null}
-        {tab === "chat" ? <ClubChatBody /> : null}
         {tab === "meetings" ? <ClubMeetingsBody isHost={data.myRole === "HOST"} /> : null}
       </SwipeableTabs>
     </PaperScreen>
@@ -536,12 +568,26 @@ function PublicClubPreview({
 
 
 const styles = StyleSheet.create({
-  menuButton: {
-    width: 40,
-    height: 40,
+  headerActions: { flexDirection: "row", gap: spacing.sm },
+  headerButton: {
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
+  // 서가 헤더의 알림 종과 같은 배지 — 숫자 배지는 악센트를 쓰는 예외다.
+  badge: {
+    position: "absolute",
+    top: 4,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: radius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  badgeText: { fontFamily: sans.bold, fontSize: 10 },
   top: {
     ...layout.content,
     flexDirection: "row",

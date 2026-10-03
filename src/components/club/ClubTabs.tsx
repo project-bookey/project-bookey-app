@@ -6,24 +6,24 @@ import { clubApi } from '@/api/endpoints';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 
-export type ClubTabKey = 'home' | 'chat' | 'meetings';
+export type ClubTabKey = 'home' | 'meetings';
 export const isClubTabKey = (v: unknown): v is ClubTabKey =>
-  v === 'home' || v === 'chat' || v === 'meetings';
+  v === 'home' || v === 'meetings';
 /**
  * ?tab= 값 → 탭. 노트 탭은 모임 탭으로 합쳐졌으니(모임마다 노트가 하나) 예전 링크는 모임으로,
- * 없어진 탭(notebook·posts·reviews)이나 모르는 값이면 null(소식).
+ * 없어진 탭(notebook·posts·reviews)이나 모르는 값이면 null(소식). 채팅은 탭이 아니라 따로 연 화면이라
+ * 예전 ?tab=chat 링크는 클럽 홈이 채팅 화면으로 넘겨준다.
  */
 export const clubTabOf = (v: unknown): ClubTabKey | null =>
   v === 'notes' ? 'meetings' : isClubTabKey(v) ? v : null;
 
 const TABS: { key: ClubTabKey; label: string }[] = [
   { key: 'home', label: '소식' },
-  { key: 'chat', label: '채팅' },
   { key: 'meetings', label: '모임' },
 ];
 
 /**
- * 클럽 탭 — 소식 · 채팅 · 모임. 클럽 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
+ * 클럽 탭 — 소식 · 모임. 클럽 홈에서는 onSelect 로 아래 영역만 바꾸고(화면 이동 없음),
  * 단독 화면에서 쓰면 라우팅으로 옮긴다.
  * 활성 탭은 잉크 글자 + 2px 민트 표식(구역 네비와 같은 규칙). 홈으로는 navigate(스택에 있으면 되돌아감),
  * 하위 화면끼리는 replace 로 옮겨 뒤로 가기가 항상 클럽 홈으로 떨어지게 한다.
@@ -44,7 +44,6 @@ export function ClubTabs({ clubId, active, onSelect }: {
   const hrefOf = (key: ClubTabKey): Href => {
     switch (key) {
       case 'home': return `/club/${clubId}`;
-      case 'chat': return `/club/${clubId}/chat`;
       case 'meetings': return { pathname: '/club/[id]/meetings', params: { id, host: isHost ? '1' : '0' } };
     }
   };
