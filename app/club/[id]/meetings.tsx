@@ -18,7 +18,7 @@ import {
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
 import { Avatar } from '@/components/Avatar';
-import { Button, EmptyState, Eyebrow, Field, Loading } from '@/components/ui';
+import { Button, EmptyState, Eyebrow, Field, Loading, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, mono, pressedStyle } from '@/theme/tokens';
 
@@ -182,14 +182,14 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
               </View>
             ) : null}
 
+            {/* 장소를 넣는 길은 하나 — 이름으로 찾으면 이름·주소·지도가 한 번에 채워진다.
+                주소 검색은 찾는 곳이 없을 때의 대안으로 아래 링크로 낮춘다(UX 철칙 Hick). */}
             <Eyebrow>장소</Eyebrow>
-            <Button label="주소 검색" variant="outline" onPress={() => setShowAddress(true)} />
             <Field
-              label="장소명 검색"
+              label="장소 검색"
               value={placeQuery}
               onChangeText={setPlaceQuery}
-              placeholder="또는 카페·서점 등 장소명"
-              hint="주소 검색이 어려우면 장소명으로 찾아요."
+              placeholder="카페·서점 등 장소 이름"
             />
             {places.isFetching ? (
               <Loading />
@@ -207,6 +207,15 @@ export function ClubMeetingsBody({ isHost }: { isHost: boolean }) {
                 </Pressable>
               ))
             )}
+            <Pressable
+              onPress={() => setShowAddress(true)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.addressLink, pressed ? pressedStyle : null]}
+            >
+              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+                찾는 곳이 없나요? {linkLabel('주소로 찾기')}
+              </Text>
+            </Pressable>
             {form.address ? (
               <>
                 <Field
@@ -368,6 +377,8 @@ const styles = StyleSheet.create({
   },
   pickValue: { fontFamily: mono.semiBold, fontSize: 15 },
   placeRow: { paddingVertical: spacing.sm, gap: 2, borderBottomWidth: hairline },
+  // 11px 모노 한 줄이라 여백으로 44pt 상자를 만든다(웹은 hitSlop 을 무시한다).
+  addressLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
   dateCell: { width: 58, gap: 2, paddingTop: 2 },
   dateDay: { fontFamily: mono.semiBold, fontSize: 18, lineHeight: 22 },
