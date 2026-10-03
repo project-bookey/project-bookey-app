@@ -53,8 +53,10 @@ export default function LibraryScreen() {
   };
 
   const records = list.data?.content ?? [];
+  // 비어 있으면 아래 빈 상태의 '책 찾기'가 같은 곳으로 간다 — 입구를 둘 두지 않게 담기 칸은 뺀다.
+  const showAddTile = list.isLoading || records.length > 0;
   const items: GridItem[] = [
-    { kind: 'add' },
+    ...(showAddTile ? [{ kind: 'add' } as GridItem] : []),
     ...(list.isLoading
       ? Array.from({ length: 6 }, (_, i): GridItem => ({ kind: 'skeleton', key: i }))
       : records.map((record): GridItem => ({ kind: 'record', record }))),

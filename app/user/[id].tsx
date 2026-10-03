@@ -20,7 +20,7 @@ export default function UserProfileScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="마이페이지" />
+      <SubHeader category="프로필" />
       {Number.isInteger(userId) ? (
         <MyPage userId={userId} mine={false} />
       ) : (

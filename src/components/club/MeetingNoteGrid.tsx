@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.xs,
     top: spacing.xs,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 1,
     borderRadius: radius.sm,
     borderWidth: hairline,

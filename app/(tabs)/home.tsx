@@ -7,7 +7,7 @@ import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native
 import { bannerApi, bookApi, libraryApi, statsApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
 import type { ReadingRecord } from '@/api/types';
-import { PaperScreen, SearchGlyph } from '@/components/collage';
+import { NAV_CLEARANCE, PaperScreen, SearchGlyph } from '@/components/collage';
 import { formatDuration } from '@/components/ui';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { NoticePopup } from '@/components/home/NoticePopup';
@@ -19,7 +19,7 @@ import { HomeScraps } from '@/components/home/HomeScraps';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 인기 → 추천 → 읽고 싶은 → 클럽 */
+/** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 읽고 싶은 → 인기 → 추천 → 클럽 */
 export default function HomeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -31,9 +31,14 @@ export default function HomeScreen() {
   const banners = useQuery({ queryKey: ['banners', 'AD'], queryFn: () => bannerApi.list('AD') });
   const notices = useQuery({ queryKey: ['banners', 'NOTICE'], queryFn: () => bannerApi.list('NOTICE') });
   const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
-  const bestsellers = useQuery({ queryKey: ['home', 'yes24', 'BESTSELLER'], queryFn: () => bookApi.yes24Curation('BESTSELLER') });
-  const newBooks = useQuery({ queryKey: ['home', 'yes24', 'NEW'], queryFn: () => bookApi.yes24Curation('NEW') });
   const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
+  // 베스트셀러는 홈에 따로 그리지 않는다 — 추천이 비었거나 못 받았을 때 채워 넣는 대체 목록으로만 받는다.
+  const usingFallback = (recommended.isSuccess && recommended.data.length === 0) || recommended.isError;
+  const bestsellers = useQuery({
+    queryKey: ['home', 'yes24', 'BESTSELLER'],
+    queryFn: () => bookApi.yes24Curation('BESTSELLER'),
+    enabled: usingFallback,
+  });
 
   // 히어로는 읽는 중 전권을 쓸어넘기는 페이저다 — 첫 장이 예전 히어로(밀린 책 우선).
   const heroRecords = orderHeroRecords(reading.data?.content ?? []);
@@ -48,9 +53,7 @@ export default function HomeScreen() {
     })),
   });
   const heroSynopses = heroBooks.map((q) => q.data?.description);
-  const recommendationBooks = (recommended.data?.length ?? 0) > 0
-    ? recommended.data ?? []
-    : bestsellers.data ?? [];
+  const recommendationBooks = usingFallback ? bestsellers.data ?? [] : recommended.data ?? [];
   const streakLine = stats.data
     ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
     : undefined;
@@ -110,7 +113,7 @@ export default function HomeScreen() {
           streakLine={streakLine}
           loading={reading.isLoading}
           scrollY={scrollY}
-          onContinue={(r) => router.push(`/timer?recordId=${r.id}`)}
+          onContinue={(r) => router.push(`/timer?recordId=${r.id}&autoStart=1`)}
           onDetail={(r) => { if (r.book?.id != null) router.push(`/book/${r.book.id}?recordId=${r.id}`); }}
         />
 
@@ -118,7 +121,24 @@ export default function HomeScreen() {
             사라져야 하는데, 여기서 감싸면 괘선과 여백만 남는다(HomeScraps 주석 참고). */}
         <HomeScraps />
 
-        {/* 섹션은 HomeSection 으로 감싸 괘선으로 나눈다 */}
+        {/* 섹션은 HomeSection 으로 감싸 괘선으로 나눈다. 내 것(읽고 싶은)부터, 가로 목록은 넷까지만 —
+            베스트셀러·새로 나온 책은 탐색(검색) 화면으로 옮겼다(UX 철칙 Hick). */}
+        <HomeSection>
+          <BookRow
+            title="읽고 싶은"
+            loading={want.isLoading}
+            books={(want.data?.content ?? []).map((r): RowBook => ({
+              key: `want-${r.id}`,
+              bookId: r.book?.id,
+              title: r.book?.title ?? '',
+              coverUrl: r.book?.coverUrl,
+            }))}
+            onPressBook={openBook}
+            onPressAll={() => router.push('/library')}
+            onPressAdd={() => router.navigate('/book-search')}
+          />
+        </HomeSection>
+
         <HomeSection>
           <BookRow
             title="지금 붐비는 책"
@@ -137,48 +157,11 @@ export default function HomeScreen() {
           />
         </HomeSection>
 
-        {(bestsellers.data?.length ?? 0) > 0 ? (
-          <HomeSection>
-            <BookRow
-              title="베스트셀러"
-              label="YES24"
-              loading={bestsellers.isLoading}
-              books={(bestsellers.data ?? []).map((b, i): RowBook => ({
-                key: `best-${b.id}`,
-                bookId: b.id,
-                title: b.title,
-                author: b.author,
-                coverUrl: b.coverUrl,
-                rank: i + 1,
-              }))}
-              onPressBook={openBook}
-            />
-          </HomeSection>
-        ) : null}
-
-        {(newBooks.data?.length ?? 0) > 0 ? (
-          <HomeSection>
-            <BookRow
-              title="새로 나온 책"
-              label="NEW"
-              loading={newBooks.isLoading}
-              books={(newBooks.data ?? []).map((b): RowBook => ({
-                key: `new-${b.id}`,
-                bookId: b.id,
-                title: b.title,
-                author: b.author,
-                coverUrl: b.coverUrl,
-              }))}
-              onPressBook={openBook}
-            />
-          </HomeSection>
-        ) : null}
-
         <HomeSection>
           <BookRow
             title="추천"
-            label={(recommended.data?.length ?? 0) > 0 ? undefined : 'YES24'}
-            loading={recommended.isLoading || (recommended.isError && bestsellers.isLoading)}
+            label={usingFallback ? 'YES24' : undefined}
+            loading={recommended.isLoading || (usingFallback && bestsellers.isLoading)}
             books={recommendationBooks.map((b): RowBook => ({
               key: `pick-${b.id}`,
               bookId: b.id,
@@ -187,22 +170,6 @@ export default function HomeScreen() {
               coverUrl: b.coverUrl,
             }))}
             onPressBook={openBook}
-          />
-        </HomeSection>
-
-        <HomeSection>
-          <BookRow
-            title="읽고 싶은"
-            loading={want.isLoading}
-            books={(want.data?.content ?? []).map((r): RowBook => ({
-              key: `want-${r.id}`,
-              bookId: r.book?.id,
-              title: r.book?.title ?? '',
-              coverUrl: r.book?.coverUrl,
-            }))}
-            onPressBook={openBook}
-            onPressAll={() => router.push('/library')}
-            onPressAdd={() => router.navigate('/book-search')}
           />
         </HomeSection>
 
@@ -244,7 +211,7 @@ const styles = StyleSheet.create({
   container: {
     ...layout.content,
     paddingTop: spacing.md,
-    paddingBottom: 104,
+    paddingBottom: NAV_CLEARANCE,
     gap: spacing.xl,
   },
   searchBar: {

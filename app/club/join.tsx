@@ -21,7 +21,7 @@ function daysBetween(startsAt: string, endsAt: string): number {
  * 코드로 볼 수 있는 정보는 미리보기 수준까지다 — 멤버 진척·기록은 참가 후에만 보인다.
  * 미리보기는 클럽 홈과 같은 활자·괘선 언어(명조 이름 · 모노 책 줄 · 숫자 띠).
  */
-export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
+export default function ClubJoinScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
@@ -53,11 +53,10 @@ export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
   const errorStyle = [typeScale.caption, { color: colors.danger }];
   const club = preview.data;
 
-  const content = (
-      <ScrollView
-        contentContainerStyle={[styles.container, embedded && styles.embeddedContainer]}
-        keyboardShouldPersistTaps="handled"
-      >
+  return (
+    <PaperScreen>
+      <SubHeader category="코드로 참가" />
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View>
           <Eyebrow>초대 코드</Eyebrow>
           <TextInput
@@ -89,7 +88,7 @@ export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
           <View style={[styles.section, { borderTopColor: colors.line }]}>
             <View style={styles.previewHead}>
               <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={52} tilt={0} entering={false} />
-              <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flex: 1, gap: spacing.xs }}>
                 <Text style={[styles.clubName, { color: colors.text }]}>{club.name}</Text>
                 <Text style={[styles.bookLine, { color: colors.textMuted }]}>
                   {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
@@ -150,26 +149,12 @@ export function ClubJoinContent({ embedded = false }: { embedded?: boolean }) {
           onPress={() => join.mutate()}
         />
       </ScrollView>
-  );
-
-  if (embedded) return content;
-
-  return (
-    <PaperScreen>
-      <SubHeader category="코드로 참가" />
-      {content}
     </PaperScreen>
   );
 }
 
-export default function ClubJoinScreen() {
-  return <ClubJoinContent />;
-}
-
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
-  // 클럽 탭 안에 끼워 넣을 때(embedded) — 자체 머리가 없으니 위는 좁게, 아래는 하단 바 높이만큼 비운다
-  embeddedContainer: { paddingTop: spacing.sm, paddingBottom: 104 },
   // 코드 입력 — Field 와 같은 종이 상자, 글자는 모노 크게(한글이 아니라 자간 1 로 숨을 준다)
   codeInput: {
     borderWidth: hairline,

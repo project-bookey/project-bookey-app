@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { radius, useTheme } from '@/theme';
+import { radius, spacing, useTheme } from '@/theme';
 import { hairline, mono } from '@/theme/tokens';
 
 const TILE = 256;
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     fontFamily: mono.regular,
     fontSize: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 1,
   },
 });

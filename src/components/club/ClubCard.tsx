@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   bandNote: { position: 'absolute', right: spacing.lg, top: spacing.md },
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
-  body: { padding: spacing.lg, paddingTop: spacing.md, gap: 4 },
+  body: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.xs },
   // 본문 제목과 겹치지 않도록 관리 버튼은 이미지 띠의 오른쪽 아래에 둔다.
   manage: { position: 'absolute', top: BAND_H - 40, right: spacing.lg },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   liveLine: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   liveMark: { width: 6, height: 6, borderRadius: radius.round },
   liveText: { fontFamily: mono.medium, fontSize: 10.5, letterSpacing: 0.3 },
-  progressLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 4 },
+  progressLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
   pct: { fontSize: 11 },
   avg: { fontFamily: mono.regular, fontSize: 10.5 },
 });

@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
 import { notificationApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
+import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle,
@@ -176,27 +177,21 @@ export default function SettingsScreen() {
               <Button
                 label="계정 영구 삭제"
                 variant="danger"
-                onPress={() => {
-                  Alert.alert(
-                    '계정을 삭제할까요?',
-                    '프로필과 로그인 정보가 영구 삭제되며 복구할 수 없습니다. 스토어 구독은 별도로 취소해야 합니다.',
-                    [
-                      { text: '취소', style: 'cancel' },
-                      {
-                        text: '영구 삭제',
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            await deleteAccount();
-                            queryClient.clear();
-                            router.replace('/login');
-                          } catch {
-                            Alert.alert('계정 삭제 실패', '잠시 후 다시 시도해 주세요.');
-                          }
-                        },
-                      },
-                    ],
+                // 되돌릴 수 없는 계정 단위 동작은 확인 창으로 묻는다(클럽 나가기·종료와 같은 규칙).
+                // Alert.alert 는 웹에서 버튼 대화상자를 띄우지 못해 웹에선 아무 일도 없었다 — confirmAsync 로 맞춘다.
+                onPress={async () => {
+                  const ok = await confirmAsync(
+                    '계정을 삭제할까요? 프로필과 로그인 정보가 영구 삭제되며 복구할 수 없습니다. 스토어 구독은 별도로 취소해야 합니다.',
+                    '영구 삭제',
                   );
+                  if (!ok) return;
+                  try {
+                    await deleteAccount();
+                    queryClient.clear();
+                    router.replace('/login');
+                  } catch {
+                    notify('계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
+                  }
                 }}
               />
             </View>

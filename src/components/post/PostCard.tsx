@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    marginVertical: -4,
+    marginVertical: -spacing.xs,
   },
   actionCount: { ...typeScale.monoNumeral, fontSize: 13 },
 });

@@ -621,7 +621,7 @@ function PublicClubPreview({
             tilt={0}
             entering={false}
           />
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1, gap: spacing.xs }}>
             <Text style={[styles.title, { color: colors.text }]}>
               {club.name}
             </Text>
@@ -818,7 +818,7 @@ const styles = StyleSheet.create({
   },
   code: { fontFamily: mono.semiBold, fontSize: 14, letterSpacing: 3 },
   grid: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
-  gridCell: { alignItems: "center", gap: 4, width: 52 },
+  gridCell: { alignItems: "center", gap: spacing.xs, width: 52 },
   gridMark: {
     width: 34,
     height: 34,

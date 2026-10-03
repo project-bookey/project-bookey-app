@@ -510,7 +510,7 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
       accessibilityLabel="좋아요"
       style={[
         styles.likeButton,
-        // 켜짐은 잉크로 뒤집는다 — 악센트는 화면의 '읽기 시작' 몫.
+        // 켜짐은 잉크로 뒤집는다 — 악센트는 화면의 '독서 시작' 몫.
         liked
           ? { backgroundColor: colors.ink, borderColor: colors.ink }
           : { borderColor: colors.lineStrong },
@@ -547,7 +547,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
       setCommitmentOpen(false);
       setCommitment('');
       onAdded(record.id);
-      // '읽기 시작'은 말 그대로 지금 읽기 시작하는 것 — 타이머로 넘겨 바로 측정을 켠다(UX 철칙 Hick).
+      // '독서 시작'은 말 그대로 지금 읽기 시작하는 것 — 타이머로 넘겨 바로 측정을 켠다(UX 철칙 Hick).
       if (status === 'READING') router.push(`/timer?recordId=${record.id}&autoStart=1`);
     },
   });
@@ -576,12 +576,12 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
               disabled={add.isPending}
               onPress={() => setCommitmentOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="읽기 시작"
+              accessibilityLabel="독서 시작"
               style={[styles.actionButton, styles.actionPrimary, {
                 backgroundColor: colors.accent, opacity: add.isPending ? 0.6 : 1,
               }]}
             >
-              <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('읽기 시작')}</Text>
+              <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('독서 시작')}</Text>
             </Pressable>
           </>
         ) : null}
@@ -610,7 +610,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
             <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentDescription, { color: colors.textMuted }]}>
               홈 화면의 책 옆 메모에 표시돼요. 비워 두고 바로 시작해도 돼요.
             </Text>
-            {/* 다짐은 선택이라 키보드를 먼저 띄우지 않는다 — 바로 '읽기 시작'을 누를 수 있게. */}
+            {/* 다짐은 선택이라 키보드를 먼저 띄우지 않는다 — 바로 '독서 시작'을 누를 수 있게. */}
             <TextInput
               value={commitment}
               onChangeText={setCommitment}
@@ -624,7 +624,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
             <View style={styles.commitmentActions}>
               <Button label="취소" variant="outline" onPress={() => setCommitmentOpen(false)} />
               <Button
-                label="읽기 시작"
+                label={playLabel('독서 시작')}
                 loading={add.isPending}
                 disabled={add.isPending}
                 onPress={() => add.mutate({ status: 'READING', commitment: commitment.trim() || undefined })}
@@ -994,18 +994,20 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
               {errorMessage ? (
                 <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
               ) : null}
+              {/* 앱 전체 순서 — [취소][주요 버튼]. 짧은 글은 '남기기'(댓글·한 마디와 같은 말). */}
               <View style={styles.formActions}>
-                <Button
-                  label={create.isPending ? '등록 중…' : '등록'}
-                  onPress={() => create.mutate()}
-                  disabled={body.trim().length === 0 || create.isPending}
-                  style={styles.formButton}
-                />
                 <Button
                   label="취소"
                   variant="outline"
                   onPress={() => setOpen(false)}
                   disabled={create.isPending}
+                  style={styles.formButton}
+                />
+                <Button
+                  label="남기기"
+                  onPress={() => create.mutate()}
+                  loading={create.isPending}
+                  disabled={body.trim().length === 0}
                   style={styles.formButton}
                 />
               </View>
@@ -1131,7 +1133,7 @@ const styles = StyleSheet.create({
   trackTouch: { height: 32, justifyContent: 'center' },
   trackActive: { height: 10 },
   fill: { height: '100%', borderRadius: radius.sm },
-  thumb: { position: 'absolute', top: '50%', width: 8, height: 22, marginTop: -11, marginLeft: -4, borderRadius: radius.sm },
+  thumb: { position: 'absolute', top: '50%', width: 8, height: 22, marginTop: -11, marginLeft: -spacing.xs, borderRadius: radius.sm },
 
   verifyHead: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap' },
   sessionRow: {

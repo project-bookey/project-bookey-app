@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 
 import { flattenPosts } from '@/api/postCache';
 import type { Page, Post } from '@/api/types';
+import { NAV_CLEARANCE } from '@/components/collage';
 import { PostCard } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
 import { EmptyState, FootAction, linkLabel } from '@/components/ui';
@@ -146,7 +147,7 @@ export function PostList({
 }
 
 const styles = StyleSheet.create({
-  list: { ...layout.content, paddingBottom: 104, gap: spacing.lg },
+  list: { ...layout.content, paddingBottom: NAV_CLEARANCE, gap: spacing.lg },
   // 헤더가 없는 화면은 SubHeader 바로 밑이라 첫 카드가 붙어 보인다 — 한 칸 띄운다.
   listTop: { paddingTop: spacing.md },
   cardWrap: { marginHorizontal: spacing.lg },

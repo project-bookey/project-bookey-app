@@ -6,6 +6,7 @@ import { TextInput } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
+import { SubHeader } from '@/components/collage';
 import { Segmented } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -68,8 +69,13 @@ export default function ProfilePhotoScreen() {
     }
   };
 
+  // 가입 직후엔 사진이 없어도 기본 정보만으로 시작할 수 있다 — 사진 때문에 입력한 성별·생년월일까지
+  // 막히거나 '나중에 하기'로 버려지지 않게(UX 철칙 Hick). 변경 화면은 사진이 있어야 저장한다.
+  const canSubmit = editing ? pickedUri != null : birthDate.trim().length > 0;
+  const submitLabel = editing ? '저장' : pickedUri ? '등록하고 시작하기' : '시작하기';
+
   const upload = async () => {
-    if (!pickedUri || uploading) return;
+    if (!canSubmit || uploading) return;
     const birthDateText = birthDate.trim();
     const normalizedBirthDate = birthDateText ? normalizeBirthDate(birthDateText) : null;
     if (!editing && !normalizedBirthDate) {
@@ -82,7 +88,12 @@ export default function ProfilePhotoScreen() {
       if (!editing) {
         const me = await authApi.updateProfile({ gender, birthDate: normalizedBirthDate ?? undefined });
         setUser(me);
+        if (!pickedUri) {
+          router.replace('/home');
+          return;
+        }
       }
+      if (!pickedUri) return;
       const form = new FormData();
       if (Platform.OS === 'web') {
         // 웹의 uri 는 blob:/data: — 실제 바이너리로 바꿔 담는다.
@@ -110,113 +121,104 @@ export default function ProfilePhotoScreen() {
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
-      {editing ? (
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로가기"
-          hitSlop={8}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Text style={[styles.backLabel, { color: colors.accent }]}>←</Text>
-        </Pressable>
-      ) : null}
-      <View style={styles.body}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>PROFILE</Text>
-        <Text style={[styles.title, { color: colors.text }]}>
-          {editing ? '프로필 사진 변경' : '프로필 사진을 올려주세요'}
-        </Text>
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      {/* 변경 화면의 뒤로 가기는 다른 서브 화면과 같은 SubHeader — 세이프에어리어도 거기서 처리한다. */}
+      {editing ? <SubHeader category="프로필 사진" /> : null}
+      <View style={styles.screen}>
+        <View style={styles.body}>
+          <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>PROFILE</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {editing ? '프로필 사진 변경' : '프로필 사진을 올려주세요'}
+          </Text>
 
-        {!editing ? (
-          <View style={styles.profileFields}>
-            <View style={styles.field}>
-              <Text style={[typeScale.label, { color: colors.textMuted }]}>성별</Text>
-              <Segmented options={GENDER_OPTIONS} value={gender} onChange={setGender} />
+          {!editing ? (
+            <View style={styles.profileFields}>
+              <View style={styles.field}>
+                <Text style={[typeScale.label, { color: colors.textMuted }]}>성별</Text>
+                <Segmented options={GENDER_OPTIONS} value={gender} onChange={setGender} />
+              </View>
+              <View style={styles.field}>
+                <Text style={[typeScale.label, { color: colors.textMuted }]}>생년월일</Text>
+                <TextInput
+                  value={birthDate}
+                  onChangeText={(value) => {
+                    setBirthDate(value.replace(/[^0-9-]/g, '').slice(0, 10));
+                    setError(null);
+                  }}
+                  placeholder="YYYYMMDD"
+                  placeholderTextColor={colors.textFaint}
+                  keyboardType="numbers-and-punctuation"
+                  inputMode="numeric"
+                  accessibilityLabel="생년월일"
+                  style={[
+                    styles.input,
+                    { borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text },
+                  ]}
+                />
+              </View>
             </View>
-            <View style={styles.field}>
-              <Text style={[typeScale.label, { color: colors.textMuted }]}>생년월일</Text>
-              <TextInput
-                value={birthDate}
-                onChangeText={(value) => {
-                  setBirthDate(value.replace(/[^0-9-]/g, '').slice(0, 10));
-                  setError(null);
-                }}
-                placeholder="YYYYMMDD"
-                placeholderTextColor={colors.textFaint}
-                keyboardType="numbers-and-punctuation"
-                inputMode="numeric"
-                accessibilityLabel="생년월일"
-                style={[
-                  styles.input,
-                  { borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text },
-                ]}
-              />
-            </View>
-          </View>
-        ) : null}
-        <Text style={[styles.copy, { color: colors.textMuted }]}>
-          {editing
-            ? '피드와 엽서에서 보일 사진을 새로 고를 수 있어요.'
-            : `피드와 엽서에서 나를 알아보게 하는 얼굴이에요.\n나중에 프로필에서 다시 등록할 수 있어요.`}
-        </Text>
+          ) : null}
+          <Text style={[styles.copy, { color: colors.textMuted }]}>
+            {editing
+              ? '피드와 엽서에서 보일 사진을 새로 고를 수 있어요.'
+              : `피드와 엽서에서 나를 알아보게 하는 얼굴이에요.\n나중에 프로필에서 다시 등록할 수 있어요.`}
+          </Text>
 
-        <Pressable
-          onPress={pick}
-          accessibilityRole="button"
-          accessibilityLabel="프로필 사진 고르기"
-          style={styles.avatarWrap}
-        >
+          <Pressable
+            onPress={pick}
+            accessibilityRole="button"
+            accessibilityLabel="프로필 사진 고르기"
+            style={styles.avatarWrap}
+          >
+            {pickedUri ? (
+              <Image source={{ uri: pickedUri }} style={styles.avatar} />
+            ) : (
+              <View style={[
+                styles.avatar,
+                styles.avatarEmpty,
+                { borderColor: colors.lineStrong, backgroundColor: colors.surface },
+              ]}>
+                <CameraGlyph color={colors.textFaint} />
+                <Text style={[typeScale.caption, { color: colors.textFaint }]}>탭해서 고르기</Text>
+              </View>
+            )}
+          </Pressable>
+
           {pickedUri ? (
-            <Image source={{ uri: pickedUri }} style={styles.avatar} />
+            <Pressable onPress={pick} accessibilityRole="button" style={styles.ghost}>
+              <Text style={[typeScale.label, { color: colors.textMuted }]}>다른 사진 고르기</Text>
+            </Pressable>
+          ) : null}
+          {!editing ? (
+            <Pressable onPress={() => router.replace('/home')} accessibilityRole="button" style={styles.ghost}>
+              <Text style={[typeScale.label, { color: colors.textMuted }]}>나중에 하기</Text>
+            </Pressable>
+          ) : null}
+
+          {error ? (
+            <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
+              {error}
+            </Text>
+          ) : null}
+        </View>
+
+        <Pressable
+          onPress={upload}
+          disabled={!canSubmit || uploading}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.cta, {
+            backgroundColor: canSubmit ? colors.accent : colors.surface,
+          }, pressed && styles.pressed]}
+        >
+          {uploading ? (
+            <ActivityIndicator color={colors.onAccent} />
           ) : (
-            <View style={[
-              styles.avatar,
-              styles.avatarEmpty,
-              { borderColor: colors.lineStrong, backgroundColor: colors.surface },
-            ]}>
-              <CameraGlyph color={colors.textFaint} />
-              <Text style={[typeScale.caption, { color: colors.textFaint }]}>탭해서 고르기</Text>
-            </View>
+            <Text style={[typeScale.bodyStrong, { color: canSubmit ? colors.onAccent : colors.textFaint }]}>
+              {submitLabel}
+            </Text>
           )}
         </Pressable>
-
-        {pickedUri ? (
-          <Pressable onPress={pick} accessibilityRole="button" style={styles.ghost}>
-            <Text style={[typeScale.label, { color: colors.textMuted }]}>다른 사진 고르기</Text>
-          </Pressable>
-        ) : null}
-        {!editing ? (
-          <Pressable onPress={() => router.replace('/home')} accessibilityRole="button" style={styles.ghost}>
-            <Text style={[typeScale.label, { color: colors.textMuted }]}>나중에 하기</Text>
-          </Pressable>
-        ) : null}
-
-        {error ? (
-          <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
-            {error}
-          </Text>
-        ) : null}
       </View>
-
-      <Pressable
-        onPress={upload}
-        disabled={!pickedUri || uploading || (!editing && birthDate.trim().length === 0)}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.cta, {
-          backgroundColor: pickedUri && (editing || birthDate.trim().length > 0) ? colors.accent : colors.surface,
-        }, pressed && styles.pressed]}
-      >
-        {uploading ? (
-          <ActivityIndicator color={colors.onAccent} />
-        ) : (
-          <Text style={[typeScale.bodyStrong, {
-            color: pickedUri && (editing || birthDate.trim().length > 0) ? colors.onAccent : colors.textFaint,
-          }]}>
-            {editing ? '변경 완료' : '등록하고 시작하기'}
-          </Text>
-        )}
-      </Pressable>
     </View>
   );
 }
@@ -232,6 +234,7 @@ function CameraGlyph({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   screen: {
     flex: 1,
     padding: spacing.xl,
@@ -240,17 +243,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   body: { flex: 1, justifyContent: 'center', gap: spacing.md },
-  backButton: {
-    position: 'absolute',
-    top: spacing.xl + spacing.md,
-    left: spacing.lg,
-    zIndex: 2,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backLabel: { fontSize: 42, lineHeight: 42 },
   title: { fontFamily: serif.bold, fontSize: 26, lineHeight: 36 },
   copy: { ...typeScale.body, lineHeight: 24 },
   profileFields: { gap: spacing.md },
@@ -270,7 +262,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
-  ghost: { alignSelf: 'center', padding: spacing.sm },
+  ghost: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   cta: {
     minHeight: 48,
     borderRadius: radius.sm,

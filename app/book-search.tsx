@@ -66,8 +66,10 @@ export default function SearchScreen() {
     enabled: searching,
   });
   // 초기 탐색 행 — 홈과 같은 키라 캐시를 공유한다
-  const popular = useQuery({ queryKey: ['home', 'popular'], queryFn: () => bookApi.popular() });
   const recommended = useQuery({ queryKey: ['home', 'recommended'], queryFn: () => bookApi.recommended() });
+  // 서점 큐레이션은 홈에서 이리로 옮겨 왔다 — 홈은 내 책 위주 넷만 두고, 둘러보기는 탐색에서 한다.
+  const bestsellers = useQuery({ queryKey: ['home', 'yes24', 'BESTSELLER'], queryFn: () => bookApi.yes24Curation('BESTSELLER') });
+  const newBooks = useQuery({ queryKey: ['home', 'yes24', 'NEW'], queryFn: () => bookApi.yes24Curation('NEW') });
 
   const add = useMutation({
     mutationFn: ({ book, status }: { book: BookSummary; status: ReadingStatus }) =>
@@ -169,15 +171,29 @@ export default function SearchScreen() {
             }))}
             onPressBook={openBook}
           />
-          <BookRow
-            title="지금 붐비는 책"
-            loading={popular.isLoading}
-            books={(popular.data ?? []).map((p, i): RowBook => ({
-              key: `popular-${p.book.id}`, bookId: p.book.id, title: p.book.title,
-              author: p.book.author, coverUrl: p.book.coverUrl, rank: i + 1,
-            }))}
-            onPressBook={openBook}
-          />
+          {/* '지금 붐비는 책'은 홈에 있다 — 여기선 서점 큐레이션을 보여 겹치지 않게 한다. */}
+          {bestsellers.isLoading || (bestsellers.data?.length ?? 0) > 0 ? (
+            <BookRow
+              title="베스트셀러"
+              label="YES24"
+              loading={bestsellers.isLoading}
+              books={(bestsellers.data ?? []).map((b, i): RowBook => ({
+                key: `best-${b.id}`, bookId: b.id, title: b.title, author: b.author, coverUrl: b.coverUrl, rank: i + 1,
+              }))}
+              onPressBook={openBook}
+            />
+          ) : null}
+          {newBooks.isLoading || (newBooks.data?.length ?? 0) > 0 ? (
+            <BookRow
+              title="새로 나온 책"
+              label="NEW"
+              loading={newBooks.isLoading}
+              books={(newBooks.data ?? []).map((b): RowBook => ({
+                key: `new-${b.id}`, bookId: b.id, title: b.title, author: b.author, coverUrl: b.coverUrl,
+              }))}
+              onPressBook={openBook}
+            />
+          ) : null}
         </ScrollView>
       ) : (
         <FlatList
@@ -359,7 +375,7 @@ const styles = StyleSheet.create({
   todayHeader: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   todayTitle: { fontFamily: serif.bold, fontSize: 17, lineHeight: 24 },
   todayBody: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
-  todayInfo: { flex: 1, gap: 4, paddingTop: spacing.xs },
+  todayInfo: { flex: 1, gap: spacing.xs, paddingTop: spacing.xs },
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: 104 },
   row: {
     flexDirection: 'row',

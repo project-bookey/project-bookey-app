@@ -10,7 +10,7 @@ import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
-import { Button, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
+import { Button, FootAction, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -241,7 +241,7 @@ export default function ClubLogScrapScreen() {
             <View style={styles.ownerActions}>
               <Button label="고치기" size="sm" variant="outline" onPress={startEditing} />
               <Button
-                label={confirm === 'scrap' ? '정말 지울까요?' : '지우기'}
+                label={confirm === 'scrap' ? '한 번 더' : '삭제'}
                 size="sm"
                 variant="outline"
                 loading={remove.isPending}
@@ -324,12 +324,14 @@ function TalkRow({ talk, mine, confirming, onDelete }: {
         <Text style={[typeScale.caption, { color: colors.textFaint, flex: 1 }]}>
           {formatRelative(talk.createdAt)}
         </Text>
+        {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'(엽서·댓글·알림과 같은 FootAction). */}
         {mine ? (
-          <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button">
-            <Text style={[typeScale.caption, { color: confirming ? colors.danger : colors.textFaint }]}>
-              {confirming ? '정말?' : '지우기'}
-            </Text>
-          </Pressable>
+          <FootAction
+            label={confirming ? '한 번 더' : '삭제'}
+            onPress={onDelete}
+            tone={confirming ? 'danger' : 'faint'}
+            accessibilityLabel={confirming ? '한 마디 삭제 확인' : '한 마디 삭제'}
+          />
         ) : null}
       </View>
       <Text style={[styles.talkBody, { color: colors.text }]}>{talk.body ?? '(가려진 한 마디)'}</Text>
@@ -371,7 +373,7 @@ const styles = StyleSheet.create({
   },
   ownerActions: { flexDirection: 'row', gap: spacing.sm },
   talks: { gap: spacing.sm },
-  talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: 4 },
+  talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: spacing.xs },
   talkHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   talkBody: { fontFamily: serif.regular, fontSize: 15, lineHeight: 22 },
   composer: {

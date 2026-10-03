@@ -10,7 +10,7 @@ import { chatApi, libraryApi, postApi, profileApi, statsApi, walletApi } from '@
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { Post, ReadingRecord } from '@/api/types';
 import {
-  MemoScrap, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
+  MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/Avatar';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
@@ -38,18 +38,24 @@ const HEATMAP_DAYS = 90;
 const POSTS_PAGE = 10;
 /**
  * 팔로워·팔로잉 터치 상자 — 12px 글줄(≈14)에 위 14·아래 16 을 더해 44pt 를 넘긴다.
- * 위는 닉네임 옆 연필 버튼의 hitSlop 아래에서 멈추고, 아래는 섹션 간격(24) 안에 머문다.
+ * 위는 닉네임 옆 연필 버튼의 hitSlop 아래에서 멈추고, 아래는 묶음 간격(36) 안에 머문다.
  */
 const SOCIAL_HIT_SLOP = { top: 14, bottom: 16, left: 8, right: 8 };
-/** 서재 '전체보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14. 아래는 선반 표지 위에서 멈춘다. */
+/**
+ * 서재 '전체보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14.
+ * 선반이 '기록' 묶음의 첫머리라 위는 묶음 간격(36) 안에 머물고, 아래는 선반 표지 위에서 멈춘다.
+ */
 const SHELF_ALL_HIT_SLOP = { top: 16, bottom: 14, left: 8, right: spacing.lg };
 
 /**
  * 마이페이지 — '나' 탭(mine)과 다른 사람의 페이지(/user/[id])가 같은 판을 쓴다.
  *
- * 둘 다: 프로필 줄 · 서재 선반 · 기록 카드(스트릭·히트맵).
- * 나만: 사진·닉네임 편집, 설정, 지갑 메모/방문 노트, 출석, 내 독후감 링크, 팔로우 목록.
- * 남만: 프로필 줄 오른쪽 팔로우 칩, 팔로워 줄 아래 채팅·엽서 링크(시안 A), 공개 독후감 — 팔로우는 이 화면에서만 한다.
+ * 위에서부터 세 묶음이다 — 묶음 사이는 간격으로만 가른다.
+ *  1. 프로필: 사진·이름·팔로워/팔로잉. 나는 사진 변경(아바타 하나로만)·편집(연필)·설정,
+ *     남은 오른쪽 팔로우 칩과 팔로워 줄 아래 채팅·엽서 링크(시안 A) — 팔로우는 이 화면에서만 한다.
+ *  2. 오늘(나만): 지갑 메모/방문 노트, 출석.
+ *  3. 기록: 서재 선반 · 기록 카드(스트릭·히트맵) · 내 독후감 링크(남은 공개 독후감).
+ * 나만 맨 끝에 팔로우 목록이 붙는다 — 프로필의 팔로워·팔로잉 숫자가 내려보내는 자리다.
  * 남의 서재·통계는 /users/{id}/library · /users/{id}/stats 로 받는다(각오 메모는 서버가 비워 보낸다).
  */
 export function MyPage({ userId, mine }: { userId: number | undefined; mine: boolean }) {
@@ -154,289 +160,299 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
 
   return (
     <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
-      <View style={styles.profileRow}>
-        {mine ? (
-          <Pressable
-            onPress={() => router.push({ pathname: '/profile-photo', params: { returnTo: 'profile' } })}
-            accessibilityRole="button"
-            accessibilityLabel="프로필 사진 변경"
-            style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
-          >
-            {avatar}
-            {/* 사진 모서리에 붙는 잉크 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다.
-                이 화면 위쪽의 악센트는 출석하기 버튼 하나뿐이다. */}
-            <View style={[styles.avatarBadge, { backgroundColor: colors.ink, borderColor: colors.bg }]}>
-              <PlusGlyph size={12} stroke={2.5} color={colors.onInk} />
+      {/* 1. 프로필 — 사진·이름·팔로워/팔로잉에 편집·설정을 붙인다(남의 페이지는 팔로우·채팅·엽서). */}
+      <View style={styles.group}>
+        <View style={styles.profileRow}>
+          {mine ? (
+            <Pressable
+              onPress={() => router.push({ pathname: '/profile-photo', params: { returnTo: 'profile' } })}
+              accessibilityRole="button"
+              accessibilityLabel="프로필 사진 변경"
+              style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
+            >
+              {avatar}
+              {/* 사진 모서리에 붙는 잉크 원 배지 — 배경색 테두리로 사진과 띄워 '떠 있는 +' 가 되지 않게 한다.
+                  이 화면 위쪽의 악센트는 출석하기 버튼 하나뿐이다. */}
+              <View style={[styles.avatarBadge, { backgroundColor: colors.ink, borderColor: colors.bg }]}>
+                <PlusGlyph size={12} stroke={2.5} color={colors.onInk} />
+              </View>
+            </Pressable>
+          ) : (
+            <View style={styles.avatarButton}>{avatar}</View>
+          )}
+          <View style={styles.profileText}>
+            <View style={styles.nicknameRow}>
+              <Text numberOfLines={1} style={[styles.nickname, { color: colors.text }]}>
+                {nickname}
+              </Text>
+              {mine ? (
+                <Pressable
+                  onPress={() => router.push('/profile-edit')}
+                  accessibilityRole="button"
+                  accessibilityLabel="프로필 편집"
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
+                >
+                  <PencilLine color={colors.textMuted} />
+                </Pressable>
+              ) : null}
             </View>
-          </Pressable>
-        ) : (
-          <View style={styles.avatarButton}>{avatar}</View>
-        )}
-        <View style={styles.profileText}>
-          <View style={styles.nicknameRow}>
-            <Text numberOfLines={1} style={[styles.nickname, { color: colors.text }]}>
-              {nickname}
+            {/* 서버 MeResponse 에 가입일이 없어 핸들로 대신한다 — 필드가 생기면 '{연도} 가입'으로 바꾼다. */}
+            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
+              @{handle ?? '—'} · 완독 {counts?.finished ?? 0}권
             </Text>
             {mine ? (
-              <Pressable
-                onPress={() => router.push('/profile-edit')}
-                accessibilityRole="button"
-                accessibilityLabel="프로필 편집"
-                hitSlop={8}
-                style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
-              >
-                <PencilLine color={colors.textMuted} />
-              </Pressable>
-            ) : null}
-          </View>
-          {/* 서버 MeResponse 에 가입일이 없어 핸들로 대신한다 — 필드가 생기면 '{연도} 가입'으로 바꾼다. */}
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.profileMeta, { color: colors.textFaint }]}>
-            @{handle ?? '—'} · 완독 {counts?.finished ?? 0}권
-          </Text>
-          {mine ? (
-            // 숫자를 누르면 아래 팔로우 섹션으로 내려가며 그 탭이 열린다 (§14.3)
-            <View style={styles.profileSocial}>
-              <Pressable
-                onPress={() => openFollows('FOLLOWER')}
-                accessibilityRole="button"
-                accessibilityLabel={`팔로워 ${followerCount}명 목록`}
-                hitSlop={SOCIAL_HIT_SLOP}
-                style={({ pressed }) => pressed && styles.pressed}
-              >
-                <SocialCount label="팔로워" value={followerCount} />
-              </Pressable>
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
-              <Pressable
-                onPress={() => openFollows('FOLLOWING')}
-                accessibilityRole="button"
-                accessibilityLabel={`팔로잉 ${followingCount}명 목록`}
-                hitSlop={SOCIAL_HIT_SLOP}
-                style={({ pressed }) => pressed && styles.pressed}
-              >
-                <SocialCount label="팔로잉" value={followingCount} />
-              </Pressable>
-            </View>
-          ) : (
-            <>
+              // 숫자를 누르면 아래 팔로우 섹션으로 내려가며 그 탭이 열린다 (§14.3)
               <View style={styles.profileSocial}>
-                <SocialCount label="팔로워" value={followerCount} />
+                <Pressable
+                  onPress={() => openFollows('FOLLOWER')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`팔로워 ${followerCount}명 목록`}
+                  hitSlop={SOCIAL_HIT_SLOP}
+                  style={({ pressed }) => pressed && styles.pressed}
+                >
+                  <SocialCount label="팔로워" value={followerCount} />
+                </Pressable>
                 <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
-                <SocialCount label="팔로잉" value={followingCount} />
-                {p?.mutual || p?.followsMe ? (
-                  <>
-                    <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
-                    <Text style={[typeScale.caption, { color: p.mutual ? colors.accent : colors.textFaint }]}>
-                      {p.mutual ? '맞팔로우' : '나를 팔로우'}
-                    </Text>
-                  </>
-                ) : null}
+                <Pressable
+                  onPress={() => openFollows('FOLLOWING')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`팔로잉 ${followingCount}명 목록`}
+                  hitSlop={SOCIAL_HIT_SLOP}
+                  style={({ pressed }) => pressed && styles.pressed}
+                >
+                  <SocialCount label="팔로잉" value={followingCount} />
+                </Pressable>
               </View>
-              {/* 채팅은 엽서 답장이 오간 사이(canChat)에만 — 서버 거절도 아래에 그대로 표시한다. */}
-              {p ? (
-                <View style={styles.visitorLinks}>
-                  {p.canChat ? (
+            ) : (
+              <>
+                <View style={styles.profileSocial}>
+                  <SocialCount label="팔로워" value={followerCount} />
+                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+                  <SocialCount label="팔로잉" value={followingCount} />
+                  {p?.mutual || p?.followsMe ? (
+                    <>
+                      <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+                      <Text style={[typeScale.caption, { color: p.mutual ? colors.accent : colors.textFaint }]}>
+                        {p.mutual ? '맞팔로우' : '나를 팔로우'}
+                      </Text>
+                    </>
+                  ) : null}
+                </View>
+                {/* 채팅은 엽서 답장이 오간 사이(canChat)에만 — 서버 거절도 아래에 그대로 표시한다. */}
+                {p ? (
+                  <View style={styles.visitorLinks}>
+                    {p.canChat ? (
+                      <Pressable
+                        onPress={() => openChat.mutate()}
+                        disabled={openChat.isPending}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${p.nickname}님과 채팅`}
+                        hitSlop={8}
+                        style={({ pressed }) => [styles.visitorLink, pressed && styles.pressed]}
+                      >
+                        <ChatLine color={colors.accent} />
+                        <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('채팅')}</Text>
+                      </Pressable>
+                    ) : null}
                     <Pressable
-                      onPress={() => openChat.mutate()}
-                      disabled={openChat.isPending}
+                      onPress={() => setComposing((v) => !v)}
                       accessibilityRole="button"
-                      accessibilityLabel={`${p.nickname}님과 채팅`}
+                      accessibilityLabel={composing ? '엽서 쓰기 닫기' : `${p.nickname}님에게 엽서 쓰기`}
+                      accessibilityState={{ expanded: composing }}
                       hitSlop={8}
                       style={({ pressed }) => [styles.visitorLink, pressed && styles.pressed]}
                     >
-                      <ChatLine color={colors.accent} />
-                      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('채팅')}</Text>
+                      <EnvelopeLine color={composing ? colors.textFaint : colors.accent} />
+                      <Text style={[typeScale.monoLabel, { color: composing ? colors.textFaint : colors.accent }]}>
+                        {linkLabel(composing ? '엽서 닫기' : '엽서 쓰기', 'action')}
+                      </Text>
                     </Pressable>
-                  ) : null}
-                  <Pressable
-                    onPress={() => setComposing((v) => !v)}
-                    accessibilityRole="button"
-                    accessibilityLabel={composing ? '엽서 쓰기 닫기' : `${p.nickname}님에게 엽서 쓰기`}
-                    accessibilityState={{ expanded: composing }}
-                    hitSlop={8}
-                    style={({ pressed }) => [styles.visitorLink, pressed && styles.pressed]}
-                  >
-                    <EnvelopeLine color={composing ? colors.textFaint : colors.accent} />
-                    <Text style={[typeScale.monoLabel, { color: composing ? colors.textFaint : colors.accent }]}>
-                      {linkLabel(composing ? '엽서 닫기' : '엽서 쓰기', 'action')}
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : null}
-            </>
-          )}
+                  </View>
+                ) : null}
+              </>
+            )}
+          </View>
+          {mine ? (
+            // 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다.
+            <TourTarget id="profile-settings" style={styles.settingsTarget}>
+              <Pressable
+                onPress={() => router.push('/settings')}
+                accessibilityRole="button"
+                accessibilityLabel="설정"
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.settingsButton,
+                  { borderColor: colors.line, backgroundColor: colors.surface },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <GearLine size={14} color={colors.textMuted} />
+                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
+              </Pressable>
+            </TourTarget>
+          ) : userId != null ? (
+            // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
+            <View style={styles.followSlot}>
+              <FollowButton userId={userId} nickname={p?.nickname} />
+            </View>
+          ) : null}
         </View>
-        {mine ? (
-          // 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다.
-          <TourTarget id="profile-settings" style={styles.settingsTarget}>
-            <Pressable
-              onPress={() => router.push('/settings')}
-              accessibilityRole="button"
-              accessibilityLabel="설정"
-              hitSlop={8}
-              style={({ pressed }) => [
-                styles.settingsButton,
-                { borderColor: colors.line, backgroundColor: colors.surface },
-                pressed && styles.pressed,
-              ]}
-            >
-              <GearLine size={14} color={colors.textMuted} />
-              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
-            </Pressable>
-          </TourTarget>
-        ) : userId != null ? (
-          // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
-          <View style={styles.followSlot}>
-            <FollowButton userId={userId} nickname={p?.nickname} />
+
+        {!mine && (chatError || composing) && p && userId != null ? (
+          <View style={[styles.block, styles.visitorActions]}>
+            {chatError ? (
+              <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
+                {chatError}
+              </Text>
+            ) : null}
+            {composing ? (
+              <PostcardComposer
+                toUserId={userId}
+                toNickname={p.nickname}
+                onDone={() => setComposing(false)}
+              />
+            ) : null}
           </View>
         ) : null}
       </View>
 
-      {!mine && (chatError || composing) && p && userId != null ? (
-        <View style={[styles.block, styles.visitorActions]}>
-          {chatError ? (
-            <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">
-              {chatError}
-            </Text>
-          ) : null}
-          {composing ? (
-            <PostcardComposer
-              toUserId={userId}
-              toNickname={p.nickname}
-              onDone={() => setComposing(false)}
-            />
-          ) : null}
+      {/* 2. 오늘(나만) — 지갑이 출석보다 위다. 출석 카드는 응답이 와야 그려지므로 아래에 두면
+          지갑이 늦게 밀려 내려가 오터치가 나고 튜토리얼 구멍(profile-wallet)도 어긋난다. */}
+      {mine ? (
+        <View style={styles.group}>
+          <MyWalletRow />
+          <AttendanceCard />
         </View>
       ) : null}
 
-      {mine ? <MyWalletRow /> : null}
+      {/* 3. 기록 — 같은 까닭으로 자리표시로 크기를 먼저 잡는 선반이 앞, 통계가 와야 그려지는 기록 카드가 뒤다. */}
+      <View style={styles.group}>
+        <View style={styles.shelfSection}>
+          <View style={styles.shelfHeader}>
+            <Text style={[typeScale.titleSerif, styles.shelfTitle, { color: colors.text }]}>
+              {mine ? '내 서재' : '서재'}
+            </Text>
+            {mine ? (
+              <Pressable
+                onPress={() => router.push('/library')}
+                hitSlop={SHELF_ALL_HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+                  {libraryTotal}권 · {linkLabel('전체보기')}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{libraryTotal}권</Text>
+            )}
+          </View>
 
-      {mine ? <AttendanceCard /> : null}
-
-      <View style={styles.shelfSection}>
-        <View style={styles.shelfHeader}>
-          <Text style={[typeScale.titleSerif, styles.shelfTitle, { color: colors.text }]}>
-            {mine ? '내 서재' : '서재'}
-          </Text>
-          {mine ? (
-            <Pressable
-              onPress={() => router.push('/library')}
-              hitSlop={SHELF_ALL_HIT_SLOP}
-              accessibilityRole="button"
-              accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
-              style={({ pressed }) => pressed && styles.pressed}
-            >
-              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
-                {libraryTotal}권 · {linkLabel('전체보기')}
-              </Text>
-            </Pressable>
+          {shelfLoading ? (
+            <View style={styles.shelfList}>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={[styles.shelfSkeleton, { backgroundColor: colors.surface }]} />
+              ))}
+            </View>
+          ) : shelf.length === 0 && mine ? (
+            <View style={styles.shelfList}>
+              <Pressable
+                onPress={() => router.navigate('/book-search')}
+                accessibilityRole="button"
+                accessibilityLabel="책 추가"
+              >
+                <View style={[styles.shelfGhost, { borderColor: colors.lineStrong }]}>
+                  <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
+                </View>
+              </Pressable>
+              {[0, 1].map((i) => (
+                <View key={i} style={[styles.shelfGhost, { borderColor: colors.lineStrong }]} />
+              ))}
+            </View>
+          ) : shelf.length === 0 ? (
+            <Text style={[typeScale.caption, styles.shelfEmpty, { color: colors.textFaint }]}>
+              서재에 담긴 책이 아직 없어요.
+            </Text>
           ) : (
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{libraryTotal}권</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.shelfList}
+            >
+              {shelf.map((record, index) => (
+                <ShelfItem
+                  key={record.id}
+                  record={record}
+                  index={index}
+                  entranceScope={mine ? 'me' : `u${userId}`}
+                  onPress={() => {
+                    if (record.book?.id == null) return;
+                    // 남의 기록 id 는 내 서재 상세에 쓸 수 없다 — 책 상세로만 보낸다.
+                    router.push(mine ? `/book/${record.book.id}?recordId=${record.id}` : `/book/${record.book.id}`);
+                  }}
+                />
+              ))}
+            </ScrollView>
           )}
         </View>
 
-        {shelfLoading ? (
-          <View style={styles.shelfList}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={[styles.shelfSkeleton, { backgroundColor: colors.surface }]} />
-            ))}
+        {stats.isLoading ? null : (
+          <View style={styles.block}>
+            <Card>
+              <Eyebrow>기록</Eyebrow>
+              {stats.data ? (
+                <>
+                  <View style={styles.statRow}>
+                    <StatCell label="현재 스트릭" value={`${stats.data.currentStreakDays}일`} />
+                    <VRule />
+                    <StatCell label="최장 스트릭" value={`${stats.data.longestStreakDays}일`} />
+                    <VRule />
+                    <StatCell label="이번 주" value={formatDuration(stats.data.weekDurationSec)} />
+                  </View>
+                  <Heatmap daily={heatDaily} />
+                  <View style={styles.legend}>
+                    <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>적음</Text>
+                    {[0, 0.2, 0.4, 0.6, 1].map((level) => (
+                      <View
+                        key={level}
+                        style={[styles.legendCell, { backgroundColor: cellColor(level, colors) }]}
+                      />
+                    ))}
+                    <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>많음</Text>
+                  </View>
+                  <View style={{ marginTop: spacing.sm }}>
+                    <Rule />
+                    <KeyValue label="총 독서시간" value={formatDuration(stats.data.totalDurationSec)} />
+                    <Rule />
+                    <KeyValue label="오늘" value={formatDuration(stats.data.todayDurationSec)} />
+                    <Rule />
+                    <KeyValue
+                      label="기록한 날"
+                      value={`${heatDaily.filter((d) => d.sessionCount > 0).length}일 / ${heatDaily.length}일`}
+                    />
+                  </View>
+                </>
+              ) : (
+                <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+                  통계를 불러오지 못했습니다.
+                </Text>
+              )}
+            </Card>
           </View>
-        ) : shelf.length === 0 && mine ? (
-          <View style={styles.shelfList}>
-            <Pressable
-              onPress={() => router.navigate('/book-search')}
-              accessibilityRole="button"
-              accessibilityLabel="책 추가"
-            >
-              <View style={[styles.shelfGhost, { borderColor: colors.lineStrong }]}>
-                <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-                <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
-              </View>
-            </Pressable>
-            {[0, 1].map((i) => (
-              <View key={i} style={[styles.shelfGhost, { borderColor: colors.lineStrong }]} />
-            ))}
-          </View>
-        ) : shelf.length === 0 ? (
-          <Text style={[typeScale.caption, styles.shelfEmpty, { color: colors.textFaint }]}>
-            서재에 담긴 책이 아직 없어요.
-          </Text>
-        ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.shelfList}
-          >
-            {shelf.map((record, index) => (
-              <ShelfItem
-                key={record.id}
-                record={record}
-                index={index}
-                entranceScope={mine ? 'me' : `u${userId}`}
-                onPress={() => {
-                  if (record.book?.id == null) return;
-                  // 남의 기록 id 는 내 서재 상세에 쓸 수 없다 — 책 상세로만 보낸다.
-                  router.push(mine ? `/book/${record.book.id}?recordId=${record.id}` : `/book/${record.book.id}`);
-                }}
-              />
-            ))}
-          </ScrollView>
         )}
+
+        {mine ? <MyScraps /> : userId != null ? <PublicPosts userId={userId} /> : null}
       </View>
 
-      {stats.isLoading ? null : (
-        <View style={styles.block}>
-          <Card>
-            <Eyebrow>기록</Eyebrow>
-            {stats.data ? (
-              <>
-                <View style={styles.statRow}>
-                  <StatCell label="현재 스트릭" value={`${stats.data.currentStreakDays}일`} />
-                  <VRule />
-                  <StatCell label="최장 스트릭" value={`${stats.data.longestStreakDays}일`} />
-                  <VRule />
-                  <StatCell label="이번 주" value={formatDuration(stats.data.weekDurationSec)} />
-                </View>
-                <Heatmap daily={heatDaily} />
-                <View style={styles.legend}>
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>적음</Text>
-                  {[0, 0.2, 0.4, 0.6, 1].map((level) => (
-                    <View
-                      key={level}
-                      style={[styles.legendCell, { backgroundColor: cellColor(level, colors) }]}
-                    />
-                  ))}
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>많음</Text>
-                </View>
-                <View style={{ marginTop: spacing.sm }}>
-                  <Rule />
-                  <KeyValue label="총 독서시간" value={formatDuration(stats.data.totalDurationSec)} />
-                  <Rule />
-                  <KeyValue label="오늘" value={formatDuration(stats.data.todayDurationSec)} />
-                  <Rule />
-                  <KeyValue
-                    label="기록한 날"
-                    value={`${heatDaily.filter((d) => d.sessionCount > 0).length}일 / ${heatDaily.length}일`}
-                  />
-                </View>
-              </>
-            ) : (
-              <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-                통계를 불러오지 못했습니다.
-              </Text>
-            )}
-          </Card>
-        </View>
-      )}
-
+      {/* 팔로우 목록 — 프로필의 팔로워·팔로잉 숫자가 내려보내는 자리라 맨 끝에 둔다.
+          onLayout 의 y 를 스크롤 좌표로 쓰므로 묶음 안이 아니라 스크롤 콘텐츠 바로 아래에 둔다. */}
       {mine ? (
-        <>
-          <MyScraps />
-          <View style={styles.block} onLayout={(e) => { followY.current = e.nativeEvent.layout.y; }}>
-            <FollowSection box={followBox} onChangeBox={setFollowBox} />
-          </View>
-        </>
-      ) : userId != null ? (
-        <PublicPosts userId={userId} />
+        <View style={styles.block} onLayout={(e) => { followY.current = e.nativeEvent.layout.y; }}>
+          <FollowSection box={followBox} onChangeBox={setFollowBox} />
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -845,7 +861,9 @@ function cellColor(ratio: number, colors: ColorTokens): string {
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, gap: spacing.xl, paddingBottom: 104, paddingTop: spacing.lg },
+  // 묶음(프로필·오늘·기록) 사이는 xxl, 묶음 안은 md — 상자나 선 없이 간격만으로 세 덩이가 갈린다.
+  container: { ...layout.content, gap: spacing.xxl, paddingBottom: NAV_CLEARANCE, paddingTop: spacing.lg },
+  group: { gap: spacing.md },
   block: { paddingHorizontal: spacing.lg },
 
   profileRow: {
@@ -963,7 +981,7 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     marginTop: spacing.md,
     justifyContent: 'flex-end',
   },

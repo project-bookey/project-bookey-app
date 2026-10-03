@@ -106,7 +106,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
       ) : null}
 
       <View style={styles.actions}>
-        <Button label="취소" variant="ghost" onPress={onDone} />
+        <Button label="취소" variant="outline" onPress={onDone} />
         <Button
           label={send.isPending ? '보내는 중…' : '엽서 보내기'}
           onPress={() => send.mutate()}

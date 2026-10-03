@@ -28,6 +28,12 @@ const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
 ];
 
+/**
+ * 구역 화면 목록 끝에 두는 하단 여백 — 떠 있는 유리 바(60)와 바닥 띄움 아래로 마지막 항목이 숨지 않게 한다.
+ * 구역 화면은 모두 이 값 하나를 쓴다.
+ */
+export const NAV_CLEARANCE = 104;
+
 let lastTabIndex = SECTIONS.findIndex((section) => section.key === 'shelf');
 
 /**
@@ -383,7 +389,7 @@ const styles = StyleSheet.create({
     height: 58,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
   },
   // 활성 표식도 유리 안에서 움직이는 작은 캡슐로 두어 현재 위치를 명확히 한다. 폭은 탭 폭에 맞춰 그린다.
   marker: {

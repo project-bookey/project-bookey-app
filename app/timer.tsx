@@ -10,7 +10,7 @@ import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import {
-  Button, Loading, ProgressBar, Rule, formatClock, formatDuration, percent,
+  Button, Loading, ProgressBar, Rule, formatClock, formatDuration, percent, playLabel,
 } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -362,7 +362,7 @@ export default function TimerScreen() {
         ) : (
           <View style={styles.startArea}>
             <Button
-              label="독서 시작"
+              label={playLabel('독서 시작')}
               onPress={() => start.mutate()}
               loading={start.isPending}
             />

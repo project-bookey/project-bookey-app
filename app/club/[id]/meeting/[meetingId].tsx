@@ -136,7 +136,7 @@ export default function MeetingDetailScreen() {
     <PaperScreen>
       <SubHeader category="모임 상세" />
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={{ gap: 4 }}>
+        <View style={{ gap: spacing.xs }}>
           <Eyebrow>클럽 모임</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>{m.title}</Text>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>{statusLine}</Text>
