@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
@@ -214,34 +213,44 @@ export default function SettingsScreen() {
 }
 
 /**
- * 소셜 로그인 연동 — 소셜 로그인은 이미 연동된 계정만 통과하므로(새 계정을 만들지 않는다), 이메일로 가입한
- * 사람이 여기서 연동해 두면 다음부터 애플·카카오·구글로 로그인할 수 있다.
- * 서버가 연동 상태를 내려 주지 않아(MeResponse 에 필드 없음) 이번에 연동한 것만 '연동됨'으로 보인다.
+ * 소셜 로그인 연동 — 연동하지 않은 소셜 계정으로 로그인하면 서버가 별도 계정을 새로 만든다(이메일이 같으면 막는다).
+ * 이메일로 가입한 사람이 여기서 연동해 두면 다음부터 같은 계정에 애플·카카오·구글로 로그인할 수 있다.
+ * 연동 상태는 내 정보(linkedProviders·hasPassword)를 따른다.
  */
 function SocialLinkCard() {
   const { colors } = useTheme();
+  const user = useAuth((s) => s.user);
   const setUser = useAuth((s) => s.setUser);
   const { getToken, appleAvailable } = useSocialTokens();
-  const [linked, setLinked] = useState<Partial<Record<SocialProvider, boolean>>>({});
+  // 아직 새 필드를 주지 않는 서버(배포 전)와 붙어도 깨지지 않게 — 없으면 연동 없음으로 본다.
+  const linked = user?.linkedProviders ?? [];
+  // 비밀번호 없는(소셜로 가입한) 계정의 마지막 연동은 지우면 다시 로그인할 길이 없다 — 서버도 LAST_LOGIN_METHOD 로 막는다.
+  const lastLoginMethod = user?.hasPassword === false && linked.length === 1;
 
   const link = useMutation({
     mutationFn: async (provider: SocialProvider) => {
       const token = await getToken(provider);
       // 사용자가 공급자 창을 닫았으면 아무것도 하지 않는다.
-      if (!token) return null;
-      return { provider, me: await authApi.linkSocial(provider, token) };
+      return token ? authApi.linkSocial(provider, token) : null;
     },
-    onSuccess: (result) => {
-      if (!result) return;
-      setUser(result.me);
-      setLinked((prev) => ({ ...prev, [result.provider]: true }));
+    onSuccess: (me) => {
+      if (me) setUser(me);
     },
   });
-  const error = link.isError && !link.isPending
-    ? link.error instanceof Error ? link.error.message : '연동하지 못했어요. 잠시 후 다시 시도해 주세요.'
+  // 해제는 언제든 다시 연동할 수 있어 확인 창 없이 바로 한다.
+  const unlink = useMutation({
+    mutationFn: (provider: SocialProvider) => authApi.unlinkSocial(provider),
+    onSuccess: setUser,
+  });
+  const busy = link.isPending || unlink.isPending;
+  const failure = link.isError && !link.isPending ? link.error : unlink.isError && !unlink.isPending ? unlink.error : null;
+  const error = failure
+    ? failure instanceof Error ? failure.message : '처리하지 못했어요. 잠시 후 다시 시도해 주세요.'
     : null;
-  // 애플은 iOS에서 쓸 수 있을 때만 보인다(로그인 화면과 같은 기준).
-  const providers = SOCIAL_PROVIDERS.filter((p) => p.value !== 'APPLE' || appleAvailable);
+  // 애플은 iOS에서 쓸 수 있을 때만 보인다(로그인 화면과 같은 기준). 이미 연동된 애플은 해제할 수 있게 늘 보인다.
+  const providers = SOCIAL_PROVIDERS.filter(
+    (p) => p.value !== 'APPLE' || appleAvailable || linked.includes('APPLE'),
+  );
 
   return (
     <Card>
@@ -250,27 +259,45 @@ function SocialLinkCard() {
         연동해 두면 다음부터 이 계정에 애플·카카오·구글로 로그인할 수 있어요.
       </Text>
       <View style={styles.linkList}>
-        {providers.map((provider, index) => (
-          <View key={provider.value}>
-            {index > 0 ? <Rule /> : null}
-            <View style={styles.linkRow}>
-              <Text style={[typeScale.label, { color: colors.text, flex: 1 }]}>{provider.label}</Text>
-              {linked[provider.value] ? (
-                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>연동됨 ✓</Text>
-              ) : (
-                <Button
-                  label="연동"
-                  size="sm"
-                  variant="outline"
-                  loading={link.isPending && link.variables === provider.value}
-                  disabled={link.isPending}
-                  onPress={() => link.mutate(provider.value)}
-                />
-              )}
+        {providers.map((provider, index) => {
+          const isLinked = linked.includes(provider.value);
+          return (
+            <View key={provider.value}>
+              {index > 0 ? <Rule /> : null}
+              <View style={styles.linkRow}>
+                <Text style={[typeScale.label, { color: colors.text, flex: 1 }]}>{provider.label}</Text>
+                {isLinked ? (
+                  <>
+                    <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>연동됨</Text>
+                    <Button
+                      label="해제"
+                      size="sm"
+                      variant="outline"
+                      loading={unlink.isPending && unlink.variables === provider.value}
+                      disabled={busy || lastLoginMethod}
+                      onPress={() => unlink.mutate(provider.value)}
+                    />
+                  </>
+                ) : (
+                  <Button
+                    label="연동"
+                    size="sm"
+                    variant="outline"
+                    loading={link.isPending && link.variables === provider.value}
+                    disabled={busy}
+                    onPress={() => link.mutate(provider.value)}
+                  />
+                )}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
+      {lastLoginMethod ? (
+        <Text style={[typeScale.caption, { color: colors.textFaint }]}>
+          소셜로 가입한 계정이라 마지막 연동은 해제할 수 없어요. 다른 소셜 계정을 먼저 연동해 주세요.
+        </Text>
+      ) : null}
       {error ? <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text> : null}
     </Card>
   );

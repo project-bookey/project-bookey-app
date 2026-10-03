@@ -2874,6 +2874,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/social/link/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 소셜 계정 연동 해제 — 비밀번호 없는 계정의 마지막 연동은 해제할 수 없다 */
+        delete: operations["unlinkSocial"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/users/{userId}/sanctions/{sanctionId}": {
         parameters: {
             query?: never;
@@ -3352,6 +3369,8 @@ export interface components {
             allowNudge: boolean;
             status: string;
             preferredCategories: string[];
+            linkedProviders: ("APPLE" | "GOOGLE" | "KAKAO")[];
+            hasPassword: boolean;
         };
         AddBookRequest: {
             /** Format: int64 */
@@ -9695,6 +9714,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    unlinkSocial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "APPLE" | "GOOGLE" | "KAKAO";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeResponse"];
+                };
             };
         };
     };
