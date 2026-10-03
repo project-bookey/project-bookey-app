@@ -144,7 +144,7 @@ export default function ChatRoomScreen() {
           ListFooterComponent={
             messages.isFetchingNextPage ? (
               <View style={styles.loading}>
-                <ActivityIndicator size="small" color={colors.accent} />
+                <ActivityIndicator size="small" color={colors.textMuted} />
               </View>
             ) : null
           }

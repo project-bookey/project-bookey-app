@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
@@ -25,6 +26,7 @@ export default function ClubJoinScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [code, setCode] = useState('');
   const [shareProgress, setShareProgress] = useState(true);
   const [adoptTarget, setAdoptTarget] = useState(true);
@@ -56,105 +58,130 @@ export default function ClubJoinScreen() {
   return (
     <PaperScreen>
       <SubHeader category="코드로 참가" />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View>
-          <Eyebrow>초대 코드</Eyebrow>
-          <TextInput
-            value={code}
-            onChangeText={(text) => {
-              setCode(text.toUpperCase());
-              setError(null);
-            }}
-            placeholder="ABC123"
-            placeholderTextColor={colors.textFaint}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={8}
-            style={[
-              styles.codeInput,
-              { borderColor: colors.line, backgroundColor: colors.surface, color: colors.text },
-            ]}
-          />
-          <Text style={[styles.hint, { color: colors.textFaint }]}>
-            대소문자와 하이픈은 자동으로 정리됩니다.
-          </Text>
-        </View>
-
-        {ready && preview.isError ? (
-          <Text style={errorStyle}>유효하지 않은 초대 코드입니다.</Text>
-        ) : null}
-
-        {club ? (
-          <View style={[styles.section, { borderTopColor: colors.line }]}>
-            <View style={styles.previewHead}>
-              <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={52} tilt={0} entering={false} />
-              <View style={{ flex: 1, gap: spacing.xs }}>
-                <Text style={[styles.clubName, { color: colors.text }]}>{club.name}</Text>
-                <Text style={[styles.bookLine, { color: colors.textMuted }]}>
-                  {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
-                </Text>
-                {club.description ? (
-                  <Text numberOfLines={2} style={[typeScale.caption, { color: colors.textFaint }]}>
-                    {club.description}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-            <StatStrip
-              cells={[
-                { label: '호스트', value: club.hostNickname ?? '—' },
-                { label: '인원', value: String(club.memberCount), unit: ` / ${club.memberLimit}명` },
-                { label: '기간', value: String(daysBetween(club.startsAt, club.endsAt)), unit: '일' },
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <View>
+            <Eyebrow>초대 코드</Eyebrow>
+            <TextInput
+              value={code}
+              onChangeText={(text) => {
+                setCode(text.toUpperCase());
+                setError(null);
+              }}
+              placeholder="ABC123"
+              placeholderTextColor={colors.textFaint}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={8}
+              style={[
+                styles.codeInput,
+                { borderColor: colors.line, backgroundColor: colors.surface, color: colors.text },
               ]}
             />
-            {club.alreadyMember ? (
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가 중인 클럽입니다.</Text>
-            ) : club.joinBlockedReason ? (
-              <Text style={errorStyle}>{club.joinBlockedReason}</Text>
-            ) : null}
-          </View>
-        ) : null}
-
-        {club?.joinable ? (
-          <View style={[styles.section, { borderTopColor: colors.line }]}>
-            <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
-            <Text style={[styles.consentText, { color: colors.textMuted }]}>
-              · 이 책이 내 서재에 자동으로 등록됩니다{'\n'}
-              · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 클럽원에게 보입니다{'\n'}
-              · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={[styles.bold, { color: colors.text }]}>공유되지 않습니다</Text>
+            <Text style={[styles.hint, { color: colors.textFaint }]}>
+              대소문자와 하이픈은 자동으로 정리됩니다.
             </Text>
-
-            <Rule />
-            <Toggle
-              label="진척 공개"
-              description="끄면 리더보드에 '비공개'로 표시되고 클럽 평균 계산에서 빠집니다."
-              value={shareProgress}
-              onChange={setShareProgress}
-            />
-            <Toggle
-              label="클럽 목표일을 내 목표로"
-              description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
-              value={adoptTarget}
-              onChange={setAdoptTarget}
-            />
           </View>
-        ) : null}
 
-        {error ? <Text style={errorStyle}>{error}</Text> : null}
+          {ready && preview.isError ? (
+            <Text style={errorStyle}>유효하지 않은 초대 코드입니다.</Text>
+          ) : null}
 
-        <Button
-          label="참가하기"
-          disabled={!club?.joinable}
-          loading={join.isPending}
-          onPress={() => join.mutate()}
-        />
-      </ScrollView>
+          {club ? (
+            <View style={[styles.section, { borderTopColor: colors.line }]}>
+              <View style={styles.previewHead}>
+                <TiltCover uri={club.book?.coverUrl} title={club.book?.title} width={52} tilt={0} entering={false} />
+                <View style={{ flex: 1, gap: spacing.xs }}>
+                  <Text style={[styles.clubName, { color: colors.text }]}>{club.name}</Text>
+                  <Text style={[styles.bookLine, { color: colors.textMuted }]}>
+                    {[club.book?.title, club.book?.author].filter(Boolean).join(' · ')}
+                  </Text>
+                  {club.description ? (
+                    <Text numberOfLines={2} style={[typeScale.caption, { color: colors.textFaint }]}>
+                      {club.description}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+              <StatStrip
+                cells={[
+                  { label: '호스트', value: club.hostNickname ?? '—' },
+                  { label: '인원', value: String(club.memberCount), unit: ` / ${club.memberLimit}명` },
+                  { label: '기간', value: String(daysBetween(club.startsAt, club.endsAt)), unit: '일' },
+                ]}
+              />
+              {club.alreadyMember ? (
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가 중인 클럽입니다.</Text>
+              ) : club.joinBlockedReason ? (
+                <Text style={errorStyle}>{club.joinBlockedReason}</Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          {club?.joinable ? (
+            <View style={[styles.section, { borderTopColor: colors.line }]}>
+              <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
+              <Text style={[styles.consentText, { color: colors.textMuted }]}>
+                · 이 책이 내 서재에 자동으로 등록됩니다{'\n'}
+                · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 클럽원에게 보입니다{'\n'}
+                · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={[styles.bold, { color: colors.text }]}>공유되지 않습니다</Text>
+              </Text>
+
+              <Rule />
+              <Toggle
+                label="진척 공개"
+                description="끄면 리더보드에 '비공개'로 표시되고 클럽 평균 계산에서 빠집니다."
+                value={shareProgress}
+                onChange={setShareProgress}
+              />
+              <Toggle
+                label="클럽 목표일을 내 목표로"
+                description={`${club.endsAt}을 내 완독 목표일로 삼습니다.`}
+                value={adoptTarget}
+                onChange={setAdoptTarget}
+              />
+            </View>
+          ) : null}
+
+        </ScrollView>
+
+        {/*
+          하단 띠 — 클럽 만들기와 같은 자리. 미리보기가 길어져도 '참가하기'는 엄지가 닿는 아래에 머물고,
+          키보드가 뜨면 그 위에 붙는다(UX 철칙 Fitts). 실패 안내도 버튼 바로 위에(Proximity).
+        */}
+        <View
+          style={[
+            styles.bottomBar,
+            {
+              backgroundColor: colors.bg,
+              borderTopColor: colors.line,
+              paddingBottom: Math.max(insets.bottom, spacing.lg),
+            },
+          ]}
+        >
+          {error ? <Text style={errorStyle}>{error}</Text> : null}
+          <Button
+            label="참가하기"
+            disabled={!club?.joinable}
+            loading={join.isPending}
+            onPress={() => join.mutate()}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
+  bottomBar: {
+    ...layout.content,
+    width: '100%',
+    gap: spacing.xs,
+    borderTopWidth: hairline,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
   // 코드 입력 — Field 와 같은 종이 상자, 글자는 모노 크게(한글이 아니라 자간 1 로 숨을 준다)
   codeInput: {
     borderWidth: hairline,

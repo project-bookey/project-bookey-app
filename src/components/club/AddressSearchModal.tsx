@@ -46,7 +46,8 @@ export function AddressSearchModal({ clubId, visible, onClose, onSelect }: {
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <PaperScreen withTopInset>
+      {/* 상단 세이프에어리어는 SubHeader 가 민다 — PaperScreen 의 withTopInset 까지 주면 두 번 내려간다. */}
+      <PaperScreen>
         <SubHeader category="주소 검색" onBack={onClose} />
         <View style={styles.search}>
           <Field
