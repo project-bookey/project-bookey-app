@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  KeyboardAvoidingView, LayoutChangeEvent, Linking, Modal, PanResponder, Platform, Pressable,
+  Keyboard, KeyboardAvoidingView, LayoutChangeEvent, Linking, Modal, PanResponder, Platform, Pressable,
   ScrollView, StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
@@ -87,6 +89,7 @@ export default function BookDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id, recordId } = useLocalSearchParams<{ id: string; recordId?: string }>();
   const bookId = Number(id);
   const paramRid = recordId ? Number(recordId) : null;
@@ -147,12 +150,24 @@ export default function BookDetailScreen() {
   const lag = progress ? getLagStyle(colors)[progress.lagLevel] : null;
   const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
   const rating = pickRating(book.data);
+  // 내 기록이 있으면 '독서 시작'을 화면 하단에 붙여 둔다 — 진척 카드 안에 두면 소개·목차를 한참
+  // 내려야 닿는다(UX 철칙 Fitts). 누르면 타이머가 바로 측정을 시작한다.
+  // 키보드가 떠 있는 동안(리뷰 쓰기)은 숨긴다 — 안드로이드는 창이 줄어들어 CTA 가 입력창을 덮는다.
+  const keyboardOpen = useKeyboardOpen();
+  const hasStartCta = record.data != null && progress != null;
+  const ctaBottom = Math.max(insets.bottom, spacing.lg);
 
   return (
     <PaperScreen>
       <SubHeader category={headerCategory(info)} />
 
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          // 고정 CTA(버튼 46 + 위아래 여백)에 마지막 섹션이 가리지 않게 그만큼 더 띄운다.
+          hasStartCta ? { paddingBottom: spacing.xxl + 46 + spacing.lg + ctaBottom } : null,
+        ]}
+      >
         <Hero
           info={info}
           rating={rating}
@@ -182,19 +197,6 @@ export default function BookDetailScreen() {
             <TableOfContents text={book.data.tableOfContents} colors={colors} />
           ) : null}
 
-          {book.data?.addonLink || book.data?.purchaseLink ? (
-            <View style={styles.section}>
-              <Button
-                label="YES24에서 구매하기"
-                variant="outline"
-                onPress={() => {
-                  const url = book.data?.addonLink ?? book.data?.purchaseLink;
-                  if (url) Linking.openURL(url).catch(() => {});
-                }}
-              />
-            </View>
-          ) : null}
-
           {record.data && progress ? (
             <Card style={styles.cardGap}>
               <View style={styles.cardHead}>
@@ -217,7 +219,6 @@ export default function BookDetailScreen() {
                 ) : null}
               </View>
 
-              <Button label={playLabel('독서 시작')} onPress={() => router.push(`/timer?recordId=${rid}`)} />
               {record.data.status !== 'FINISHED' ? (
                 <ConfirmButton
                   label="완독 처리"
@@ -228,14 +229,17 @@ export default function BookDetailScreen() {
                 />
               ) : null}
               {record.data.status === 'READING' ? (
-                <ConfirmButton
-                  label="하차하기"
-                  question="정말 하차할까요?"
-                  tone="danger"
-                  variant="ghost"
-                  pending={abandon.isPending}
-                  onConfirm={() => abandon.mutate()}
-                />
+                // 되돌리기 어려운 하차는 완독 처리와 떨어뜨린다 — 카드 간격(md)에 md 를 더해 xl.
+                <View style={styles.dangerGap}>
+                  <ConfirmButton
+                    label="하차하기"
+                    question="정말 하차할까요?"
+                    tone="danger"
+                    variant="ghost"
+                    pending={abandon.isPending}
+                    onConfirm={() => abandon.mutate()}
+                  />
+                </View>
               ) : null}
               {actionFailed ? (
                 <Text style={[typeScale.caption, { color: colors.warn }]}>
@@ -243,6 +247,19 @@ export default function BookDetailScreen() {
                 </Text>
               ) : null}
             </Card>
+          ) : null}
+
+          {book.data?.addonLink || book.data?.purchaseLink ? (
+            <View style={styles.section}>
+              <Button
+                label="YES24에서 구매하기"
+                variant="outline"
+                onPress={() => {
+                  const url = book.data?.addonLink ?? book.data?.purchaseLink;
+                  if (url) Linking.openURL(url).catch(() => {});
+                }}
+              />
+            </View>
           ) : null}
 
           {verification.data ? (
@@ -317,8 +334,38 @@ export default function BookDetailScreen() {
           <ReviewSection bookId={bookId} rid={rid} colors={colors} />
         </View>
       </ScrollView>
+
+      {hasStartCta && !keyboardOpen ? (
+        // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '한 조각 남기기'와 같은 만듦새.
+        <LinearGradient
+          colors={[`${colors.bg}00`, colors.bg]}
+          locations={[0, 0.45]}
+          style={[styles.cta, { paddingBottom: ctaBottom }]}
+        >
+          <View style={styles.ctaInner}>
+            <Button
+              label={playLabel('독서 시작')}
+              onPress={() => router.push(`/timer?recordId=${rid}&autoStart=1`)}
+            />
+          </View>
+        </LinearGradient>
+      ) : null}
     </PaperScreen>
   );
+}
+
+/** 키보드가 떠 있는지 — 하단 고정 CTA 를 잠시 거둘 때 쓴다. */
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setOpen(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
 }
 
 /**
@@ -463,16 +510,17 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
       accessibilityLabel="좋아요"
       style={[
         styles.likeButton,
+        // 켜짐은 잉크로 뒤집는다 — 악센트는 화면의 '읽기 시작' 몫.
         liked
-          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+          ? { backgroundColor: colors.ink, borderColor: colors.ink }
           : { borderColor: colors.lineStrong },
         { opacity: like.isPending ? 0.6 : 1 },
       ]}
     >
-      <Text style={[styles.likeGlyph, { color: liked ? colors.onAccent : colors.textMuted }]}>
+      <Text style={[styles.likeGlyph, { color: liked ? colors.onInk : colors.textMuted }]}>
         {liked ? '♥' : '♡'}
       </Text>
-      <Text style={[typeScale.monoNumeral, { color: liked ? colors.onAccent : colors.textMuted }]}>
+      <Text style={[typeScale.monoNumeral, { color: liked ? colors.onInk : colors.textMuted }]}>
         {groupNumber(likeCount)}
       </Text>
     </Pressable>
@@ -486,6 +534,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
   colors: ColorTokens;
   onAdded: (recordId: number) => void;
 }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [commitmentOpen, setCommitmentOpen] = useState(false);
   const [commitment, setCommitment] = useState('');
@@ -493,11 +542,13 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
   const add = useMutation({
     mutationFn: ({ status, commitment }: { status: ReadingStatus; commitment?: string }) =>
       libraryApi.add({ bookId, status, commitment }),
-    onSuccess: (record) => {
+    onSuccess: (record, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['library'] });
       setCommitmentOpen(false);
       setCommitment('');
       onAdded(record.id);
+      // '읽기 시작'은 말 그대로 지금 읽기 시작하는 것 — 타이머로 넘겨 바로 측정을 켠다(UX 철칙 Hick).
+      if (status === 'READING') router.push(`/timer?recordId=${record.id}&autoStart=1`);
     },
   });
   const failed = add.isError && !add.isPending;
@@ -554,27 +605,29 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setCommitmentOpen(false)} />
           <View style={[styles.commitmentDialog, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]}>
             <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentTitle, { color: colors.text }]}>
-              완독을 위한 다짐을 입력해 주세요.
+              완독을 위한 다짐을 남겨 보세요.
             </Text>
-            <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentDescription, { color: colors.textMuted }]}>홈 화면의 책 옆 메모에 표시됩니다.</Text>
+            <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentDescription, { color: colors.textMuted }]}>
+              홈 화면의 책 옆 메모에 표시돼요. 비워 두고 바로 시작해도 돼요.
+            </Text>
+            {/* 다짐은 선택이라 키보드를 먼저 띄우지 않는다 — 바로 '읽기 시작'을 누를 수 있게. */}
             <TextInput
-              autoFocus
               value={commitment}
               onChangeText={setCommitment}
               maxLength={200}
               multiline
               maxFontSizeMultiplier={1.15}
-              placeholder="예: 매일 10쪽씩 끝까지 읽기"
+              placeholder="(선택) 예: 매일 10쪽씩 끝까지 읽기"
               placeholderTextColor={colors.textFaint}
               style={[styles.commitmentInput, { color: colors.text, borderColor: colors.lineStrong }]}
             />
             <View style={styles.commitmentActions}>
-              <Button label="취소" variant="ghost" onPress={() => setCommitmentOpen(false)} />
+              <Button label="취소" variant="outline" onPress={() => setCommitmentOpen(false)} />
               <Button
                 label="읽기 시작"
                 loading={add.isPending}
-                disabled={!commitment.trim() || add.isPending}
-                onPress={() => add.mutate({ status: 'READING', commitment: commitment.trim() })}
+                disabled={add.isPending}
+                onPress={() => add.mutate({ status: 'READING', commitment: commitment.trim() || undefined })}
               />
             </View>
           </View>
@@ -590,13 +643,12 @@ function StatStrip({ detail, rating, colors }: {
   rating: RatingPick | null;
   colors: ColorTokens;
 }) {
-  const cells: { key: string; value: string; label: string; accent?: boolean }[] = [];
+  const cells: { key: string; value: string; label: string }[] = [];
   if (rating) {
     cells.push({
       key: 'rating',
       value: `★ ${rating.average.toFixed(1)}`,
       label: rating.verified ? '검증 완독 평점' : '전체 평점',
-      accent: true,
     });
   }
   cells.push({ key: 'reviews', value: groupNumber(detail.verifiedReviewCount), label: '끝까지 읽은 리뷰' });
@@ -608,7 +660,7 @@ function StatStrip({ detail, rating, colors }: {
         <Fragment key={cell.key}>
           {index > 0 ? <View style={[styles.statDivider, { backgroundColor: colors.line }]} /> : null}
           <View style={styles.statCell}>
-            <Text style={[styles.statValue, { color: cell.accent ? colors.accent : colors.text }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>
               {cell.value}
             </Text>
             <Text style={[typeScale.caption, styles.statLabel, { color: colors.textFaint }]}>
@@ -630,8 +682,8 @@ function Description({ text, colors }: { text: string; colors: ColorTokens }) {
       <Text numberOfLines={expanded ? undefined : 4} style={[typeScale.quote, { color: colors.textMuted }]}>
         {text}
       </Text>
-      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" hitSlop={8}>
-        <Text style={[typeScale.monoEyebrow, styles.moreLink, { color: colors.accent }]}>
+      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" style={styles.moreLink}>
+        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
           {expanded ? '접기 ↑' : '더보기 ↓'}
         </Text>
       </Pressable>
@@ -652,8 +704,8 @@ function TableOfContents({ text, colors }: { text: string; colors: ColorTokens }
       <Text numberOfLines={expanded ? undefined : 8} style={[typeScale.caption, { color: colors.textMuted, lineHeight: 20 }]}>
         {cleaned}
       </Text>
-      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" hitSlop={8}>
-        <Text style={[typeScale.monoEyebrow, styles.moreLink, { color: colors.accent }]}>
+      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" style={styles.moreLink}>
+        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
           {expanded ? '접기 ↑' : '더보기 ↓'}
         </Text>
       </Pressable>
@@ -920,12 +972,12 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
             <Card style={styles.formCard}>
               <View style={styles.stars}>
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <Pressable key={n} onPress={() => setRating(n === rating ? 0 : n)} hitSlop={6}
+                  <Pressable key={n} onPress={() => setRating(n === rating ? 0 : n)} style={styles.star}
                     accessibilityRole="button" accessibilityLabel={`별점 ${n}`}>
                     <Text style={{ fontSize: 24, color: n <= rating ? colors.accent : colors.lineStrong }}>★</Text>
                   </Pressable>
                 ))}
-                <Text style={[typeScale.caption, { color: colors.textFaint, marginLeft: spacing.sm }]}>
+                <Text style={[typeScale.caption, { flex: 1, color: colors.textFaint, marginLeft: spacing.xs }]}>
                   {rating > 0 ? `${rating}점` : '별점 선택 (선택 사항)'}
                 </Text>
               </View>
@@ -1009,7 +1061,18 @@ const styles = StyleSheet.create({
   listCard: { paddingVertical: 0 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   kvBlock: { gap: 0 },
-  moreLink: { marginTop: spacing.xs },
+  // 10px 글자만으로는 손가락이 닿지 않는다 — 44pt 상자를 주고, 늘어난 높이만큼 위 여백은 뺀다.
+  moreLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', marginTop: -spacing.sm },
+  dangerGap: { marginTop: spacing.md },
+  cta: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
+  },
+  ctaInner: { ...layout.content, width: '100%' },
 
   actionBarWrap: { gap: spacing.sm },
   actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
@@ -1078,7 +1141,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
 
-  stars: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  // 별마다 44pt 상자 — 이웃 별끼리 터치 영역이 겹치지 않게 간격 대신 상자로 띄운다.
+  stars: { flexDirection: 'row', alignItems: 'center' },
+  star: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   formCard: { gap: spacing.md },
   reviewInput: {
     minHeight: 96,

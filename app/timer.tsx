@@ -28,7 +28,7 @@ export default function TimerScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const { recordId } = useLocalSearchParams<{ recordId: string }>();
+  const { recordId, autoStart } = useLocalSearchParams<{ recordId: string; autoStart?: string }>();
   const id = Number(recordId);
 
   const record = useQuery({
@@ -115,6 +115,18 @@ export default function TimerScreen() {
       }
     },
   });
+
+  // 도서 상세의 '읽기 시작'·'독서 시작'에서 왔으면 시작 버튼을 한 번 더 누르게 하지 않고 바로 잰다.
+  // 열린 세션이 있으면(같은 책이든 다른 책이든) 건드리지 않는다 — 다른 책이면 위 효과가 그 타이머로 옮긴다.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStart !== '1' || autoStarted.current) return;
+    if (!record.data || !current.isSuccess || current.data?.readingRecordId != null) return;
+    autoStarted.current = true;
+    start.mutate();
+    // 뒤로 왔다가 다시 이 화면에 올 때 또 시작하지 않도록 파라미터를 지운다.
+    router.setParams({ autoStart: undefined });
+  }, [autoStart, record.data, current.isSuccess, current.data?.readingRecordId, start, router]);
 
   const saveTotalPages = useMutation({
     mutationFn: async () => {
@@ -285,6 +297,7 @@ export default function TimerScreen() {
               />
               <Button
                 label="등록"
+                variant="outline"
                 onPress={() => saveTotalPages.mutate()}
                 loading={saveTotalPages.isPending}
                 disabled={Number(totalPagesInput) < 1 || Number(totalPagesInput) > 20_000}
