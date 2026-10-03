@@ -1,7 +1,11 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text,
+  TextInput, View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { ApiError } from '@/api/client';
@@ -22,8 +26,14 @@ export function ClubChatBody() {
   const clubId = Number(id);
   const qc = useQueryClient();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
   const [showGift, setShowGift] = useState(false);
+  // 이 본문은 클럽 머리(표지·숫자 띠·탭) 아래에 끼워져 있다. KeyboardAvoidingView 는 자기 위치를
+  // 부모 기준으로만 알아서, 화면 위에서 얼마나 내려와 있는지를 오프셋으로 알려 줘야 키보드가
+  // 입력 줄을 가리지 않는다.
+  const wrapRef = useRef<View>(null);
+  const [windowY, setWindowY] = useState(0);
 
   const state = useQuery({
     queryKey: ['clubChat', clubId, 'state'],
@@ -129,57 +139,76 @@ export function ClubChatBody() {
   }
 
   return (
-    <View style={styles.fill}>
-      {giftBar}
-      {giftSheet}
-      <FlatList
+    <View
+      ref={wrapRef}
+      style={styles.fill}
+      onLayout={() => wrapRef.current?.measureInWindow((_x, y) => setWindowY(y))}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={windowY}
         style={styles.fill}
-        inverted
-        data={items}
-        keyExtractor={(m) => String(m.id)}
-        contentContainerStyle={styles.list}
-        onEndReached={() => pages.hasNextPage && pages.fetchNextPage()}
-        renderItem={({ item }) => <Bubble message={item} />}
-        ListEmptyComponent={
-          // inverted 목록은 빈 상태도 뒤집혀 그려지므로 한 번 더 뒤집는다.
-          <View style={styles.flip}>
-            <EmptyState title="아직 대화가 없어요" description="첫 마디를 남겨 보세요." />
-          </View>
-        }
-      />
-      <View style={[styles.inputBar, { borderTopColor: colors.line, backgroundColor: colors.bg }]}>
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          placeholder="메시지 보내기"
-          placeholderTextColor={colors.textFaint}
-          multiline
-          maxLength={1000}
-          style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]}
+      >
+        {giftBar}
+        {giftSheet}
+        <FlatList
+          style={styles.fill}
+          inverted
+          data={items}
+          keyExtractor={(m) => String(m.id)}
+          contentContainerStyle={styles.list}
+          onEndReached={() => pages.hasNextPage && pages.fetchNextPage()}
+          renderItem={({ item }) => <Bubble message={item} />}
+          ListEmptyComponent={
+            // inverted 목록은 빈 상태도 뒤집혀 그려지므로 한 번 더 뒤집는다.
+            <View style={styles.flip}>
+              <EmptyState title="아직 대화가 없어요" description="첫 마디를 남겨 보세요." />
+            </View>
+          }
         />
-        <Pressable
-          onPress={() => {
-            const body = draft.trim();
-            if (body) send.mutate(body);
-          }}
-          disabled={!canSend}
-          accessibilityRole="button"
-          accessibilityLabel="보내기"
-          style={({ pressed }) => [
-            styles.send,
-            { backgroundColor: canSend ? colors.ink : colors.surfaceRaised },
-            pressed && canSend ? pressedStyle : null,
+        <View
+          style={[
+            styles.inputBar,
+            {
+              borderTopColor: colors.line,
+              backgroundColor: colors.bg,
+              paddingBottom: Math.max(insets.bottom, spacing.md),
+            },
           ]}
         >
-          {send.isPending ? (
-            <ActivityIndicator size="small" color={colors.onInk} />
-          ) : (
-            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={canSend ? colors.onInk : colors.textFaint}>
-              <Path d="M12 19V5M6 11l6-6 6 6" {...iconStroke} />
-            </Svg>
-          )}
-        </Pressable>
-      </View>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            placeholder="메시지 보내기"
+            placeholderTextColor={colors.textFaint}
+            multiline
+            maxLength={1000}
+            style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]}
+          />
+          <Pressable
+            onPress={() => {
+              const body = draft.trim();
+              if (body) send.mutate(body);
+            }}
+            disabled={!canSend}
+            accessibilityRole="button"
+            accessibilityLabel="보내기"
+            style={({ pressed }) => [
+              styles.send,
+              { backgroundColor: canSend ? colors.ink : colors.surfaceRaised },
+              pressed && canSend ? pressedStyle : null,
+            ]}
+          >
+            {send.isPending ? (
+              <ActivityIndicator size="small" color={colors.onInk} />
+            ) : (
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={canSend ? colors.onInk : colors.textFaint}>
+                <Path d="M12 19V5M6 11l6-6 6 6" {...iconStroke} />
+              </Svg>
+            )}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -242,7 +271,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
     paddingHorizontal: spacing.lg,
     borderTopWidth: hairline,
   },
