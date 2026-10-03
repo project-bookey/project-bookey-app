@@ -445,6 +445,8 @@ export default function LoginScreen() {
                 <Text style={styles.legalHint}>각 문서를 끝까지 읽어야 동의할 수 있습니다.</Text>
               </View>
             ) : null}
+            {/* 실패 안내는 누른 버튼 바로 위에 — 아래 '처음 가입하기' 밑에 두면 눈이 닿지 않는다(Proximity). */}
+            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
             <Pressable
               onPress={submitEmail}
               disabled={busy || (isSignup && !signupConsentComplete)}
@@ -468,7 +470,6 @@ export default function LoginScreen() {
                 {isSignup ? '로그인으로 돌아가기' : '처음 가입하기'}
               </Text>
             </Pressable>
-            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
           </View>
 
           <View style={styles.divider}>
@@ -656,7 +657,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   legalHeading: { ...typeScale.label, color: darkColors.text },
-  legalRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  legalRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   check: {
     width: 20,
     height: 20,

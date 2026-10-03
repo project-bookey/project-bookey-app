@@ -17,6 +17,7 @@ type AppTourState = {
   step: number;
   start: () => void;
   next: () => void;
+  prev: () => void;
   stop: () => void;
   startIfFirstLogin: (userId: number) => Promise<void>;
   markSeen: (userId: number) => Promise<void>;
@@ -27,6 +28,7 @@ export const useAppTour = create<AppTourState>((set, get) => ({
   step: 0,
   start: () => set({ active: true, step: 0 }),
   next: () => set((state) => ({ step: Math.min(state.step + 1, APP_TOUR_STEPS.length - 1) })),
+  prev: () => set((state) => ({ step: Math.max(state.step - 1, 0) })),
   stop: () => set({ active: false, step: 0 }),
   startIfFirstLogin: async (userId) => {
     try {
