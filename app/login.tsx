@@ -1,7 +1,7 @@
 import * as Google from 'expo-auth-session/providers/google';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator, KeyboardAvoidingView, Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
@@ -13,6 +13,8 @@ import { API_BASE_URL } from '@/api/client';
 import { authApi, libraryApi } from '@/api/endpoints';
 import { useOnboarding } from '@/store/onboarding';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
+// 공급자 설정(애플 모듈·구글 클라이언트 ID)은 설정의 '소셜 계정 연동'과 한 곳에서 나눠 쓴다.
+import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/hooks/useSocialTokens';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
 import { LEGAL_DOCUMENTS, LEGAL_VERSION, LegalDocumentKey } from '@/legal/documents';
@@ -20,17 +22,6 @@ import { linkLabel } from '@/components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
 
-/** 애플 모듈은 iOS에서만 실행 로드 (번들엔 포함되나 다른 플랫폼에선 실행되지 않음, Expo Go 미포함 대비 try/catch). */
-let Apple: typeof import('expo-apple-authentication') | null = null;
-if (Platform.OS === 'ios') {
-  try {
-    Apple = require('expo-apple-authentication');
-  } catch {
-    Apple = null;
-  }
-}
-
-type SocialProvider = 'APPLE' | 'KAKAO' | 'GOOGLE';
 
 const BUTTON_HEIGHT = 48;
 
@@ -78,18 +69,6 @@ export default function LoginScreen() {
   useEffect(() => {
     Apple?.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
   }, []);
-
-  const googleClientIds = useMemo(() => ({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'not-configured',
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 'not-configured',
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || 'not-configured',
-  }), []);
-
-  const hasGoogleClient = Boolean(
-    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
-      || process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
-      || process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-  );
 
   const [googleRequest, googleResponse, promptGoogle] = Google.useIdTokenAuthRequest({
     ...googleClientIds,

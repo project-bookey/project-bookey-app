@@ -1,15 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
-import { notificationApi } from '@/api/endpoints';
+import { authApi, notificationApi } from '@/api/endpoints';
 import type { NotifyTone } from '@/api/types';
 import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle,
 } from '@/components/ui';
+import { useSocialTokens, type SocialProvider } from '@/hooks/useSocialTokens';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import { useAppTour } from '@/store/appTour';
@@ -22,6 +24,13 @@ const TONES: { value: NotifyTone; label: string; sample: string }[] = [
   { value: 'SPARTA', label: '스파르타', sample: '5일째 안 읽음. 책이 당신을 노려보고 있습니다.' },
   { value: 'TSUNDERE', label: '츤데레', sample: '뭐, 안 읽어도 상관없는데. 남은 12쪽이 좀 불쌍하긴 하네.' },
   { value: 'SILENT', label: '무음', sample: '푸시 없이 인앱 배지로만 알립니다.' },
+];
+
+/** 연동할 수 있는 소셜 계정 — 로그인 화면의 버튼과 같은 순서. */
+const SOCIAL_PROVIDERS: { value: SocialProvider; label: string }[] = [
+  { value: 'APPLE', label: 'Apple' },
+  { value: 'KAKAO', label: '카카오' },
+  { value: 'GOOGLE', label: 'Google' },
 ];
 
 const THEMES: { value: ThemePreference; label: string }[] = [
@@ -136,6 +145,8 @@ export default function SettingsScreen() {
             </Text>
           </Card>
 
+          <SocialLinkCard />
+
           {/* 도움말·약관 묶음과 계정 묶음(로그아웃·삭제)은 xl 로 갈라 놓는다 — 파괴적 동작을 오터치하지 않게. */}
           <View style={styles.footer}>
             <View style={styles.links}>
@@ -202,6 +213,69 @@ export default function SettingsScreen() {
   );
 }
 
+/**
+ * 소셜 로그인 연동 — 소셜 로그인은 이미 연동된 계정만 통과하므로(새 계정을 만들지 않는다), 이메일로 가입한
+ * 사람이 여기서 연동해 두면 다음부터 애플·카카오·구글로 로그인할 수 있다.
+ * 서버가 연동 상태를 내려 주지 않아(MeResponse 에 필드 없음) 이번에 연동한 것만 '연동됨'으로 보인다.
+ */
+function SocialLinkCard() {
+  const { colors } = useTheme();
+  const setUser = useAuth((s) => s.setUser);
+  const { getToken, appleAvailable } = useSocialTokens();
+  const [linked, setLinked] = useState<Partial<Record<SocialProvider, boolean>>>({});
+
+  const link = useMutation({
+    mutationFn: async (provider: SocialProvider) => {
+      const token = await getToken(provider);
+      // 사용자가 공급자 창을 닫았으면 아무것도 하지 않는다.
+      if (!token) return null;
+      return { provider, me: await authApi.linkSocial(provider, token) };
+    },
+    onSuccess: (result) => {
+      if (!result) return;
+      setUser(result.me);
+      setLinked((prev) => ({ ...prev, [result.provider]: true }));
+    },
+  });
+  const error = link.isError && !link.isPending
+    ? link.error instanceof Error ? link.error.message : '연동하지 못했어요. 잠시 후 다시 시도해 주세요.'
+    : null;
+  // 애플은 iOS에서 쓸 수 있을 때만 보인다(로그인 화면과 같은 기준).
+  const providers = SOCIAL_PROVIDERS.filter((p) => p.value !== 'APPLE' || appleAvailable);
+
+  return (
+    <Card>
+      <Eyebrow>소셜 로그인 연동</Eyebrow>
+      <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
+        연동해 두면 다음부터 이 계정에 애플·카카오·구글로 로그인할 수 있어요.
+      </Text>
+      <View style={styles.linkList}>
+        {providers.map((provider, index) => (
+          <View key={provider.value}>
+            {index > 0 ? <Rule /> : null}
+            <View style={styles.linkRow}>
+              <Text style={[typeScale.label, { color: colors.text, flex: 1 }]}>{provider.label}</Text>
+              {linked[provider.value] ? (
+                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>연동됨 ✓</Text>
+              ) : (
+                <Button
+                  label="연동"
+                  size="sm"
+                  variant="outline"
+                  loading={link.isPending && link.variables === provider.value}
+                  disabled={link.isPending}
+                  onPress={() => link.mutate(provider.value)}
+                />
+              )}
+            </View>
+          </View>
+        ))}
+      </View>
+      {error ? <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text> : null}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { ...layout.content, gap: spacing.xl, paddingBottom: spacing.xxl, paddingTop: spacing.lg },
   block: { paddingHorizontal: spacing.lg },
@@ -219,6 +293,8 @@ const styles = StyleSheet.create({
   radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },
   switchRow: { paddingVertical: spacing.sm },
+  linkList: { marginTop: spacing.sm },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44, paddingVertical: spacing.xs },
   footer: { gap: spacing.xl },
   links: { gap: spacing.sm },
   account: { gap: spacing.md },
