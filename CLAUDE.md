@@ -53,6 +53,18 @@ The only link between this repo and the backend is the server-published OpenAPI 
 - **Navigation**: the Stack sets `headerShown: false` globally — there is no native header anywhere. Each screen draws its own chrome: the five sections (광장 `/plaza` · 서가 `/home` · 모임 `/clubs` · 메신저 `/messenger` · 나 `/profile`) render `BrandHeader` at the top and share the bottom `SectionNav` (탐색 `/search` lives in the group without a tab — it is entered from the home search bar), and sub-screens render `SubHeader`. 설정 `/settings` is a sub-screen, entered from the gear button in the 나 profile row — it is not a tab. 메신저 groups the 엽서함 and 채팅 lists as segments; the old `/postcards` and `/chats` routes redirect into it. Screens still register a Korean `title`, which the web build uses as the browser tab title. Moving *between sections* uses `router.navigate` (or `replace` inside `SectionNav`) so the stack never stacks duplicate section entries; pushing to a sub-route (`/book/[id]`, `/post/new`, `/post/[id]`, `/post/mine`, `/library`, `/club/[id]`, `/timer`, ...) uses `router.push`.
 - **Path alias**: `@/*` → `src/*`.
 
+## UX 철칙 — 디자인·서비스 구조의 다섯 법칙
+
+화면·컴포넌트·플로우·내비게이션 구조를 만들거나 고칠 때 **예외 없이** 지킨다. 아래 Design system과 "모바일 앱 디자인 원칙"은 이 다섯 법칙을 구체화한 규칙이다. 요청이 법칙과 부딪치면(예: 한 화면에 CTA 버튼 셋) 그대로 만들지 말고, 어느 법칙과 충돌하는지 짚은 뒤 대안을 제안한다.
+
+1. **Hick — 선택을 줄인다.** 한 화면의 주요 행동은 하나다. 지금 단계에 필요 없는 선택지는 다음 단계로 미루거나 '더 보기'·시트 뒤로 숨긴다. 고를 것이 있으면 가장 흔한 값을 기본값으로 미리 선택해 둔다. 탭·세그먼트·메뉴·설정 항목을 늘리려면 기존 항목을 합치거나 빼는 방안부터 검토한다. 하단 `SectionNav`의 다섯 섹션이 상한이다.
+2. **Fitts — 누르기 쉽게 만든다.** 터치 영역은 최소 44×44pt로 하고, 작은 아이콘은 `hitSlop`으로 넓힌다. 주요 동작은 크게 만들어 엄지가 닿는 화면 하단에 두고, 자주 함께 쓰는 동작끼리는 가까이 둔다. 삭제·나가기 같은 파괴적 동작은 주요 버튼에서 떨어뜨린다. 세부 규칙은 "터치·조작"을 따른다.
+3. **Jakob — 익숙한 방식으로 만든다.** 사용자는 다른 앱에서 익힌 방식대로 이 앱을 쓴다. 하단 탭 이동, 좌상단 뒤로 가기, 당겨서 새로고침, 아래에서 올라오는 시트처럼 iOS·Android 표준 패턴과 널리 쓰이는 앱의 관례를 먼저 쓴다. 콜라주 미감은 겉모습에만 적용하고 조작 방식은 표준을 따른다. 새 인터랙션을 만들기 전에 표준 패턴으로 풀리는지부터 확인하고, 같은 동작은 앱 전체에서 같은 위치·같은 방식·같은 문구로 만든다.
+4. **Proximity — 간격으로 관계를 보여준다.** 서로 관련된 요소(제목과 설명, 라벨과 입력창, 버튼과 그 버튼이 다루는 대상)는 가깝게 두고, 다른 그룹과는 멀리 띄운다. 그룹 안 간격은 언제나 그룹 사이 간격보다 작아야 한다. 예를 들어 그룹 안은 `spacing.xs`~`sm`, 항목 사이는 `md`~`lg`, 섹션 사이는 `xl`로 둔다. 구분선이나 박스를 더하기 전에 간격만으로 묶음이 읽히는지 먼저 본다.
+5. **Von Restorff — 중요한 것 하나만 강조한다.** 한 화면에서 눈에 띄는 요소는 하나뿐이다. `accent`로 채운 `Button variant="primary"`는 화면당 하나만 두고, 나머지 버튼은 `outline`·`ghost`로 낮춘다. 강조색·굵은 글씨·큰 글자를 여러 곳에 흩뿌리지 않는다. 모두 강조하면 아무것도 강조되지 않는다.
+
+새 화면을 마치면 다섯 가지를 차례로 점검한다. 주요 행동이 하나인가? 엄지로 쉽게 누를 수 있는가? 처음 보는 사람도 조작법을 아는가? 간격만으로 묶음이 보이는가? 강조가 하나뿐인가?
+
 ## Design system
 
 The aesthetic is **collage desk** — books, memos and sticky notes scattered across a sheet of paper. Design spec: `docs/superpowers/specs/2026-09-01-collage-redesign-design.md`.
