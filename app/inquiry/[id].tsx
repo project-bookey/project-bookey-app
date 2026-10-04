@@ -53,7 +53,7 @@ function PhotoViewer({ image, onClose }: { image: InquiryImage | null; onClose: 
 }
 
 /**
- * 문의 내용 — 내가 쓴 문의(유형 · 상태 · 본문 · 사진)와 그 아래 '북키 답변'.
+ * 문의 내용 — 내가 쓴 문의(유형 · 상태 · 본문 · 사진)와 그 아래 'Bookey 답변'.
  * 답변 알림을 누르면 바로 여기로 온다. 아직 답이 없으면 기다린다는 한 줄만 둔다.
  * 삭제는 맨 아래, 내용과 떨어진 곳에 두고 두 번 눌러 지운다(답변 전후 모두 지울 수 있다).
  */
@@ -197,7 +197,7 @@ function InquiryArticle({ inquiry, onOpenPhoto, confirming, deleteError, onDelet
 
       {/* 답변 — 문의와는 괘선과 섹션 간격으로 나눈다. */}
       <View style={[styles.group, styles.answer, { borderTopColor: colors.line }]}>
-        <Eyebrow>북키 답변</Eyebrow>
+        <Eyebrow>Bookey 답변</Eyebrow>
         {answered ? (
           <>
             <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>

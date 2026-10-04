@@ -100,7 +100,7 @@ export function RemarkTicker({ bookId }: { bookId: number }) {
   return (
     <View>
       <SectionHeader
-        title="독자들의 한 마디"
+        title="독자들의 한 줄평"
         action={count > 1 ? (
           <Text style={[typeScale.monoNumeral, { color: colors.textFaint }]}>{index + 1} / {count}</Text>
         ) : undefined}
@@ -110,7 +110,7 @@ export function RemarkTicker({ bookId }: { bookId: number }) {
         disabled={count < 2}
         accessibilityRole={count > 1 ? 'button' : undefined}
         accessibilityLabel={`${remark.authorNickname} · ${statusLabel[remark.kind]} · ${remark.body}`}
-        accessibilityHint={count > 1 ? '누르면 다음 한 마디로 넘어가요' : undefined}
+        accessibilityHint={count > 1 ? '누르면 다음 한 줄평으로 넘어가요' : undefined}
         style={({ pressed }) => (pressed && count > 1 ? pressedStyle : null)}
       >
         <MemoScrap rotate={-1}>

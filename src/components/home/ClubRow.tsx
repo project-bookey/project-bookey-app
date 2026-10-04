@@ -33,7 +33,7 @@ export function ClubRow() {
         <View style={styles.headTitle}>
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 클럽</Text>
         </View>
-        <TextLink label="전체보기" onPress={() => router.navigate('/clubs')} />
+        <TextLink label="전체 보기" onPress={() => router.navigate('/clubs')} />
       </View>
       <FlatList
         horizontal

@@ -101,7 +101,7 @@ export default function HomeScreen() {
           accessibilityLabel="책 검색"
         >
           <SearchGlyph color={colors.textMuted} />
-          <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
+          <Text style={[typeScale.body, { color: colors.textFaint }]}>제목이나 저자로 찾기</Text>
         </Pressable>
 
         <BannerCarousel banners={banners.data ?? []} />
@@ -126,7 +126,7 @@ export default function HomeScreen() {
             베스트셀러·새로 나온 책은 탐색(검색) 화면으로 옮겼다(UX 철칙 Hick). */}
         <HomeSection>
           <BookRow
-            title="읽고 싶은"
+            title="읽고 싶은 책"
             loading={want.isLoading}
             books={(want.data?.content ?? []).map((r): RowBook => ({
               key: `want-${r.id}`,
@@ -142,7 +142,7 @@ export default function HomeScreen() {
 
         <HomeSection>
           <BookRow
-            title="지금 붐비는 책"
+            title="요즘 많이 읽는 책"
             label="LIVE"
             staggered
             loading={popular.isLoading}

@@ -69,7 +69,7 @@ export default function ProfileEditScreen() {
       const birthDateText = birthDate.trim();
       const normalizedBirthDate = birthDateText ? normalizeBirthDate(birthDateText) : '';
       if (birthDateText && !normalizedBirthDate) {
-        throw new Error('생년월일을 YYYYMMDD 또는 YYYY-MM-DD 형식으로 입력해 주세요.');
+        throw new Error('생년월일을 19950101처럼 숫자 8자리로 적어 주세요.');
       }
       if (needsOptionalConsent) {
         await authApi.setConsent('PROFILE_OPTIONAL', true);

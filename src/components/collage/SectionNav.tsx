@@ -16,16 +16,16 @@ import { hairline, iconStroke, pressedStyle, spacing } from '@/theme/tokens';
 export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
 /**
- * 하단 구역 네비. 탐색은 서가의 검색 진입점이라 탭으로 두지 않는다.
+ * 하단 구역 네비. 탐색은 홈의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
- * 서가는 가운데에 두고 집 아이콘을 쓴다 — 앱의 홈이 서가이기 때문(광장은 펼친 책).
+ * 홈(내 책 · key shelf)은 가운데에 두고 집 아이콘을 쓴다(광장은 펼친 책).
  * 메신저(엽서함·채팅)는 헤더 아이콘 둘이던 것을 사람 사이 글끼리 한 구역으로 묶은 것.
  * 설정은 탭이 아니라 '나' 화면 프로필 행의 톱니로 들어가는 서브 화면이다(2026-09-08).
  */
 const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[] = [
   { key: 'plaza', label: '광장', path: '/plaza', route: 'plaza' },
   { key: 'clubs', label: '클럽', path: '/clubs', route: 'clubs' },
-  { key: 'shelf', label: '서가', path: '/home', route: 'home' },
+  { key: 'shelf', label: '홈', path: '/home', route: 'home' },
   { key: 'messenger', label: '메신저', path: '/messenger', route: 'messenger' },
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
 ];

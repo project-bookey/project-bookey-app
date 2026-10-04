@@ -5,7 +5,7 @@ import type { SectionRoute } from '@/components/pager/sectionPager';
 
 /**
  * 둘러보기 한 단계 — 메인 탭 한 구역을 보여 주고, 그 구역의 하단 탭 아이콘과 화면 속 핵심 요소를 함께 비춘다.
- * 하단 탭은 아이콘만 있어 이름(서가·메신저·나)을 익힐 곳이 여기뿐이다 — 제목은 탭의 접근성 라벨과 같게 둔다.
+ * 하단 탭은 아이콘만 있어 이름(홈·메신저·나)을 익힐 곳이 여기뿐이다 — 제목은 탭의 접근성 라벨과 같게 둔다.
  */
 export type TourStep = {
   /** 이 단계에서 보여 줄 메인 탭 구역. */
@@ -25,8 +25,8 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
     section: 'home',
     nav: true,
     target: 'home-search',
-    title: '서가',
-    body: "내 책이 모이는 홈이에요. 책을 찾아 서재에 담고, 책 화면에서 '독서 시작'을 누르면 타이머가 시간을 재요.",
+    title: '홈',
+    body: "내 책이 모이는 곳이에요. 책을 찾아 서재에 담고, 책 화면에서 '독서 시작'을 누르면 타이머가 시간을 재요.",
   },
   {
     section: 'plaza',

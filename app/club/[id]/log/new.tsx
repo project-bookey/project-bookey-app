@@ -19,7 +19,7 @@ const BODY_MAX = 100;
 type PickedPhoto = { uri: string; width?: number; height?: number };
 
 /**
- * 한 조각 남기기 — 타이머를 끝내면 바로 들어온다(보드의 '한 조각 남기기'로도 온다).
+ * 메모 남기기 — 타이머를 끝내면 바로 들어온다(보드의 '메모 남기기'로도 온다).
  *
  * 사진 한 장(선택) + 한 줄. 방금 읽은 마지막 쪽에 붙이면 그 쪽까지 읽은 멤버에게만 보인다 —
  * 책 본문이 찍혀도 스포일러가 새지 않게 기본값은 켜 둔다.
@@ -82,8 +82,8 @@ export default function ClubLogNewScreen() {
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
         setNotice(source === 'camera'
-          ? '카메라 권한이 없어요. 설정에서 허용하면 바로 찍을 수 있어요.'
-          : '사진 보관함 권한이 없어요. 설정에서 허용해 주세요.');
+          ? '카메라를 쓸 수 없어요. 설정에서 카메라 접근을 허용해 주세요.'
+          : '사진을 고를 수 없어요. 설정에서 사진 접근을 허용해 주세요.');
         return;
       }
     }
@@ -121,11 +121,11 @@ export default function ClubLogNewScreen() {
       queryClient.invalidateQueries({ queryKey: clubLogKeys.all(clubId) });
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      // 조각은 클럽 홈의 '읽기 조각'에 붙는다. 아래에 클럽 홈이 있으면(홈의 '한 조각 남기기'·'합류'로 왔으면) 그 홈으로
+      // 조각은 클럽 홈의 '메모'에 붙는다. 아래에 클럽 홈이 있으면(홈의 '메모 남기기'·'같이 읽기'로 왔으면) 그 홈으로
       // 돌아가고, 없으면(서가에서 타이머를 켰으면) 이 화면을 클럽 홈으로 바꾼다. 옛 보드 경로로 가면 클럽 홈이 한 벌 더 쌓였다.
       router.dismissTo(`/club/${clubId}`);
     },
-    onError: (e) => setNotice(e instanceof ApiError ? e.message : '조각을 붙이지 못했어요 · 다시 시도'),
+    onError: (e) => setNotice(e instanceof ApiError ? e.message : '메모를 붙이지 못했어요 · 다시 시도'),
   });
 
   const canSubmit = (photo != null || body.trim().length > 0) && !submit.isPending;
@@ -134,7 +134,7 @@ export default function ClubLogNewScreen() {
   return (
     <PaperScreen>
       <SubHeader
-        category="한 조각 남기기"
+        category="메모 남기기"
         right={
           <Pressable onPress={leave} hitSlop={12} accessibilityRole="button">
             <Text style={[typeScale.label, { color: colors.textMuted, fontSize: 12 }]}>건너뛰기</Text>
@@ -153,7 +153,7 @@ export default function ClubLogNewScreen() {
               colors={colors}
             />
             <View style={[styles.vRule, { backgroundColor: colors.line }]} />
-            <SummaryCell label="오늘 조각" value={`${nth}번째`} colors={colors} />
+            <SummaryCell label="오늘 남긴 메모" value={`${nth}번째`} colors={colors} />
           </Card>
         ) : null}
 
@@ -168,11 +168,11 @@ export default function ClubLogNewScreen() {
                   // 장식 모서리 — 악센트는 '클럽 보드에 붙이기' 몫이라 뮤트 잉크로
                   <View key={corner} style={[styles.corner, styles[corner], { borderColor: colors.textMuted }]} />
                 ))}
-                <Text style={[styles.viewfinderText, { color: colors.textMuted }]}>지금 눈앞을 한 장</Text>
+                <Text style={[styles.viewfinderText, { color: colors.textMuted }]}>지금 펼친 책을 찍어 보세요</Text>
               </View>
             )}
             <Text style={[styles.caption, { color: body.trim() ? colors.onMemoPad : colors.textFaint }]} numberOfLines={2}>
-              {body.trim() || '한 줄을 적으면 여기에 적혀요'}
+              {body.trim() || '아래에 한 줄을 적으면 여기에 보여요'}
             </Text>
             <Text style={[styles.meta, { color: colors.mid }]}>
               나 · {kstTime(new Date().toISOString())}{atPage != null ? ` · ${atPage}쪽` : ''}
@@ -181,7 +181,7 @@ export default function ClubLogNewScreen() {
 
           <View style={styles.pickRow}>
             {/* 주요 버튼은 아래 '클럽 보드에 붙이기' 하나 — 사진 고르기는 모두 outline */}
-            <Button label="촬영" size="sm" variant="outline" onPress={() => pick('camera')} />
+            <Button label="사진 찍기" size="sm" variant="outline" onPress={() => pick('camera')} />
             <Button label="앨범에서 고르기" size="sm" variant="outline" onPress={() => pick('library')} />
             {photo ? <Button label="사진 빼기" size="sm" variant="outline" onPress={() => setPhoto(null)} /> : null}
           </View>
@@ -215,7 +215,7 @@ export default function ClubLogNewScreen() {
             />
             <Text style={[typeScale.caption, { color: colors.textFaint, flex: 1 }]}>
               {atPage == null
-                ? '비워 두면 쪽 없이 남겨요.'
+                ? '비워 두면 쪽 번호 없이 남겨요.'
                 : willBump
                   ? '서재 진도도 여기까지 올라가요.'
                   : `지금 진도 ${readPage}쪽은 그대로 둬요.`}
@@ -226,7 +226,7 @@ export default function ClubLogNewScreen() {
         {atPage != null ? (
           <Toggle
             label={`${atPage}쪽까지 읽은 사람에게만 보이기`}
-            description="책 본문이 찍혀도 스포일러 걱정 없이. 끄면 쪽은 적어 두되 모두에게 보여요."
+            description="본문이 찍혀도 아직 거기까지 안 읽은 사람에게는 가려져요. 끄면 쪽 번호는 남기고 누구에게나 보여요."
             value={anchor}
             onChange={setAnchor}
           />

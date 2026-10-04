@@ -98,15 +98,15 @@ function SettingsForm({ club }: { club: ClubHome }) {
       queryClient.setQueryData(['club', clubId], updated);
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
     },
-    onError: (e) => fail(e, '저장하지 못했습니다.'),
+    onError: (e) => fail(e, '저장하지 못했어요.'),
   });
   const rotate = useMutation({
     mutationFn: () => clubApi.rotateCode(clubId),
     onSuccess: () => {
       invalidate();
-      notify('초대 코드를 새로 발급했어요.');
+      notify('초대 코드를 새로 만들었어요.');
     },
-    onError: (e) => fail(e, '재발급하지 못했습니다.'),
+    onError: (e) => fail(e, '새로 만들지 못했어요.'),
   });
   const kick = useMutation({
     mutationFn: ({ userId, reason }: { userId: number; reason: string }) => clubApi.kick(clubId, userId, reason),
@@ -116,7 +116,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
       invalidate();
       notify('내보냈어요.');
     },
-    onError: (e) => fail(e, '내보내지 못했습니다.'),
+    onError: (e) => fail(e, '내보내지 못했어요.'),
   });
   const transfer = useMutation({
     mutationFn: (userId: number) => clubApi.transferHost(clubId, userId),
@@ -125,7 +125,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
       notify('호스트를 넘겼어요. 이제 멤버로 함께 읽어요.');
       router.replace(`/club/${clubId}`);
     },
-    onError: (e) => fail(e, '넘기지 못했습니다.'),
+    onError: (e) => fail(e, '넘기지 못했어요.'),
   });
   // 배경 사진 — 고르면 줄이고 JPEG 로 바꿔 바로 올린다. 이전 사진은 서버가 지운다.
   const applyClub = (updated: ClubHome) => {
@@ -135,7 +135,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
   const backgroundFail = (e: unknown) =>
     notify(
       e instanceof ApiError && e.code === 'STORAGE_DISABLED'
-        ? '사진 저장소가 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.'
+        ? '지금은 사진을 올릴 수 없어요. 잠시 후 다시 시도해 주세요.'
         : e instanceof ApiError ? e.message : '배경 사진을 바꾸지 못했어요.',
     );
   const uploadBackground = useMutation({
@@ -165,7 +165,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
       invalidate();
       router.replace(`/club/${clubId}`);
     },
-    onError: (e) => fail(e, '종료하지 못했습니다.'),
+    onError: (e) => fail(e, '종료하지 못했어요.'),
   });
 
   const infoDirty = name.trim() !== club.name || description.trim() !== (club.description ?? '');
@@ -274,8 +274,8 @@ function SettingsForm({ club }: { club: ClubHome }) {
         </Section>
 
         {/* 클럽은 기간 없이 이어진다 — 연 날만 적어 두고, 끝내려면 아래 '클럽 종료'. */}
-        <Section title="시작 · 찌르기">
-          <KeyValue label="연 날" value={club.startsAt} />
+        <Section title="시작한 날 · 찌르기">
+          <KeyValue label="시작한 날" value={club.startsAt} />
           <Rule />
           <Toggle
             label="찌르기 허용"
@@ -292,12 +292,12 @@ function SettingsForm({ club }: { club: ClubHome }) {
               <Text style={[styles.code, { color: colors.text }]}>{club.joinCode}</Text>
             </View>
             <Button
-              label="재발급"
+              label="새로 만들기"
               size="sm"
               variant="outline"
               loading={rotate.isPending}
               onPress={async () => {
-                if (await confirmAsync('초대 코드를 새로 발급할까요? 이전 코드는 더 이상 쓸 수 없어요.', '재발급')) {
+                if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
                   rotate.mutate();
                 }
               }}
@@ -382,7 +382,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
           <View style={{ gap: spacing.sm }}>
             <Rule />
             <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-              종료하면 더는 조각을 남길 수 없고 결산이 만들어져요.
+              종료하면 더는 메모를 남길 수 없어요. 지금까지 남긴 기록은 그대로 볼 수 있어요.
             </Text>
             <Button
               label="클럽 종료하기"

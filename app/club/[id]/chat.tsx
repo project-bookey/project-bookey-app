@@ -154,7 +154,7 @@ export default function ClubChatScreen() {
               책갈피 {cost}개로 채팅을 열면 이전 대화 전체를 읽고 메시지를 보낼 수 있어요.
             </Text>
             <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-              현재 책갈피 {state.data?.bookmarkBalance ?? 0}개 · 해제 후 환불되지 않아요.
+              지금 책갈피 {state.data?.bookmarkBalance ?? 0}개 · 채팅을 연 뒤에는 환불되지 않아요.
             </Text>
             <Button
               label={`책갈피 ${cost}개로 열기`}

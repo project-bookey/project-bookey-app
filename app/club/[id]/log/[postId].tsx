@@ -80,7 +80,7 @@ export default function ClubLogScrapScreen() {
   const speak = useMutation({
     mutationFn: () => clubApi.createPost(clubId, { body: talk.trim(), parentId: scrapId }),
     onSuccess: () => { setTalk(''); refresh(); },
-    onError: (e) => setNotice(e instanceof ApiError ? e.message : '한 마디를 남기지 못했어요 · 다시 시도'),
+    onError: (e) => setNotice(e instanceof ApiError ? e.message : '댓글을 남기지 못했어요 · 다시 시도'),
   });
   const save = useMutation({
     mutationFn: () => {
@@ -115,7 +115,7 @@ export default function ClubLogScrapScreen() {
   if (scrap.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="조각" />
+        <SubHeader category="메모" />
         <Loading />
       </PaperScreen>
     );
@@ -123,9 +123,9 @@ export default function ClubLogScrapScreen() {
   if (!scrap.data) {
     return (
       <PaperScreen>
-        <SubHeader category="조각" />
+        <SubHeader category="메모" />
         <Text style={[typeScale.body, { color: colors.danger, padding: spacing.lg }]}>
-          조각을 불러오지 못했어요. 지워졌을 수도 있어요.
+          메모를 불러오지 못했어요. 지워졌을 수도 있어요.
         </Text>
       </PaperScreen>
     );
@@ -137,7 +137,7 @@ export default function ClubLogScrapScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="조각" />
+      <SubHeader category="메모" />
       <KeyboardArea>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           {data.masked ? (
@@ -148,7 +148,7 @@ export default function ClubLogScrapScreen() {
             >
               <View style={[styles.photo, styles.maskedPhoto, { backgroundColor: colors.surfaceRaised }]}>
                 <Text style={[styles.maskedTitle, { color: colors.text }]}>
-                  {data.anchorPage != null ? `${data.anchorPage}쪽 조각` : '가려진 조각'}
+                  {data.anchorPage != null ? `${data.anchorPage}쪽 메모` : '가려진 메모'}
                 </Text>
               </View>
               <Text style={[styles.caption, { color: colors.onMemoPad }]}>
@@ -200,7 +200,7 @@ export default function ClubLogScrapScreen() {
                   value={page}
                   onChangeText={(t) => setPage(t.replace(/[^0-9]/g, ''))}
                   keyboardType="number-pad"
-                  placeholder="비우면 쪽 없이"
+                  placeholder="비워 둬도 돼요"
                   placeholderTextColor={colors.textFaint}
                   style={[styles.pageInput, { borderBottomColor: colors.line, color: colors.text }]}
                   accessibilityLabel="쪽"
@@ -210,14 +210,14 @@ export default function ClubLogScrapScreen() {
               {page.trim() ? (
                 <Toggle
                   label={`${page}쪽까지 읽은 사람에게만 보이기`}
-                  description="끄면 쪽은 적어 두되 모두에게 보여요."
+                  description="끄면 쪽 번호는 남기고 누구에게나 보여요."
                   value={anchor}
                   onChange={setAnchor}
                 />
               ) : null}
               <View style={styles.editActions}>
                 <Button label="저장" size="sm" onPress={() => save.mutate()} loading={save.isPending} disabled={!canSave} />
-                <Button label="그만두기" size="sm" variant="outline" onPress={() => { setEditing(false); setNotice(null); }} />
+                <Button label="취소" size="sm" variant="outline" onPress={() => { setEditing(false); setNotice(null); }} />
               </View>
             </View>
           ) : null}
@@ -283,11 +283,11 @@ export default function ClubLogScrapScreen() {
             <View style={styles.talks}>
               <Rule />
               <Text style={[typeScale.label, { color: colors.textMuted }]}>
-                한 마디{talks.length > 0 ? ` ${talks.length}` : ''}
+                댓글{talks.length > 0 ? ` ${talks.length}` : ''}
               </Text>
               {talks.length === 0 ? (
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                  아직 조용해요. 먼저 한 마디 남겨 보세요.
+                  아직 댓글이 없어요. 먼저 남겨 보세요.
                 </Text>
               ) : (
                 talks.map((t) => (
@@ -313,7 +313,7 @@ export default function ClubLogScrapScreen() {
               value={talk}
               onChangeText={setTalk}
               maxLength={TALK_MAX}
-              placeholder="한 마디 남기기"
+              placeholder="댓글 남기기"
               placeholderTextColor={colors.textFaint}
               style={[styles.composerInput, { color: colors.text }]}
               multiline
@@ -353,11 +353,11 @@ function TalkRow({ talk, mine, confirming, onDelete }: {
             label={confirming ? '한 번 더' : '삭제'}
             onPress={onDelete}
             tone={confirming ? 'danger' : 'faint'}
-            accessibilityLabel={confirming ? '한 마디 삭제 확인' : '한 마디 삭제'}
+            accessibilityLabel={confirming ? '댓글 삭제 확인' : '댓글 삭제'}
           />
         ) : null}
       </View>
-      <Text style={[styles.talkBody, { color: colors.text }]}>{talk.body ?? '(가려진 한 마디)'}</Text>
+      <Text style={[styles.talkBody, { color: colors.text }]}>{talk.body ?? '(가려진 댓글)'}</Text>
     </View>
   );
 }

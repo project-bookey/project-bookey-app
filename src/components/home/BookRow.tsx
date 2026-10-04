@@ -79,7 +79,7 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
           ) : null}
         </View>
         {onPressAll && !empty ? (
-          <TextLink label="전체보기" onPress={onPressAll} hitSlop={ALL_HIT_SLOP} />
+          <TextLink label="전체 보기" onPress={onPressAll} hitSlop={ALL_HIT_SLOP} />
         ) : null}
       </View>
 

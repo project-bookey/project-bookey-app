@@ -144,7 +144,7 @@ export default function ClubHomeScreen() {
       router.replace(`/club/${joined.id}`);
     },
     onError: (e) =>
-      notify(e instanceof ApiError ? e.message : "참가하지 못했습니다."),
+      notify(e instanceof ApiError ? e.message : "참가하지 못했어요."),
   });
 
   if (club.isLoading && !preview.data) {
@@ -171,7 +171,7 @@ export default function ClubHomeScreen() {
       <PaperScreen>
         <SubHeader category="클럽" />
         <Text style={[styles.error, { color: colors.danger }]}>
-          클럽을 불러오지 못했습니다.
+          클럽을 불러오지 못했어요.
         </Text>
       </PaperScreen>
     );
@@ -411,7 +411,7 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
               accessibilityRole="button"
               style={({ pressed }) => [styles.headLink, pressed && pressedStyle]}
             >
-              <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("모두 보기")}</Text>
+              <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("전체 보기")}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -439,7 +439,7 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
           <View style={styles.emptyMeeting}>
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>
               {isHost
-                ? "아직 잡힌 모임이 없어요. 모임을 열며 읽을 책과 최대 인원을 정할 수 있어요."
+                ? "아직 잡힌 모임이 없어요. 모임을 만들 때 읽을 책과 인원도 정할 수 있어요."
                 : "아직 잡힌 모임이 없어요. 호스트가 모임을 열면 여기에 보여요."}
             </Text>
             {isHost && !ended ? (
@@ -455,7 +455,7 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
           <View style={styles.sectionHead}>
             <Eyebrow>최근 노트</Eyebrow>
             <Pressable onPress={onOpenNotes} accessibilityRole="button" style={({ pressed }) => [styles.headLink, pressed && pressedStyle]}>
-              <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("모두 보기")}</Text>
+              <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel("전체 보기")}</Text>
             </Pressable>
           </View>
           <View style={styles.noteRow}>
@@ -480,7 +480,7 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
       {hasBook ? (
         <View style={styles.section}>
           <Text numberOfLines={1} style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
-            읽기 조각 · {club.book!.title}
+            메모 · {club.book!.title}
           </Text>
           <ReadingNowLine
             readers={readingNow.data ?? []}
@@ -503,10 +503,10 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
             </View>
           ) : feed.isLoading ? null : (
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              타이머로 읽고 나면 사진 한 장과 한 줄로 조각을 남길 수 있어요. 멤버가 남긴 조각이 여기 모여요.
+              타이머로 읽고 나면 사진 한 장과 한 줄로 메모를 남길 수 있어요. 멤버가 남긴 메모가 여기 모여요.
             </Text>
           )}
-          {!ended ? <Button label="한 조각 남기기" variant="outline" onPress={writeLog} /> : null}
+          {!ended ? <Button label="메모 남기기" variant="outline" onPress={writeLog} /> : null}
         </View>
       ) : null}
     </ScrollView>
@@ -662,8 +662,8 @@ function PublicClubPreview({
           <Card style={{ gap: spacing.md }}>
             <Eyebrow>참가 설정</Eyebrow>
             <Toggle
-              label="진척 공개"
-              description="끄면 리더보드에 비공개로 표시되고 클럽 평균 계산에서 빠집니다."
+              label="내 진도 공개"
+              description="끄면 멤버 목록에 내 진도가 '비공개'로 보이고, 클럽 평균에서도 빠져요."
               value={shareProgress}
               onChange={onShareProgressChange}
             />

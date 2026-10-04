@@ -63,7 +63,7 @@ export function useClubLogFeed(clubId: number, startsOn: string | undefined, ena
 }
 
 /**
- * 이 클럽 책의 내 독서 기록 — '합류'·'한 조각 남기기'가 타이머와 현재 쪽을 알아야 해서 찾는다.
+ * 이 클럽 책의 내 독서 기록 — '같이 읽기'·'메모 남기기'가 타이머와 현재 쪽을 알아야 해서 찾는다.
  * 클럽 홈 응답에는 기록 id 가 없으므로 서재에서 같은 책의 열린 기록을 고른다.
  */
 export function useMyClubRecord(club?: ClubHome) {

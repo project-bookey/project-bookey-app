@@ -16,9 +16,9 @@ import { serif } from '@/theme/tokens';
 
 const FILTERS: { value: ReadingStatus; label: string }[] = [
   { value: 'READING', label: '읽는 중' },
-  { value: 'WANT_TO_READ', label: '읽고 싶은' },
+  { value: 'WANT_TO_READ', label: '읽고 싶음' },
   { value: 'FINISHED', label: '완독' },
-  { value: 'PAUSED', label: '멈춤' },
+  { value: 'PAUSED', label: '쉬는 중' },
   { value: 'ABANDONED', label: '하차' },
 ];
 
@@ -163,7 +163,7 @@ function GridTile({ record, colors, mode, onPress }: {
 
           {record.status === 'PAUSED' ? (
             <View style={[styles.stateTag, { backgroundColor: colors.warnSoft }]}>
-              <Text style={[typeScale.monoLabel, styles.tagText, { color: colors.warn }]}>멈춤</Text>
+              <Text style={[typeScale.monoLabel, styles.tagText, { color: colors.warn }]}>쉬는 중</Text>
             </View>
           ) : null}
           {abandoned ? (
@@ -205,15 +205,24 @@ function AddTile({ colors, onPress }: { colors: ColorTokens; onPress: () => void
   );
 }
 
-/** 빈 상태 — 기존 문구 유지. 오류 시에도 동일하게 노출된다(당겨서 새로고침으로 복구). */
+/** 상태마다 문장을 통째로 둔다 — 상태 이름에 '책이 없어요'를 붙이면 '읽는 중 책이 없어요'처럼 깨진다. */
+const EMPTY_TITLE: Record<ReadingStatus, string> = {
+  READING: '지금 읽는 책이 없어요',
+  WANT_TO_READ: '읽고 싶은 책이 없어요',
+  FINISHED: '아직 다 읽은 책이 없어요',
+  PAUSED: '쉬고 있는 책이 없어요',
+  ABANDONED: '하차한 책이 없어요',
+};
+
+/** 빈 상태 — 오류 시에도 동일하게 노출된다(당겨서 새로고침으로 복구). */
 function EmptyNote({ status, onSearch }: { status: ReadingStatus; onSearch: () => void }) {
   return (
     <EmptyState
-      title={`${statusLabel[status]} 책이 없어요`}
+      title={EMPTY_TITLE[status]}
       description={
         status === 'ABANDONED'
-          ? '하차도 기록입니다. 맞지 않는 책을 내려놓는 것도 독서의 일부예요.'
-          : '검색해서 서재에 담아보세요.'
+          ? '하차도 기록이에요. 맞지 않는 책을 내려놓는 것도 독서의 일부예요.'
+          : '책을 찾아 서재에 담아 보세요.'
       }
       action={<Button label="책 찾기" onPress={onSearch} />}
     />

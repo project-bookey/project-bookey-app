@@ -19,9 +19,9 @@ export function visibilityOptions(inClub: boolean, current?: PostVisibility): { 
 /** 공개 범위 아래 한 줄. */
 export function visibilityCaption(visibility: PostVisibility, inClub: boolean): string {
   switch (visibility) {
-    case 'CLUB': return '이 클럽 멤버만 봅니다';
-    case 'PUBLIC': return inClub ? '클럽과 함께 광장·책 상세에도 실립니다' : '광장·책 상세에 실립니다';
-    case 'PRIVATE': return '나만 봅니다';
+    case 'CLUB': return '이 클럽 멤버만 볼 수 있어요';
+    case 'PUBLIC': return inClub ? '클럽과 광장, 책 정보 화면에 함께 올라가요' : '광장과 책 정보 화면에 올라가요';
+    case 'PRIVATE': return '나만 볼 수 있어요';
     case 'LINK': return '링크로만 볼 수 있어요';
   }
 }

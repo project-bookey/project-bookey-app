@@ -33,8 +33,8 @@ export type ImageUpload = (form: FormData) => Promise<PostImage>;
 /** 다시 올릴 때 필요한 만큼만 남긴 자산. */
 type PickedAsset = { uri: string; width?: number; height?: number };
 
-/** 네이티브에서 사진첩 권한을 거부했을 때 띠 아래에 다는 한 줄 — 웹은 권한이 없어 뜨지 않는다. */
-const PERMISSION_NOTICE = '사진첩 접근을 허용해 주세요';
+/** 네이티브에서 사진 권한을 거부했을 때 띠 아래에 다는 한 줄 — 웹은 권한이 없어 뜨지 않는다. */
+const PERMISSION_NOTICE = '설정에서 사진 접근을 허용해 주세요';
 /** 서버가 이유를 주지 않았을 때의 한 줄 — 이유가 있으면 서버 문장을 그대로 보여 준다. */
 const UPLOAD_NOTICE = '사진을 올리지 못했어요 · 다시 시도';
 /**

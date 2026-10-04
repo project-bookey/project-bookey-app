@@ -121,7 +121,7 @@ export default function PlazaScreen() {
               </View>
             ) : feed.isError ? (
               <EmptyState
-                title="광장을 불러오지 못했습니다"
+                title="광장을 불러오지 못했어요"
                 description="잠시 후 다시 시도해 주세요."
                 action={(
                   <Pressable
@@ -135,7 +135,7 @@ export default function PlazaScreen() {
                 )}
               />
             ) : (
-              <EmptyState illustration title="아직 완독 자랑이 없습니다" description="한 권을 끝내면 여기에 걸립니다." />
+              <EmptyState illustration title="아직 완독 자랑이 없어요" description="책을 다 읽으면 여기에 올라와요." />
             )
           }
           ListFooterComponent={

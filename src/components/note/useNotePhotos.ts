@@ -122,7 +122,7 @@ export function useNotePhotos({ upload, apply, applyTo, pageId, canvas = CANVAS,
     if (Platform.OS !== 'web') {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        notify('사진을 붙이려면 사진 보관함 접근을 허용해 주세요.');
+        notify('사진을 붙이려면 설정에서 사진 접근을 허용해 주세요.');
         return;
       }
     }
