@@ -104,7 +104,7 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
   // 후보 행 아래 한 줄 안내 — 상태마다 다른 말을 한다.
   const hint = searching
     ? search.isLoading ? '찾는 중…' : search.isError ? null : candidates.length === 0 ? '검색 결과가 없어요.' : null
-    : reading.isLoading || finished.isLoading ? '내 서재의 책을 찾는 중입니다.'
+    : reading.isLoading || finished.isLoading ? '내 서재의 책을 찾고 있어요.'
       : reading.isError || finished.isError ? null
         : candidates.length === 0 ? '읽는 중이거나 완독한 책이 없어요 — 위에서 책을 검색해 고르세요.' : null;
 
