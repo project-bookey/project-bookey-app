@@ -1,6 +1,6 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -22,6 +22,7 @@ import {
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
+import { ReturnToClubHome } from '@/components/club/ReturnToClubHome';
 import { todayKst } from '@/components/clubLog';
 import { TiltCover } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
@@ -501,5 +502,5 @@ const styles = StyleSheet.create({
 /** 딥링크 호환 — 모임은 이제 클럽 홈의 탭이다. */
 export default function ClubMeetingsRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <Redirect href={{ pathname: '/club/[id]', params: { id, tab: 'meetings' } }} />;
+  return <ReturnToClubHome clubId={id} tab="meetings" />;
 }

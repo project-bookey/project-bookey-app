@@ -4,6 +4,7 @@ export { ClubCard } from './ClubCard';
 export { MemberDetail, MemberStrip, NUDGES } from './MemberStrip';
 export { confirmAsync, notify } from './dialogs';
 export { ClubTabs, clubTabOf, isClubTabKey } from './ClubTabs';
+export { ReturnToClubHome } from './ReturnToClubHome';
 export { StatStrip } from './StatStrip';
 export { CLUB_DESCRIPTION_MAX } from './limits';
 export type { StatCell } from './StatStrip';

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -9,7 +9,7 @@ import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
-import { CLUB_DESCRIPTION_MAX, ClubBackdrop, confirmAsync, notify } from '@/components/club';
+import { CLUB_DESCRIPTION_MAX, ClubBackdrop, ReturnToClubHome, confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
@@ -63,7 +63,7 @@ export default function ClubSettingsScreen() {
     );
   }
   if (club.data.myRole !== 'HOST') {
-    return <Redirect href={`/club/${clubId}`} />;
+    return <ReturnToClubHome clubId={clubId} />;
   }
   // 입력 초기값을 서버 값으로 잡으려고 폼을 따로 둔다 — 클럽이 바뀌면 key 로 다시 만든다.
   return <SettingsForm key={club.data.id} club={club.data} />;

@@ -121,8 +121,9 @@ export default function ClubLogNewScreen() {
       queryClient.invalidateQueries({ queryKey: clubLogKeys.all(clubId) });
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      // 보드에서 왔으면 그 보드로 돌아가고(스택에 보드가 두 겹 쌓이지 않게), 타이머에서 왔으면 보드로 바꾼다.
-      router.dismissTo(`/club/${clubId}/log`);
+      // 조각은 클럽 홈의 '읽기 조각'에 붙는다. 아래에 클럽 홈이 있으면(홈의 '한 조각 남기기'·'합류'로 왔으면) 그 홈으로
+      // 돌아가고, 없으면(서가에서 타이머를 켰으면) 이 화면을 클럽 홈으로 바꾼다. 옛 보드 경로로 가면 클럽 홈이 한 벌 더 쌓였다.
+      router.dismissTo(`/club/${clubId}`);
     },
     onError: (e) => setNotice(e instanceof ApiError ? e.message : '조각을 붙이지 못했어요 · 다시 시도'),
   });
