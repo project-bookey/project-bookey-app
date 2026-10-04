@@ -15,8 +15,8 @@ import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme'
 /**
  * 자리 늘리기 — 클럽 홈의 '자리 늘리기'로 들어온다(호스트 전용).
  *
- * 무료 정원을 넘는 자리는 책갈피로 연다. 가격·상한은 클럽 홈 응답의 seatPolicy 를 따르고,
- * 늘린 자리는 그 클럽에만 적용되며 클럽이 끝나면 사라진다(서버 정책).
+ * 무료 정원을 넘는 자리는 책갈피로 연다 — 정해진 단위(step, 10자리)씩만. 가격·상한·단위는 클럽 홈 응답의
+ * seatPolicy 를 따르고, 늘린 자리는 그 클럽에만 적용되며 클럽이 끝나면 사라진다(서버 정책).
  */
 export default function ClubSeatsScreen() {
   const router = useRouter();
@@ -92,7 +92,9 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
   onInsufficient: () => void;
 }) {
   const router = useRouter();
-  const [target, setTarget] = useState(String(policy.maxLimit));
+  // 고를 수 있는 정원 — 지금 정원 다음 단위부터 최대 정원까지. 기본값은 가장 흔한 한 단위(UX 철칙 Hick).
+  const options = seatTargets(club.memberLimit, policy).map((value) => ({ value: String(value), label: `${value}명` }));
+  const [target, setTarget] = useState(options[0]?.value ?? String(policy.maxLimit));
   const [error, setError] = useState<string | null>(null);
 
   const expand = useMutation({
@@ -109,7 +111,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
   });
 
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
-  if (ended || club.memberLimit >= policy.maxLimit) {
+  if (ended || options.length === 0) {
     return (
       <PaperScreen>
         <SubHeader category="자리 늘리기" />
@@ -125,18 +127,16 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
     );
   }
 
-  const options = Array.from({ length: policy.maxLimit - club.memberLimit }, (_, i) => {
-    const value = club.memberLimit + i + 1;
-    return { value: String(value), label: `${value}명` };
-  });
+  const costOf = (limit: number) => (limit - club.memberLimit) * policy.costPerSeat;
   const targetLimit = Number(target);
   const added = targetLimit - club.memberLimit;
-  const cost = added * policy.costPerSeat;
+  const cost = costOf(targetLimit);
   const balance = wallet?.bookmarkBalance;
   const shortage = balance == null ? 0 : Math.max(0, cost - balance);
+  // 지금 책갈피로 고를 수 있는 가장 큰 정원 — 한 단위도 못 열면 없다.
   const affordableLimit = balance == null
-    ? club.memberLimit
-    : Math.min(policy.maxLimit, club.memberLimit + Math.floor(balance / policy.costPerSeat));
+    ? undefined
+    : options.map((o) => Number(o.value)).filter((limit) => costOf(limit) <= balance).pop();
 
   return (
     <PaperScreen>
@@ -146,11 +146,11 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
           {/* 머리 — 카드 없이 명조 표제와 자리 격자(활자·괘선 언어) */}
           <View style={styles.hero}>
             <Eyebrow>{club.name}</Eyebrow>
-            <Text style={[styles.title, { color: colors.text }]}>자리를 열고{'\n'}한 명 더 초대해요</Text>
+            <Text style={[styles.title, { color: colors.text }]}>자리를 열고{'\n'}더 많이 초대해요</Text>
             <Text style={[typeScale.body, { color: colors.textMuted }]}>
-              클럽은 {policy.freeLimit}명까지 무료예요. 책갈피로 자리를 늘리면 최대 {policy.maxLimit}명까지 함께 읽을 수 있어요.
+              클럽은 {policy.freeLimit}명까지 무료예요. 책갈피로 {policy.step}명씩, 최대 {policy.maxLimit}명까지 늘릴 수 있어요.
             </Text>
-            <SeatGrid club={club} targetLimit={targetLimit} maxLimit={policy.maxLimit} colors={colors} />
+            <SeatGrid club={club} targetLimit={targetLimit} policy={policy} colors={colors} />
           </View>
 
           <View style={[styles.section, { borderTopColor: colors.line }]}>
@@ -166,7 +166,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
                 value={
                   <Text style={{ color: colors.text }}>
                     {cost}개{' '}
-                    <Text style={{ color: colors.textFaint }}>({policy.costPerSeat} × {added}자리)</Text>
+                    <Text style={{ color: colors.textFaint }}>({policy.step}자리마다 {policy.step * policy.costPerSeat}개)</Text>
                   </Text>
                 }
               />
@@ -179,7 +179,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
                 </>
               ) : null}
             </View>
-            {shortage > 0 && affordableLimit > club.memberLimit ? (
+            {shortage > 0 && affordableLimit != null ? (
               <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
                 지금 책갈피로는 {affordableLimit}명까지 늘릴 수 있어요.
               </Text>
@@ -219,38 +219,60 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
   );
 }
 
-/** 자리 격자 — 지금 멤버(이니셜, 나는 잉크 테두리) · 이번에 열 자리(잉크 점선 +) · 그 너머 자리(흐린 점선). */
-function SeatGrid({ club, targetLimit, maxLimit, colors }: {
+/** 고를 수 있는 목표 정원 — 지금 정원보다 큰 step 의 배수부터 최대 정원까지(서버가 같은 규칙으로 검사한다). */
+function seatTargets(memberLimit: number, policy: ClubSeatPolicy): number[] {
+  const targets: number[] = [];
+  for (let limit = (Math.floor(memberLimit / policy.step) + 1) * policy.step; limit <= policy.maxLimit; limit += policy.step) {
+    targets.push(limit);
+  }
+  return targets;
+}
+
+/**
+ * 자리 격자 — 한 줄이 늘리는 단위(10자리)이고, 줄 끝 숫자가 그 줄까지의 정원이다.
+ * 지금 멤버(채운 점, 나는 잉크) · 빈 자리(실선) · 이번에 열 자리(잉크 점선) · 그 너머 자리(흐린 점선).
+ */
+function SeatGrid({ club, targetLimit, policy, colors }: {
   club: ClubHome;
   targetLimit: number;
-  maxLimit: number;
+  policy: ClubSeatPolicy;
   colors: ColorTokens;
 }) {
+  const rows = Math.ceil(policy.maxLimit / policy.step);
   return (
     <View style={styles.seatGrid} accessible accessibilityLabel={`${club.memberLimit}명에서 ${targetLimit}명으로`}>
-      {Array.from({ length: maxLimit }, (_, i) => {
-        const member = club.members[i];
-        const isNew = i >= club.memberLimit && i < targetLimit;
-        const isOpen = !member && i < club.memberLimit;
+      {Array.from({ length: rows }, (_, row) => {
+        const first = row * policy.step;
+        const rowEnd = Math.min(first + policy.step, policy.maxLimit);
+        const opensHere = rowEnd > club.memberLimit && rowEnd <= targetLimit;
         return (
-          <View key={i} style={styles.seatCell}>
-            <View
-              style={[
-                styles.seat,
-                member
-                  ? { backgroundColor: colors.surfaceRaised, borderColor: member.isMe ? colors.ink : colors.lineStrong }
-                  : isOpen
-                    ? { borderColor: colors.lineStrong }
-                    : { borderStyle: 'dashed', borderColor: isNew ? colors.ink : colors.line },
-              ]}
-            >
-              {member ? (
-                <Text style={[typeScale.label, { color: colors.text }]}>{member.nickname.slice(0, 1)}</Text>
-              ) : isNew ? (
-                <Text style={[typeScale.label, { color: colors.text }]}>+</Text>
-              ) : null}
+          <View key={row} style={styles.seatRow}>
+            <View style={styles.seatDots}>
+              {Array.from({ length: policy.step }, (_, col) => {
+                const i = first + col;
+                // 최대 정원이 단위로 나눠떨어지지 않으면 마지막 줄 남는 칸은 비워 둬 점 간격을 맞춘다.
+                if (i >= rowEnd) return <View key={i} style={styles.seatSlot} />;
+                const member = club.members[i];
+                const isNew = i >= club.memberLimit && i < targetLimit;
+                const isOpen = !member && i < club.memberLimit;
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.seat,
+                      member
+                        ? { backgroundColor: member.isMe ? colors.ink : colors.textFaint, borderColor: member.isMe ? colors.ink : colors.textFaint }
+                        : isOpen
+                          ? { borderColor: colors.lineStrong }
+                          : { borderStyle: 'dashed', borderColor: isNew ? colors.ink : colors.line },
+                    ]}
+                  />
+                );
+              })}
             </View>
-            <Text style={[typeScale.monoLabel, { color: isNew ? colors.text : colors.textFaint }]}>{i + 1}</Text>
+            <Text style={[typeScale.monoLabel, styles.seatRowEnd, { color: opensHere ? colors.text : colors.textFaint }]}>
+              {rowEnd}
+            </Text>
           </View>
         );
       })}
@@ -266,14 +288,11 @@ const styles = StyleSheet.create({
   section: { borderTopWidth: hairline, paddingTop: spacing.lg },
   hint: { marginTop: spacing.sm },
   actions: { gap: spacing.sm },
-  seatGrid: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs },
-  seatCell: { alignItems: 'center', gap: 6 },
-  seat: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.round,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  seatGrid: { gap: spacing.sm, marginTop: spacing.xs },
+  seatRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  seatDots: { flex: 1, flexDirection: 'row', justifyContent: 'space-between' },
+  // 줄 끝 숫자 — 두 자리 정원이 같은 폭에 오른쪽으로 맞춰지게 폭을 고정한다.
+  seatRowEnd: { width: 24, textAlign: 'right' },
+  seatSlot: { width: 18, height: 18 },
+  seat: { width: 18, height: 18, borderRadius: radius.round, borderWidth: 1 },
 });

@@ -3964,7 +3964,10 @@ export interface components {
             endsAt?: string;
             /** @enum {string} */
             visibility?: "CODE_ONLY" | "LINK" | "PUBLIC";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @deprecated
+             */
             memberLimit?: number;
             allowNudge?: boolean;
             /** @deprecated */
@@ -4040,6 +4043,8 @@ export interface components {
             maxLimit: number;
             /** Format: int32 */
             costPerSeat: number;
+            /** Format: int32 */
+            step: number;
         };
         MemberProgressView: {
             /** Format: int64 */

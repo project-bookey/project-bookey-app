@@ -353,12 +353,11 @@ export const clubApi = {
     clubId: number,
     body: { shareProgress: boolean },
   ) => api<ClubHome>(`/api/v1/clubs/${clubId}/join`, { method: "POST", body }),
-  /** 클럽 만들기 — 기간 없이 이어지고 책은 모임마다 고르므로 이름 · 정원 · 공개 범위만 보낸다. */
+  /** 클럽 만들기 — 기간 없이 이어지고 책은 모임마다 고르므로 이름 · 공개 범위만 보낸다. 정원은 서버가 무료 정원으로 연다. */
   create: (body: {
     name: string;
     description?: string;
     visibility?: string;
-    memberLimit?: number;
     allowNudge?: boolean;
   }) => api<ClubHome>("/api/v1/clubs", { method: "POST", body }),
   home: (clubId: number) => api<ClubHome>(`/api/v1/clubs/${clubId}`),

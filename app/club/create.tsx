@@ -7,20 +7,15 @@ import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
-import { CLUB_DESCRIPTION_MAX } from '@/components/club';
-import { Button, Eyebrow, Field, Segmented, Toggle } from '@/components/ui';
+import { CLUB_DESCRIPTION_MAX, CLUB_FREE_MEMBER_LIMIT, CLUB_SEAT_STEP } from '@/components/club';
+import { Button, Eyebrow, Field, Toggle } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
-/** 무료 정원은 3명까지 — 더 필요하면 만든 뒤 클럽 홈에서 책갈피로 자리를 늘린다(서버가 같은 상한을 검사한다). */
-const MEMBER_LIMITS = [
-  { value: '2', label: '2명' },
-  { value: '3', label: '3명' },
-] as const;
-
 /**
- * 클럽 만들기 (§12.1) — 이름 · 소개 · 정원 · 공개 한 화면.
+ * 클럽 만들기 (§12.1) — 이름 · 소개 · 공개 한 화면.
  * 클럽은 기간 없이 이어지고 책은 모임을 열 때마다 고르므로, 여기서는 책도 기간도 묻지 않는다.
- * 정원은 기본값(3명)이 골라져 있어 이름만 적으면 바로 만들 수 있다(UX 철칙 Hick).
+ * 정원도 고르지 않는다 — 새 클럽은 늘 무료 정원(10명)으로 열고, 더 필요하면 만든 뒤 10명씩 늘린다.
+ * 그래서 이름만 적으면 바로 만들 수 있다(UX 철칙 Hick).
  * 클럽 탭·홈 클럽 줄 모두 이 화면으로 들어온다.
  */
 export default function ClubCreateScreen() {
@@ -30,7 +25,6 @@ export default function ClubCreateScreen() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [memberLimit, setMemberLimit] = useState<'2' | '3'>('3');
   const [isPublic, setIsPublic] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +34,6 @@ export default function ClubCreateScreen() {
         name: name.trim(),
         description: description.trim() || undefined,
         visibility: isPublic ? 'PUBLIC' : 'CODE_ONLY',
-        memberLimit: Number(memberLimit),
       }),
     onSuccess: (club) => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
@@ -77,17 +70,12 @@ export default function ClubCreateScreen() {
             />
           </View>
 
+          {/* 정원 — 고를 것이 없어 안내만 둔다 */}
           <View>
             <Eyebrow>정원</Eyebrow>
-            <View style={{ marginTop: spacing.sm }}>
-              <Segmented
-                options={MEMBER_LIMITS.map((m) => ({ value: m.value, label: m.label }))}
-                value={memberLimit}
-                onChange={(v) => setMemberLimit(v as typeof memberLimit)}
-              />
-            </View>
+            <Text style={[styles.limit, { color: colors.text }]}>{CLUB_FREE_MEMBER_LIMIT}명 · 호스트 포함</Text>
             <Text style={[styles.helper, { color: colors.textMuted }]}>
-              호스트 포함 3명까지 무료예요. 더 필요하면 클럽을 만든 뒤 책갈피로 자리를 늘릴 수 있어요.
+              무료예요. 더 필요하면 클럽을 만든 뒤 책갈피로 {CLUB_SEAT_STEP}명씩 늘릴 수 있어요.
             </Text>
           </View>
 
@@ -131,6 +119,7 @@ export default function ClubCreateScreen() {
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   helper: { ...typeScale.caption, marginTop: spacing.sm },
+  limit: { ...typeScale.body, marginTop: spacing.xs },
   fields: { gap: spacing.md },
   options: { borderTopWidth: hairline, paddingTop: spacing.lg, gap: spacing.md },
   // 하단 고정 띠 — 독후감 쓰기의 띠와 같은 만듦새(머리카락 선 · 본문 폭 · 종이 배경).
