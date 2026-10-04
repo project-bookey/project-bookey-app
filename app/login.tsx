@@ -15,12 +15,14 @@ import { useOnboarding } from '@/store/onboarding';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 // 공급자 설정(애플 모듈·구글 클라이언트 ID)은 설정의 '소셜 계정 연동'과 한 곳에서 나눠 쓴다.
 import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/hooks/useSocialTokens';
+import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
 import {
   consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type ConsentDraft,
 } from '@/components/legal/SignupConsentBox';
 import { SocialConsentSheet } from '@/components/legal/SocialConsentSheet';
+import { CODE_EXPIRED_MESSAGE, FieldError, isEmail, TimedCodeInput } from '@/components/auth/authFields';
 import { KeyboardArea } from '@/components/keyboard';
 import { linkLabel } from '@/components/ui';
 
@@ -48,28 +50,6 @@ const SERVER_ERROR_SPOT: Record<string, FieldSpot> = {
   IDENTITY_VERIFICATION_FAILED: 'identity',
   IDENTITY_ALREADY_REGISTERED: 'identity',
 };
-
-const isEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value) && value.length <= 255;
-
-/** 남은 초를 '2:59' 꼴로. */
-const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-
-/**
- * 마감 시각(ms)까지 남은 초 — 1초마다 다시 센다. 마감이 지나면 멈춘다.
- * 그릴 때마다 실제 시각으로 다시 재므로, 메일 앱에서 코드를 보고 돌아와도(그동안 타이머가 멈춰 있었어도) 맞는다.
- */
-function useSecondsLeft(deadline: number | null): number {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (deadline == null || deadline <= Date.now()) return;
-    const timer = setInterval(() => {
-      setTick((n) => n + 1);
-      if (Date.now() >= deadline) clearInterval(timer);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [deadline]);
-  return deadline == null ? 0 : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-}
 
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
@@ -476,7 +456,7 @@ export default function LoginScreen() {
   const signupVerificationComplete = signupConfig.data?.verification !== 'EMAIL_CODE' || codeVerified;
   const codeTiming = codeSent && !codeVerified;
   const codeExpired = codeTiming && codeLeft === 0;
-  const codeError = errors.code ?? (codeExpired ? '입력 시간이 지났어요. 코드를 다시 받아 주세요.' : undefined);
+  const codeError = errors.code ?? (codeExpired ? CODE_EXPIRED_MESSAGE : undefined);
 
   return (
     <View style={styles.screen}>
@@ -522,7 +502,7 @@ export default function LoginScreen() {
                 autoComplete="email"
                 inputMode="email"
               />
-              <FieldError message={errors.email} />
+              <FieldError colors={darkColors} message={errors.email} />
             </View>
             {isSignup ? (
               <View style={styles.field} onLayout={trackField('nickname')}>
@@ -540,7 +520,7 @@ export default function LoginScreen() {
                   accessibilityLabel="닉네임"
                   textContentType="nickname"
                 />
-                <FieldError message={errors.nickname} />
+                <FieldError colors={darkColors} message={errors.nickname} />
               </View>
             ) : null}
             <View style={styles.field} onLayout={trackField('password')}>
@@ -559,7 +539,7 @@ export default function LoginScreen() {
                 textContentType={isSignup ? 'newPassword' : 'password'}
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
               />
-              <FieldError message={errors.password} />
+              <FieldError colors={darkColors} message={errors.password} />
               {/* 비밀번호를 잊었을 때의 길은 비밀번호 칸 바로 아래 — 흔한 자리(Jakob)이자 그 칸과 한 묶음(Proximity). */}
               {!isSignup ? (
                 <Pressable
@@ -600,46 +580,28 @@ export default function LoginScreen() {
                     </Text>
                   </Pressable>
                 )}
-                <FieldError message={errors.identity} />
+                <FieldError colors={darkColors} message={errors.identity} />
               </View>
             ) : null}
             {isSignup && signupConfig.data?.verification === 'EMAIL_CODE' ? (
               <View style={styles.field} onLayout={trackField('code')}>
                 <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
                 <View style={styles.codeRow}>
-                  <View style={styles.codeInputWrap}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        codeTiming ? styles.codeInputTimed : null,
-                        codeError ? styles.inputError : null,
-                      ]}
-                      value={code}
-                      onChangeText={(value) => {
-                        setCode(value);
-                        setCodeVerified(false);
-                        putError('code', null);
-                      }}
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      placeholder="6자리"
-                      placeholderTextColor={darkColors.textFaint}
-                      accessibilityLabel="이메일 인증 코드"
-                      textContentType="oneTimeCode"
-                      autoComplete="one-time-code"
-                    />
-                    {/* 입력 마감까지 남은 시간 — 칸 안 오른쪽, 흔한 자리(Jakob). 끝나면 붉게 바뀌고 칸 밑에 다시 받으라는 경고가 뜬다. */}
-                    {codeTiming ? (
-                      <View style={styles.codeTimer} pointerEvents="none">
-                        <Text
-                          style={[styles.codeTimerLabel, codeExpired ? styles.codeTimerExpired : null]}
-                          accessibilityLabel={`남은 시간 ${Math.floor(codeLeft / 60)}분 ${codeLeft % 60}초`}
-                        >
-                          {formatClock(codeLeft)}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
+                  {/* 입력 마감까지 남은 시간은 칸 안 오른쪽 — 끝나면 붉게 바뀌고 칸 밑에 다시 받으라는 경고가 뜬다. */}
+                  <TimedCodeInput
+                    colors={darkColors}
+                    inputStyle={styles.input}
+                    timing={codeTiming}
+                    secondsLeft={codeLeft}
+                    error={codeError}
+                    value={code}
+                    onChangeText={(value) => {
+                      setCode(value);
+                      setCodeVerified(false);
+                      putError('code', null);
+                    }}
+                    accessibilityLabel="이메일 인증 코드"
+                  />
                   {/* 다시 받기는 기다림 없이 바로 열려 있다(사용자 결정) — 남용은 서버가 1시간 횟수 상한으로 막는다. */}
                   <Pressable
                     onPress={requestCode}
@@ -655,7 +617,7 @@ export default function LoginScreen() {
                       : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
                   </Pressable>
                 </View>
-                <FieldError message={codeError} />
+                <FieldError colors={darkColors} message={codeError} />
                 {codeSent ? (
                   <>
                     <Pressable
@@ -684,7 +646,7 @@ export default function LoginScreen() {
               <SignupConsentBox colors={darkColors} value={consent} onChange={setConsent} disabled={busy} />
             ) : null}
             {/* 어느 칸에도 걸리지 않는 실패(로그인 실패·소셜 등)는 누른 버튼 바로 위에 — 아래 '회원가입' 밑에 두면 눈이 닿지 않는다. */}
-            <FieldError message={errors.form} />
+            <FieldError colors={darkColors} message={errors.form} />
             <Pressable
               onPress={submitEmail}
               disabled={busy || (isSignup && (!signupConsentComplete || !signupVerificationComplete))}
@@ -782,11 +744,6 @@ export default function LoginScreen() {
   );
 }
 
-/** 칸 밑 경고 한 줄 — 없으면 자리를 차지하지 않는다. */
-function FieldError({ message }: { message?: string }) {
-  return message ? <Text style={styles.error} accessibilityRole="alert">{message}</Text> : null;
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: darkColors.bg },
   container: {
@@ -843,14 +800,7 @@ const styles = StyleSheet.create({
   // 겉 높이 32 + 아래 hitSlop 12 = 44pt. 위는 비밀번호 칸과 겹치지 않게 넓히지 않는다.
   forgot: { alignSelf: 'flex-end', paddingVertical: spacing.sm },
   forgotLabel: { ...typeScale.caption, color: darkColors.textMuted },
-  error: { ...typeScale.caption, color: darkColors.danger },
   codeRow: { flexDirection: 'row', gap: spacing.sm },
-  codeInputWrap: { flex: 1, justifyContent: 'center' },
-  // 칸 안 오른쪽 타이머 자리('2:59' 너비 + 여백)만큼 글자를 비운다.
-  codeInputTimed: { paddingRight: 64 },
-  codeTimer: { position: 'absolute', right: spacing.md },
-  codeTimerLabel: { ...typeScale.label, color: darkColors.textMuted, fontVariant: ['tabular-nums'] },
-  codeTimerExpired: { color: darkColors.danger },
   codeButton: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.md,
