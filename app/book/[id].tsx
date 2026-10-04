@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Heart } from 'lucide-react-native';
+import { Check, Heart, Plus } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
@@ -121,8 +121,9 @@ export default function BookDetailScreen() {
   });
 
   // 이 화면에서 서재에서 뺀 기록 — 라우트 파라미터·책 상세가 아직 그 id 를 들고 있어도 없는 것으로 본다.
-  const [removedRid, setRemovedRid] = useState<number | null>(null);
-  const live = (id?: number | null) => (id != null && id !== removedRid ? id : null);
+  // 읽고 싶음은 켰다 껐다 하므로 뺀 id 를 모두 기억한다.
+  const [removedRids, setRemovedRids] = useState<number[]>([]);
+  const live = (id?: number | null) => (id != null && !removedRids.includes(id) ? id : null);
 
   // 라우트 파라미터 → 이 세션에서 담은 기록 → 서버가 알려준 내 기록 순으로 채택
   const rid = live(paramRid) ?? live(addedRid) ?? live(book.data?.myRecordId);
@@ -162,16 +163,13 @@ export default function BookDetailScreen() {
       setRemarkSheetOpen(true);
     },
   });
-  // 읽고 싶은 책 빼기 — 빠지면 내 진도 카드가 사라지고 담기 버튼이 다시 선다.
-  const remove = useMutation({
-    mutationFn: (id: number) => libraryApi.remove(id),
-    onSuccess: (_, id) => {
-      setRemovedRid(id);
-      queryClient.removeQueries({ queryKey: ['library', 'record', id] });
-      queryClient.invalidateQueries({ queryKey: ['library'] });
-      queryClient.invalidateQueries({ queryKey: ['book', bookId] });
-    },
-  });
+  // 읽고 싶음을 끈 뒤 — 내 진도 카드가 사라지고 서재·홈 목록도 다시 받는다.
+  const onRemoved = (id: number) => {
+    setRemovedRids((prev) => [...prev, id]);
+    queryClient.removeQueries({ queryKey: ['library', 'record', id] });
+    queryClient.invalidateQueries({ queryKey: ['library'] });
+    queryClient.invalidateQueries({ queryKey: ['book', bookId] });
+  };
 
   const info = book.data?.book;
   const description = book.data?.description;
@@ -189,8 +187,7 @@ export default function BookDetailScreen() {
     backNote: description ? { title: '줄거리', body: description } : {},
   };
   const lag = progress ? getLagStyle(colors)[progress.lagLevel] : null;
-  const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending)
-    || (remove.isError && !remove.isPending);
+  const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
   const rating = pickRating(book.data);
   // 방금 다 읽은 책 — 완독 리뷰 시트에 띄울 표지·제목·기간. 기록이 완독으로 바뀐 걸 확인한 뒤에만 만든다.
   const finishedBook: FinishedBook | null =
@@ -205,8 +202,9 @@ export default function BookDetailScreen() {
   // 내려야 닿는다(UX 철칙 Fitts). 누르면 타이머가 바로 측정을 시작한다.
   // 키보드가 떠 있는 동안과 리뷰를 쓰는 동안은 숨긴다 — 리뷰 폼이 키보드 위로 올라오면 그 자리를 CTA 가 덮고,
   // 폼의 '남기기'와 초록 버튼이 둘이 된다.
+  // 읽고 싶음일 땐 위 액션 바에 '독서 시작'이 남아 있으니 하단에는 두지 않는다 — 초록 버튼은 하나.
   const keyboardOpen = useKeyboardOpen();
-  const hasStartCta = record.data != null && progress != null;
+  const hasStartCta = record.data != null && progress != null && record.data.status !== 'WANT_TO_READ';
   const ctaBottom = Math.max(insets.bottom, spacing.lg);
 
   return (
@@ -236,9 +234,11 @@ export default function BookDetailScreen() {
             <View style={styles.headBlock}>
               <ActionBar
                 bookId={bookId}
-                hasRecord={rid != null}
+                rid={rid}
+                status={record.data?.status}
                 colors={colors}
                 onAdded={setAddedRid}
+                onRemoved={onRemoved}
               />
               <StatStrip detail={book.data} rating={rating} reviewTotal={reviewTotal} colors={colors} />
             </View>
@@ -308,27 +308,10 @@ export default function BookDetailScreen() {
                   />
                 </View>
               ) : null}
-              {record.data.status === 'WANT_TO_READ' ? (
-                // 하차하기와 같은 자리 — 완독 처리와 떨어뜨린 ghost 버튼, 한 번 더 물은 뒤 뺀다.
-                <View style={styles.dangerGap}>
-                  <ConfirmButton
-                    label="서재에서 빼기"
-                    question="읽고 싶은 책에서 뺄까요?"
-                    confirmLabel="빼기"
-                    tone="danger"
-                    variant="ghost"
-                    pending={remove.isPending}
-                    onConfirm={() => remove.mutate(rid!)}
-                  />
-                </View>
-              ) : null}
               {actionFailed ? (
                 <RetryLine
                   colors={colors}
-                  onRetry={() =>
-                    finish.isError ? finish.mutate()
-                      : abandon.isError ? abandon.mutate()
-                        : remove.mutate(rid!)}
+                  onRetry={() => (finish.isError ? finish.mutate() : abandon.mutate())}
                 />
               ) : null}
             </Card>
@@ -569,12 +552,20 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
   );
 }
 
-/** 액션 바 — 서재에 없으면 담기 2종(아웃라인 · 주 CTA). */
-function ActionBar({ bookId, hasRecord, colors, onAdded }: {
+/**
+ * 액션 바 — 서재에 없거나 읽고 싶음일 때 [읽고 싶음 토글][독서 시작].
+ * 읽고 싶음은 누를 때마다 켜지고(담기) 꺼진다(서재에서 빼기) — 켜지면 잉크로 뒤집고 체크 아이콘을 단다.
+ * 두 상태 모두 버튼 자리가 같아 켰다 껐다 해도 화면이 움직이지 않는다.
+ */
+function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
   bookId: number;
-  hasRecord: boolean;
+  /** 화면이 보는 내 기록 — 없으면 null */
+  rid: number | null;
+  /** 그 기록의 상태 — 아직 받는 중이면 undefined */
+  status?: ReadingStatus;
   colors: ColorTokens;
   onAdded: (recordId: number) => void;
+  onRemoved: (recordId: number) => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -585,6 +576,8 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
     mutationFn: ({ status, commitment }: { status: ReadingStatus; commitment?: string }) =>
       libraryApi.add({ bookId, status, commitment }),
     onSuccess: (record, { status }) => {
+      // 받은 기록을 바로 앉혀 둔다 — 상태를 다시 받는 동안 토글이 사라졌다 돌아오지 않게.
+      queryClient.setQueryData(['library', 'record', record.id], record);
       queryClient.invalidateQueries({ queryKey: ['library'] });
       setCommitmentOpen(false);
       setCommitment('');
@@ -593,43 +586,72 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
       if (status === 'READING') router.push(`/timer?recordId=${record.id}&autoStart=1`);
     },
   });
-  const failed = add.isError && !add.isPending;
+  // 읽고 싶음 끄기 — 기록에 쌓인 것이 없는 상태라 묻지 않고 바로 뺀다. 다시 누르면 다시 담긴다.
+  const remove = useMutation({
+    mutationFn: (id: number) => libraryApi.remove(id),
+    onSuccess: (_, id) => onRemoved(id),
+  });
+  const wanted = rid != null && status === 'WANT_TO_READ';
+  const busy = add.isPending || remove.isPending;
+  const addFailed = add.isError && !add.isPending;
+  const removeFailed = remove.isError && !remove.isPending;
 
-  if (hasRecord && !failed) return null;
+  if (rid != null && !wanted) return null;
+
+  const toggleWant = () => {
+    add.reset();
+    remove.reset();
+    if (wanted && rid != null) remove.mutate(rid);
+    else add.mutate({ status: 'WANT_TO_READ' });
+  };
+  const ToggleIcon = wanted ? Check : Plus;
+  const toggleColor = wanted ? colors.onInk : colors.text;
 
   return (
     <>
     <View style={styles.actionBarWrap}>
       <View style={styles.actionBar}>
-        {!hasRecord ? (
-          <>
-            <Pressable
-              disabled={add.isPending}
-              onPress={() => add.mutate({ status: 'WANT_TO_READ' })}
-              accessibilityRole="button"
-              accessibilityLabel="읽고 싶은 책으로 담기"
-              style={[styles.actionButton, styles.actionOutline, {
-                borderColor: colors.control, opacity: add.isPending ? 0.6 : 1,
-              }]}
-            >
-              <Text style={[typeScale.label, { color: colors.text }]}>+ 읽고 싶은 책</Text>
-            </Pressable>
-            <Pressable
-              disabled={add.isPending}
-              onPress={() => setCommitmentOpen(true)}
-              accessibilityRole="button"
-              accessibilityLabel="독서 시작"
-              style={[styles.actionButton, styles.actionPrimary, {
-                backgroundColor: colors.accent, opacity: add.isPending ? 0.6 : 1,
-              }]}
-            >
-              <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('독서 시작')}</Text>
-            </Pressable>
-          </>
-        ) : null}
+        <Pressable
+          disabled={busy}
+          onPress={toggleWant}
+          accessibilityRole="button"
+          accessibilityLabel="읽고 싶음"
+          accessibilityState={{ selected: wanted, disabled: busy }}
+          style={({ pressed }) => [
+            styles.actionButton,
+            styles.actionOutline,
+            styles.wantToggle,
+            wanted
+              ? { backgroundColor: colors.ink, borderColor: colors.ink }
+              : { borderColor: colors.control },
+            { opacity: busy ? 0.6 : 1 },
+            pressed && !busy ? pressedStyle : null,
+          ]}
+        >
+          <ToggleIcon size={16} color={toggleColor} {...iconStroke} />
+          <Text style={[typeScale.label, { color: toggleColor }]}>읽고 싶음</Text>
+        </Pressable>
+        <Pressable
+          disabled={busy}
+          // 서재에 없으면 다짐을 묻고 담으며 시작, 읽고 싶음이면 그 기록으로 타이머를 바로 켠다.
+          onPress={() =>
+            wanted ? router.push(`/timer?recordId=${rid}&autoStart=1`) : setCommitmentOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="독서 시작"
+          style={({ pressed }) => [
+            styles.actionButton,
+            styles.actionPrimary,
+            { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 },
+            pressed && !busy ? pressedStyle : null,
+          ]}
+        >
+          <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('독서 시작')}</Text>
+        </Pressable>
       </View>
-      {failed && add.variables ? (
+      {addFailed && add.variables ? (
         <RetryLine colors={colors} onRetry={() => add.mutate(add.variables!)} />
+      ) : removeFailed && remove.variables != null ? (
+        <RetryLine colors={colors} onRetry={() => remove.mutate(remove.variables!)} />
       ) : null}
     </View>
       <Modal
@@ -1268,6 +1290,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   actionOutline: { borderWidth: hairline },
+  wantToggle: { flexDirection: 'row', gap: spacing.xs },
   actionPrimary: { flex: 1 },
   commitmentBackdrop: {
     flex: 1,
