@@ -37,10 +37,11 @@ const HEATMAP_DAYS = 90;
 /** 남의 공개 독후감을 한 번에 받는 편수. */
 const POSTS_PAGE = 10;
 /**
- * 팔로워·팔로잉 터치 상자 — 14px 글줄(20)에 위아래 12 씩 더해 44pt.
+ * 팔로워·팔로잉 터치 상자 — 15px 글줄(22)에 위아래 11 씩 더해 44pt.
  * 위는 핸들 줄 안에서 멈춰 닉네임 옆 연필 버튼의 hitSlop 과 겹치지 않고, 아래는 묶음 간격(36) 안에 머문다.
+ * 좌우 6 씩은 두 칸 사이 간격(spacing.md = 12)을 반씩 나눠 가져 서로 겹치지 않는다.
  */
-const SOCIAL_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
+const SOCIAL_HIT_SLOP = { top: 11, bottom: 11, left: 6, right: 6 };
 /**
  * 서재 '전체보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14.
  * 선반이 '기록' 묶음의 첫머리라 위는 묶음 간격(36) 안에 머물고, 아래는 선반 표지 위에서 멈춘다.
@@ -208,7 +209,6 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 >
                   <SocialCount label="팔로워" value={followerCount} />
                 </Pressable>
-                <Text style={[styles.socialText, { color: colors.textMuted }]}>·</Text>
                 <Pressable
                   onPress={() => openFollows('FOLLOWING')}
                   accessibilityRole="button"
@@ -223,15 +223,11 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               <>
                 <View style={styles.profileSocial}>
                   <SocialCount label="팔로워" value={followerCount} />
-                  <Text style={[styles.socialText, { color: colors.textMuted }]}>·</Text>
                   <SocialCount label="팔로잉" value={followingCount} />
                   {p?.mutual || p?.followsMe ? (
-                    <>
-                      <Text style={[styles.socialText, { color: colors.textMuted }]}>·</Text>
-                      <Text style={[styles.socialText, { color: p.mutual ? colors.accent : colors.textFaint }]}>
-                        {p.mutual ? '맞팔로우' : '나를 팔로우'}
-                      </Text>
-                    </>
+                    <Text style={[styles.socialText, { color: p.mutual ? colors.accent : colors.textFaint }]}>
+                      {p.mutual ? '맞팔로우' : '나를 팔로우'}
+                    </Text>
                   ) : null}
                 </View>
                 {/* 채팅은 엽서 답장이 오간 사이(canChat)에만 — 서버 거절도 아래에 그대로 표시한다. */}
@@ -895,14 +891,15 @@ const styles = StyleSheet.create({
   },
   settingsTarget: { alignSelf: 'flex-end' },
   profileMeta: { letterSpacing: 0.4 },
-  // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 14 로 키웠다(2026-10-04).
-  socialText: { fontFamily: sans.regular, fontSize: 14, lineHeight: 20 },
+  // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 본문 크기(15)로 키웠다(2026-10-04).
+  socialText: { fontFamily: sans.regular, fontSize: 15, lineHeight: 22 },
   // 숫자만 본문색 세미볼드 — 크기는 바깥 Text(socialText)가 정한다.
   profileCount: { fontFamily: sans.semiBold },
-  // 360pt 폭에 숫자가 커지면 '팔로잉' 칸이 다음 줄로 넘어간다 — 잘리거나 설정 버튼 밑으로 파고들지 않게.
+  // 칸 사이는 '·' 없이 간격(md)으로만 가른다 — 360pt 에서 세 자리 숫자까지 한 줄에 들고,
+  // 더 길어져 다음 줄로 넘어가도 줄 끝에 점만 덩그러니 남지 않는다.
   profileSocial: {
     flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center',
-    columnGap: spacing.sm, rowGap: spacing.xs, alignSelf: 'flex-start',
+    columnGap: spacing.md, rowGap: spacing.xs, alignSelf: 'flex-start',
   },
   pressed: pressedStyle,
 
