@@ -13,7 +13,7 @@ import type { ColorTokens } from '@/theme';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
- * 자리 늘리기 — 클럽 홈의 '자리 늘리기'로 들어온다(호스트 전용).
+ * 자리 늘리기 — 클럽 정보(초대 코드 밑)와 클럽 설정의 '자리 늘리기'로 들어온다(호스트 전용).
  *
  * 무료 정원을 넘는 자리는 책갈피로 연다 — 정해진 단위(step, 10자리)씩만. 가격·상한·단위는 클럽 홈 응답의
  * seatPolicy 를 따르고, 늘린 자리는 그 클럽에만 적용되며 클럽이 끝나면 사라진다(서버 정책).
