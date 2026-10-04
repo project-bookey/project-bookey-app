@@ -234,8 +234,8 @@ export function SectionNav({
           style={[
             styles.marker,
             {
-              backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.68)',
-              borderColor: mode === 'dark' ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.92)',
+              backgroundColor: colors.accent,
+              borderColor: colors.accent,
               transform: [{
                 translateX: Animated.add(
                   Animated.multiply(liveTranslateX, tabWidth),
@@ -262,7 +262,7 @@ export function SectionNav({
             hitSlop={6}
             style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
           >
-            <SectionIcon name={section.key} color={visuallySelected ? colors.accent : colors.textMuted} />
+            <SectionIcon name={section.key} color={visuallySelected ? colors.onAccent : colors.textMuted} />
           </Pressable>
         );
       })}

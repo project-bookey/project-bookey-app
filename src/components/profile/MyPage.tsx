@@ -896,9 +896,8 @@ const styles = StyleSheet.create({
   settingsTarget: { alignSelf: 'flex-end' },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 본문 크기(15)로 키웠다(2026-10-04).
-  socialText: { fontFamily: sans.regular, fontSize: 15, lineHeight: 22 },
-  // 숫자만 본문색 세미볼드 — 크기는 바깥 Text(socialText)가 정한다.
-  profileCount: { fontFamily: sans.semiBold },
+  socialText: { fontFamily: sans.regular, fontSize: 16, lineHeight: 24 },
+  profileCount: { fontFamily: sans.semiBold, fontSize: 19, lineHeight: 24 },
   // 칸 사이는 '·' 없이 간격(md)으로만 가른다 — 360pt 에서 세 자리 숫자까지 한 줄에 들고,
   // 더 길어져 다음 줄로 넘어가도 줄 끝에 점만 덩그러니 남지 않는다.
   profileSocial: {
