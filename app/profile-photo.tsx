@@ -116,7 +116,9 @@ export default function ProfilePhotoScreen() {
       }
       const me = await authApi.uploadAvatar(form);
       setUser(me);
-      router.replace(editing ? '/profile' : '/home');
+      // 변경은 '나' 화면에서 push 로 들어온다 — 돌아간다. '/profile' 로 replace 하면 메인 탭이 한 벌 더 쌓인다.
+      if (editing && router.canGoBack()) router.back();
+      else router.replace(editing ? '/profile' : '/home');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'STORAGE_DISABLED') {
         setError('사진 업로드 저장소가 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.');
