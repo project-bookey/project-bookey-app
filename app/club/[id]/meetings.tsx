@@ -69,7 +69,7 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
   const clubId = Number(id);
   const router = useRouter();
   const qc = useQueryClient();
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const [open, setOpen] = useState(initialOpen && !ended);
   // 폼 아래쪽 칸(최대 인원·설명)을 누르면 '모임 열기'까지 키보드 위로 올린다.
   const scrollRef = useRef<ScrollView>(null);
@@ -179,12 +179,17 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
               <PickBox label="날짜" value={formatPickDate(date)} onPress={() => setShowDate(true)} />
               <PickBox label="시간" value={formatPickTime(time)} onPress={() => setShowTime(true)} />
             </View>
+            {/* iOS 선택기는 그대로 두면 기기 설정(밝게/어둡게)을 따라 그려져 앱 테마와 어긋난다 — themeVariant 로
+                앱 테마에 맞춘다. 고른 날짜는 앱의 선택 상태처럼 잉크(accentColor), 시간 휠 글자는 본문색.
+                Android 다이얼은 앱 위에 뜨는 시스템 창이라 기기 설정을 따른다. */}
             {showDate ? (
               <View>
                 <DateTimePicker
                   value={date}
                   mode="date"
                   display={Platform.OS === 'ios' ? 'inline' : 'calendar'}
+                  themeVariant={mode}
+                  accentColor={colors.ink}
                   minimumDate={new Date()}
                   onChange={changeDate}
                 />
@@ -199,6 +204,8 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
                   value={time}
                   mode="time"
                   display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+                  themeVariant={mode}
+                  textColor={colors.text}
                   minuteInterval={5}
                   onChange={changeTime}
                 />
