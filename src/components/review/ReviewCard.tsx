@@ -5,6 +5,8 @@ import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
+import { FinishedTag } from './FinishedTag';
+
 export type ReviewCardProps = {
   authorNickname: string;
   rating?: number | null;
@@ -14,7 +16,14 @@ export type ReviewCardProps = {
   createdAt: string;
   /** 아직 책 정보를 못 받았으면 '책'으로 대신한다. */
   bookTitle?: string;
+  /** 작성자가 이 책을 완독했으면 이름 옆에 '완독'. */
+  authorFinished: boolean;
   onOpenBook: () => void;
+  /** 내 리뷰일 때만 — 고치기·삭제가 발치 오른쪽에 선다. */
+  onEdit?: () => void;
+  onDelete?: () => void;
+  /** 삭제를 한 번 눌러 '한 번 더'를 기다리는 중. */
+  deleteConfirming?: boolean;
 };
 
 /**
@@ -22,11 +31,11 @@ export type ReviewCardProps = {
  *
  * 리뷰는 조각이 아니라 글이라 본문을 자르지 않고 전문을 그대로 편다. 독후감의 문장 조각과 달리
  * 왼쪽 악센트 선은 두지 않는다 — 인용이 아니라 자기 글이기 때문이다.
- * 삭제·수정은 아직 없다(서버에도 없음).
+ * 발치는 독후감 상세와 같은 배치 — 왼쪽은 이 글로 갈 곳('책 보기'), 오른쪽은 내 글을 다루는 '고치기'·'삭제'.
  */
 export function ReviewCard({
   authorNickname, rating, body, tags, createdAt,
-  bookTitle, onOpenBook,
+  bookTitle, authorFinished, onOpenBook, onEdit, onDelete, deleteConfirming = false,
 }: ReviewCardProps) {
   const { colors } = useTheme();
   const where = bookTitle ?? '책';
@@ -37,9 +46,12 @@ export function ReviewCard({
         {/* 리뷰 응답에는 작성자 사진이 없다 — 아바타는 늘 닉네임 이니셜로 선다. */}
         <Avatar nickname={authorNickname} />
         <View style={styles.authorText}>
-          <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
-            {authorNickname}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
+              {authorNickname}
+            </Text>
+            {authorFinished ? <FinishedTag /> : null}
+          </View>
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
             {where} · {formatRelative(createdAt)}
           </Text>
@@ -58,9 +70,21 @@ export function ReviewCard({
       ) : null}
 
       <View style={styles.footRow}>
-        <View style={styles.footRight}>
-          <FootAction label="책 보기" tone="accent" onPress={onOpenBook} accessibilityLabel={`${where} 상세`} />
-        </View>
+        <FootAction label="책 보기" tone="accent" onPress={onOpenBook} accessibilityLabel={`${where} 상세`} />
+        {onEdit || onDelete ? (
+          <View style={styles.footRight}>
+            {onEdit ? <FootAction label="고치기" onPress={onEdit} accessibilityLabel="리뷰 고치기" /> : null}
+            {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'. */}
+            {onDelete ? (
+              <FootAction
+                label={deleteConfirming ? '한 번 더' : '삭제'}
+                onPress={onDelete}
+                tone={deleteConfirming ? 'danger' : 'faint'}
+                accessibilityLabel={deleteConfirming ? '리뷰 삭제 확인' : '리뷰 삭제'}
+              />
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </Card>
   );
@@ -71,7 +95,8 @@ const styles = StyleSheet.create({
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
-  nickname: { lineHeight: 20 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  nickname: { lineHeight: 20, flexShrink: 1 },
   where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
   rating: { marginLeft: 'auto' },
   // 리뷰 본문 — 도서 상세 조각(14/23)보다 한 단 키운 읽기용 세리프. 인용이 아니라 좌측선은 없다.

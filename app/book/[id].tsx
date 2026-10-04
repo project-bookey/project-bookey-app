@@ -18,15 +18,15 @@ import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/ap
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
 import { LikeAction } from '@/components/post/LikeAction';
-import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
+import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
-import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
+import { KeyboardArea, KeyboardScroll, useKeyboardOpen } from '@/components/keyboard';
 import { MyRemark } from '@/components/remark/MyRemark';
 import { RemarkTicker } from '@/components/remark/RemarkTicker';
 import { useMyRemark, useSaveRemark } from '@/components/remark/queries';
 import { FinishReviewSheet, type FinishedBook } from '@/components/review/FinishReviewSheet';
+import { ReviewForm } from '@/components/review/ReviewForm';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
-import { RATING_WORDS, StarRating, ratingPrompt } from '@/components/review/StarRating';
 import { Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
@@ -959,9 +959,6 @@ function ReviewSection({
   const saveRemark = useSaveRemark(rid, bookId);
   const [remarkDraft, setRemarkDraft] = useState('');
   const [remarkPassed, setRemarkPassed] = useState(false);
-  // 리뷰 칸을 누르면 그 밑 '남기기'까지 키보드 위로 올린다.
-  const reveal = useKeyboardReveal();
-  const formActionsRef = useRef<View>(null);
 
   // 탭을 바꾸면 펼쳐져 있던 작성 폼은 닫는다 — 다른 탭 밑에 폼이 숨어 있지 않게.
   const switchTab = (next: RecordTab) => {
@@ -1057,56 +1054,18 @@ function ReviewSection({
       ) : (
         <>
           {open ? (
-            <View style={styles.formBlock}>
-              {/*
-                쓰는 칸도 목록의 리뷰 조각과 같은 모양 — 내 이름·별·글·받게 될 배지가 목록 조각과 같은 자리에 선다.
-                안쪽 입력 상자는 두지 않는다(이중 테두리). 쓰는 중인 조각만 테두리를 한 단 짙게 해 구분한다.
-              */}
-              <MemoScrap rotate={0} style={{ borderColor: colors.textFaint }}>
-                <View style={styles.scrapHead}>
-                  <Text numberOfLines={1} style={[typeScale.label, styles.scrapAuthor, { color: colors.text }]}>
-                    {me?.nickname ?? '나'}
-                  </Text>
-                  <View style={styles.scrapStars}>
-                    <StarRating value={rating} onChange={setRating} />
-                  </View>
-                </View>
-                <TextInput
-                  value={body}
-                  onChangeText={setBody}
-                  placeholder={ratingPrompt(rating)}
-                  placeholderTextColor={colors.textFaint}
-                  multiline
-                  accessibilityLabel="리뷰"
-                  onFocus={() => reveal(formActionsRef)}
-                  onContentSizeChange={() => reveal(formActionsRef, { onlyIfOpen: true })}
-                  style={[styles.scrapInput, { color: colors.text }]}
-                />
-                <Text style={[typeScale.caption, styles.scrapMeta, { color: rating > 0 ? colors.text : colors.textFaint }]}>
-                  {rating > 0 ? RATING_WORDS[rating] : '별점은 선택이에요'}
-                </Text>
-              </MemoScrap>
-              {errorMessage ? (
-                <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
-              ) : null}
-              {/* 앱 전체 순서 — [취소][주요 버튼]. 짧은 글은 '남기기'(댓글·한 마디와 같은 말). */}
-              <View ref={formActionsRef} style={styles.formActions}>
-                <Button
-                  label="취소"
-                  variant="outline"
-                  onPress={() => setOpen(false)}
-                  disabled={create.isPending}
-                  style={styles.formButton}
-                />
-                <Button
-                  label="남기기"
-                  onPress={() => create.mutate()}
-                  loading={create.isPending}
-                  disabled={body.trim().length === 0}
-                  style={styles.formButton}
-                />
-              </View>
-            </View>
+            <ReviewForm
+              nickname={me?.nickname ?? '나'}
+              rating={rating}
+              onRating={setRating}
+              body={body}
+              onBody={setBody}
+              submitLabel="남기기"
+              onSubmit={() => create.mutate()}
+              onCancel={() => setOpen(false)}
+              pending={create.isPending}
+              error={errorMessage}
+            />
           ) : null}
 
           {items.length === 0 ? (
@@ -1247,25 +1206,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
 
-  // 작성 조각 — 리뷰 조각(ReviewScrap)과 같은 머리·본문·메타 줄. 버튼 줄은 조각 밖 바로 아래.
-  formBlock: { gap: spacing.md },
-  scrapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  scrapAuthor: { flexShrink: 1 },
-  // 별 상자(44pt)의 오른쪽 여백만큼 당겨 별이 조각 안쪽 가장자리에 맞게 — 위아래도 상자만큼 되돌려 머리 줄 높이는 그대로.
-  scrapStars: { marginRight: -spacing.sm, marginVertical: -spacing.sm },
-  scrapInput: {
-    minHeight: 72,
-    maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '남기기'가 키보드 밑으로 밀려나지 않게
-    marginTop: spacing.sm,
-    padding: 0,
-    fontFamily: serif.regular,
-    fontSize: 15,
-    lineHeight: 24,
-    textAlignVertical: 'top',
-  },
-  scrapMeta: { alignSelf: 'flex-end', marginTop: spacing.sm },
-  formActions: { flexDirection: 'row', gap: spacing.sm },
-  formButton: { flex: 1 },
   // 리뷰|독후감 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
   tabHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   tabRow: { flexDirection: 'row', gap: spacing.lg },
