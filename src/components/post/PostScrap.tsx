@@ -5,6 +5,7 @@ import { MemoScrap } from '@/components/collage';
 import { ScrapAuthor } from '@/components/home/ScrapAuthor';
 import { META_LH, META_SIZE, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { VISIBILITY_LABEL } from '@/components/post/PostByline';
+import { LikeCount } from '@/components/post/LikeCount';
 import { ViewCount } from '@/components/post/ViewCount';
 import { spacing, typeScale, useTheme } from '@/theme';
 
@@ -37,7 +38,7 @@ const HOME_TEXT_MAX_H = QUOTE_MAX_H;
  * 오려 붙인 종잇조각이다. 쓰이는 자리마다 곁들이는 메타가 달라 variant 로 가른다.
  *
  * - `home`  — 홈 '오늘의 글' 스포트라이트. 머리에 작성자 행(ScrapAuthor: 아바타·닉네임·책)을
- *             세우고, 오른쪽 열에 `독후감` 태그와 `좋아요 n` 을 얹는다. 행 높이가 표지와 같게
+ *             세우고, 오른쪽 열에 `독후감` 태그와 좋아요(하트 + n)를 얹는다. 행 높이가 표지와 같게
  *             못 박혀 있어 글 상자는 인용 토큰 한 줄 자리다 — 그 한 줄은 제목이 쓰고 발췌는 빠진다.
  * - `book`  — 도서 상세. 책은 이미 아니까 누가 썼는지와 반응만.
  * - `profile` — 내 독후감. 내가 쓴 글이니 작성자 대신 어느 책·공개 범위·조회 수를 본다.
@@ -70,7 +71,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
           avatarUrl={post.authorAvatarUrl}
           where={post.bookTitle ?? '책 없음'}
           kind="독후감"
-          stat={`좋아요 ${post.likeCount}`}
+          likes={post.likeCount}
         />
       ) : null}
       <View style={home ? styles.homeText : undefined}>
@@ -93,7 +94,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
       </View>
 
       {/* 홈은 작성자·책·좋아요를 머리 행이 이미 보여 줘 메타 줄이 없다 — 못 박힌 행 높이 안에 들어간다. */}
-      {/* 프로필 메타는 조회를 눈 아이콘으로 끼우므로 행으로 잇는다 — 길어지면 책 제목만 줄어든다. */}
+      {/* 프로필·책 메타는 조회(눈)·좋아요(하트) 아이콘을 끼우므로 행으로 잇는다 — 길어지면 글자 쪽만 줄어든다. */}
       {home ? null : variant === 'profile' ? (
         <View style={[styles.metaRow, styles.metaGap]}>
           <Text numberOfLines={1} style={[metaText, styles.shrink]}>{post.bookTitle ?? '책 없음'}</Text>
@@ -101,9 +102,11 @@ export function PostScrap({ post, rotate, variant, onPress }: {
           <ViewCount count={post.viewCount} textStyle={metaText} />
         </View>
       ) : (
-        <Text numberOfLines={1} style={[metaText, styles.metaGap]}>
-          {`${post.authorNickname} · 좋아요 ${post.likeCount}`}
-        </Text>
+        <View style={[styles.metaRow, styles.metaGap]}>
+          <Text numberOfLines={1} style={[metaText, styles.shrink]}>{post.authorNickname}</Text>
+          <Text style={metaText}> · </Text>
+          <LikeCount count={post.likeCount} textStyle={metaText} />
+        </View>
       )}
     </MemoScrap>
   );
