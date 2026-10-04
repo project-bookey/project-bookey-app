@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
@@ -30,15 +30,17 @@ export default function ClubsScreen() {
   return (
     <PaperScreen>
       {/* 주요 행동은 '클럽 만들기' 하나 — 코드 참가는 outline 으로 낮춰 왼쪽에 둔다(앱 공통 순서). */}
-      <TourTarget id="club-actions" style={styles.actions}>
-        <Button
-          label="코드로 참가"
-          variant="outline"
-          onPress={() => router.push('/club/join')}
-          style={styles.action}
-        />
-        <Button label="클럽 만들기" onPress={() => router.push('/club/create')} style={styles.action} />
-      </TourTarget>
+      <View style={styles.actionsFrame}>
+        <TourTarget id="club-actions" style={styles.actions}>
+          <Button
+            label="코드로 참가"
+            variant="outline"
+            onPress={() => router.push('/club/join')}
+            style={styles.action}
+          />
+          <Button label="클럽 만들기" onPress={() => router.push('/club/create')} style={styles.action} />
+        </TourTarget>
+      </View>
 
       {clubs.isLoading ? <Loading /> : null}
 
@@ -77,8 +79,10 @@ export default function ClubsScreen() {
 }
 
 const styles = StyleSheet.create({
+  // 여백은 바깥 틀에 둔다 — 둘러보기 대상(actions)이 두 버튼만 감싸게.
+  actionsFrame: { ...layout.content, padding: spacing.lg },
   // 두 버튼은 같은 폭 — 서로 다른 동작이라 sm 이상 띄운다(오터치 방지).
-  actions: { ...layout.content, flexDirection: 'row', gap: spacing.sm, padding: spacing.lg },
+  actions: { flexDirection: 'row', gap: spacing.sm },
   action: { flex: 1 },
   // 카드 목록 — 구분선 대신 간격으로 띄운다. 아래는 하단 SectionNav 높이만큼 비운다.
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: NAV_CLEARANCE, gap: spacing.md },

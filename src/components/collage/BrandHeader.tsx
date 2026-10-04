@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { walletApi } from '@/api/endpoints';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
+import { useTourTarget } from '@/components/tour/TourTarget';
 import { hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
@@ -37,11 +38,13 @@ function BookmarkBalance() {
   const { colors } = useTheme();
   const { data } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
   const balance = data?.bookmarkBalance ?? 0;
+  const tourRef = useTourTarget('header-bookmarks');
 
   // 잔액 칩 전체가 하나의 버튼이다 — 24pt '+' 만 누르게 하면 손가락이 빗나간다(UX 철칙 Fitts).
   // 색은 글자색 — 헤더는 다섯 구역에 늘 떠 있어 악센트를 쓰면 화면마다 CTA 와 겹친다.
   return (
     <Pressable
+      ref={tourRef}
       onPress={() => router.push('/bookmarks')}
       hitSlop={BADGE_HIT_SLOP}
       accessibilityRole="button"

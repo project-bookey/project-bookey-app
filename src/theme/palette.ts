@@ -37,6 +37,8 @@ export type ColorTokens = {
   dangerSoft: string;
   /** 전면 딤 (모달 뒤) */
   scrimDim: string;
+  /** 앱 둘러보기 딤 — 비춘 구멍만 또렷하게 남도록 모달 딤보다 짙다. */
+  scrimFocus: string;
   /** 포스터 하단→투명 그라데이션 색 스톱. 렌더링은 화면 작업 때 expo-linear-gradient 로. */
   scrimStops: readonly [string, string];
   /** 배경 보조 톤 — 섹션 구분·서브 배경 */
@@ -92,6 +94,7 @@ export const darkColors: ColorTokens = {
   danger: '#FF6B60',
   dangerSoft: '#3A1714',
   scrimDim: 'rgba(0,0,0,0.55)',
+  scrimFocus: 'rgba(0,0,0,0.72)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
   bgAlt: '#131413',
   surfaceDeep: '#141712',
@@ -129,6 +132,7 @@ export const lightColors: ColorTokens = {
   danger: '#B3362B',
   dangerSoft: '#FBE4E1',
   scrimDim: 'rgba(0,0,0,0.45)',
+  scrimFocus: 'rgba(0,0,0,0.72)',
   scrimStops: ['transparent', 'rgba(0,0,0,0.85)'],
   bgAlt: '#f4f1ea',
   surfaceDeep: '#f1eee6',

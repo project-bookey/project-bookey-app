@@ -212,14 +212,14 @@ function FinishCard({ item, index, mine, onOpenBook }: {
 
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: NAV_CLEARANCE, gap: spacing.lg },
-  header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs },
+  // 좌우 여백은 여기서 준다 — 안쪽 줄(둘러보기 대상)이 여백까지 감싸면 강조 테두리가 화면 끝에 붙는다.
+  header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs, paddingHorizontal: spacing.lg },
   // 탭과 쓰기 버튼은 한 줄 — 탭(가로 ScrollView)이 남는 폭을 채워 버튼은 오른쪽 끝에 붙는다.
   // 서로 다른 동작이라 오터치를 막게 sm 이상 띄운다.
   chipRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
   },
   composeButton: {
     flexShrink: 0,

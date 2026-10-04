@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { useKeyboardOpen } from '@/components/keyboard';
+import { useTourTarget } from '@/components/tour/TourTarget';
 import { useTheme } from '@/theme';
 import { hairline, iconStroke, pressedStyle, spacing } from '@/theme/tokens';
 
@@ -34,6 +35,9 @@ const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[
  * 구역 화면은 모두 이 값 하나를 쓴다.
  */
 export const NAV_CLEARANCE = 104;
+
+/** 떠 있는 유리 바의 높이 — 바 바로 위에 붙는 것(둘러보기 카드)이 같은 값을 쓴다. */
+export const NAV_BAR_HEIGHT = 60;
 
 let lastTabIndex = SECTIONS.findIndex((section) => section.key === 'shelf');
 
@@ -248,22 +252,17 @@ export function SectionNav({
       ) : null}
       {SECTIONS.map((section, index) => {
         const selected = section.key === active || (active === 'explore' && section.key === 'shelf');
-        const visuallySelected = index === visualIndex;
         return (
-          <Pressable
+          <SectionTab
             key={section.key}
+            section={section}
+            selected={selected}
+            visuallySelected={index === visualIndex}
             onPress={() => {
               if (selected) return;
               selectIndex(index);
             }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected }}
-            accessibilityLabel={section.label}
-            hitSlop={6}
-            style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
-          >
-            <SectionIcon name={section.key} color={visuallySelected ? colors.onAccent : colors.textMuted} />
-          </Pressable>
+          />
         );
       })}
     </View>
@@ -309,6 +308,30 @@ export function SectionNav({
         </BlurView>
       )}
     </View>
+  );
+}
+
+/** 탭 하나 — 둘러보기가 이 아이콘을 비출 수 있게 `nav-<구역>` 대상으로 올린다(아이콘만 있는 탭의 이름을 익히는 자리). */
+function SectionTab({ section, selected, visuallySelected, onPress }: {
+  section: (typeof SECTIONS)[number];
+  selected: boolean;
+  visuallySelected: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const tourRef = useTourTarget(`nav-${section.route}`);
+  return (
+    <Pressable
+      ref={tourRef}
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityState={{ selected }}
+      accessibilityLabel={section.label}
+      hitSlop={6}
+      style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
+    >
+      <SectionIcon name={section.key} color={visuallySelected ? colors.onAccent : colors.textMuted} />
+    </Pressable>
   );
 }
 
@@ -377,7 +400,7 @@ const styles = StyleSheet.create({
     elevation: 14,
   },
   glass: {
-    height: 60,
+    height: NAV_BAR_HEIGHT,
     borderRadius: 30,
     borderWidth: hairline,
     overflow: 'hidden',

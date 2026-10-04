@@ -18,7 +18,7 @@ import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { LikeCount } from '@/components/post/LikeCount';
 import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { TourTarget } from '@/components/tour/TourTarget';
+import { useTourTarget } from '@/components/tour/TourTarget';
 import {
   Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
 } from '@/components/ui';
@@ -79,6 +79,8 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
   const openFollows = (tab: 'FOLLOWER' | 'FOLLOWING') => {
     router.push({ pathname: '/follows', params: { tab } });
   };
+  // 둘러보기 마지막 단계가 비추는 설정 버튼 — 남의 페이지에선 버튼이 없어 아무것도 등록되지 않는다.
+  const settingsTourRef = useTourTarget('profile-settings');
 
   // 내 서재·통계는 홈·서재 화면과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
   const profile = useQuery({
@@ -267,22 +269,21 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
           </View>
           {mine ? (
             // 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다.
-            <TourTarget id="profile-settings" style={styles.settingsTarget}>
-              <Pressable
-                onPress={() => router.push('/settings')}
-                accessibilityRole="button"
-                accessibilityLabel="설정"
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.settingsButton,
-                  { borderColor: colors.control, backgroundColor: colors.surface },
-                  pressed && styles.pressed,
-                ]}
-              >
-                <GearLine size={14} color={colors.text} />
-                <Text style={[typeScale.monoLabel, { color: colors.text }]}>설정</Text>
-              </Pressable>
-            </TourTarget>
+            <Pressable
+              ref={settingsTourRef}
+              onPress={() => router.push('/settings')}
+              accessibilityRole="button"
+              accessibilityLabel="설정"
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.settingsButton,
+                { borderColor: colors.control, backgroundColor: colors.surface },
+                pressed && styles.pressed,
+              ]}
+            >
+              <GearLine size={14} color={colors.text} />
+              <Text style={[typeScale.monoLabel, { color: colors.text }]}>설정</Text>
+            </Pressable>
           ) : userId != null ? (
             // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
             <View style={styles.followSlot}>
@@ -310,7 +311,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
       </View>
 
       {/* 2. 오늘(나만) — 지갑이 출석보다 위다. 출석 카드는 응답이 와야 그려지므로 아래에 두면
-          지갑이 늦게 밀려 내려가 오터치가 나고 튜토리얼 구멍(profile-wallet)도 어긋난다. */}
+          지갑이 늦게 밀려 내려가 오터치가 난다. */}
       {mine ? (
         <View style={styles.group}>
           <MyWalletRow />
@@ -466,7 +467,7 @@ function MyWalletRow() {
   const visitCount = myProfile.data?.visitCount ?? 0;
 
   return (
-    <TourTarget id="profile-wallet" style={[styles.block, styles.scrapRow]}>
+    <View style={[styles.block, styles.scrapRow]}>
       <Pressable
         onPress={() => router.push('/wallet')}
         accessibilityRole="button"
@@ -500,7 +501,7 @@ function MyWalletRow() {
           <Text style={[typeScale.monoEyebrow, styles.visitAction, { color: colors.onNote }]}>{linkLabel('확인하기')}</Text>
         </StickyNote>
       </Pressable>
-    </TourTarget>
+    </View>
   );
 }
 
@@ -885,6 +886,7 @@ const styles = StyleSheet.create({
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
   settingsButton: {
+    alignSelf: 'flex-end',
     height: 30,
     paddingHorizontal: spacing.sm + 2,
     borderRadius: radius.sm,
@@ -893,7 +895,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-  settingsTarget: { alignSelf: 'flex-end' },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 본문 크기(15)로 키웠다(2026-10-04).
   socialText: { fontFamily: sans.regular, fontSize: 16, lineHeight: 24 },

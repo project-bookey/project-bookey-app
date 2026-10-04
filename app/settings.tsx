@@ -184,10 +184,15 @@ export default function SettingsScreen() {
           <View style={styles.footer}>
             <View style={styles.links}>
               <Rule />
+              {/* 둘러보기는 메인 탭 위에서만 뜬다 — 새로 쌓지 않고 왔던 '나' 화면으로 돌아가 그 자리에서 시작한다. */}
               <Button
                 label="앱 사용법 다시 보기"
                 variant="ghost"
-                onPress={startTour}
+                onPress={() => {
+                  startTour();
+                  if (router.canGoBack()) router.back();
+                  else router.replace('/home');
+                }}
               />
               <Button
                 label="고객문의"

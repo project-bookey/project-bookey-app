@@ -16,7 +16,7 @@ import { ClubRow } from '@/components/home/ClubRow';
 import { HeroPager } from '@/components/home/HeroPager';
 import { HomeSection } from '@/components/home/HomeSection';
 import { HomeScraps } from '@/components/home/HomeScraps';
-import { TourTarget } from '@/components/tour/TourTarget';
+import { useTourTarget } from '@/components/tour/TourTarget';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 홈 — 검색 바 → 배너 → 히어로(읽는 중 전권) → 오늘의 글 → 읽고 싶은 → 인기 → 추천 → 클럽 */
@@ -71,6 +71,8 @@ export default function HomeScreen() {
     queryClient.invalidateQueries({ queryKey: POST_HOME_KEY });
   };
 
+  const searchTourRef = useTourTarget('home-search');
+
   const openBook = (b: RowBook) => {
     if (b.bookId != null) router.push(`/book/${b.bookId}`);
   };
@@ -91,17 +93,16 @@ export default function HomeScreen() {
       >
         {/* 구역(서가·탐색·광장·나) 이동은 push 가 아니라 navigate 다 — push 하면
             서가↔탐색을 오갈 때마다 스택에 같은 구역이 쌓여 뒤로 가기가 길어진다. */}
-        <TourTarget id="home-search">
-          <Pressable
-            onPress={() => router.navigate('/book-search')}
-            style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
-            accessibilityRole="button"
-            accessibilityLabel="책 검색"
-          >
-            <SearchGlyph color={colors.textMuted} />
-            <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
-          </Pressable>
-        </TourTarget>
+        <Pressable
+          ref={searchTourRef}
+          onPress={() => router.navigate('/book-search')}
+          style={[styles.searchBar, { borderColor: colors.lineStrong, backgroundColor: colors.surface }]}
+          accessibilityRole="button"
+          accessibilityLabel="책 검색"
+        >
+          <SearchGlyph color={colors.textMuted} />
+          <Text style={[typeScale.body, { color: colors.textFaint }]}>책 제목, 저자 검색</Text>
+        </Pressable>
 
         <BannerCarousel banners={banners.data ?? []} />
 
