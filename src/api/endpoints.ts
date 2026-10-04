@@ -98,6 +98,13 @@ export const authApi = {
       auth: false,
       body: { email },
     }),
+  /** 가입 제출 전에 이메일 인증 코드를 확인한다. 성공해도 코드는 실제 가입 때까지 소진하지 않는다. */
+  verifyEmailCode: (email: string, code: string) =>
+    api<void>("/api/v1/auth/email/code/verify", {
+      method: "POST",
+      auth: false,
+      body: { email, code },
+    }),
   /** 비밀번호 재설정 코드 발급 — 가입된 이메일만(없으면 EMAIL_NOT_REGISTERED). 로컬 서버는 devCode 를 동봉한다. */
   requestPasswordResetCode: (email: string) =>
     api<EmailCodeResponse>("/api/v1/auth/password/code", {
@@ -509,7 +516,7 @@ export type BookmarkPurchaseVerify = {
 };
 
 export const bookmarkPurchaseApi = {
-  begin: (quantity: number, provider: SubscriptionProvider = "TOSS") =>
+  begin: (quantity: number, provider: SubscriptionProvider) =>
     api<BookmarkPurchaseCheckout>("/api/v1/bookmark-purchases/checkout", {
       method: "POST",
       body: { provider, quantity },

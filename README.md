@@ -66,6 +66,22 @@ BOOKEY_API_URL=https://api.bookey.app npm run types
 | 키 | 설명 |
 |---|---|
 | `EXPO_PUBLIC_API_URL` | API 주소. 없으면 개발 서버 호스트에서 유추 |
+| `EXPO_PUBLIC_ENABLE_PAYMENTS` | 스토어 상품 구성이 끝난 빌드에서만 `true` |
+| `EXPO_PUBLIC_SUBSCRIPTION_PRODUCT_ID` | App Store/Google Play 공통 구독 상품 ID |
+| `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 플랫폼별 Google OAuth 클라이언트 ID |
+
+Apple/Google 인앱 결제는 Expo Go에서 동작하지 않으므로 development build가 필요합니다.
+스토어에는 `bookey.plus.monthly` 구독과 `bookey.bookmark.5`, `.10`, `.50` 소비성 상품을 먼저 생성해야 합니다.
+
+Apple Developer Program 가입 전에는 Xcode의 로컬 StoreKit 환경으로 구매 콜백을 확인할 수 있습니다.
+`.env.local`에서 `EXPO_PUBLIC_ENABLE_PAYMENTS=true`, `EXPO_PUBLIC_LOCAL_STOREKIT_TEST=true`로 설정한 뒤 실행합니다.
+
+```bash
+npm run ios:storekit
+```
+
+이 모드는 `__DEV__`인 iOS 빌드에서만 서버 검증을 생략하며 재화를 실제로 지급하지 않습니다.
+운영 및 Sandbox 테스트에서는 `EXPO_PUBLIC_LOCAL_STOREKIT_TEST=false`를 사용해야 합니다.
 
 ## 검사
 

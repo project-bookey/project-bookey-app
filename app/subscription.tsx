@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIAP, type Purchase } from 'expo-iap';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -17,26 +19,87 @@ const FEATURE_COPY: Record<string, string> = {
   likers: '내 글에 좋아요를 누른 사람을 확인할 수 있어요.',
 };
 const PAYMENTS_ENABLED = process.env.EXPO_PUBLIC_ENABLE_PAYMENTS === 'true';
+const SUBSCRIPTION_PRODUCT_ID = process.env.EXPO_PUBLIC_SUBSCRIPTION_PRODUCT_ID || 'bookey.plus.monthly';
+const PENDING_CHECKOUT_KEY = 'bookey.pendingSubscriptionCheckout';
+const LOCAL_STOREKIT_TEST = __DEV__
+  && Platform.OS === 'ios'
+  && process.env.EXPO_PUBLIC_LOCAL_STOREKIT_TEST === 'true';
 
 export default function SubscriptionScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { feature } = useLocalSearchParams<{ feature?: string }>();
   const [notice, setNotice] = useState<string | null>(null);
+  const pendingCheckout = useRef<Awaited<ReturnType<typeof subscriptionApi.begin>> | null>(null);
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
+  const completePurchase = async (purchase: Purchase) => {
+    const view = pendingCheckout.current;
+    if (!view || purchase.productId !== view.productId) return;
+    if (LOCAL_STOREKIT_TEST) {
+      await finishTransaction({ purchase, isConsumable: false });
+      pendingCheckout.current = null;
+      await AsyncStorage.removeItem(PENDING_CHECKOUT_KEY);
+      setNotice(`로컬 구독 성공 콜백을 받았습니다: ${purchase.productId}`);
+      return;
+    }
+    const provider: SubscriptionProvider = Platform.OS === 'ios' ? 'APPLE' : 'GOOGLE';
+    await subscriptionApi.verify({
+      provider,
+      productId: view.productId,
+      orderId: view.orderId,
+      amountKrw: view.amountKrw,
+      receiptData: purchase.purchaseToken ?? undefined,
+      originalTransactionId: purchase.transactionId ?? purchase.id,
+    });
+    await finishTransaction({ purchase, isConsumable: false });
+    pendingCheckout.current = null;
+    await AsyncStorage.removeItem(PENDING_CHECKOUT_KEY);
+    await wallet.refetch();
+    setNotice('구독이 시작되었습니다.');
+  };
+  const { connected, subscriptions, fetchProducts, requestPurchase, finishTransaction } = useIAP({
+    onPurchaseSuccess: (purchase) => void completePurchase(purchase).catch((e) => {
+      setNotice(e instanceof Error ? e.message : '결제 검증에 실패했습니다.');
+    }),
+    onPurchaseError: (e) => setNotice(e.message || '스토어 결제를 완료하지 못했습니다.'),
+  });
+
+  useEffect(() => {
+    void AsyncStorage.getItem(PENDING_CHECKOUT_KEY).then((raw) => {
+      if (raw) pendingCheckout.current = JSON.parse(raw) as Awaited<ReturnType<typeof subscriptionApi.begin>>;
+    }).catch(() => AsyncStorage.removeItem(PENDING_CHECKOUT_KEY));
+  }, []);
+
+  useEffect(() => {
+    if (connected) void fetchProducts({ skus: [SUBSCRIPTION_PRODUCT_ID], type: 'subs' });
+  }, [connected, fetchProducts]);
+
   const checkout = useMutation({
     mutationFn: (provider: SubscriptionProvider) => subscriptionApi.begin(provider),
     onMutate: () => setNotice(null),
-    onSuccess: (view, provider) => {
-      if (provider === 'APPLE') {
-        setNotice('App Store 결제는 development build에서 테스트할 수 있습니다. 결제 후 거래 ID는 서버에서 Apple로 재검증합니다.');
-        return;
-      }
-      setNotice('Google Play 결제는 아직 막아 두었습니다.');
+    onSuccess: async (view) => {
+      pendingCheckout.current = view;
+      await AsyncStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify(view));
+      const androidProduct = subscriptions.find((product) => product.id === view.productId && product.platform === 'android');
+      const offerToken = androidProduct?.subscriptionOffers?.[0]?.offerTokenAndroid;
+      await requestPurchase({
+        type: 'subs',
+        request: Platform.OS === 'ios'
+          ? { apple: { sku: view.productId } }
+          : {
+              google: {
+                skus: [view.productId],
+                subscriptionOffers: offerToken ? [{ sku: view.productId, offerToken }] : undefined,
+              },
+            },
+      });
     },
   });
 
-  const price = wallet.data?.subscriptionPriceKrw ?? 17900;
+  const storeProduct = subscriptions.find((product) => product.id === SUBSCRIPTION_PRODUCT_ID);
+  const price = storeProduct?.displayPrice
+    ?? `${(LOCAL_STOREKIT_TEST ? 5900 : (wallet.data?.subscriptionPriceKrw ?? 5900)).toLocaleString()}원`;
+  const storeUnavailable = !connected || !storeProduct;
   const featureCopy = feature ? FEATURE_COPY[feature] : null;
   const error = checkout.error instanceof ApiError
     ? checkout.error.message
@@ -59,7 +122,7 @@ export default function SubscriptionScreen() {
               구독하면 소셜 신호를 더 자세히 보고, 매달 엽서와 우표를 받아 대화를 이어갈 수 있습니다.
             </Text>
             <View style={styles.priceRow}>
-              <Text style={[styles.price, { color: colors.text }]}>{price.toLocaleString()}원</Text>
+              <Text style={[styles.price, { color: colors.text }]}>{price}</Text>
               <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>/ 월</Text>
             </View>
           </Card>
@@ -85,7 +148,7 @@ export default function SubscriptionScreen() {
                   label={PAYMENTS_ENABLED ? 'Apple로 구독하기' : 'App Store 결제 준비 중'}
                   onPress={() => checkout.mutate('APPLE')}
                   loading={checkout.isPending}
-                  disabled={!PAYMENTS_ENABLED}
+                  disabled={!PAYMENTS_ENABLED || (!LOCAL_STOREKIT_TEST && storeUnavailable)}
                 />
               ) : null}
               {Platform.OS === 'android' ? (
@@ -93,7 +156,7 @@ export default function SubscriptionScreen() {
                   label={PAYMENTS_ENABLED ? 'Google Play로 구독하기' : 'Google Play 결제 준비 중'}
                   onPress={() => checkout.mutate('GOOGLE')}
                   loading={checkout.isPending}
-                  disabled={!PAYMENTS_ENABLED}
+                  disabled={!PAYMENTS_ENABLED || storeUnavailable}
                 />
               ) : null}
             </View>

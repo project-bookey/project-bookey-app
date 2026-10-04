@@ -74,10 +74,10 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ title: 'BOOKEY' }} />
             <Stack.Screen name="library" options={{ title: '서재' }} />
             <Stack.Screen name="book-search" options={{ title: '도서 탐색' }} />
-            <Stack.Screen name="login" options={{ title: '로그인' }} />
+            <Stack.Screen name="login" options={{ title: '로그인', gestureEnabled: false }} />
             <Stack.Screen name="password-reset" options={{ title: '비밀번호 찾기' }} />
             <Stack.Screen name="onboarding" options={{ title: '환영합니다' }} />
-            <Stack.Screen name="profile-photo" options={{ title: '프로필 사진' }} />
+            <Stack.Screen name="profile-photo" options={{ title: '프로필 사진', gestureEnabled: false }} />
             <Stack.Screen name="profile-edit" options={{ title: '프로필 편집' }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
             <Stack.Screen name="bookmarks" options={{ title: '책갈피 구매' }} />

@@ -1,0 +1,104 @@
+{
+  "identifier" : "C7A50802-4B68-4A04-B42F-2D2EBF921A9D",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "1000",
+      "familyShareable" : false,
+      "internalID" : "8CF26231-C044-4E67-B30C-0ADBF8B1B1A4",
+      "localizations" : [
+        {
+          "description" : "책갈피 5개",
+          "displayName" : "책갈피 5개",
+          "locale" : "ko_KR"
+        }
+      ],
+      "productID" : "bookey.bookmark.5",
+      "referenceName" : "Bookey Bookmark 5",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2000",
+      "familyShareable" : false,
+      "internalID" : "80D13251-C446-43CC-99F5-A9E5A4D7C508",
+      "localizations" : [
+        {
+          "description" : "보너스 1개를 포함한 책갈피 11개",
+          "displayName" : "책갈피 10개 + 보너스 1개",
+          "locale" : "ko_KR"
+        }
+      ],
+      "productID" : "bookey.bookmark.10",
+      "referenceName" : "Bookey Bookmark 10",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "10000",
+      "familyShareable" : false,
+      "internalID" : "6FB08AB2-A847-4C09-B26F-B2EFC810BDA3",
+      "localizations" : [
+        {
+          "description" : "보너스 5개를 포함한 책갈피 55개",
+          "displayName" : "책갈피 50개 + 보너스 5개",
+          "locale" : "ko_KR"
+        }
+      ],
+      "productID" : "bookey.bookmark.50",
+      "referenceName" : "Bookey Bookmark 50",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ko_KR",
+    "_storefront" : "KOR",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "DC2F1C65-CF30-4B61-80C8-BB9F9232B7BA",
+      "localizations" : [
+
+      ],
+      "name" : "Bookey Plus",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "5900",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "A5427E3F-C969-446F-98B2-49E04A3CC029",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Bookey Plus 월간 구독",
+              "displayName" : "Bookey Plus",
+              "locale" : "ko_KR"
+            }
+          ],
+          "productID" : "bookey.plus.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Bookey Plus Monthly",
+          "subscriptionGroupID" : "DC2F1C65-CF30-4B61-80C8-BB9F9232B7BA",
+          "type" : "RecurringSubscription",
+          "winBackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
