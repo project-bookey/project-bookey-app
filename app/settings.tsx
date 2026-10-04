@@ -231,6 +231,8 @@ export default function SettingsScreen() {
                 variant="ghost"
                 onPress={async () => {
                   await logout();
+                  // 메인 탭까지 걷어 내고 로그인만 남긴다 — 밑에 남겨 두면 다음 로그인 때 메인 탭이 한 벌 더 쌓인다.
+                  if (router.canDismiss()) router.dismissAll();
                   router.replace('/login');
                 }}
               />
@@ -248,6 +250,8 @@ export default function SettingsScreen() {
                   try {
                     await deleteAccount();
                     queryClient.clear();
+                    // 로그아웃과 같다 — 메인 탭을 밑에 남기지 않는다.
+                    if (router.canDismiss()) router.dismissAll();
                     router.replace('/login');
                   } catch {
                     notify('계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
