@@ -17,6 +17,8 @@ export type PickedBook = {
   bookId: number;
   title: string;
   coverUrl?: string;
+  /** 저자 — 독후감 쓰기의 책 줄에 쓴다. 고치는 글처럼 모르면 없다. */
+  author?: string;
   recordId?: number;
   shelfStatus?: 'READING' | 'FINISHED';
 };
@@ -53,13 +55,13 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
   const readingPicks: PickedBook[] = (reading.data?.content ?? [])
     .filter((r) => r.book?.id != null)
     .map((r) => ({
-      bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id, shelfStatus: 'READING',
+      bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, author: r.book!.author, recordId: r.id, shelfStatus: 'READING',
     }));
   const readingIds = new Set(readingPicks.map((book) => book.bookId));
   const finishedPicks: PickedBook[] = (finished.data?.content ?? [])
     .filter((r) => r.book?.id != null && !readingIds.has(r.book.id))
     .map((r) => ({
-      bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, recordId: r.id, shelfStatus: 'FINISHED',
+      bookId: r.book!.id, title: r.book!.title, coverUrl: r.book!.coverUrl, author: r.book!.author, recordId: r.id, shelfStatus: 'FINISHED',
     }));
   const quickPicks = [...readingPicks, ...finishedPicks];
 
@@ -80,6 +82,7 @@ export function useBookPicker(opts?: { initial?: PickedBook | null }): {
     bookId: b.id,
     title: b.title,
     coverUrl: b.coverUrl,
+    author: b.author,
     // 검색으로 골라도 내 서재에 읽는 중 기록이 있으면 그 기록에 매단다.
     recordId: quickPicks.find((q) => q.bookId === b.id)?.recordId,
   }));

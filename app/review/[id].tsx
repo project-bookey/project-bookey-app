@@ -10,9 +10,6 @@ import { ReviewCard } from '@/components/review/ReviewCard';
 import { EmptyState, linkLabel } from '@/components/ui';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 상세 카드는 살짝만 기울인다 — 읽는 화면이라 얌전하게. */
-const CARD_TILT = -0.6;
-
 /**
  * 리뷰 상세 — 도서 상세의 리뷰 조각에서 들어온다. 댓글 기능은 막고 본문만 펼친다.
  */
@@ -39,7 +36,6 @@ export default function ReviewDetailScreen() {
 
   const article = review.data ? (
     <ReviewCard
-      tilt={CARD_TILT}
       authorNickname={review.data.authorNickname}
       rating={review.data.rating}
       verificationLevel={review.data.verificationLevel}

@@ -8,20 +8,19 @@ import { serif } from '@/theme/tokens';
 import { VERIFICATION_LABEL } from './verification';
 
 /**
- * 리뷰 조각 — 도서 상세에 오려 붙인 짧은 메모. 통째로 눌러 리뷰 상세로 간다.
+ * 리뷰 조각 — 도서 상세에 붙인 짧은 메모. 통째로 눌러 리뷰 상세로 간다.
  * 전문은 상세에서 읽으라고 두 줄까지만 보이고, 메타 줄에는 검증 등급만 남긴다.
+ * 기울이지 않는다 — 읽는 목록이라 반듯하게 둔다(사용자 결정, 2026-10-04).
  */
-export function ReviewScrap({ review, rotate, onPress }: {
+export function ReviewScrap({ review, onPress }: {
   review: Review;
-  /** 기울기(도). 목록에서 교차 회전으로 붙인 티를 낸다. */
-  rotate: number;
   onPress: () => void;
 }) {
   const { colors } = useTheme();
   const verified = review.verificationLevel === 'VERIFIED_FULL';
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="리뷰 상세">
-      <MemoScrap rotate={rotate}>
+      <MemoScrap rotate={0}>
         <View style={styles.head}>
           <Text numberOfLines={1} style={[typeScale.label, styles.author, { color: colors.text }]}>
             {review.authorNickname}

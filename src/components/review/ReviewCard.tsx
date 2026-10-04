@@ -24,8 +24,6 @@ export type ReviewCardProps = {
   createdAt: string;
   /** 아직 책 정보를 못 받았으면 '책'으로 대신한다. */
   bookTitle?: string;
-  /** 카드 회전(도). 상세는 살짝만. */
-  tilt?: number;
   onOpenBook: () => void;
 };
 
@@ -38,14 +36,14 @@ export type ReviewCardProps = {
  */
 export function ReviewCard({
   authorNickname, rating, verificationLevel, body, tags, createdAt,
-  bookTitle, tilt = 0, onOpenBook,
+  bookTitle, onOpenBook,
 }: ReviewCardProps) {
   const { colors } = useTheme();
   const where = bookTitle ?? '책';
   const verified = verificationLevel === 'VERIFIED_FULL';
 
   return (
-    <Card style={{ ...styles.card, transform: [{ rotate: `${tilt}deg` }] }}>
+    <Card style={styles.card}>
       <View style={styles.authorRow}>
         {/* 리뷰 응답에는 작성자 사진이 없다 — 아바타는 늘 닉네임 이니셜로 선다. */}
         <Avatar nickname={authorNickname} />

@@ -13,10 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
-import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
+import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
-import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
+import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
 import { FinishReviewSheet, type FinishedBook } from '@/components/review/FinishReviewSheet';
@@ -121,6 +121,8 @@ export default function BookDetailScreen() {
   // 이 화면에서 '완독 처리'를 눌렀는지 — 타이머에서 넘어온 완독과 같은 시트를 띄운다. 한 번 닫으면 다시 띄우지 않는다.
   const [justFinished, setJustFinished] = useState(false);
   const [finishPromptClosed, setFinishPromptClosed] = useState(false);
+  // 리뷰를 쓰는 중인지 — 그동안은 하단 '독서 시작'을 숨겨 초록 버튼을 '남기기' 하나로 둔다(UX 철칙 Von Restorff).
+  const [reviewComposing, setReviewComposing] = useState(false);
 
   const book = useQuery({
     queryKey: ['book', bookId],
@@ -192,7 +194,8 @@ export default function BookDetailScreen() {
       : null;
   // 내 기록이 있으면 '독서 시작'을 화면 하단에 붙여 둔다 — 진척 카드 안에 두면 소개·목차를 한참
   // 내려야 닿는다(UX 철칙 Fitts). 누르면 타이머가 바로 측정을 시작한다.
-  // 키보드가 떠 있는 동안(리뷰 쓰기)은 숨긴다 — 리뷰 폼이 키보드 위로 올라오면 그 자리를 CTA 가 덮는다.
+  // 키보드가 떠 있는 동안과 리뷰를 쓰는 동안은 숨긴다 — 리뷰 폼이 키보드 위로 올라오면 그 자리를 CTA 가 덮고,
+  // 폼의 '남기기'와 초록 버튼이 둘이 된다.
   const keyboardOpen = useKeyboardOpen();
   const hasStartCta = record.data != null && progress != null;
   const ctaBottom = Math.max(insets.bottom, spacing.lg);
@@ -385,11 +388,14 @@ export default function BookDetailScreen() {
             finishedBook={finishedBook}
             roundStartedAt={record.data?.startedAt}
             onFinishPromptClose={() => setFinishPromptClosed(true)}
+            expectedLevel={verification.data?.expectedLevel}
+            composing={reviewComposing}
+            onComposingChange={setReviewComposing}
           />
         </View>
       </KeyboardScroll>
 
-      {hasStartCta && !keyboardOpen ? (
+      {hasStartCta && !keyboardOpen && !reviewComposing ? (
         // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '한 조각 남기기'와 같은 만듦새.
         <LinearGradient
           colors={[`${colors.bg}00`, colors.bg]}
@@ -962,7 +968,9 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
  * 방금 완독한 책(finishedBook)이면 완독 리뷰 시트도 여기서 띄운다 — 리뷰 목록·작성 상태를 이 섹션이 쥐고 있어서
  * 시트와 인라인 폼이 같은 별점·글을 나눠 쓴다.
  */
-function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose }: {
+function ReviewSection({
+  bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose, expectedLevel, composing, onComposingChange,
+}: {
   bookId: number;
   rid: number | null;
   colors: ColorTokens;
@@ -970,10 +978,16 @@ function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFi
   /** 이번 회차를 시작한 때 — 그 뒤에 쓴 내 리뷰가 있으면 이 기록엔 이미 리뷰가 있다(기록당 하나). */
   roundStartedAt?: string;
   onFinishPromptClose: () => void;
+  /** 지금 쓰면 받게 될 검증 배지 — 작성 조각의 메타 줄에 목록 조각과 같은 자리로 미리 붙인다. */
+  expectedLevel?: VerificationLevel;
+  /** 작성 폼이 펼쳐져 있는지 — 화면이 하단 CTA 를 숨기려고 쥔다. */
+  composing: boolean;
+  onComposingChange: (composing: boolean) => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const myId = useAuth((state) => state.user?.id);
+  const me = useAuth((state) => state.user);
+  const myId = me?.id;
   const reviews = useQuery({
     queryKey: bookReviewsKey(bookId),
     queryFn: () => bookApi.reviews(bookId),
@@ -981,7 +995,8 @@ function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFi
   });
 
   const [tab, setTab] = useState<RecordTab>('REVIEW');
-  const [open, setOpen] = useState(false);
+  const open = composing;
+  const setOpen = onComposingChange;
   const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
@@ -1061,25 +1076,44 @@ function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFi
       ) : (
         <>
           {open ? (
-            <Card style={styles.formCard}>
-              <View style={styles.stars}>
-                <StarRating value={rating} onChange={setRating} />
-                <Text style={[typeScale.caption, { flex: 1, color: rating > 0 ? colors.text : colors.textFaint, marginLeft: spacing.xs }]}>
-                  {rating > 0 ? RATING_WORDS[rating] : '별점 선택 (선택 사항)'}
-                </Text>
-              </View>
-              <TextInput
-                value={body}
-                onChangeText={setBody}
-                placeholder={ratingPrompt(rating)}
-                placeholderTextColor={colors.textFaint}
-                multiline
-                onFocus={() => reveal(formActionsRef)}
-                onContentSizeChange={() => reveal(formActionsRef, { onlyIfOpen: true })}
-                style={[styles.reviewInput, {
-                  backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
-                }]}
-              />
+            <View style={styles.formBlock}>
+              {/*
+                쓰는 칸도 목록의 리뷰 조각과 같은 모양 — 내 이름·별·글·받게 될 배지가 목록 조각과 같은 자리에 선다.
+                안쪽 입력 상자는 두지 않는다(이중 테두리). 쓰는 중인 조각만 테두리를 한 단 짙게 해 구분한다.
+              */}
+              <MemoScrap rotate={0} style={{ borderColor: colors.textFaint }}>
+                <View style={styles.scrapHead}>
+                  <Text numberOfLines={1} style={[typeScale.label, styles.scrapAuthor, { color: colors.text }]}>
+                    {me?.nickname ?? '나'}
+                  </Text>
+                  <View style={styles.scrapStars}>
+                    <StarRating value={rating} onChange={setRating} />
+                  </View>
+                </View>
+                <TextInput
+                  value={body}
+                  onChangeText={setBody}
+                  placeholder={ratingPrompt(rating)}
+                  placeholderTextColor={colors.textFaint}
+                  multiline
+                  accessibilityLabel="리뷰"
+                  onFocus={() => reveal(formActionsRef)}
+                  onContentSizeChange={() => reveal(formActionsRef, { onlyIfOpen: true })}
+                  style={[styles.scrapInput, { color: colors.text }]}
+                />
+                <View style={styles.scrapMeta}>
+                  {expectedLevel ? (
+                    <Text style={[typeScale.monoLabel, styles.scrapBadge, {
+                      color: expectedLevel === 'VERIFIED_FULL' ? colors.accent : colors.textFaint,
+                    }]}>
+                      {VERIFICATION_LABEL[expectedLevel]}
+                    </Text>
+                  ) : <View />}
+                  <Text style={[typeScale.caption, { color: rating > 0 ? colors.text : colors.textFaint }]}>
+                    {rating > 0 ? RATING_WORDS[rating] : '별점은 선택이에요'}
+                  </Text>
+                </View>
+              </MemoScrap>
               {errorMessage ? (
                 <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
               ) : null}
@@ -1100,7 +1134,7 @@ function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFi
                   style={styles.formButton}
                 />
               </View>
-            </Card>
+            </View>
           ) : null}
 
           {items.length === 0 ? (
@@ -1111,12 +1145,11 @@ function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFi
             </Card>
           ) : (
             <View style={styles.reviewList}>
-              {/* 오려 붙인 메모 조각 — 인덱스 기준 ±1° 교차 회전으로 붙인 티를 낸다. 눌러서 전문을 읽는다. */}
-              {items.map((review, index) => (
+              {/* 붙인 메모 조각 — 반듯하게 쌓는다. 눌러서 전문을 읽는다. */}
+              {items.map((review) => (
                 <ReviewScrap
                   key={review.id}
                   review={review}
-                  rotate={index % 2 === 0 ? -1 : 1}
                   onPress={() => router.push(`/review/${review.id}`)}
                 />
               ))}
@@ -1249,20 +1282,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
 
-  // 별(44pt 상자 다섯) 옆에 고른 별의 한마디.
-  stars: { flexDirection: 'row', alignItems: 'center' },
-  formCard: { gap: spacing.md },
-  reviewInput: {
-    minHeight: 96,
+  // 작성 조각 — 리뷰 조각(ReviewScrap)과 같은 머리·본문·메타 줄. 버튼 줄은 조각 밖 바로 아래.
+  formBlock: { gap: spacing.md },
+  scrapHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  scrapAuthor: { flexShrink: 1 },
+  // 별 상자(44pt)의 오른쪽 여백만큼 당겨 별이 조각 안쪽 가장자리에 맞게 — 위아래도 상자만큼 되돌려 머리 줄 높이는 그대로.
+  scrapStars: { marginRight: -spacing.sm, marginVertical: -spacing.sm },
+  scrapInput: {
+    minHeight: 72,
     maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '남기기'가 키보드 밑으로 밀려나지 않게
-    borderRadius: radius.md,
-    borderWidth: hairline,
-    padding: spacing.md,
+    marginTop: spacing.sm,
+    padding: 0,
     fontFamily: serif.regular,
     fontSize: 15,
     lineHeight: 24,
     textAlignVertical: 'top',
   },
+  scrapMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.sm },
+  scrapBadge: { fontSize: 9, letterSpacing: 0.4 },
   formActions: { flexDirection: 'row', gap: spacing.sm },
   formButton: { flex: 1 },
   // 리뷰|독후감 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
