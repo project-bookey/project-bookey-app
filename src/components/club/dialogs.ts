@@ -15,15 +15,18 @@ export function notify(message: string) {
   }
 }
 
-/** 확인/취소 — 확인이면 true. 되돌리기 어려운 동작(나가기·내보내기·종료) 앞에 쓴다. */
-export function confirmAsync(message: string, okLabel = '확인'): Promise<boolean> {
+/**
+ * 확인/취소 — 확인이면 true. 되돌리기 어려운 동작(나가기·내보내기·종료) 앞에 쓴다.
+ * 알릴 것이 여러 줄인 경고(클럽 나가기)는 `title`에 묻는 말을 두고 `message`에 결과를 적는다.
+ */
+export function confirmAsync(message: string, okLabel = '확인', title = ''): Promise<boolean> {
   if (Platform.OS === 'web') {
     // eslint-disable-next-line no-alert
-    return Promise.resolve(window.confirm(message));
+    return Promise.resolve(window.confirm(title ? `${title}\n\n${message}` : message));
   }
   return new Promise((resolve) => {
     Alert.alert(
-      '',
+      title,
       message,
       [
         { text: '취소', style: 'cancel', onPress: () => resolve(false) },
