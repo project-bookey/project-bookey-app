@@ -4821,15 +4821,6 @@ export interface components {
             /** Format: date-time */
             occurredAt: string;
             remark?: string;
-            review?: components["schemas"]["PlazaReviewView"];
-        };
-        PlazaReviewView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int32 */
-            rating?: number;
-            body: string;
-            hasSpoiler: boolean;
         };
         NotificationView: {
             /** Format: int64 */
@@ -5639,7 +5630,6 @@ export type SchemaPageResponsePostCommentView = components['schemas']['PageRespo
 export type SchemaPageResponsePostcardView = components['schemas']['PageResponsePostcardView'];
 export type SchemaPageResponsePlazaItemView = components['schemas']['PageResponsePlazaItemView'];
 export type SchemaPlazaItemView = components['schemas']['PlazaItemView'];
-export type SchemaPlazaReviewView = components['schemas']['PlazaReviewView'];
 export type SchemaNotificationView = components['schemas']['NotificationView'];
 export type SchemaPageResponseNotificationView = components['schemas']['PageResponseNotificationView'];
 export type SchemaPageResponseVisitorView = components['schemas']['PageResponseVisitorView'];
