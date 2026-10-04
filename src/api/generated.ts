@@ -4423,8 +4423,6 @@ export interface components {
         EmailCodeResponse: {
             /** Format: int64 */
             expiresInSec: number;
-            /** Format: int64 */
-            resendAfterSec: number;
             devCode?: string;
         };
         EmailLoginRequest: {
