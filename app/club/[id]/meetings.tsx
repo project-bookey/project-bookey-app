@@ -14,6 +14,7 @@ import {
   attendeeLabel,
   formatPickDate,
   formatPickTime,
+  isTodayOrLater,
   meetingClock,
   meetingDay,
   meetingState,
@@ -21,6 +22,7 @@ import {
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
+import { todayKst } from '@/components/clubLog';
 import { TiltCover } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
@@ -378,21 +380,31 @@ function PickBox({ label, value, onPress }: { label: string; value: string; onPr
 /**
  * 모임 한 줄 — 왼쪽 모노 날짜 칸(10.1 / 목 19:30), 오른쪽 명조 제목 · 읽을 책 · 장소 · 참여자 아바타.
  * 지난 모임·취소는 글자를 죽인다. 줄 전체가 상세로 가는 링크라 별도 '자세히 보기'는 없다.
+ * 내가 참여한 오늘 이후의 모임은 초록 테두리로 감싸고 상태를 '참여해요'로 — 홈 탭 다가오는 모임 카드와 같은 기준.
  */
 function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: () => void }) {
   const { colors } = useTheme();
   const state = meetingState(m);
-  const dim = state !== 'open';
+  const mine = m.attending && isTodayOrLater(m, todayKst());
+  const dim = state !== 'open' && !mine;
   const attendees = m.attendees ?? [];
-  const stateColor = state === 'cancelled' ? colors.danger : state === 'past' ? colors.textFaint : colors.text;
+  const stateColor = mine || state === 'open' ? colors.text : state === 'cancelled' ? colors.danger : colors.textFaint;
   // 열린 모임이라도 정원이 찼으면 '정원 마감'으로 알린다.
-  const stateLabel = state === 'open' && meetingFull(m) ? '정원 마감' : MEETING_STATE_LABEL[state];
+  const stateLabel = mine
+    ? '참여해요'
+    : state === 'open' && meetingFull(m)
+      ? '정원 마감'
+      : MEETING_STATE_LABEL[state];
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${m.title} 모임 상세`}
-      style={({ pressed }) => [styles.row, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
+      style={({ pressed }) => [
+        styles.row,
+        mine ? [styles.mineRow, { borderColor: colors.accent }] : { borderBottomColor: colors.line },
+        pressed ? pressedStyle : null,
+      ]}
     >
       <View style={styles.dateCell}>
         <Text style={[styles.dateDay, { color: dim ? colors.textFaint : colors.text }]}>{meetingDay(m.startsAt)}</Text>
@@ -461,6 +473,14 @@ const styles = StyleSheet.create({
   // 11px 모노 한 줄이라 여백으로 44pt 상자를 만든다(웹은 hitSlop 을 무시한다).
   addressLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
+  // 내가 참여한 모임 — 줄을 테두리 상자로 감싸되, 음수 마진 짝으로 글자 줄은 다른 줄과 맞춘다.
+  mineRow: {
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    marginHorizontal: -spacing.sm,
+    marginVertical: spacing.xs,
+  },
   // 고른 책 — 표지 · 제목 · 바꾸기가 한 줄.
   bookRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   bookTitle: { flex: 1 },
