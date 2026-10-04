@@ -128,6 +128,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["google"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wallet/exchange": {
         parameters: {
             query?: never;
@@ -3489,6 +3505,13 @@ export interface components {
             /** Format: date-time */
             endsAt: string;
         };
+        PubSubEnvelope: {
+            message?: components["schemas"]["PubSubMessage"];
+        };
+        PubSubMessage: {
+            data?: string;
+            messageId?: string;
+        };
         ExchangeRequest: {
             /** @enum {string} */
             target: "POSTCARD" | "STAMP";
@@ -4400,6 +4423,8 @@ export interface components {
         EmailCodeResponse: {
             /** Format: int64 */
             expiresInSec: number;
+            /** Format: int64 */
+            resendAfterSec: number;
             devCode?: string;
         };
         EmailLoginRequest: {
@@ -5511,6 +5536,8 @@ export type SchemaFaqAdminView = components['schemas']['FaqAdminView'];
 export type SchemaFaqOrderRequest = components['schemas']['FaqOrderRequest'];
 export type SchemaBannerUpsertRequest = components['schemas']['BannerUpsertRequest'];
 export type SchemaBannerAdminView = components['schemas']['BannerAdminView'];
+export type SchemaPubSubEnvelope = components['schemas']['PubSubEnvelope'];
+export type SchemaPubSubMessage = components['schemas']['PubSubMessage'];
 export type SchemaExchangeRequest = components['schemas']['ExchangeRequest'];
 export type SchemaWalletView = components['schemas']['WalletView'];
 export type SchemaSubscriptionVerifyRequest = components['schemas']['SubscriptionVerifyRequest'];
@@ -6012,6 +6039,30 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    google: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PubSubEnvelope"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
