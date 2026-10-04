@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubApi } from '@/api/endpoints';
+import { clubApi, clubCommunityApi } from '@/api/endpoints';
 import type { ClubHome, NudgeMessageKey } from '@/api/types';
 import { CopyCodeButton, MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
 import { meetingDay } from '@/components/club/meetingTime';
@@ -20,6 +20,19 @@ import { mono } from '@/theme/tokens';
  * 함께 읽는 사람(지금 읽는 책의 진척 · 찌르기) · 이번 주 카드 · 초대 코드 · 나가기는 여기로 모았다.
  * 운영(코드 재발급 · 자리 · 멤버 · 종료)은 여전히 호스트 전용 설정(/club/[id]/settings)이다.
  */
+/**
+ * 클럽 나가기 경고 — 나가면 클럽의 정보를 더는 볼 수 없고, 채팅에서는 '나간 멤버'가 되며,
+ * 다시 참가해도 새 멤버라 채팅을 다시 열어야 한다(서버가 채팅 이용권을 지운다). 메모는 남는다(2026-10-05).
+ */
+function leaveWarning(chatCost: number | undefined) {
+  const pay = chatCost ? `책갈피 ${chatCost}개를` : '책갈피를';
+  return [
+    '나가면 이 클럽의 모든 정보가 사라져요. 모임·노트·채팅을 더는 볼 수 없고, 참여하기로 한 모임에서도 빠져요.',
+    `채팅에 남긴 메시지는 '나간 멤버'로 바뀌어요. 다시 참가해도 새 멤버로 시작해서, 채팅을 열려면 ${pay} 다시 내야 해요.`,
+    '남긴 메모는 그대로 남아요.',
+  ].join('\n\n');
+}
+
 export default function ClubInfoScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -48,6 +61,12 @@ export default function ClubInfoScreen() {
     enabled: isMember,
     refetchInterval: 30_000,
   });
+  // 나가기 경고에 적을 채팅 이용료 — 클럽 홈의 안 읽음 배지와 같은 캐시 키라 대개 이미 있다.
+  const chatState = useQuery({
+    queryKey: ['clubChat', clubId, 'state'],
+    queryFn: () => clubCommunityApi.chatState(clubId),
+    enabled: isMember,
+  });
 
   const nudge = useMutation({
     mutationFn: ({ userId, key }: { userId: number; key: NudgeMessageKey }) =>
@@ -66,6 +85,8 @@ export default function ClubInfoScreen() {
       // 멤버 홈이 열린다 — 둘 다 다시 받게 한다(홈은 403이 되고, 클럽 홈이 그걸 보고 미리보기로 바꾼다).
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
       queryClient.invalidateQueries({ queryKey: ['club', 'preview', clubId] });
+      // 나가면 채팅 이용권이 사라지고 다시 참가하면 새 멤버다 — 예전의 열린 채팅·내 메시지를 캐시에 남기지 않는다.
+      queryClient.removeQueries({ queryKey: ['clubChat', clubId] });
       // 클럽 홈 · 정보 둘 다 걷어 내고 목록으로 — 목록이 스택에 없으면 이 화면을 목록으로 바꾼다.
       router.dismissTo('/clubs');
     },
@@ -216,7 +237,9 @@ export default function ClubInfoScreen() {
           variant="danger"
           loading={leave.isPending}
           onPress={async () => {
-            if (await confirmAsync('클럽에서 나갈까요? 남긴 메모와 글은 그대로 남아요.', '나가기')) leave.mutate();
+            if (await confirmAsync(leaveWarning(chatState.data?.unlockCost), '나가기', '클럽에서 나갈까요?')) {
+              leave.mutate();
+            }
           }}
         />
       </ScrollView>

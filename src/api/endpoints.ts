@@ -634,7 +634,8 @@ export type ClubChatState = {
 };
 export type ClubChatMessage = {
   id: number;
-  senderId: number;
+  /** 나간 멤버(다시 참가하기 전의 나 포함)의 메시지에는 없다 — 이름은 '나간 멤버'로 온다. */
+  senderId?: number;
   senderNickname: string;
   body: string;
   createdAt: string;
