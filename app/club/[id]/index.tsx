@@ -305,7 +305,7 @@ export default function ClubHomeScreen() {
             onOpenNotes={() => changeTab("notes")}
           />
         ) : null}
-        {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} initialOpen={formOpen} /> : null}
+        {tab === "meetings" ? <ClubMeetingsBody isHost={isHost} ended={ended} initialOpen={formOpen} /> : null}
         {tab === "notes" ? (
           <MeetingNoteGrid clubId={clubId} onOpenMeetings={() => changeTab("meetings")} />
         ) : null}
@@ -320,7 +320,7 @@ export default function ClubHomeScreen() {
  */
 function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
   club: ClubHome;
-  /** withForm — 호스트가 '모임 만들기'로 들어오면 새 모임 폼을 펼쳐 둔다. */
+  /** withForm — '모임 만들기'로 들어오면 새 모임 폼을 펼쳐 둔다. */
   onOpenMeetings: (withForm: boolean) => void;
   onOpenNotes: () => void;
 }) {
@@ -439,11 +439,11 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
         ) : (
           <View style={styles.emptyMeeting}>
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-              {isHost
-                ? "아직 잡힌 모임이 없어요. 모임을 만들 때 읽을 책과 인원도 정할 수 있어요."
-                : "아직 잡힌 모임이 없어요. 호스트가 모임을 열면 여기에 보여요."}
+              {ended
+                ? "아직 잡힌 모임이 없어요."
+                : "아직 잡힌 모임이 없어요. 모임을 만들 때 읽을 책과 인원도 정할 수 있어요."}
             </Text>
-            {isHost && !ended ? (
+            {!ended ? (
               <Button label="모임 만들기" variant="outline" onPress={() => onOpenMeetings(true)} />
             ) : null}
           </View>

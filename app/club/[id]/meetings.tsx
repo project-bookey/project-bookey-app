@@ -52,13 +52,16 @@ const emptyForm = () => ({
 const MIN_ATTENDEES = 2;
 
 /**
- * 모임 탭 — 클럽 홈 '모임' 탭의 본문. 위는 괘선 머리줄(개수 · 호스트의 만들기), 아래는 모임을
- * 활자·괘선 판면으로 한 줄씩(왼쪽 모노 날짜 칸, 오른쪽 명조 제목·장소·참여). 호스트가 '모임 만들기'를
- * 누르면 목록 위에 새 모임 폼이 펼쳐진다. 모임마다 읽을 책을 고를 수 있고(선택), 다가오는 모임의 책이
- * 클럽의 지금 읽는 책이 된다 — 진척 · 스포일러 가림 · 지금 읽는 중이 그 책을 본다.
+ * 모임 탭 — 클럽 홈 '모임' 탭의 본문. 위는 괘선 머리줄(개수 · 만들기), 아래는 모임을
+ * 활자·괘선 판면으로 한 줄씩(왼쪽 모노 날짜 칸, 오른쪽 명조 제목·장소·참여). 모임은 멤버 누구나 연다 —
+ * '모임 만들기'를 누르면 목록 위에 새 모임 폼이 펼쳐진다(끝난 클럽에선 버튼이 없다). 모임마다 읽을 책을
+ * 고를 수 있고(선택), 다가오는 모임의 책이 클럽의 지금 읽는 책이 된다 — 진척 · 스포일러 가림 · 지금 읽는 중이 그 책을 본다.
  */
-export function ClubMeetingsBody({ isHost, initialOpen = false }: {
+export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
+  /** 클럽 호스트 — 모임 상세에서 남이 연 모임도 취소할 수 있다. */
   isHost: boolean;
+  /** 끝난 클럽 — 새 모임을 열 수 없다. */
+  ended: boolean;
   /** 클럽 홈의 '모임 만들기'로 들어오면 새 모임 폼을 펼친 채로 연다. */
   initialOpen?: boolean;
 }) {
@@ -67,7 +70,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
   const router = useRouter();
   const qc = useQueryClient();
   const { colors } = useTheme();
-  const [open, setOpen] = useState(initialOpen && isHost);
+  const [open, setOpen] = useState(initialOpen && !ended);
   // 폼 아래쪽 칸(최대 인원·설명)을 누르면 '모임 열기'까지 키보드 위로 올린다.
   const scrollRef = useRef<ScrollView>(null);
   const submitRef = useRef<View>(null);
@@ -180,8 +183,8 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
       />
       <View style={[styles.head, { borderBottomColor: colors.line }]}>
         <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>모임 · {meetings.length}개</Text>
-        {isHost ? (
-          // 호스트가 이 탭에서 하는 주요 행동 — 글자 링크가 아니라 테두리 버튼으로 크게(악센트는 폼의 '모임 열기' 몫).
+        {!ended ? (
+          // 이 탭의 주요 행동 — 글자 링크가 아니라 테두리 버튼으로 크게(악센트는 폼의 '모임 열기' 몫).
           <Button label={open ? '닫기' : '모임 만들기'} variant="outline" onPress={() => setOpen((v) => !v)} />
         ) : null}
       </View>
@@ -336,7 +339,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
         ) : meetings.length === 0 ? (
           <EmptyState
             title="아직 모임이 없어요"
-            description={isHost ? '첫 모임을 열고 함께 읽을 날을 잡아 보세요.' : '호스트가 모임을 열면 여기에 보여요.'}
+            description={ended ? undefined : '첫 모임을 열고 함께 읽을 날을 잡아 보세요.'}
           />
         ) : (
           <View>
