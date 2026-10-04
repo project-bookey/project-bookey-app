@@ -195,6 +195,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{sessionId}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 타이머 이어서 */
+        post: operations["resume"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{sessionId}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 타이머 잠깐 쉬기 — 쉰 시간은 독서 시간에서 빠진다 */
+        post: operations["pause"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{sessionId}/end": {
         parameters: {
             query?: never;
@@ -498,7 +532,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 다시 읽기 시작 */
-        post: operations["resume"];
+        post: operations["resume_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -515,7 +549,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 일시정지 — 재촉 알림 중단 */
-        post: operations["pause"];
+        post: operations["pause_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3559,6 +3593,33 @@ export interface components {
             successUrl?: string;
             failUrl?: string;
         };
+        SessionView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            readingRecordId: number;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: int32 */
+            durationSec: number;
+            /** Format: int32 */
+            startPage?: number;
+            /** Format: int32 */
+            endPage?: number;
+            /** Format: int32 */
+            readPages?: number;
+            /** @enum {string} */
+            source: "TIMER" | "MANUAL";
+            memo?: string;
+            /** Format: date-time */
+            pausedAt?: string;
+            /** Format: int32 */
+            pausedSec: number;
+            abuseFlags: string[];
+            countedForVerification: boolean;
+        };
         EndRequest: {
             /** Format: int32 */
             endPage?: number;
@@ -3588,29 +3649,6 @@ export interface components {
             lagLevel: string;
             bookFinished: boolean;
             clubs: components["schemas"]["ClubProgressEcho"][];
-        };
-        SessionView: {
-            /** Format: int64 */
-            id: number;
-            /** Format: int64 */
-            readingRecordId: number;
-            /** Format: date-time */
-            startedAt: string;
-            /** Format: date-time */
-            endedAt?: string;
-            /** Format: int32 */
-            durationSec: number;
-            /** Format: int32 */
-            startPage?: number;
-            /** Format: int32 */
-            endPage?: number;
-            /** Format: int32 */
-            readPages?: number;
-            /** @enum {string} */
-            source: "TIMER" | "MANUAL";
-            memo?: string;
-            abuseFlags: string[];
-            countedForVerification: boolean;
         };
         StartRequest: {
             /** Format: int64 */
@@ -5543,10 +5581,10 @@ export type SchemaWalletView = components['schemas']['WalletView'];
 export type SchemaSubscriptionVerifyRequest = components['schemas']['SubscriptionVerifyRequest'];
 export type SchemaSubscriptionCheckoutRequest = components['schemas']['SubscriptionCheckoutRequest'];
 export type SchemaSubscriptionCheckoutView = components['schemas']['SubscriptionCheckoutView'];
+export type SchemaSessionView = components['schemas']['SessionView'];
 export type SchemaEndRequest = components['schemas']['EndRequest'];
 export type SchemaClubProgressEcho = components['schemas']['ClubProgressEcho'];
 export type SchemaSessionEndResult = components['schemas']['SessionEndResult'];
-export type SchemaSessionView = components['schemas']['SessionView'];
 export type SchemaStartRequest = components['schemas']['StartRequest'];
 export type SchemaManualRequest = components['schemas']['ManualRequest'];
 export type SchemaCreateReviewRequest = components['schemas']['CreateReviewRequest'];
@@ -6143,6 +6181,50 @@ export interface operations {
             };
         };
     };
+    resume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
+    pause: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SessionView"];
+                };
+            };
+        };
+    };
     end: {
         parameters: {
             query?: never;
@@ -6652,7 +6734,7 @@ export interface operations {
             };
         };
     };
-    resume: {
+    resume_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -6674,7 +6756,7 @@ export interface operations {
             };
         };
     };
-    pause: {
+    pause_1: {
         parameters: {
             query?: never;
             header?: never;
