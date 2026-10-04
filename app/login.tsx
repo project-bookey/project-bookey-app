@@ -51,29 +51,24 @@ const SERVER_ERROR_SPOT: Record<string, FieldSpot> = {
 
 const isEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value) && value.length <= 255;
 
-/** 예전 서버는 다시 받기 대기 시간을 보내지 않는다 — 그때는 서버 기본값(1분)으로 센다. */
-const FALLBACK_RESEND_SEC = 60;
-
 /** 남은 초를 '2:59' 꼴로. */
 const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
 /**
- * 마감 시각(ms)마다 남은 초 — 1초마다 다시 센다. 남은 마감이 없으면 멈춘다.
+ * 마감 시각(ms)까지 남은 초 — 1초마다 다시 센다. 마감이 지나면 멈춘다.
  * 그릴 때마다 실제 시각으로 다시 재므로, 메일 앱에서 코드를 보고 돌아와도(그동안 타이머가 멈춰 있었어도) 맞는다.
  */
-function useSecondsLeft(...deadlines: (number | null)[]): number[] {
+function useSecondsLeft(deadline: number | null): number {
   const [, setTick] = useState(0);
-  const last = Math.max(0, ...deadlines.map((deadline) => deadline ?? 0));
   useEffect(() => {
-    if (last <= Date.now()) return;
+    if (deadline == null || deadline <= Date.now()) return;
     const timer = setInterval(() => {
       setTick((n) => n + 1);
-      if (Date.now() >= last) clearInterval(timer);
+      if (Date.now() >= deadline) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [last]);
-  const now = Date.now();
-  return deadlines.map((deadline) => (deadline == null ? 0 : Math.max(0, Math.ceil((deadline - now) / 1000))));
+  }, [deadline]);
+  return deadline == null ? 0 : Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
 }
 
 /**
@@ -99,11 +94,10 @@ export default function LoginScreen() {
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeVerifyLoading, setCodeVerifyLoading] = useState(false);
   const [codeVerified, setCodeVerified] = useState(false);
-  /** 보낸 코드를 입력할 수 있는 마지막 시각(ms)과 코드를 다시 받을 수 있는 시각(ms) — 서버가 알려 준 시간으로 센다. */
+  /** 보낸 코드를 입력할 수 있는 마지막 시각(ms) — 서버가 알려 준 시간으로 센다. */
   const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
-  const [resendAt, setResendAt] = useState<number | null>(null);
   const [codeValidMinutes, setCodeValidMinutes] = useState(3);
-  const [codeLeft, resendLeft] = useSecondsLeft(codeExpiresAt, resendAt);
+  const codeLeft = useSecondsLeft(codeExpiresAt);
   /** 온보딩의 "가입하고 시작하기"는 signup=1 로 들어와 곧장 가입 폼을 연다. */
   const { signup: signupParam } = useLocalSearchParams<{ signup?: string }>();
   const [isSignup, setIsSignup] = useState(signupParam === '1');
@@ -230,12 +224,8 @@ export default function LoginScreen() {
       setCodeSent(true);
       setCodeExpiresAt(requestedAt + result.expiresInSec * 1000);
       setCodeValidMinutes(Math.max(1, Math.round(result.expiresInSec / 60)));
-      // 다시 받기는 응답을 받은 때부터 센다 — 서버보다 먼저 풀려 눌렀는데 거절되지 않게.
-      setResendAt(Date.now() + (result.resendAfterSec ?? FALLBACK_RESEND_SEC) * 1000);
-      // 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
-      if (result.devCode) {
-        setCode(result.devCode);
-      }
+      // 새 코드가 앞 코드를 대신하므로 칸을 비운다. 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
+      setCode(result.devCode ?? '');
     } catch (e) {
       flagError(errorSpotOf(e, 'code'), e instanceof Error ? e.message : '인증 코드를 보내지 못했어요.');
     } finally {
@@ -519,7 +509,6 @@ export default function LoginScreen() {
                     setCodeSent(false);
                     setCode('');
                     setCodeExpiresAt(null);
-                    setResendAt(null);
                     putError('code', null);
                   }
                 }}
@@ -651,25 +640,19 @@ export default function LoginScreen() {
                       </View>
                     ) : null}
                   </View>
-                  {/* 다시 받기는 서버 대기 시간이 지나야 열린다 — 남은 초를 버튼에 보여 줘 언제 누를 수 있는지 알게 한다. */}
+                  {/* 다시 받기는 기다림 없이 바로 열려 있다(사용자 결정) — 남용은 서버가 1시간 횟수 상한으로 막는다. */}
                   <Pressable
                     onPress={requestCode}
-                    disabled={busy || codeLoading || resendLeft > 0}
+                    disabled={busy || codeLoading}
                     style={({ pressed }) => [
                       styles.codeButton,
-                      (pressed || busy || codeLoading || resendLeft > 0) && styles.pressed,
+                      (pressed || busy || codeLoading) && styles.pressed,
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel={resendLeft > 0 ? `${resendLeft}초 뒤에 다시 받을 수 있어요` : undefined}
-                    accessibilityState={{ disabled: busy || codeLoading || resendLeft > 0 }}
                   >
                     {codeLoading
                       ? <ActivityIndicator color={darkColors.text} />
-                      : (
-                        <Text style={styles.codeButtonLabel}>
-                          {!codeSent ? '코드 받기' : resendLeft > 0 ? `다시 받기 ${resendLeft}초` : '다시 받기'}
-                        </Text>
-                      )}
+                      : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
                   </Pressable>
                 </View>
                 <FieldError message={codeError} />
@@ -722,7 +705,6 @@ export default function LoginScreen() {
                 setCode('');
                 setCodeSent(false);
                 setCodeExpiresAt(null);
-                setResendAt(null);
                 setCodeVerified(false);
                 setIdentityId(null);
               }}
