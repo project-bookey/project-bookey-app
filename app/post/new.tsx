@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronDown } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import {
@@ -12,8 +13,9 @@ import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post, PostVisibility } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import type { PickedBook } from '@/components/book/BookPicker';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
+import { NoteSheet } from '@/components/note/NoteSheet';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
 import type { PhotoSource } from '@/components/post/PostPhoto';
@@ -27,13 +29,24 @@ import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/po
 import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { Button, Card, EmptyState, Eyebrow, Field, Segmented, linkLabel } from '@/components/ui';
-import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, Card, EmptyState, Eyebrow, linkLabel } from '@/components/ui';
+import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { serif } from '@/theme/tokens';
 
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 const TITLE_MAX = POST_TITLE_MAX;
-/** 하단 띠의 대략 높이(46px 제출 버튼 + 위아래 여백) — 본문 아래 여백을 이만큼 더 준다. */
-const BOTTOM_BAR_HEIGHT = 70;
+/** 공개 범위 칩(겉모습 34pt)의 위아래 터치 확장 — Button sm 과 같은 몫. */
+const CHIP_HIT_SLOP = { top: 6, bottom: 6, left: 4, right: 4 };
+/** 종이 괘선 간격 = 본문 줄 높이. 글줄이 괘선 위에 앉는다. */
+const BODY_LINE = 26;
+/** 글이 짧아도 종이는 이만큼의 줄을 편다 — 빈 종이가 '여기 쓰면 된다'를 말한다. */
+const MIN_BODY_LINES = 10;
+
+/** 종이 머리의 날짜 — '2026.10.4'. 고치는 글은 처음 쓴 날, 새 글은 오늘. */
+function paperDate(iso?: string): string {
+  const date = iso ? new Date(iso) : new Date();
+  return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+}
 
 /**
  * 독후감 쓰기·고치기 — 광장 `+ 독후감`(빈 글), 책 상세(`bookId`, 그 책이 골라진 글),
@@ -180,6 +193,29 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
   // 문장을 넣은 직후 한 번만 실제 캐럿을 옮기려고 잡아 두는 자리. 평소에는 null(비제어)이다.
   const [pendingSelection, setPendingSelection] = useState<{ start: number; end: number } | null>(null);
   const uploads = usePhotoUploads(post?.images ?? [], POST_IMAGE_MAX);
+  const [bookSheet, setBookSheet] = useState(false);
+  const [visibilitySheet, setVisibilitySheet] = useState(false);
+  const [dateLabel] = useState(() => paperDate(post?.createdAt));
+  const bodyRef = useRef<TextInput>(null);
+
+  // 책 시트 — 열 때 지금 보이는 책(기본값 포함)을 고른 것으로 굳힌다. 시트에서 검색어를 치는 동안
+  // 기본값이 풀려 뒤의 책 줄이 비어 버리지 않게. 닫을 때 검색어를 비워 다음에 열면 내 서재부터 보인다.
+  const openBookSheet = () => {
+    picker.pick(picker.selected);
+    setBookSheet(true);
+  };
+  const closeBookSheet = () => {
+    picker.setKeyword('');
+    setBookSheet(false);
+  };
+  // 시트 안에서 책을 누르면 그걸로 끝 — 고르기 한 번에 닫힌다(UX 철칙 Hick).
+  const sheetPicker = {
+    ...picker,
+    pick: (next: PickedBook | null) => {
+      picker.pick(next);
+      closeBookSheet();
+    },
+  };
 
   // 사진 고르기는 비동기다 — 창이 닫힌 뒤에도 최신 본문·커서에 넣도록 ref 로 본다.
   const latest = useRef({ bodyMd, caret });
@@ -268,53 +304,51 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
     : null;
 
   const visibilityChoices = visibilityOptions(inClub, post?.visibility);
+  const visibilityLabel = visibilityChoices.find((option) => option.value === visibility)?.label ?? '공개';
 
   const submitLabel = editing ? '저장' : '올리기';
+  // 종이 위 글자는 종이 잉크(onMemoPad)의 농담으로만 — 테마가 바뀌어도 종이는 종이색이다.
+  const paperFaint = `${colors.onMemoPad}80`;
+  const paperRule = `${colors.onMemoPad}1F`;
 
   return (
     <PaperScreen>
-      <SubHeader category={editing ? '독후감 고치기' : '독후감 쓰기'} />
+      <SubHeader
+        category={editing ? '독후감 고치기' : '독후감 쓰기'}
+        right={(
+          <Pressable
+            onPress={() => setMode(mode === 'WRITE' ? 'PREVIEW' : 'WRITE')}
+            accessibilityRole="button"
+            accessibilityLabel={mode === 'WRITE' ? '미리보기' : '계속 쓰기'}
+            style={({ pressed }) => [styles.modeToggle, pressed ? pressedStyle : null]}
+          >
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{mode === 'WRITE' ? '미리보기' : '쓰기'}</Text>
+          </Pressable>
+        )}
+      />
 
       <KeyboardArea>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
-          {/* ① 책 — 없어도 된다. */}
-          <View style={styles.section}>
-            <Eyebrow>책</Eyebrow>
-            <BookPicker picker={picker} />
-            {book == null ? (
-              <Text style={[typeScale.caption, { color: colors.textFaint }]}>책 없이 써도 돼요</Text>
-            ) : !bookLocked ? (
-              <Pressable
-                onPress={() => picker.pick(null)}
-                accessibilityRole="button"
-                accessibilityLabel="책 빼기"
-                style={({ pressed }) => [styles.unpick, pressed ? pressedStyle : null]}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 빼기</Text>
-              </Pressable>
-            ) : null}
-          </View>
+          {/* ① 책 — 표지·제목 한 줄. 누르면 시트에서 바꾼다. 없어도 된다. */}
+          <BookLine book={book} onPress={openBookSheet} />
 
-          {/* ② 제목 */}
-          <Field
-            label="제목"
-            value={title}
-            onChangeText={setTitle}
-            placeholder="한 줄로 남기는 제목"
-            maxLength={TITLE_MAX}
-            accessibilityLabel="제목"
-          />
-
-          {/* ③ 본문 — 쓰기 / 미리보기 */}
-          <View style={styles.section}>
-            <Eyebrow>본문</Eyebrow>
-            <Segmented
-              options={[{ value: 'WRITE', label: '쓰기' }, { value: 'PREVIEW', label: '미리보기' }]}
-              value={mode}
-              onChange={setMode}
-            />
-            {mode === 'WRITE' ? (
-              <>
+          {mode === 'WRITE' ? (
+            // ② 종이 한 장 — 입력 상자 없이 괘선 메모지에 제목과 본문을 바로 쓴다.
+            <View style={[styles.paper, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong }]}>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder="제목"
+                placeholderTextColor={paperFaint}
+                maxLength={TITLE_MAX}
+                returnKeyType="next"
+                onSubmitEditing={() => bodyRef.current?.focus()}
+                accessibilityLabel="제목"
+                style={[styles.titleInput, { color: colors.onMemoPad }]}
+              />
+              <Text style={[typeScale.monoLabel, { color: paperFaint }]}>{dateLabel}</Text>
+              <View style={[styles.paperRule, { backgroundColor: `${colors.onMemoPad}47` }]} />
+              <RuledBody color={paperRule}>
                 {/*
                   selection 은 문장을 넣은 직후에만 준다 — 늘 물고 있으면 한글 조합(IME)이
                   글자마다 확정돼 끊기고, 되돌리기 자리도 어긋난다. 캐럿이 한 번 옮겨 가면
@@ -322,6 +356,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                   그 알림이 오지 않는 경우를 대비해 onChangeText 에서도 놓아 준다.
                 */}
                 <TextInput
+                  ref={bodyRef}
                   value={bodyMd}
                   selection={pendingSelection ?? undefined}
                   onChangeText={(text) => {
@@ -333,42 +368,42 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                     setPendingSelection(null);
                   }}
                   multiline
-                  placeholder="이 책을 읽고 남은 생각을 적어 보세요. 마크다운을 쓸 수 있어요."
-                  placeholderTextColor={colors.textFaint}
+                  // 문법 안내는 빈 종이일 때만 — 쓰기 시작하면 사라져 종이를 어지럽히지 않는다.
+                  placeholder={'이 책을 읽고 남은 생각을 적어 보세요.\n**굵게** · # 소제목 · - 목록 · > 문장'}
+                  placeholderTextColor={paperFaint}
                   accessibilityLabel="본문"
-                  style={[styles.bodyInput, {
-                    backgroundColor: colors.surface, borderColor: colors.line, color: colors.text,
-                  }]}
+                  style={[styles.bodyInput, { color: colors.onMemoPad }]}
                 />
-                {/* 옛 글을 열었을 때만 — 아래에 모아 두던 밑줄을 본문 끝으로 옮겼다고 알린다. */}
-                {seed.moved > 0 ? (
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-                    아래 모아 두었던 문장 {seed.moved}개를 본문 끝으로 옮겼어요 · 원하는 자리로 옮겨 보세요
-                  </Text>
-                ) : null}
-                {/* 사진을 따로 붙이던 옛 글을 열었을 때만 — 그 사진을 사진 줄로 글 맨 앞에 넣었다고 알린다. */}
-                {seed.placedPhotos > 0 ? (
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-                    사진 {seed.placedPhotos}장을 본문 맨 앞에 넣었어요 · 원하는 자리로 옮겨 보세요
-                  </Text>
-                ) : null}
-                {/* 문장 조각은 `>` 묶음이다 — 아래 '+ 문장'으로 넣거나 직접 써도 같다. */}
-                <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                  **굵게** · _기울임_ · # 제목 · - 목록 · {'>'} 문장
-                </Text>
-              </>
-            ) : (
-              <Card>
-                {bodyMd.trim() ? (
-                  <PostBody md={bodyMd} photoOf={photoOf} />
-                ) : (
-                  <Text style={[typeScale.caption, { color: colors.textFaint }]}>미리볼 내용이 없어요</Text>
-                )}
-              </Card>
-            )}
-          </View>
+              </RuledBody>
+            </View>
+          ) : (
+            // 미리보기 — 종이가 아니라 올린 뒤 보일 모습 그대로(화면 바탕 위 카드).
+            <Card style={styles.preview}>
+              {title.trim() ? (
+                <Text style={[typeScale.titleSerif, { color: colors.text }]}>{title.trim()}</Text>
+              ) : null}
+              {bodyMd.trim() ? (
+                <PostBody md={bodyMd} photoOf={photoOf} />
+              ) : (
+                <Text style={[typeScale.caption, { color: colors.textFaint }]}>미리볼 내용이 없어요</Text>
+              )}
+            </Card>
+          )}
 
-          {/* ④ 사진 — 넣기는 하단 띠의 '+ 사진'(커서 자리)이 맡는다. 여기는 붙은 사진의 올라가는 상태·다시·떼기를
+          {/* 옛 글을 열었을 때만 — 아래에 모아 두던 밑줄을 본문 끝으로 옮겼다고 알린다. */}
+          {seed.moved > 0 ? (
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+              아래 모아 두었던 문장 {seed.moved}개를 본문 끝으로 옮겼어요 · 원하는 자리로 옮겨 보세요
+            </Text>
+          ) : null}
+          {/* 사진을 따로 붙이던 옛 글을 열었을 때만 — 그 사진을 사진 줄로 글 맨 앞에 넣었다고 알린다. */}
+          {seed.placedPhotos > 0 ? (
+            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+              사진 {seed.placedPhotos}장을 본문 맨 앞에 넣었어요 · 원하는 자리로 옮겨 보세요
+            </Text>
+          ) : null}
+
+          {/* ③ 사진 — 넣기는 하단 띠의 '+ 사진'(커서 자리)이 맡는다. 여기는 붙은 사진의 올라가는 상태·다시·떼기를
               보는 자리라, 붙은 사진도 알릴 것도 없으면 숨긴다. 떼면 본문의 사진 줄도 함께 빠진다. */}
           {uploads.photos.length > 0 || uploads.notice ? (
             <View style={styles.section}>
@@ -383,20 +418,14 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
               />
             </View>
           ) : null}
-
-          {/* ⑤ 공개 범위 */}
-          <View style={styles.section}>
-            <Eyebrow>공개 범위</Eyebrow>
-            <Segmented options={visibilityChoices} value={visibility} onChange={setVisibility} />
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>{visibilityCaption(visibility, inClub)}</Text>
-          </View>
         </ScrollView>
 
         {/*
           하단 띠 — 댓글 입력 바와 같은 자리(ScrollView 의 형제)라 키보드가 뜨면 그 위에 붙고,
           글이 길어져도 늘 손에 닿는다. 제출은 엄지가 닿는 여기 오른쪽에 둔다(UX 철칙 Fitts).
           '+ 문장'·'+ 사진'은 커서 자리에 문장 조각·사진을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
-          실패 안내도 제출 버튼 바로 위에 붙인다(UX 철칙 Proximity).
+          공개 범위는 올릴 때 정하는 것이라 '올리기' 바로 옆 칩으로 둔다(UX 철칙 Proximity).
+          실패 안내도 제출 버튼 바로 위에 붙인다.
         */}
         <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
           {errorMessage ? (
@@ -425,26 +454,174 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 </Pressable>
               </View>
             ) : null}
-            <Button
-              label={submitLabel}
-              onPress={() => submit.mutate()}
-              disabled={!canSubmit}
-              loading={submit.isPending}
-              style={styles.submit}
-            />
+            <View style={styles.submitGroup}>
+              <Pressable
+                onPress={() => setVisibilitySheet(true)}
+                hitSlop={CHIP_HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel={`공개 범위, ${visibilityLabel}`}
+                style={({ pressed }) => [styles.visibilityChip, { borderColor: colors.lineStrong }, pressed ? pressedStyle : null]}
+              >
+                <Text style={[typeScale.label, { color: colors.text }]}>{visibilityLabel}</Text>
+                <ChevronDown size={14} color={colors.textMuted} {...iconStroke} />
+              </Pressable>
+              <Button
+                label={submitLabel}
+                onPress={() => submit.mutate()}
+                disabled={!canSubmit}
+                loading={submit.isPending}
+              />
+            </View>
           </View>
         </KeyboardDock>
       </KeyboardArea>
 
       {quoting ? <QuoteInsertSheet draft={quoteDraft} onInsert={insertQuote} onClose={() => setQuoting(false)} /> : null}
+
+      {/* 책 고르기 시트 — 내 서재의 책을 누르거나 검색해 고른다. 고르면 바로 닫힌다. */}
+      {bookSheet ? (
+        <NoteSheet visible title="책" onClose={closeBookSheet} scroll>
+          <BookPicker picker={sheetPicker} />
+          {/* 고치는 글에 책이 있으면 바꿀 수만 있고 뺄 수 없다(서버 규칙). 빼기는 고르기와 떨어진 맨 아래. */}
+          {book != null && !bookLocked ? (
+            <Pressable
+              onPress={() => sheetPicker.pick(null)}
+              accessibilityRole="button"
+              accessibilityLabel="책 빼기"
+              style={({ pressed }) => [styles.unpick, pressed ? pressedStyle : null]}
+            >
+              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 없이 쓰기</Text>
+            </Pressable>
+          ) : null}
+        </NoteSheet>
+      ) : null}
+
+      {/* 공개 범위 시트 — 고르면 바로 닫힌다. 고른 것은 잉크 라디오. */}
+      {visibilitySheet ? (
+        <NoteSheet visible title="공개 범위" onClose={() => setVisibilitySheet(false)}>
+          {visibilityChoices.map((option) => {
+            const on = option.value === visibility;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => {
+                  setVisibility(option.value);
+                  setVisibilitySheet(false);
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: on }}
+                accessibilityLabel={option.label}
+                style={({ pressed }) => [styles.option, pressed ? pressedStyle : null]}
+              >
+                <View style={[styles.radio, { borderColor: on ? colors.ink : colors.lineStrong }]}>
+                  {on ? <View style={[styles.radioDot, { backgroundColor: colors.ink }]} /> : null}
+                </View>
+                <View style={styles.optionText}>
+                  <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{option.label}</Text>
+                  <Text style={[typeScale.caption, { color: colors.textFaint }]}>{visibilityCaption(option.value, inClub)}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </NoteSheet>
+      ) : null}
     </PaperScreen>
   );
 }
 
+/** 책 한 줄 — 작은 표지 · 제목 · 저자. 줄 전체가 눌려 책 시트를 연다(UX 철칙 Fitts). */
+function BookLine({ book, onPress }: { book: PickedBook | null; onPress: () => void }) {
+  const { colors } = useTheme();
+  const meta = book ? [book.author, book.recordId != null ? '내 서재' : null].filter(Boolean).join(' · ') : '책 없이 써도 돼요';
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={book ? `책 바꾸기, ${book.title}` : '책 고르기'}
+      style={({ pressed }) => [styles.bookLine, pressed ? pressedStyle : null]}
+    >
+      {book ? (
+        <TiltCover uri={book.coverUrl} title={book.title} width={30} tilt={-3} entering={false} />
+      ) : (
+        <View style={[styles.emptyCover, { borderColor: colors.lineStrong }]} />
+      )}
+      <View style={styles.bookText}>
+        <Text numberOfLines={1} style={[typeScale.label, { color: book ? colors.text : colors.textMuted }]}>
+          {book ? book.title : '책 고르기'}
+        </Text>
+        {meta ? <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textFaint }]}>{meta}</Text> : null}
+      </View>
+      <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{book ? '바꾸기' : '고르기'}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * 괘선 본문 — 줄 높이(BODY_LINE)마다 머리카락 선을 그어 글줄이 선 위에 앉게 한다.
+ * 칸 높이를 재서 그만큼만 긋고, 선은 입력 뒤에 깔려 터치를 그대로 통과시킨다.
+ */
+function RuledBody({ color, children }: { color: string; children: ReactNode }) {
+  const [height, setHeight] = useState(0);
+  const count = Math.floor(height / BODY_LINE);
+  return (
+    <View style={styles.ruled} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {Array.from({ length: count }, (_, i) => (
+          <View key={i} style={[styles.ruleLine, { top: (i + 1) * BODY_LINE - hairline, backgroundColor: color }]} />
+        ))}
+      </View>
+      {children}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  // 아래 여백은 띠 높이만큼 더 둔다 — 키보드가 올라와 보이는 자리가 줄어도 마지막 칸을 띠 위로 밀어 올릴 수 있게.
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl + BOTTOM_BAR_HEIGHT },
+  // flexGrow — 글이 짧아도 종이가 하단 띠 바로 위까지 내려온다. 띠는 스크롤의 형제라 그 몫의 여백은 따로 두지 않는다.
+  container: {
+    ...layout.content,
+    flexGrow: 1,
+    padding: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
   section: { gap: spacing.md },
+  // 책 한 줄 — 44pt 이상 높이(표지 45)라 줄 전체가 손가락 상자다.
+  bookLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 52 },
+  emptyCover: { width: 30, height: 45, borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.sm },
+  bookText: { flex: 1, gap: 2 },
+  // 종이 — 괘선 메모지 한 장(카드 모서리, 머리카락 테두리). 미리보기의 카드와 같은 폭.
+  paper: {
+    flexGrow: 1,
+    borderWidth: hairline,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg + spacing.xs,
+    paddingTop: spacing.lg + spacing.sm,
+    paddingBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  titleInput: {
+    padding: 0,
+    fontFamily: serif.extraBold,
+    fontSize: 23,
+    lineHeight: 32,
+    letterSpacing: -0.5,
+  },
+  // 제목과 본문 사이 굵은 괘선 하나 — 위 날짜 줄과는 붙고, 본문과는 한 줄만큼 띄운다.
+  paperRule: { height: hairline, marginTop: spacing.md, marginBottom: spacing.sm },
+  ruled: { flexGrow: 1, minHeight: BODY_LINE * MIN_BODY_LINES },
+  ruleLine: { position: 'absolute', left: 0, right: 0, height: hairline },
+  // 본문 — 줄 높이를 괘선 간격과 맞춘다. 안쪽 여백을 없애야 첫 줄이 첫 괘선 위에 앉는다.
+  bodyInput: {
+    flexGrow: 1,
+    minHeight: BODY_LINE * MIN_BODY_LINES,
+    padding: 0,
+    fontFamily: serif.regular,
+    fontSize: 15,
+    lineHeight: BODY_LINE,
+    textAlignVertical: 'top',
+  },
+  preview: { gap: spacing.md },
   // 하단 고정 띠 — 댓글 입력 바와 같은 만듦새(머리카락 선 · 본문 폭 · 종이 배경).
   bottomBar: {
     ...layout.content,
@@ -455,26 +632,31 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   bottomRow: { flexDirection: 'row', alignItems: 'center' },
-  // 화면의 유일한 악센트 — 띠 오른쪽 끝에 붙인다.
-  submit: { marginLeft: 'auto' },
-  // 본문 칸 — 바탕·테두리·모서리는 바로 위 제목 칸(Field)과 같다. 활자는 문장 넣기 시트의 문장 칸과 같은
-  // quote 토큰 15/25, 길게 쓰는 글이라 높이만 키운다.
-  bodyInput: {
-    minHeight: 220,
+  // 공개 범위 칩 + 제출 — 띠 오른쪽 끝에 붙인다. 칩과 버튼은 함께 쓰는 동작이라 붙여 둔다.
+  submitGroup: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // 칩 — 겉모습 34pt(Button sm 과 같다), 위아래 hitSlop 으로 44pt 이상 눌린다.
+  visibilityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    height: 34,
+    paddingHorizontal: spacing.sm + 2,
     borderWidth: hairline,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    ...typeScale.quote,
-    fontSize: 15,
-    lineHeight: 25,
-    textAlignVertical: 'top',
+    borderRadius: radius.sm,
   },
-  // 모노 한 줄 — 44pt 상자로 키우고 같은 만큼 음수 마진으로 리듬은 그대로 둔다.
-  unpick: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginVertical: -spacing.sm },
   // 커서 자리에 넣는 도구 둘 — 터치 상자(좌우로 sm 씩 넓힌다)끼리 sm 이상 떨어지게 xl 간격.
   tools: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
   // 11px 모노 라벨이라 글자 상자만으로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
   tool: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
+  // 헤더 오른쪽 '미리보기' — 44pt 상자.
+  modeToggle: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
+  // 시트 맨 아래 '책 없이 쓰기' — 모노 한 줄을 44pt 상자로.
+  unpick: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  // 공개 범위 한 줄 — 라디오 · 이름 · 설명. 줄 전체가 눌린다.
+  option: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 52 },
+  radio: { width: 20, height: 20, borderRadius: radius.round, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: radius.round },
+  optionText: { flex: 1, gap: 2 },
   // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
   retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   skeleton: { ...layout.content, padding: spacing.lg },
