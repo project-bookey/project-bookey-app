@@ -186,9 +186,9 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                   accessibilityRole="button"
                   accessibilityLabel="프로필 편집"
                   hitSlop={8}
-                  style={({ pressed }) => [styles.editButton, { borderColor: colors.control }, pressed && styles.pressed]}
+                  style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
                 >
-                  <PencilLine color={colors.text} />
+                  <PencilLine color={colors.textMuted} />
                 </Pressable>
               ) : null}
             </View>
@@ -606,7 +606,7 @@ function GearLine({ size, color }: { size: number; color: string }) {
 
 function PencilLine({ color }: { color: string }) {
   return (
-    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path
         d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z"
         stroke={color}
@@ -881,15 +881,8 @@ const styles = StyleSheet.create({
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 22로 줄여 쓴다.
   nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
-  // 프로필 편집으로 가는 유일한 길 — 회색 연필만 있던 때는 버튼으로 보이지 않아 설정 버튼과 같은 네모 상자에 담는다.
-  editButton: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // 닉네임 옆 연필은 상자 없이 둔다(사용자 결정 2026-10-04 — 테두리 상자로 바꿨다가 되돌림).
+  editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
   settingsButton: {
     height: 30,
