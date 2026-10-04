@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import {
   Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { Heart } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
@@ -13,7 +14,7 @@ import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboa
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
 import { Button, FootAction, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
 /** 한 줄 길이 — 서버의 조각 본문 상한과 같은 값. */
@@ -225,11 +226,13 @@ export default function ClubLogScrapScreen() {
             <View style={styles.reactions}>
               {LOG_REACTIONS.map(({ kind, label }) => {
                 const on = data.myReactions.includes(kind);
+                const fg = on ? colors.onInk : colors.textMuted;
                 return (
                   <Pressable
                     key={kind}
                     onPress={() => react.mutate(kind)}
                     accessibilityRole="button"
+                    accessibilityLabel={label}
                     accessibilityState={{ selected: on }}
                     style={({ pressed }) => [
                       styles.reaction,
@@ -238,7 +241,13 @@ export default function ClubLogScrapScreen() {
                       pressed && pressedStyle,
                     ]}
                   >
-                    <Text style={[typeScale.monoLabel, { color: on ? colors.onInk : colors.textMuted }]}>{label}</Text>
+                    {/* 좋아요는 앱 어디서나 하트로 그린다 — 반응 칩도 글자 대신 하트, 켜지면 채운다.
+                        칩이 잉크로 뒤집히는 건 다른 반응과 같다(초록 하트는 잉크 위에서 대비가 모자란다). */}
+                    {kind === 'LIKE' ? (
+                      <Heart size={16} color={fg} fill={on ? fg : 'transparent'} {...iconStroke} />
+                    ) : (
+                      <Text style={[typeScale.monoLabel, { color: fg }]}>{label}</Text>
+                    )}
                   </Pressable>
                 );
               })}

@@ -15,6 +15,7 @@ import {
 import { PersonGlyph } from '@/components/Avatar';
 import { KeyboardScroll } from '@/components/keyboard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
+import { LikeCount } from '@/components/post/LikeCount';
 import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { TourTarget } from '@/components/tour/TourTarget';
@@ -553,9 +554,12 @@ function PublicPosts({ userId }: { userId: number }) {
                       『{item.bookTitle}』
                     </Text>
                   ) : <View style={{ flex: 1 }} />}
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-                    ♥ {item.likeCount} · {formatRelative(item.publishedAt ?? item.createdAt)}
-                  </Text>
+                  <View style={styles.postStat}>
+                    <LikeCount count={item.likeCount} textStyle={[typeScale.monoLabel, { color: colors.textFaint }]} />
+                    <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+                      {` · ${formatRelative(item.publishedAt ?? item.createdAt)}`}
+                    </Text>
+                  </View>
                 </View>
               </Card>
             </Pressable>
@@ -992,5 +996,6 @@ const styles = StyleSheet.create({
   postsSection: { gap: spacing.md },
   postTitle: { fontFamily: serif.bold, fontSize: 16, lineHeight: 23, marginBottom: spacing.xs },
   postFoot: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.sm },
+  postStat: { flexDirection: 'row', alignItems: 'center' },
   more: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
 });

@@ -10,6 +10,7 @@ import {
   META_SIZE,
 } from '@/components/home/scrapMetrics';
 import { Avatar } from '@/components/Avatar';
+import { LikeCount } from '@/components/post/LikeCount';
 import { Tag } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
@@ -17,7 +18,7 @@ import { spacing, typeScale, useTheme } from '@/theme';
  * 홈 '오늘의 글' 조각 머리의 작성자 행 — 아바타 옆에 두 줄.
  *
  *   닉네임 ………………… [독후감]  ← 종류 태그
- *   책 제목 ………………… 좋아요 12  ← 핫 지표
+ *   책 제목 ………………… ♡ 12  ← 핫 지표(좋아요 하트 + 수)
  *
  * 광장 카드의 작성자 줄과 같은 짜임이라 눈에 익고, 오른쪽 열이 각 줄의 글자
  * 밑선에 맞아 떨어진다 — 처음엔 핫 지표를 행 세로 가운데에 하나만 뒀는데 어느 줄에도
@@ -32,15 +33,15 @@ import { spacing, typeScale, useTheme } from '@/theme';
  * 아바타는 앱 공용 Avatar 를 그대로 쓴다 — 사진이 없으면 실루엣.
  * 누를 수 없다 — 바깥 행 하나가 통째로 버튼이다(HomeScraps 의 rowWrap 주석 참고).
  */
-export function ScrapAuthor({ nickname, avatarUrl, where, kind, stat }: {
+export function ScrapAuthor({ nickname, avatarUrl, where, kind, likes }: {
   nickname: string;
   avatarUrl?: string | null;
   /** 둘째 줄 왼쪽 — 책 제목. 길면 말줄임. */
   where: string;
   /** 첫째 줄 오른쪽 태그 — 무슨 글의 조각인지. */
   kind: '독후감';
-  /** 둘째 줄 오른쪽 핫 지표 — `좋아요 12`. */
-  stat: string;
+  /** 둘째 줄 오른쪽 핫 지표 — 좋아요 수. 하트 + 숫자로 그린다(LikeCount). */
+  likes: number;
 }) {
   const { colors } = useTheme();
   return (
@@ -57,9 +58,11 @@ export function ScrapAuthor({ nickname, avatarUrl, where, kind, stat }: {
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
             {where}
           </Text>
-          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.stat, { color: colors.textMuted }]}>
-            {stat}
-          </Text>
+          <LikeCount
+            count={likes}
+            color={colors.textMuted}
+            textStyle={[typeScale.monoLabel, styles.stat, { color: colors.textMuted }]}
+          />
         </View>
       </View>
     </View>
@@ -90,5 +93,5 @@ const styles = StyleSheet.create({
   // 오른쪽 열(태그·좋아요)은 줄어들지 않는다 — 닉네임·책 제목이 먼저 말줄임된다.
   nickname: { flex: 1, lineHeight: 20 },
   where: { flex: 1, fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH },
-  stat: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, flexShrink: 0 },
+  stat: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH },
 });

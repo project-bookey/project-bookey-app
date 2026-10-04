@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Heart } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
@@ -26,7 +27,7 @@ import { VERIFICATION_LABEL } from '@/components/review/verification';
 import { Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
-import { getLagStyle, hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { getLagStyle, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
 
 /** 시안 2c(390px) 기준 히어로 지오메트리 — 세로·표지 폭만 실제 폭에 비례 환산한다. */
@@ -548,25 +549,24 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
       );
     },
   });
+  // 좋아요는 앱 어디서나 같은 하트다 — 독후감 LikeAction 처럼 켜지면 하트를 초록으로 채우고 숫자도 초록.
+  // 상자는 누를 수 있다는 표시라 control 테두리 그대로 둔다(하트 켜짐은 사용자 결정으로 둔 악센트 예외).
+  const color = liked ? colors.accent : colors.textMuted;
   return (
     <Pressable
       disabled={like.isPending}
       onPress={() => like.mutate()}
       accessibilityRole="button"
-      accessibilityLabel="좋아요"
-      style={[
+      accessibilityState={{ selected: liked }}
+      accessibilityLabel={`좋아요 ${likeCount}`}
+      style={({ pressed }) => [
         styles.likeButton,
-        // 좋아요 켜짐은 초록 — 하트는 앱 전체에서 초록으로 둔다(사용자 결정 2026-10-03, CLAUDE.md 예외 목록).
-        liked
-          ? { backgroundColor: colors.accent, borderColor: colors.accent }
-          : { borderColor: colors.control },
-        { opacity: like.isPending ? 0.6 : 1 },
+        { borderColor: colors.control, opacity: like.isPending ? 0.6 : 1 },
+        pressed ? pressedStyle : null,
       ]}
     >
-      <Text style={[styles.likeGlyph, { color: liked ? colors.onAccent : colors.textMuted }]}>
-        {liked ? '♥' : '♡'}
-      </Text>
-      <Text style={[typeScale.monoNumeral, { color: liked ? colors.onAccent : colors.textMuted }]}>
+      <Heart size={18} color={color} fill={liked ? color : 'transparent'} {...iconStroke} />
+      <Text style={[typeScale.monoNumeral, { color }]}>
         {groupNumber(likeCount)}
       </Text>
     </Pressable>
@@ -684,7 +684,7 @@ function StatStrip({ detail, rating, colors }: {
   rating: RatingPick | null;
   colors: ColorTokens;
 }) {
-  const cells: { key: string; value: string; label: string }[] = [];
+  const cells: { key: string; value: string; label: string; icon?: ReactNode }[] = [];
   if (rating) {
     cells.push({
       key: 'rating',
@@ -693,7 +693,13 @@ function StatStrip({ detail, rating, colors }: {
     });
   }
   cells.push({ key: 'reviews', value: groupNumber(detail.verifiedReviewCount), label: '끝까지 읽은 리뷰' });
-  cells.push({ key: 'likes', value: groupNumber(detail.likeCount), label: '좋아요' });
+  // 좋아요 수는 앱 어디서나 하트를 앞에 단다 — 평점 칸의 ★ 자리와 같다.
+  cells.push({
+    key: 'likes',
+    value: groupNumber(detail.likeCount),
+    label: '좋아요',
+    icon: <Heart size={16} color={colors.text} {...iconStroke} />,
+  });
 
   return (
     <View style={[styles.statStrip, { borderTopColor: colors.line }]}>
@@ -701,9 +707,12 @@ function StatStrip({ detail, rating, colors }: {
         <Fragment key={cell.key}>
           {index > 0 ? <View style={[styles.statDivider, { backgroundColor: colors.line }]} /> : null}
           <View style={styles.statCell}>
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {cell.value}
-            </Text>
+            <View style={styles.statValueRow}>
+              {cell.icon}
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {cell.value}
+              </Text>
+            </View>
             <Text style={[typeScale.caption, styles.statLabel, { color: colors.textFaint }]}>
               {cell.label}
             </Text>
@@ -1230,7 +1239,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: hairline,
   },
-  likeGlyph: { fontSize: 16, lineHeight: 20 },
   actionButton: {
     height: 46,
     borderRadius: radius.sm,
@@ -1265,6 +1273,8 @@ const styles = StyleSheet.create({
   statStrip: { flexDirection: 'row', gap: spacing.lg, borderTopWidth: hairline, paddingTop: spacing.lg },
   statCell: { gap: 3 },
   statDivider: { width: hairline },
+  // 아이콘(하트)과 숫자는 한 덩어리 — ★ 와 숫자 사이 띄어쓰기만큼(5px) 띄운다.
+  statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statValue: { fontFamily: mono.semiBold, fontSize: 19 },
   statLabel: { fontSize: 10 },
 
