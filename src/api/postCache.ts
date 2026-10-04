@@ -37,8 +37,10 @@ export function flattenPosts(pages: Page<Post>[] | undefined): Post[] {
   return list;
 }
 
-/** 다섯 캐시가 공통으로 가진 반응 필드 — 패치는 이것만 건드린다. */
-export type PostReaction = { likedByMe?: boolean; likeCount?: number; commentCount?: number };
+/** 다섯 캐시가 공통으로 가진 반응·조회 수치 — 패치는 이것만 건드린다. */
+export type PostReaction = {
+  likedByMe?: boolean; likeCount?: number; commentCount?: number; viewCount?: number;
+};
 export type PostPatch =
   | Partial<PostReaction>
   | ((current: PostReaction) => Partial<PostReaction>);
@@ -81,6 +83,15 @@ export function patchPostEverywhere(queryClient: QueryClient, postId: number, pa
     old ? ('pages' in old ? patchInfinite(old) : patchPage(old)) : old,
   );
   queryClient.setQueryData<Post>(postKey(postId), (old) => (old ? patchPost(old) : old));
+}
+
+/**
+ * 상세가 서버에서 막 받은 조회수를 목록 캐시에 맞춘다.
+ * 서버는 상세 조회 때 조회수를 올리고 그 값을 돌려주므로, 그냥 두면 뒤로 돌아간 목록 카드가 한 칸 뒤처진다.
+ * 좋아요·댓글 수는 건드리지 않는다 — 진행 중인 좋아요 낙관 패치를 덮어쓰지 않게.
+ */
+export function syncViewCount(queryClient: QueryClient, post: Post) {
+  patchPostEverywhere(queryClient, post.id, { viewCount: post.viewCount });
 }
 
 /** 독후감이 생기거나 지워지거나 고쳐졌을 때 — 목록 캐시를 전부 다시 받게 한다. */

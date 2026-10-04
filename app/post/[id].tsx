@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
-import { invalidatePostLists, postKey } from '@/api/postCache';
+import { invalidatePostLists, postKey, syncViewCount } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll } from '@/components/keyboard';
@@ -37,7 +37,11 @@ export default function PostDetailScreen() {
 
   const post = useQuery({
     queryKey: postKey(postId),
-    queryFn: () => postApi.get(postId),
+    queryFn: async () => {
+      const fresh = await postApi.get(postId);
+      syncViewCount(queryClient, fresh);
+      return fresh;
+    },
     enabled: Number.isFinite(postId),
   });
 
