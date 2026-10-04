@@ -48,7 +48,8 @@ export function patchReviewEverywhere(queryClient: QueryClient, reviewId: number
   queryClient.setQueryData<CachedReview>(reviewKey(reviewId), (old) => (old ? patchReview(old) : old));
 }
 
-/** 리뷰가 생기거나 지워졌을 때 — 목록 캐시를 전부 다시 받게 한다. */
+/** 리뷰가 생기거나 지워졌을 때 — 목록 캐시를 전부 다시 받게 한다. 광장 완독 자랑 카드도 그 회차의 리뷰를 보여 준다. */
 export function invalidateReviewLists(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ['reviews'] });
+  queryClient.invalidateQueries({ queryKey: ['plaza'] });
 }
