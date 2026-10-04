@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Eye } from 'lucide-react-native';
 
 import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
@@ -7,7 +8,7 @@ import { Avatar } from '@/components/Avatar';
 import { LikeAction } from '@/components/post/LikeAction';
 import { visibilityLabelOf } from '@/components/post/PostByline';
 import { Card, formatRelative } from '@/components/ui';
-import { darkColors, hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { darkColors, hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 포스터 사진 높이(px) — 카드 머리를 채우고 그 위에 표제까지 얹는다. */
 const POSTER_H = 208;
@@ -67,8 +68,11 @@ export function PostCard({ post, onOpen, onLike, onOpenAuthor, showVisibility = 
             {visibility ? `${when} · ${visibility}` : when}
           </Text>
         </Pressable>
-        {/* 조회수는 누를 수 없는 정보라 글자로 둔다 — 하트와 같은 아이콘 모양이면 눌러 볼 것처럼 보인다(Jakob). */}
-        <Text style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>조회 {post.viewCount}</Text>
+        {/* 조회수는 눈 아이콘 + 숫자 — 사용자 결정. 누를 수 없는 정보라 Pressable 이 아니라 View 다. */}
+        <View accessible accessibilityLabel={`조회 ${post.viewCount}`} style={styles.views}>
+          <Eye size={22} color={colors.textMuted} {...iconStroke} />
+          <Text style={[styles.viewCount, { color: colors.textMuted }]}>{post.viewCount}</Text>
+        </View>
         <LikeAction count={post.likeCount} liked={post.likedByMe} onPress={onLike} />
       </View>
     </Card>
@@ -192,4 +196,7 @@ const styles = StyleSheet.create({
   author: { flex: 1, minWidth: 0, minHeight: 44, marginVertical: -6, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   nickname: { flexShrink: 1 },
   meta: { fontSize: 10, letterSpacing: 0.4 },
+  // 조회 — 옆 좋아요(LikeAction)와 같은 아이콘 크기·숫자 조판으로 맞춘다.
+  views: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  viewCount: { ...typeScale.monoNumeral },
 });
