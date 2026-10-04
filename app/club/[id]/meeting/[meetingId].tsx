@@ -29,7 +29,8 @@ import { pressedStyle, sans } from '@/theme/tokens';
  * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(sans.extraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
  * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
- * 함께 독서를 끝내면 그 모임의 공유 노트로 간다 — 멤버 모두가 같은 대형노트에 그날을 함께 남긴다.
+ * 함께 독서를 끝내면 그 모임의 공유 노트로 간다 — 참여한 멤버가 같은 대형노트에 그날을 함께 남긴다.
+ * 같이 읽기와 노트 쓰기는 참여자만 한다. 모임을 연 사람은 늘 참여자다(참여 취소 대신 모임 취소).
  * 노트는 모임 상세에서 언제든 다시 열 수 있다.
  */
 
@@ -230,7 +231,10 @@ export default function MeetingDetailScreen() {
               아직 참여자가 없어요. 첫 참여자가 되어 보세요.
             </Text>
           )}
-          {state === 'open' ? (
+          {state === 'open' && m.host ? (
+            // 모임을 연 사람은 빠질 수 없다 — 못 가게 되면 아래 '모임 취소'.
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>모임을 연 사람은 늘 참여해요.</Text>
+          ) : state === 'open' ? (
             // 정원이 차면 새로 참여할 수 없다 — 이미 참여한 사람은 취소할 수 있다.
             <Button
               label={m.attending ? '참여 취소' : full ? '정원이 찼어요' : '참여하기'}
@@ -259,13 +263,15 @@ export default function MeetingDetailScreen() {
                   ? '취소된 모임은 같이 읽기를 시작할 수 없어요.'
                   : !canStartTogether
                     ? '모임 날이 지나 같이 읽기를 시작할 수 없어요.'
-                    : "모임에서 '같이 읽기 시작'을 누르고, 다 읽은 뒤 모임 노트에 소감을 함께 남겨 보세요."}
+                    : !m.attending
+                      ? '모임에 참여한 사람만 같이 읽을 수 있어요.'
+                      : "모임에서 '같이 읽기 시작'을 누르고, 다 읽은 뒤 모임 노트에 소감을 함께 남겨 보세요."}
           </Text>
-          {/* 재고 있으면 모임 날이 지났든 취소됐든 언제나 끝낼 수 있다 — 시작만 그날 안으로 묶는다. */}
+          {/* 재고 있으면 모임 날이 지났든 취소됐든 참여를 뺐든 언제나 끝낼 수 있다 — 시작만 그날 안, 참여자로 묶는다. */}
           <Button
             label={running ? '같이 읽기 끝내기' : '같이 읽기 시작'}
             variant={running ? 'danger' : joinFirst ? 'outline' : 'primary'}
-            disabled={!running && (otherRunning || !canStartTogether)}
+            disabled={!running && (otherRunning || !canStartTogether || !m.attending)}
             onPress={() => (running ? end.mutate() : start.mutate())}
             loading={start.isPending || end.isPending}
           />
@@ -287,7 +293,9 @@ export default function MeetingDetailScreen() {
           <Text style={[typeScale.caption, { color: colors.textMuted }]}>
             {state === 'cancelled'
               ? '취소된 모임의 노트는 볼 수만 있어요.'
-              : '멤버 모두가 노트 한 장에 그날의 생각·사진·스티커를 붙여요. 다른 사람이 쓰는 모습도 바로 보여요.'}
+              : m.attending
+                ? '참여한 멤버가 노트 한 장에 그날의 생각·사진·스티커를 붙여요. 다른 사람이 쓰는 모습도 바로 보여요.'
+                : '노트는 참여한 멤버가 함께 써요. 참여하지 않았으면 볼 수만 있어요.'}
           </Text>
           <TextLink
             label="모임 노트"
