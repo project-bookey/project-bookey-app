@@ -44,6 +44,8 @@ export default function LoginScreen() {
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [codeLoading, setCodeLoading] = useState(false);
+  const [codeVerifyLoading, setCodeVerifyLoading] = useState(false);
+  const [codeVerified, setCodeVerified] = useState(false);
   /** 온보딩의 "가입하고 시작하기"는 signup=1 로 들어와 곧장 가입 폼을 연다. */
   const { signup: signupParam } = useLocalSearchParams<{ signup?: string }>();
   const [isSignup, setIsSignup] = useState(signupParam === '1');
@@ -109,6 +111,7 @@ export default function LoginScreen() {
       return;
     }
     setCodeLoading(true);
+    setCodeVerified(false);
     setError(null);
     try {
       const result = await authApi.requestEmailCode(email.trim());
@@ -121,6 +124,26 @@ export default function LoginScreen() {
       setError(e instanceof Error ? e.message : '인증 코드를 요청하지 못했습니다.');
     } finally {
       setCodeLoading(false);
+    }
+  };
+
+  const verifyCode = async () => {
+    const normalizedEmail = email.trim();
+    const normalizedCode = code.trim();
+    if (!normalizedEmail || normalizedCode.length !== 6) {
+      setError('이메일과 6자리 인증 코드를 확인해 주세요.');
+      return;
+    }
+    setCodeVerifyLoading(true);
+    setError(null);
+    try {
+      await authApi.verifyEmailCode(normalizedEmail, normalizedCode);
+      setCodeVerified(true);
+    } catch (e) {
+      setCodeVerified(false);
+      setError(e instanceof Error ? e.message : '인증 코드를 확인하지 못했습니다.');
+    } finally {
+      setCodeVerifyLoading(false);
     }
   };
 
@@ -169,6 +192,10 @@ export default function LoginScreen() {
     const method = signupConfig.data?.verification;
     if (isSignup && method === 'EMAIL_CODE' && !code.trim()) {
       setError('이메일로 받은 인증 코드를 입력해 주세요.');
+      return;
+    }
+    if (isSignup && method === 'EMAIL_CODE' && !codeVerified) {
+      setError('이메일 인증 코드를 먼저 확인해 주세요.');
       return;
     }
     if (isSignup && method === 'IDENTITY' && !identityId) {
@@ -280,8 +307,9 @@ export default function LoginScreen() {
   };
 
   const showApple = Boolean(Apple) && appleAvailable;
-  const busy = emailLoading || socialLoading != null;
+  const busy = emailLoading || codeLoading || codeVerifyLoading || socialLoading != null;
   const signupConsentComplete = legalAgreed.terms && legalAgreed.privacy;
+  const signupVerificationComplete = signupConfig.data?.verification !== 'EMAIL_CODE' || codeVerified;
 
   const openLegal = (key: LegalDocumentKey) => {
     setLegalOpen(key);
@@ -319,7 +347,10 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setCodeVerified(false);
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -403,7 +434,10 @@ export default function LoginScreen() {
                   <TextInput
                     style={[styles.input, styles.codeInput]}
                     value={code}
-                    onChangeText={setCode}
+                    onChangeText={(value) => {
+                      setCode(value);
+                      setCodeVerified(false);
+                    }}
                     keyboardType="number-pad"
                     maxLength={6}
                     placeholder="6자리"
@@ -427,7 +461,24 @@ export default function LoginScreen() {
                   </Pressable>
                 </View>
                 {codeSent ? (
-                  <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 입력해 주세요. (10분 유효)</Text>
+                  <>
+                    <Pressable
+                      onPress={verifyCode}
+                      disabled={busy || codeVerifyLoading || code.length !== 6 || codeVerified}
+                      style={({ pressed }) => [
+                        styles.identityButton,
+                        (pressed || busy || codeVerifyLoading || codeVerified) && styles.pressed,
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      {codeVerifyLoading
+                        ? <ActivityIndicator color={darkColors.text} />
+                        : <Text style={[typeScale.label, { color: codeVerified ? darkColors.accent : darkColors.text }]}>
+                            {codeVerified ? '✓ 이메일 인증 완료' : '인증 코드 확인'}
+                          </Text>}
+                    </Pressable>
+                    <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 입력해 확인해 주세요. (10분 유효)</Text>
+                  </>
                 ) : null}
               </View>
             ) : null}
@@ -456,10 +507,10 @@ export default function LoginScreen() {
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
             <Pressable
               onPress={submitEmail}
-              disabled={busy || (isSignup && !signupConsentComplete)}
+              disabled={busy || (isSignup && (!signupConsentComplete || !signupVerificationComplete))}
               style={({ pressed }) => [
                 styles.cta,
-                (pressed || busy || (isSignup && !signupConsentComplete)) && styles.ctaDisabled,
+                (pressed || busy || (isSignup && (!signupConsentComplete || !signupVerificationComplete))) && styles.ctaDisabled,
               ]}
               accessibilityRole="button"
             >
@@ -468,7 +519,14 @@ export default function LoginScreen() {
                 : <Text style={styles.ctaLabel}>{isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</Text>}
             </Pressable>
             <Pressable
-              onPress={() => { setIsSignup(!isSignup); setError(null); setCode(''); setCodeSent(false); setIdentityId(null); }}
+              onPress={() => {
+                setIsSignup(!isSignup);
+                setError(null);
+                setCode('');
+                setCodeSent(false);
+                setCodeVerified(false);
+                setIdentityId(null);
+              }}
               disabled={busy}
               accessibilityRole="button"
               style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}

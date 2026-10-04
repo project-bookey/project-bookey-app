@@ -1,7 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIAP, type Purchase } from 'expo-iap';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ApiError } from '@/api/client';
@@ -12,7 +14,12 @@ import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme'
 
 const PRICE_PER_BOOKMARK = 200;
 const PRESETS = [5, 10, 50] as const;
+const BOOKMARK_SKUS = PRESETS.map((amount) => `bookey.bookmark.${amount}`);
+const PENDING_CHECKOUT_KEY = 'bookey.pendingBookmarkCheckout';
 const PAYMENTS_ENABLED = process.env.EXPO_PUBLIC_ENABLE_PAYMENTS === 'true';
+const LOCAL_STOREKIT_TEST = __DEV__
+  && Platform.OS === 'ios'
+  && process.env.EXPO_PUBLIC_LOCAL_STOREKIT_TEST === 'true';
 
 function bonusFor(quantity: number): number {
   return quantity >= 10 ? Math.floor(quantity * 0.1) : 0;
@@ -34,21 +41,81 @@ export default function BookmarksScreen() {
   const [quantity, setQuantity] = useState(10);
   const [custom, setCustom] = useState('10');
   const [notice, setNotice] = useState<string | null>(null);
+  const pendingCheckout = useRef<Awaited<ReturnType<typeof bookmarkPurchaseApi.begin>> | null>(null);
+  const completePurchase = async (purchase: Purchase) => {
+    const view = pendingCheckout.current;
+    if (!view || purchase.productId !== view.productId) return;
+    if (LOCAL_STOREKIT_TEST) {
+      await finishTransaction({ purchase, isConsumable: true });
+      pendingCheckout.current = null;
+      await AsyncStorage.removeItem(PENDING_CHECKOUT_KEY);
+      setNotice(`로컬 구매 성공 콜백을 받았습니다: ${purchase.productId}`);
+      return;
+    }
+    const provider = Platform.OS === 'ios' ? 'APPLE' : 'GOOGLE';
+    const nextWallet = await bookmarkPurchaseApi.verify({
+      provider,
+      productId: view.productId,
+      orderId: view.orderId,
+      quantity: view.quantity,
+      amountKrw: view.amountKrw,
+      receiptData: purchase.purchaseToken ?? undefined,
+      originalTransactionId: purchase.transactionId ?? purchase.id,
+    });
+    await finishTransaction({ purchase, isConsumable: true });
+    pendingCheckout.current = null;
+    await AsyncStorage.removeItem(PENDING_CHECKOUT_KEY);
+    setNotice(`결제가 완료되었습니다. 책갈피 ${nextWallet.bookmarkBalance}개를 보유하고 있습니다.`);
+  };
+  const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
+    onPurchaseSuccess: (purchase) => void completePurchase(purchase).catch((e) => {
+      setNotice(e instanceof Error ? e.message : '결제 검증에 실패했습니다.');
+    }),
+    onPurchaseError: (e) => setNotice(e.message || '스토어 결제를 완료하지 못했습니다.'),
+  });
+
+  useEffect(() => {
+    void AsyncStorage.getItem(PENDING_CHECKOUT_KEY).then((raw) => {
+      if (raw) pendingCheckout.current = JSON.parse(raw) as Awaited<ReturnType<typeof bookmarkPurchaseApi.begin>>;
+    }).catch(() => AsyncStorage.removeItem(PENDING_CHECKOUT_KEY));
+  }, []);
+
+  useEffect(() => {
+    if (connected) {
+      void fetchProducts({ skus: BOOKMARK_SKUS, type: 'in-app' });
+    }
+  }, [connected, fetchProducts]);
+
   const checkout = useMutation({
-    mutationFn: () => bookmarkPurchaseApi.begin(quantity),
+    mutationFn: () => bookmarkPurchaseApi.begin(
+      quantity,
+      Platform.OS === 'ios' ? 'APPLE' : Platform.OS === 'android' ? 'GOOGLE' : 'TOSS',
+    ),
     onMutate: () => setNotice(null),
     onSuccess: async (view) => {
-      if (!view.checkoutUrl) {
-        setNotice('결제창을 열 수 없습니다.');
+      if (Platform.OS === 'web') {
+        if (!view.checkoutUrl) {
+          setNotice('결제창을 열 수 없습니다.');
+          return;
+        }
+        await WebBrowser.openBrowserAsync(view.checkoutUrl);
         return;
       }
-      await WebBrowser.openBrowserAsync(view.checkoutUrl);
+      pendingCheckout.current = view;
+      await AsyncStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify(view));
+      await requestPurchase({
+        type: 'in-app',
+        request: Platform.OS === 'ios'
+          ? { apple: { sku: view.productId, quantity: 1 } }
+          : { google: { skus: [view.productId] } },
+      });
     },
   });
 
   const bonus = bonusFor(quantity);
   const total = quantity + bonus;
   const price = quantity * PRICE_PER_BOOKMARK;
+  const selectedProduct = products.find((product) => product.id === `bookey.bookmark.${quantity}`);
   const error = checkout.error instanceof ApiError
     ? checkout.error.message
     : checkout.error
@@ -101,14 +168,15 @@ export default function BookmarksScreen() {
                     {presetBonus > 0 ? `${amount}+${presetBonus}` : `${amount}`}
                   </Text>
                   <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                    {(amount * PRICE_PER_BOOKMARK).toLocaleString()}원
+                    {products.find((product) => product.id === `bookey.bookmark.${amount}`)?.displayPrice
+                      ?? `${(amount * PRICE_PER_BOOKMARK).toLocaleString()}원`}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
 
-          <Card>
+          {Platform.OS === 'web' ? <Card>
             <Eyebrow>직접 입력</Eyebrow>
             <View style={styles.inputRow}>
               <TextInput
@@ -133,7 +201,7 @@ export default function BookmarksScreen() {
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
               10개부터 구매 수량의 10%를 추가로 드립니다.
             </Text>
-          </Card>
+          </Card> : null}
 
           <Card>
             <Eyebrow>결제 요약</Eyebrow>
@@ -144,12 +212,17 @@ export default function BookmarksScreen() {
               <Rule />
               <KeyValue label="충전 합계" value={`${total}개`} />
               <Rule />
-              <KeyValue label="결제 금액" value={`${price.toLocaleString()}원`} />
+              <KeyValue
+                label="결제 금액"
+                value={Platform.OS === 'web'
+                  ? `${price.toLocaleString()}원`
+                  : selectedProduct?.displayPrice ?? '스토어 가격 확인 중'}
+              />
             </View>
             <Button
               label={PAYMENTS_ENABLED ? checkoutLabel() : '스토어 결제 준비 중'}
               style={styles.checkout}
-              disabled={!PAYMENTS_ENABLED || quantity < 1}
+              disabled={!PAYMENTS_ENABLED || quantity < 1 || (Platform.OS !== 'web' && (!connected || !selectedProduct))}
               onPress={() => checkout.mutate()}
               loading={checkout.isPending}
             />
@@ -161,6 +234,8 @@ export default function BookmarksScreen() {
               <Text style={[typeScale.caption, styles.notice, { color: colors.warn }]}>
                 {notice}
               </Text>
+            ) : Platform.OS !== 'web' && !PRESETS.includes(quantity as typeof PRESETS[number]) ? (
+              <Text style={[typeScale.caption, styles.notice, { color: colors.textMuted }]}>5개, 10개, 50개 묶음 중 하나를 선택해 주세요.</Text>
             ) : !PAYMENTS_ENABLED ? (
               <Text style={[typeScale.caption, styles.notice, { color: colors.textMuted }]}> 
                 안전한 인앱 결제를 준비하고 있습니다.

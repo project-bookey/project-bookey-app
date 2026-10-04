@@ -8,6 +8,7 @@
     "web": "expo start --web",
     "ios": "expo run:ios",
     "android": "expo run:android",
+    "ios:storekit": "node scripts/setup-local-storekit.mjs && expo run:ios",
     "typecheck": "tsc --noEmit",
     "types": "node scripts/generate-api-types.mjs"
   },
@@ -29,6 +30,7 @@
     "expo-device": "~57.0.2",
     "expo-font": "~57.0.2",
     "expo-glass-effect": "~57.0.4",
+    "expo-iap": "^5.8.2",
     "expo-image-manipulator": "~57.0.19",
     "expo-image-picker": "~57.0.19",
     "expo-linear-gradient": "~57.0.2",

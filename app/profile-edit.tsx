@@ -7,16 +7,16 @@ import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
+import { BirthDatePicker } from '@/components/BirthDatePicker';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
-type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
+type Gender = 'MALE' | 'FEMALE' | 'PREFER_NOT_TO_SAY';
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
-  { value: 'PREFER_NOT_TO_SAY', label: '선택 안 함' },
-  { value: 'FEMALE', label: '여성' },
   { value: 'MALE', label: '남성' },
-  { value: 'OTHER', label: '기타' },
+  { value: 'FEMALE', label: '여성' },
+  { value: 'PREFER_NOT_TO_SAY', label: '선택하고 싶지 않음' },
 ];
 
 function normalizeBirthDate(value: string): string | null {
@@ -119,21 +119,12 @@ export default function ProfileEditScreen() {
             </View>
             <View style={styles.field}>
               <Text style={[typeScale.label, { color: colors.textMuted }]}>생년월일</Text>
-              <TextInput
+              <BirthDatePicker
                 value={birthDate}
-                onChangeText={(value) => {
-                  setBirthDate(value.replace(/[^0-9-]/g, '').slice(0, 10));
+                onChange={(value) => {
+                  setBirthDate(value);
                   setError(null);
                 }}
-                placeholder="YYYYMMDD"
-                placeholderTextColor={colors.textFaint}
-                keyboardType="numbers-and-punctuation"
-                inputMode="numeric"
-                accessibilityLabel="생년월일"
-                style={[
-                  styles.input,
-                  { borderColor: colors.lineStrong, backgroundColor: colors.surface, color: colors.text },
-                ]}
               />
             </View>
           </Card>
