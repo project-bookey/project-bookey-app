@@ -17,7 +17,7 @@ import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
-import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
+import { MemoScrap, PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
 import { MyRemark } from '@/components/remark/MyRemark';
@@ -45,8 +45,6 @@ const H = {
   /** 표제 — 표지 아래에서 본문 폭을 넉넉히 사용한다. */
   titleTop: 252,
   titleWRatio: 342 / BASE_W,
-  /** 평점 스티키 칩 */
-  chipTop: 326,
   /** 콜라주 판 기본 높이 */
   height: 352,
 } as const;
@@ -219,15 +217,7 @@ export default function BookDetailScreen() {
           hasStartCta ? { paddingBottom: spacing.xxl + 46 + spacing.lg + ctaBottom } : null,
         ]}
       >
-        <Hero
-          info={info}
-          rating={rating}
-          loading={book.isLoading}
-          bound={bound}
-          bookId={bookId}
-          liked={book.data?.liked ?? false}
-          likeCount={book.data?.likeCount ?? 0}
-        />
+        <Hero info={info} loading={book.isLoading} bound={bound} />
 
         <View style={styles.sections}>
           {book.data ? (
@@ -392,27 +382,22 @@ export default function BookDetailScreen() {
 }
 
 /**
- * 히어로 콜라주 — 표지 스택·겹쳐 앉은 세리프 표제·평점 스티키 칩.
+ * 히어로 콜라주 — 표지 스택·겹쳐 앉은 세리프 표제. 평점·좋아요는 아래 스탯 스트립 한 곳에만 둔다.
  * 서브 화면이라 패럴랙스는 없다(정적 콜라주). 입장 정착 애니는 표지에만 건다.
  */
-function Hero({ info, rating, loading, bound, bookId, liked, likeCount }: {
+function Hero({ info, loading, bound }: {
   info?: BookSummary;
-  rating: RatingPick | null;
   /** 로딩 중에는 같은 높이의 빈 판만 그린다 — 도착할 때 아래 섹션이 튀지 않는다. */
   loading?: boolean;
   /** 장정본 표지 — 띠지(내 기록)와 뒤장 메모장(줄거리). */
   bound?: { band?: BookBand; backNote?: BookNote };
-  bookId: number;
-  liked: boolean;
-  likeCount: number;
 }) {
   const { colors } = useTheme();
   const window = useWindowDimensions();
   // 실제 판 폭. 레이아웃 전 첫 프레임은 화면 폭(최대 560)으로 근사한다.
   const [boardW, setBoardW] = useState(0);
-  // 표제·칩 실측 높이 — 두 줄 표제나 큰 글꼴에서도 판이 잘리지 않게 한다.
+  // 표제 실측 높이 — 두 줄 표제나 큰 글꼴에서도 판이 잘리지 않게 한다.
   const [titleH, setTitleH] = useState(0);
-  const [chipH, setChipH] = useState(0);
 
   const W = boardW || Math.min(window.width, 560);
   const k = clamp(W / BASE_W, 0.86, 1.18);
@@ -420,12 +405,10 @@ function Hero({ info, rating, loading, bound, bookId, liked, likeCount }: {
   const coverW = Math.round(H.coverW * k);
   const coverTop = Math.round(H.coverTop * k);
   const titleTop = Math.round(H.titleTop * k);
-  const chipTop = Math.round(H.chipTop * k);
   const boardH = Math.max(
     Math.round(H.height * k),
     coverTop + Math.round(coverW * 1.5) + spacing.sm,
     titleTop + titleH + spacing.md,
-    chipTop + chipH + spacing.md,
   );
 
   const caption = [info?.author ?? '저자 미상', info?.totalPages ? `${info.totalPages}쪽` : null]
@@ -474,81 +457,20 @@ function Hero({ info, rating, loading, bound, bookId, liked, likeCount }: {
           if (next > 0 && next !== titleH) setTitleH(next);
         }}
       >
-        <View style={styles.heroTitleRow}>
-          <Text
-            numberOfLines={2}
-            lineBreakStrategyIOS="hangul-word"
-            textBreakStrategy="balanced"
-            style={[styles.heroTitle, halo, { color: colors.text }]}
-          >
-            {info?.title ?? '제목 미상'}
-          </Text>
-          <BookLikeButton bookId={bookId} liked={liked} likeCount={likeCount} colors={colors} />
-        </View>
+        <Text
+          numberOfLines={2}
+          lineBreakStrategyIOS="hangul-word"
+          textBreakStrategy="balanced"
+          style={[styles.heroTitle, halo, { color: colors.text }]}
+        >
+          {info?.title ?? '제목 미상'}
+        </Text>
         <Text numberOfLines={1} style={[typeScale.caption, styles.heroCaption, halo, { color: colors.textMuted }]}>
           {caption}
         </Text>
       </View>
 
-      {/* ③ 평점 스티키 칩 — 평점 데이터가 없으면 붙이지 않는다 */}
-      {rating ? (
-        <View
-          style={[styles.layer, { right: GUTTER, top: chipTop, zIndex: 3 }]}
-          onLayout={(e) => {
-            const next = Math.round(e.nativeEvent.layout.height);
-            if (next > 0 && next !== chipH) setChipH(next);
-          }}
-        >
-          <StickyNote rotate={2.5} style={styles.ratingNote}>
-            <Text style={[typeScale.monoNumeral, { color: colors.onNote }]}>
-              ★ {rating.average.toFixed(1)} · {groupNumber(rating.count)}명
-            </Text>
-          </StickyNote>
-        </View>
-      ) : null}
     </View>
-  );
-}
-
-function BookLikeButton({ bookId, liked, likeCount, colors }: {
-  bookId: number;
-  liked: boolean;
-  likeCount: number;
-  colors: ColorTokens;
-}) {
-  const queryClient = useQueryClient();
-  const like = useMutation({
-    mutationFn: () => bookApi.like(bookId),
-    onSuccess: (res) => {
-      queryClient.setQueryData(['book', bookId], (old: BookDetail | undefined) =>
-        old ? { ...old, liked: res.liked, likeCount: res.likeCount } : old,
-      );
-    },
-  });
-  // 좋아요는 앱 어디서나 같은 하트다. 이 버튼만 켜지면 상자째 초록으로 채우고 하트·숫자를 onAccent 로
-  // 뒤집는다(사용자 결정 2026-10-04, CLAUDE.md '사용자 결정으로 둔 예외'). 꺼지면 control 테두리 상자.
-  const color = liked ? colors.onAccent : colors.textMuted;
-  return (
-    <Pressable
-      disabled={like.isPending}
-      onPress={() => like.mutate()}
-      accessibilityRole="button"
-      accessibilityState={{ selected: liked }}
-      accessibilityLabel={`좋아요 ${likeCount}`}
-      style={({ pressed }) => [
-        styles.likeButton,
-        liked
-          ? { backgroundColor: colors.accent, borderColor: colors.accent }
-          : { borderColor: colors.control },
-        { opacity: like.isPending ? 0.6 : 1 },
-        pressed ? pressedStyle : null,
-      ]}
-    >
-      <Heart size={18} color={color} fill={liked ? color : 'transparent'} {...iconStroke} />
-      <Text style={[typeScale.monoNumeral, { color }]}>
-        {groupNumber(likeCount)}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -696,7 +618,10 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
   );
 }
 
-/** 스탯 스트립 — 헤어라인 세로 구분으로 나눈 실측 수치 3종(평점 없으면 2종). */
+/**
+ * 스탯 스트립 — 헤어라인 세로 구분으로 나눈 실측 수치 3종(평점 없으면 2종). 책의 평점·좋아요는 여기 한 곳에만 둔다.
+ * 좋아요 칸은 눌러 켜고 끈다 — 앱 어디서나처럼 켜지면 하트를 초록으로 채운다(LikeAction 과 같은 모양).
+ */
 function StatStrip({ detail, rating, reviewTotal, colors }: {
   detail: BookDetail;
   rating: RatingPick | null;
@@ -704,29 +629,40 @@ function StatStrip({ detail, rating, reviewTotal, colors }: {
   reviewTotal?: number;
   colors: ColorTokens;
 }) {
+  const queryClient = useQueryClient();
+  const bookId = detail.book.id;
+  const like = useMutation({
+    mutationFn: () => bookApi.like(bookId),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['book', bookId], (old: BookDetail | undefined) =>
+        old ? { ...old, liked: res.liked, likeCount: res.likeCount } : old,
+      );
+    },
+  });
+
   const cells: { key: string; value: string; label: string; icon?: ReactNode }[] = [];
   if (rating) {
     cells.push({
       key: 'rating',
       value: `★ ${rating.average.toFixed(1)}`,
-      label: '평점',
+      label: `평점 · ${groupNumber(rating.count)}명`,
     });
   }
   cells.push({ key: 'reviews', value: reviewTotal != null ? groupNumber(reviewTotal) : '–', label: '리뷰' });
   // 좋아요 수는 앱 어디서나 하트를 앞에 단다 — 평점 칸의 ★ 자리와 같다.
+  const heart = detail.liked ? colors.accent : colors.text;
   cells.push({
     key: 'likes',
     value: groupNumber(detail.likeCount),
     label: '좋아요',
-    icon: <Heart size={16} color={colors.text} {...iconStroke} />,
+    icon: <Heart size={16} color={heart} fill={detail.liked ? heart : 'transparent'} {...iconStroke} />,
   });
 
   return (
     <View style={[styles.statStrip, { borderTopColor: colors.line }]}>
-      {cells.map((cell, index) => (
-        <Fragment key={cell.key}>
-          {index > 0 ? <View style={[styles.statDivider, { backgroundColor: colors.line }]} /> : null}
-          <View style={styles.statCell}>
+      {cells.map((cell, index) => {
+        const body = (
+          <>
             <View style={styles.statValueRow}>
               {cell.icon}
               <Text style={[styles.statValue, { color: colors.text }]}>
@@ -736,12 +672,40 @@ function StatStrip({ detail, rating, reviewTotal, colors }: {
             <Text style={[typeScale.caption, styles.statLabel, { color: colors.textFaint }]}>
               {cell.label}
             </Text>
-          </View>
-        </Fragment>
-      ))}
+          </>
+        );
+        return (
+          <Fragment key={cell.key}>
+            {index > 0 ? <View style={[styles.statDivider, { backgroundColor: colors.line }]} /> : null}
+            {cell.key === 'likes' ? (
+              <Pressable
+                disabled={like.isPending}
+                onPress={() => like.mutate()}
+                accessibilityRole="button"
+                accessibilityState={{ selected: detail.liked }}
+                accessibilityLabel={`좋아요 ${detail.likeCount}`}
+                hitSlop={LIKE_HIT_SLOP}
+                style={({ pressed }) => [
+                  styles.statCell,
+                  styles.statPressable,
+                  { opacity: like.isPending ? 0.6 : 1 },
+                  pressed ? pressedStyle : null,
+                ]}
+              >
+                {body}
+              </Pressable>
+            ) : (
+              <View style={styles.statCell}>{body}</View>
+            )}
+          </Fragment>
+        );
+      })}
     </View>
   );
 }
+
+/** 좋아요 칸의 터치 상자 — 칸 높이(약 42pt)를 44pt 넘게, 옆 칸과 겹치지 않을 만큼만 넓힌다. */
+const LIKE_HIT_SLOP = { top: 6, bottom: 6, left: spacing.sm, right: spacing.sm };
 
 /** 책 소개 — 세리프 인용 활자 + 더보기/접기. */
 function Description({ text, colors }: { text: string; colors: ColorTokens }) {
@@ -1237,16 +1201,13 @@ const styles = StyleSheet.create({
   layer: { position: 'absolute' },
   // 시안 27px 세리프 — 두 줄까지만 두고 살짝 기울여 종이에 앉힌 인상을 준다.
   heroTitle: {
-    flex: 1,
     fontFamily: serif.extraBold,
     fontSize: 27,
     lineHeight: 31,
     letterSpacing: -1.1,
     transform: [{ rotate: '-1.5deg' }],
   },
-  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   heroCaption: { marginTop: spacing.sm },
-  ratingNote: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
 
   sections: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.xl },
   headBlock: { gap: spacing.lg },
@@ -1271,17 +1232,6 @@ const styles = StyleSheet.create({
 
   actionBarWrap: { gap: spacing.sm },
   actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
-  likeButton: {
-    minWidth: 46,
-    height: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-  },
   actionButton: {
     height: 46,
     borderRadius: radius.sm,
@@ -1316,6 +1266,7 @@ const styles = StyleSheet.create({
 
   statStrip: { flexDirection: 'row', gap: spacing.lg, borderTopWidth: hairline, paddingTop: spacing.lg },
   statCell: { gap: 3 },
+  statPressable: { minWidth: 44 },
   statDivider: { width: hairline },
   // 아이콘(하트)과 숫자는 한 덩어리 — ★ 와 숫자 사이 띄어쓰기만큼(5px) 띄운다.
   statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
