@@ -27,9 +27,13 @@ function formatDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/** 가입·프로필에서 공통으로 쓰는 생년월일 선택기. iOS는 휠, Android는 날짜 다이얼을 연다. */
+/**
+ * 가입·프로필에서 공통으로 쓰는 생년월일 선택기. iOS는 휠, Android는 날짜 다이얼을 연다.
+ * iOS 휠은 그대로 두면 기기 설정(밝게/어둡게)을 따라 그려져, 앱 테마와 다르면 글자가 배경에 묻힌다 —
+ * themeVariant·textColor 로 앱 테마에 맞춘다. Android 다이얼은 앱 위에 뜨는 시스템 창이라 기기 설정을 따른다.
+ */
 export function BirthDatePicker({ value, onChange, accessibilityLabel = '생년월일' }: Props) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const [androidOpen, setAndroidOpen] = useState(false);
   const date = parseDate(value);
 
@@ -79,6 +83,8 @@ export function BirthDatePicker({ value, onChange, accessibilityLabel = '생년�
       mode="date"
       display="spinner"
       locale="ko-KR"
+      themeVariant={mode}
+      textColor={colors.text}
       maximumDate={new Date()}
       minimumDate={MIN_DATE}
       onChange={change}

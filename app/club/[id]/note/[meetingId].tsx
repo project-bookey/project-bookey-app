@@ -42,10 +42,11 @@ const NOTE_IMAGE_MAX = 30;
 const PEER_AVATAR_MAX = 4;
 
 /** 읽기만 되는 까닭 — 마무리했거나, 클럽이 끝났거나 모임이 취소됐거나, 연결 중에 알게 돼 까닭을 모를 때. */
-type Lock = 'closed' | 'over' | 'unknown';
+type Lock = 'closed' | 'over' | 'guest' | 'unknown';
 const LOCK_TEXT: Record<Lock, string> = {
   closed: '마무리한 노트예요. 이제 볼 수만 있어요.',
   over: '끝난 클럽이나 취소된 모임의 노트는 볼 수만 있어요.',
+  guest: '노트는 모임에 참여한 사람만 쓸 수 있어요. 지금은 볼 수만 있어요.',
   unknown: '이 노트는 이제 볼 수만 있어요.',
 };
 
@@ -119,7 +120,10 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
     void queryClient.invalidateQueries({ queryKey: meetingNotesKey(clubId) });
   }, [queryClient, clubId]);
   const editor = useNoteEditor(seed);
-  const [lock, setLock] = useState<Lock | null>(note.closedAt ? 'closed' : note.readOnly ? 'over' : null);
+  // 서버는 참여하지 않은 사람에게도 readOnly 를 켠다 — 그때는 attending 으로 이유를 가른다.
+  const [lock, setLock] = useState<Lock | null>(
+    note.closedAt ? 'closed' : !note.attending ? 'guest' : note.readOnly ? 'over' : null,
+  );
   const readOnly = lock !== null;
   const [busy, setBusy] = useState<'leaving' | 'closing' | null>(null);
 

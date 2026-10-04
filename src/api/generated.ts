@@ -4246,7 +4246,7 @@ export interface components {
             contributors: components["schemas"]["MeetingAttendeeView"][];
             /** Format: date-time */
             updatedAt?: string;
-            /** @description 끝난 클럽·취소된 모임·마무리한 노트면 true — 읽기만 된다 */
+            /** @description 보는 사람이 쓸 수 없으면 true — 끝난 클럽·취소된 모임·마무리한 노트이거나, 보는 사람이 모임에 참여하지 않았을 때 */
             readOnly: boolean;
             /**
              * Format: date-time
@@ -4255,6 +4255,8 @@ export interface components {
             closedAt?: string;
             /** @description 보는 사람이 이 노트를 마무리할 수 있는지 — 모임을 연 사람(또는 호스트)이고 아직 쓸 수 있는 노트일 때 */
             canClose: boolean;
+            /** @description 보는 사람이 이 모임에 참여했는지 — 노트는 참여한 사람만 쓴다 */
+            attending: boolean;
         };
         KickRequest: {
             /** Format: int64 */

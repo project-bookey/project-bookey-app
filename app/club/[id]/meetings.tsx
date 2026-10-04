@@ -259,7 +259,7 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
             {form.latitude != null ? <PlaceMap latitude={form.latitude} longitude={form.longitude} /> : null}
             <Field
               label="최대 인원 (선택)"
-              hint="비우면 제한 없이 받아요. 정원이 차면 더 참여할 수 없어요."
+              hint="비우면 제한 없이 받아요. 모임을 연 나도 정원에 들어가요."
               error={maxInvalid ? `${MIN_ATTENDEES}명 이상의 숫자로 적어 주세요.` : null}
               value={form.maxAttendees}
               onChangeText={(maxAttendees) => setForm((f) => ({ ...f, maxAttendees: maxAttendees.replace(/[^0-9]/g, '') }))}

@@ -288,24 +288,24 @@ function SettingsForm({ club }: { club: ClubHome }) {
         </Section>
 
         <Section title="초대 · 자리">
-          <View style={styles.rowBetween}>
-            <View style={{ gap: spacing.xs }}>
-              <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
+          <View style={{ gap: spacing.xs }}>
+            <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
+            <View style={styles.rowBetween}>
               <InviteCodeNote code={club.joinCode} />
-            </View>
-            <View style={styles.codeActions}>
-              <CopyCodeButton code={club.joinCode} />
-              <Button
-                label="새로 만들기"
-                size="sm"
-                variant="outline"
-                loading={rotate.isPending}
-                onPress={async () => {
-                  if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
-                    rotate.mutate();
-                  }
-                }}
-              />
+              <View style={styles.codeActions}>
+                <CopyCodeButton code={club.joinCode} />
+                <Button
+                  label="새로 만들기"
+                  size="sm"
+                  variant="outline"
+                  loading={rotate.isPending}
+                  onPress={async () => {
+                    if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
+                      rotate.mutate();
+                    }
+                  }}
+                />
+              </View>
             </View>
           </View>
           <Rule />
