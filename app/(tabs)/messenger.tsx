@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { PaperScreen } from '@/components/collage';
 import { ChatList } from '@/components/messenger/ChatList';
@@ -37,9 +37,11 @@ export default function MessengerScreen() {
 
   return (
     <PaperScreen>
-      <TourTarget id="messenger-panes" style={styles.panes}>
-        <CapsuleTabs items={PANES} value={pane} onChange={setPane} />
-      </TourTarget>
+      <View style={styles.panes}>
+        <TourTarget id="messenger-panes">
+          <CapsuleTabs items={PANES} value={pane} onChange={setPane} />
+        </TourTarget>
+      </View>
       <SwipeableTabs values={PANE_VALUES} value={pane} onChange={setPane}>
         {pane === 'chats' ? <ChatList /> : <PostcardList box={pane === 'inbox' ? 'INBOX' : 'SENT'} />}
       </SwipeableTabs>

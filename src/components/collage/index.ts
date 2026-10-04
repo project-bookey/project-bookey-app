@@ -11,7 +11,7 @@ export { MemoScrap } from './MemoScrap';
 export { PaperScreen } from './PaperScreen';
 export { PlusGlyph } from './PlusGlyph';
 export { SearchGlyph } from './SearchGlyph';
-export { NAV_CLEARANCE, SectionNav } from './SectionNav';
+export { NAV_BAR_HEIGHT, NAV_CLEARANCE, SectionNav } from './SectionNav';
 export type { SectionKey } from './SectionNav';
 export { StickyNote } from './StickyNote';
 export { SubHeader } from './SubHeader';

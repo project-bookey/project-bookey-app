@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 
 import type { Banner } from '@/api/types';
+import { useAppTour } from '@/store/appTour';
 import { hairline, pressedStyle, radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
 import { InlineMarkdownText } from './InlineMarkdownText';
 
@@ -13,6 +14,10 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
   const router = useRouter();
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
+  // 앱 둘러보기와 겹치지 않게 — 둘러보기를 띄울지 확인이 끝나고 둘러보기가 꺼진 뒤에만 띄운다.
+  // 메인 탭이 두 벌 떠 있을 때(프로필 사진 변경 뒤 등) 가려진 쪽은 띄우지 않는다.
+  const tourBusy = useAppTour((s) => !s.checked || s.active);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +50,7 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
+    <Modal visible={visible && !tourBusy && isFocused} transparent animationType="fade" onRequestClose={dismiss}>
       <View style={styles.backdrop}>
         <View style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]}>
           {/* 닫는 길은 아래 '닫기' 하나 — 위 × 까지 두면 같은 동작의 입구가 둘이다(UX 철칙 Hick). */}
