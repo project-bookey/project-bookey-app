@@ -262,6 +262,9 @@ export const libraryApi = {
       method: "POST",
       body: { reason },
     }),
+  /** 서재에서 빼기 — 서버는 기록에 딸린 독서 시간까지 함께 지우므로, 앱은 읽고 싶음 상태에서만 쓴다. */
+  remove: (recordId: number) =>
+    api<void>(`/api/v1/library/${recordId}`, { method: "DELETE" }),
   /** 이 기록에 남긴 내 한 마디 — 없으면 서버가 빈 응답을 준다. */
   remark: async (recordId: number) =>
     (await api<Remark | undefined>(`/api/v1/library/${recordId}/remark`)) ?? null,
