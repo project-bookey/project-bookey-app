@@ -126,7 +126,11 @@ export default function ClubHomeScreen() {
     retry: false,
   });
 
-  const isMember = !!club.data;
+  // 나갔거나 내보내진 클럽은 멤버일 때 받은 홈이 캐시에 남는다(다시 받기가 실패해도 react-query는 지난 데이터를 둔다).
+  // 서버가 멤버가 아니라고 하면(403) 그 홈은 버리고 미리보기(참가하기)로 연다.
+  const notMember = club.error instanceof ApiError && club.error.status === 403;
+  const home = notMember ? undefined : club.data;
+  const isMember = !!home;
   // 헤더 말풍선의 안 읽음 배지 — 채팅 화면을 나오면 그쪽에서 무효화해 다시 받는다.
   const chatState = useQuery({
     queryKey: ["clubChat", clubId, "state"],
@@ -155,7 +159,7 @@ export default function ClubHomeScreen() {
       </PaperScreen>
     );
   }
-  if (!club.data) {
+  if (!home) {
     if (preview.data) {
       return (
         <PublicClubPreview
@@ -177,7 +181,7 @@ export default function ClubHomeScreen() {
     );
   }
 
-  const data: ClubHome = club.data;
+  const data: ClubHome = home;
   const ended = data.status === "ENDED" || data.status === "ARCHIVED";
   const isHost = data.myRole === "HOST";
   const host = data.members.find((m) => m.role === "HOST");
