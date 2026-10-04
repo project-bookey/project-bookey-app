@@ -3,16 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIAP, type Purchase } from 'expo-iap';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { subscriptionApi, walletApi } from '@/api/endpoints';
 import type { SubscriptionProvider } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
-  Button, Card, Eyebrow, KeyValue, Rule, Tag,
+  Button, Card, Eyebrow, KeyValue, Rule, Tag, linkLabel,
 } from '@/components/ui';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { openLegal, type LegalSection } from '@/legal/links';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const FEATURE_COPY: Record<string, string> = {
   visitors: '누가 내 페이지를 다녀갔는지 확인할 수 있어요.',
@@ -21,6 +22,8 @@ const FEATURE_COPY: Record<string, string> = {
 const PAYMENTS_ENABLED = process.env.EXPO_PUBLIC_ENABLE_PAYMENTS === 'true';
 const SUBSCRIPTION_PRODUCT_ID = process.env.EXPO_PUBLIC_SUBSCRIPTION_PRODUCT_ID || 'bookey.plus.monthly';
 const PENDING_CHECKOUT_KEY = 'bookey.pendingSubscriptionCheckout';
+/** 구독을 받는 앱 마켓 — 웹에는 구독 결제가 없어 묶어 부른다. */
+const STORE_NAME = Platform.OS === 'ios' ? 'App Store' : Platform.OS === 'android' ? 'Google Play' : '앱 마켓';
 const LOCAL_STOREKIT_TEST = __DEV__
   && Platform.OS === 'ios'
   && process.env.EXPO_PUBLIC_LOCAL_STOREKIT_TEST === 'true';
@@ -177,6 +180,23 @@ export default function SubscriptionScreen() {
                 앱 결제 완료 후 서버에서 결제를 다시 검증합니다.
               </Text>
             )}
+            {/* 자동 갱신 구독의 구매 전 고지 — 갱신·해지 방법과 약관·개인정보·환불 링크(App Store 심사 3.1.2 요건). */}
+            <Text style={[typeScale.caption, styles.renewal, { color: colors.textMuted }]}>
+              구독은 한 달마다 자동으로 갱신돼요. 이용 기간이 끝나기 24시간 전까지 {STORE_NAME} 구독 관리에서 해지하지 않으면 다음 달 요금이 결제돼요. 해지해도 남은 기간은 쓸 수 있고, 환불은 {STORE_NAME} 절차를 따라요.
+            </Text>
+            <View style={styles.legalLinks}>
+              {([['terms', '이용약관'], ['privacy', '개인정보처리방침'], ['refund', '환불 정책']] as [LegalSection, string][]).map(([section, label]) => (
+                <Pressable
+                  key={section}
+                  onPress={() => openLegal(section)}
+                  accessibilityRole="link"
+                  hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
+                  style={({ pressed }) => pressed && pressedStyle}
+                >
+                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>{linkLabel(label)}</Text>
+                </Pressable>
+              ))}
+            </View>
           </Card>
         </View>
       </ScrollView>
@@ -193,6 +213,8 @@ const styles = StyleSheet.create({
   price: { ...typeScale.display, fontSize: 30, letterSpacing: 0 },
   checkoutButtons: { gap: spacing.sm, marginTop: spacing.md },
   note: { marginTop: spacing.md, lineHeight: 18 },
+  renewal: { marginTop: spacing.md, lineHeight: 18 },
+  legalLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
   error: {
     marginTop: spacing.md,
     lineHeight: 18,

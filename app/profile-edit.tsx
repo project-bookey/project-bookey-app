@@ -1,16 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
-import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
+import { Button, Card, Eyebrow, FootAction, Segmented, linkLabel } from '@/components/ui';
 import { BirthDatePicker } from '@/components/BirthDatePicker';
+import { LegalDocumentSheet } from '@/components/legal/LegalDocumentSheet';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 type Gender = 'MALE' | 'FEMALE' | 'PREFER_NOT_TO_SAY';
 
@@ -47,21 +49,36 @@ export default function ProfileEditScreen() {
   const user = useAuth((s) => s.user);
   const setUser = useAuth((s) => s.setUser);
   const [nickname, setNickname] = useState(user?.nickname ?? '');
-  const [gender, setGender] = useState<Gender>((user?.gender as Gender | undefined) ?? 'PREFER_NOT_TO_SAY');
-  const [birthDate, setBirthDate] = useState(user?.birthDate ?? '');
+  const savedGender = (user?.gender as Gender | undefined) ?? 'PREFER_NOT_TO_SAY';
+  const savedBirthDate = user?.birthDate ?? '';
+  const [gender, setGender] = useState<Gender>(savedGender);
+  const [birthDate, setBirthDate] = useState(savedBirthDate);
   const [error, setError] = useState<string | null>(null);
+  const [optionalDocOpen, setOptionalDocOpen] = useState(false);
+  const clearConfirm = useDeleteConfirm<'optional'>();
+
+  // 성별·생년월일은 [선택] 정보 — 바꿔서 저장하려면 선택 동의가 있어야 한다(서버가 CONSENT_REQUIRED 로 막는다).
+  const optionalAgreed = user?.consents?.some((c) => c.kind === 'PROFILE_OPTIONAL' && c.agreed) ?? false;
+  const genderChanged = gender !== savedGender;
+  const birthDateChanged = birthDate.trim() !== savedBirthDate;
+  const needsOptionalConsent = (genderChanged || (birthDateChanged && birthDate.trim().length > 0)) && !optionalAgreed;
+  const hasOptional = user?.gender != null || user?.birthDate != null;
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const birthDateText = birthDate.trim();
       const normalizedBirthDate = birthDateText ? normalizeBirthDate(birthDateText) : '';
       if (birthDateText && !normalizedBirthDate) {
         throw new Error('생년월일을 YYYYMMDD 또는 YYYY-MM-DD 형식으로 입력해 주세요.');
       }
+      if (needsOptionalConsent) {
+        await authApi.setConsent('PROFILE_OPTIONAL', true);
+      }
+      // 바뀐 값만 보낸다 — 그대로인 성별·생년월일을 다시 보내 동의를 요구받지 않게.
       return authApi.updateProfile({
         nickname: nickname.trim(),
-        gender,
-        birthDate: normalizedBirthDate || undefined,
+        gender: genderChanged ? gender : undefined,
+        birthDate: birthDateChanged ? normalizedBirthDate || undefined : undefined,
       });
     },
     onSuccess: (me) => {
@@ -73,10 +90,23 @@ export default function ProfileEditScreen() {
     onError: (e) => setError(e instanceof ApiError || e instanceof Error ? e.message : '프로필을 저장하지 못했어요.'),
   });
 
+  /** 선택 동의 철회 — 서버가 성별·생년월일을 지운다. 되돌리려면 다시 넣으면 된다. */
+  const clearOptional = useMutation({
+    mutationFn: () => authApi.setConsent('PROFILE_OPTIONAL', false),
+    onSuccess: (me) => {
+      setUser(me);
+      setGender('PREFER_NOT_TO_SAY');
+      setBirthDate('');
+      clearConfirm.disarm();
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : '선택 정보를 지우지 못했어요.'),
+  });
+
   const canSave = nickname.trim().length > 0 && (
     nickname.trim() !== (user?.nickname ?? '')
-    || gender !== ((user?.gender as Gender | undefined) ?? 'PREFER_NOT_TO_SAY')
-    || birthDate.trim() !== (user?.birthDate ?? '')
+    || genderChanged
+    || birthDateChanged
   );
 
   return (
@@ -114,7 +144,22 @@ export default function ProfileEditScreen() {
           </Card>
 
           <Card>
-            <Eyebrow>기본 정보</Eyebrow>
+            <Eyebrow>선택 정보</Eyebrow>
+            <View style={styles.optionalNote}>
+              <Text style={[typeScale.caption, styles.optionalCopy, { color: colors.textMuted }]}>
+                {optionalAgreed
+                  ? '맞춤 추천과 또래 독서 통계에만 써요.'
+                  : '[선택] 바꿔서 저장하면 맞춤 추천·또래 독서 통계에 쓰는 데 동의하게 돼요.'}
+              </Text>
+              <Pressable
+                onPress={() => setOptionalDocOpen(true)}
+                accessibilityRole="button"
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                style={({ pressed }) => pressed && pressedStyle}
+              >
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>{linkLabel('자세히')}</Text>
+              </Pressable>
+            </View>
             <View style={styles.field}>
               <Text style={[typeScale.label, { color: colors.textMuted }]}>성별</Text>
               <Segmented options={GENDER_OPTIONS} value={gender} onChange={setGender} />
@@ -129,6 +174,17 @@ export default function ProfileEditScreen() {
                 }}
               />
             </View>
+            {/* 지우기(동의 철회)는 저장 버튼과 떨어진 카드 발치에, 두 번 눌러야 지운다. */}
+            {hasOptional ? (
+              <View style={styles.clearRow}>
+                <FootAction
+                  label={clearConfirm.confirm ? '한 번 더' : '성별·생년월일 지우기'}
+                  tone={clearConfirm.confirm ? 'danger' : 'faint'}
+                  disabled={clearOptional.isPending}
+                  onPress={() => (clearConfirm.confirm ? clearOptional.mutate() : clearConfirm.arm('optional'))}
+                />
+              </View>
+            ) : null}
           </Card>
         </View>
       </ScrollView>
@@ -136,13 +192,18 @@ export default function ProfileEditScreen() {
       {/* 하단 띠 — 다른 쓰기 화면과 같은 자리라 닉네임을 적는 동안에도 키보드 위에 붙어 엄지가 닿는다(UX 철칙 Fitts). */}
       <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
         <Button
-          label="저장"
+          label={needsOptionalConsent ? '동의하고 저장' : '저장'}
           disabled={!canSave || save.isPending}
           loading={save.isPending}
           onPress={() => save.mutate()}
         />
       </KeyboardDock>
       </KeyboardArea>
+      <LegalDocumentSheet
+        docKey={optionalDocOpen ? 'profile-optional' : null}
+        colors={colors}
+        onClose={() => setOptionalDocOpen(false)}
+      />
     </PaperScreen>
   );
 }
@@ -167,5 +228,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   counter: { marginTop: spacing.xs, textAlign: 'right' },
+  optionalNote: { marginTop: spacing.sm, gap: spacing.xs },
+  optionalCopy: { lineHeight: 18 },
+  clearRow: { flexDirection: 'row', marginTop: spacing.md },
   error: { marginTop: spacing.sm, lineHeight: 18 },
 });

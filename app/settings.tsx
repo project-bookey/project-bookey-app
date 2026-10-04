@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { API_BASE_URL } from '@/api/client';
 import { authApi, notificationApi } from '@/api/endpoints';
@@ -11,6 +11,7 @@ import {
   Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle,
 } from '@/components/ui';
 import { useSocialTokens, type SocialProvider } from '@/hooks/useSocialTokens';
+import { openLegal } from '@/legal/links';
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import { useAppTour } from '@/store/appTour';
@@ -38,7 +39,11 @@ const THEMES: { value: ThemePreference; label: string }[] = [
   { value: 'dark', label: '다크' },
 ];
 
-const LEGAL_URL = 'https://api.bookey.site/legal/index.html';
+/** 광고성 정보 수신 동의를 마지막으로 바꾼 날 — '2026년 10월 4일'. 처리 결과 안내(정보통신망법 제50조 ⑧)에 쓴다. */
+function consentDate(at: string): string {
+  const date = new Date(at);
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -51,6 +56,18 @@ export default function SettingsScreen() {
   const preference = useThemePreference((s) => s.preference);
   const setPreference = useThemePreference((s) => s.setPreference);
   const startTour = useAppTour((s) => s.start);
+
+  const marketing = user?.consents?.find((c) => c.kind === 'MARKETING');
+  const setMarketing = useMutation({
+    mutationFn: (agreed: boolean) => authApi.setConsent('MARKETING', agreed),
+    // 처리 결과는 토글 아래 줄(보낸 곳·일자)과 서버가 남기는 알림(CONSENT_RESULT)으로 알린다 — 대화상자는 띄우지 않는다.
+    onSuccess: (me) => {
+      setUser(me);
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: () => notify('바꾸지 못했어요. 잠시 후 다시 시도해 주세요.'),
+  });
 
   const updateSettings = useMutation({
     mutationFn: (body: Record<string, unknown>) => notificationApi.updateSettings(body),
@@ -131,6 +148,23 @@ export default function SettingsScreen() {
                   onChange={(value) => updateSettings.mutate({ allowNudge: value })}
                 />
               </View>
+              <Rule />
+              {/* [선택] 광고성 정보 수신 — 바꿀 때마다 처리 결과(보낸 곳·일자)를 알린다. 마지막 처리 일자는 아래 줄에 남는다. */}
+              <View style={styles.switchRow}>
+                <Toggle
+                  label="혜택·이벤트 소식 받기"
+                  description="광고성 정보를 앱 푸시·이메일로 받습니다. 밤 9시~아침 8시에는 보내지 않아요."
+                  value={marketing?.agreed ?? false}
+                  onChange={(value) => {
+                    if (!setMarketing.isPending) setMarketing.mutate(value);
+                  }}
+                />
+                {marketing ? (
+                  <Text style={[typeScale.caption, styles.consentNote, { color: colors.textFaint }]}>
+                    Bookey · {consentDate(marketing.at)} {marketing.agreed ? '수신 동의' : '수신 동의 철회'}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           </Card>
 
@@ -163,18 +197,23 @@ export default function SettingsScreen() {
               <Button
                 label="개인정보처리방침"
                 variant="ghost"
-                onPress={() => void Linking.openURL(`${LEGAL_URL}#privacy`)}
+                onPress={() => openLegal('privacy')}
               />
               <Button
                 label="이용약관"
                 variant="ghost"
-                onPress={() => void Linking.openURL(`${LEGAL_URL}#terms`)}
+                onPress={() => openLegal('terms')}
+              />
+              <Button
+                label="환불 정책"
+                variant="ghost"
+                onPress={() => openLegal('refund')}
               />
               {/* 문의는 위 '고객문의'로 받는다 — 여기는 웹 안내문의 계정 삭제 절만 연다. */}
               <Button
                 label="계정 삭제 안내"
                 variant="ghost"
-                onPress={() => void Linking.openURL(`${LEGAL_URL}#deletion`)}
+                onPress={() => openLegal('deletion')}
               />
               {/* 접속 서버 확인용 — 개발 빌드에서만 보인다. */}
               {__DEV__ ? (
@@ -326,6 +365,7 @@ const styles = StyleSheet.create({
   radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },
   switchRow: { paddingVertical: spacing.sm },
+  consentNote: { marginTop: spacing.xs },
   linkList: { marginTop: spacing.sm },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44, paddingVertical: spacing.xs },
   footer: { gap: spacing.xl },

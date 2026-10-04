@@ -1667,7 +1667,7 @@ export interface paths {
         get: operations["me"];
         put?: never;
         post?: never;
-        /** 계정 영구 삭제 — 개인정보·로그인 수단 제거 및 계정 종료 */
+        /** 계정 탈퇴 — 즉시 로그인 차단, 30일 뒤 연관 기록 영구 삭제 */
         delete: operations["deleteAccount"];
         options?: never;
         head?: never;

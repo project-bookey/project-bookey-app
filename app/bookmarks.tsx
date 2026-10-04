@@ -9,8 +9,9 @@ import { useRouter } from 'expo-router';
 import { ApiError } from '@/api/client';
 import { bookmarkPurchaseApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { Button, Card, Eyebrow, KeyValue, Rule } from '@/components/ui';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, Card, Eyebrow, KeyValue, Rule, linkLabel } from '@/components/ui';
+import { openLegal } from '@/legal/links';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const PRICE_PER_BOOKMARK = 200;
 const PRESETS = [5, 10, 50] as const;
@@ -241,6 +242,22 @@ export default function BookmarksScreen() {
                 안전한 인앱 결제를 준비하고 있습니다.
               </Text>
             ) : null}
+            {/* 환불 조건은 결제 버튼 바로 아래에 — 구매 전에 표시한다(이용약관 제7조). 앱 결제는 마켓이 환불한다. */}
+            <View style={styles.refund}>
+              <Text style={[typeScale.caption, styles.refundCopy, { color: colors.textMuted }]}>
+                {Platform.OS === 'web'
+                  ? '결제 후 7일 안에 쓰지 않은 책갈피는 수수료 없이 환불돼요. 엽서·우표로 바꾸거나 쓴 책갈피와 보너스는 환불되지 않아요.'
+                  : `환불은 ${Platform.OS === 'ios' ? 'App Store' : 'Google Play'} 절차를 따라요. 엽서·우표로 바꾸거나 쓴 책갈피와 보너스는 환불되지 않아요.`}
+              </Text>
+              <Pressable
+                onPress={() => openLegal('refund')}
+                accessibilityRole="link"
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                style={({ pressed }) => [styles.refundLink, pressed && pressedStyle]}
+              >
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>{linkLabel('환불 정책')}</Text>
+              </Pressable>
+            </View>
           </Card>
         </View>
       </ScrollView>
@@ -279,4 +296,7 @@ const styles = StyleSheet.create({
   hint: { marginTop: spacing.sm, lineHeight: 18 },
   checkout: { marginTop: spacing.md },
   notice: { marginTop: spacing.md, lineHeight: 18 },
+  refund: { marginTop: spacing.md, gap: spacing.xs },
+  refundCopy: { lineHeight: 18 },
+  refundLink: { alignSelf: 'flex-start' },
 });
