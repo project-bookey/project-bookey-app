@@ -309,6 +309,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
               multiline
               style={styles.description}
               onFocus={() => revealAbove(submitRef)}
+              onContentSizeChange={() => revealAbove(submitRef, { onlyIfOpen: true })}
             />
             <View ref={submitRef} style={styles.submit}>
               <Button label="모임 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} />

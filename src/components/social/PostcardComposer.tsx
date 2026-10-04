@@ -83,6 +83,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
         placeholderTextColor={colors.textFaint}
         multiline
         onFocus={() => reveal(actionsRef)}
+        onContentSizeChange={() => reveal(actionsRef, { onlyIfOpen: true })}
         accessibilityLabel="엽서 본문"
       />
       <Text style={[typeScale.monoLabel, styles.counter, { color: over ? colors.danger : colors.textFaint }]}>
