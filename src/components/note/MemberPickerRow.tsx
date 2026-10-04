@@ -27,7 +27,7 @@ export function MemberPickerRow({ members, selectedUserId, onPick }: {
               styles.chip,
               selected
                 ? { backgroundColor: colors.ink, borderColor: colors.ink }
-                : { backgroundColor: 'transparent', borderColor: colors.line },
+                : { backgroundColor: 'transparent', borderColor: colors.control },
               pressed && !selected ? pressedStyle : null,
             ]}
           >

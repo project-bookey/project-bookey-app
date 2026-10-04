@@ -18,8 +18,13 @@ export type ColorTokens = {
   textFaint: string;
   /** 헤어라인·트랙 */
   line: string;
-  /** 아웃라인 버튼 테두리 */
+  /** 굵은 구분선·시트 테두리·장식 획 — 누를 수 있는 것의 테두리는 control 을 쓴다 */
   lineStrong: string;
+  /**
+   * 누를 수 있는 것의 테두리(아웃라인 버튼·칩·토글·카드 발치 버튼). 배경·카드·시트 어디서든 대비 3:1 이상
+   * (WCAG 1.4.11) — lineStrong(1.5:1)으로는 버튼이 상자 없는 글자처럼 보였다(2026-10-04).
+   */
+  control: string;
   /** CTA·진행 바·링크·긍정 상태 — 민트 하나로 통일(2026-09-28 세이지·주홍·형광펜 대조 후 유지 결정) */
   accent: string;
   /** 악센트 배경 위 텍스트 */
@@ -78,6 +83,7 @@ export const darkColors: ColorTokens = {
   textFaint: '#6f6d66',
   line: '#23261f',
   lineStrong: '#33372e',
+  control: '#77746c',
   accent: '#3ddc97',
   onAccent: '#0c0e0d',
   accentSoft: '#16352a',
@@ -114,6 +120,7 @@ export const lightColors: ColorTokens = {
   textFaint: '#8b887f',
   line: '#e5e1d7',
   lineStrong: '#cfcabc',
+  control: '#858277',
   accent: '#177a54',
   onAccent: '#ffffff',
   accentSoft: '#ddf2e7',

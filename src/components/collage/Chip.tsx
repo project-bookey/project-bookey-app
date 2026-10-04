@@ -28,7 +28,7 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
         styles.chip,
         active
           ? { backgroundColor: colors.ink, borderColor: colors.ink }
-          : { backgroundColor: 'transparent', borderColor: colors.line },
+          : { backgroundColor: 'transparent', borderColor: colors.control },
         disabled ? styles.disabled : null,
         pressed && !inert && !active && pressedStyle,
       ]}

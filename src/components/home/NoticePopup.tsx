@@ -63,9 +63,9 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
               onPress={dismiss}
               accessibilityRole="button"
               accessibilityLabel="공지 닫기"
-              style={({ pressed }) => [styles.button, { borderColor: colors.lineStrong }, pressed && pressedStyle]}
+              style={({ pressed }) => [styles.button, { borderColor: colors.control }, pressed && pressedStyle]}
             >
-              <Text style={[typeScale.label, { color: colors.textMuted }]}>닫기</Text>
+              <Text style={[typeScale.label, { color: colors.text }]}>닫기</Text>
             </Pressable>
             {notice.linkUrl ? (
               <Pressable

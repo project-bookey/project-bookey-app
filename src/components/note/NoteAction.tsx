@@ -20,7 +20,7 @@ export function NoteAction({ label, onPress, tone = 'default' }: {
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.action,
-        { backgroundColor: colors.surface, borderColor: colors.lineStrong },
+        { backgroundColor: colors.surface, borderColor: colors.control },
         pressed ? pressedStyle : null,
       ]}
     >

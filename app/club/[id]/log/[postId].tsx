@@ -233,7 +233,7 @@ export default function ClubLogScrapScreen() {
                     accessibilityState={{ selected: on }}
                     style={({ pressed }) => [
                       styles.reaction,
-                      { borderColor: colors.line, backgroundColor: colors.bg },
+                      { borderColor: colors.control, backgroundColor: colors.bg },
                       on && { backgroundColor: colors.ink, borderColor: colors.ink },
                       pressed && pressedStyle,
                     ]}

@@ -54,7 +54,7 @@ export function ConfirmButton({ label, question, confirmLabel = '확정', tone =
           onPress={() => setArming(false)}
           accessibilityRole="button"
           accessibilityLabel="취소"
-          style={({ pressed }) => [styles.button, { borderWidth: hairline, borderColor: colors.lineStrong }, pressed && !pending && pressedStyle]}
+          style={({ pressed }) => [styles.button, { borderWidth: hairline, borderColor: colors.control }, pressed && !pending && pressedStyle]}
         >
           <Text style={[typeScale.label, { color: colors.textMuted }]}>취소</Text>
         </Pressable>
@@ -70,11 +70,11 @@ export function ConfirmButton({ label, question, confirmLabel = '확정', tone =
       style={({ pressed }) => [
         styles.button,
         styles.idle,
-        variant === 'outline' ? { borderWidth: hairline, borderColor: colors.lineStrong } : null,
+        variant === 'outline' ? { borderWidth: hairline, borderColor: colors.control } : null,
         pressed && pressedStyle,
       ]}
     >
-      <Text style={[typeScale.label, { color: variant === 'ghost' ? colors.textFaint : colors.text }]}>
+      <Text style={[typeScale.label, { color: variant === 'ghost' ? colors.textMuted : colors.text }]}>
         {label}
       </Text>
     </Pressable>

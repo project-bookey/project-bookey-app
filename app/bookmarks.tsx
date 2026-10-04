@@ -158,7 +158,7 @@ export default function BookmarksScreen() {
                   style={[
                     styles.preset,
                     {
-                      borderColor: selected ? colors.ink : colors.line,
+                      borderColor: selected ? colors.ink : colors.control,
                       backgroundColor: selected ? colors.surfaceRaised : colors.surface,
                     },
                   ]}

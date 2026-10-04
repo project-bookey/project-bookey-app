@@ -173,7 +173,7 @@ export default function ChatRoomScreen() {
                       styles.stickerPackTab,
                       // 고른 묶음은 다른 선택 상태처럼 잉크로 뒤집는다.
                       {
-                        borderColor: selected ? colors.ink : colors.line,
+                        borderColor: selected ? colors.ink : colors.control,
                         backgroundColor: selected ? colors.ink : colors.bg,
                       },
                       pressed ? pressedStyle : null,
@@ -226,7 +226,7 @@ export default function ChatRoomScreen() {
               styles.stickerButton,
               // 열린 동안은 토글 선택 상태처럼 잉크로 뒤집는다.
               {
-                borderColor: stickersOpen ? colors.ink : colors.line,
+                borderColor: stickersOpen ? colors.ink : colors.control,
                 backgroundColor: stickersOpen ? colors.ink : colors.surface,
               },
               pressed ? pressedStyle : null,

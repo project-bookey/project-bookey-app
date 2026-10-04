@@ -34,7 +34,7 @@ export function FollowButton({ userId, nickname, size = 'sm' }: {
         styles.base,
         size === 'md' && styles.md,
         following
-          ? { backgroundColor: 'transparent', borderColor: colors.lineStrong }
+          ? { backgroundColor: 'transparent', borderColor: colors.control }
           : { backgroundColor: colors.ink, borderColor: colors.ink },
         pressed && !pending && pressedStyle,
       ]}
