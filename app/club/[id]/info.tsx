@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { clubApi, clubCommunityApi } from '@/api/endpoints';
 import type { ClubHome, NudgeMessageKey } from '@/api/types';
-import { CopyCodeButton, InviteCodeNote, MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
+import { CopyCodeButton, MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
 import { meetingDay } from '@/components/club/meetingTime';
 import { clubLogKeys, mondayOf, todayKst } from '@/components/clubLog';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
@@ -204,12 +204,12 @@ export default function ClubInfoScreen() {
           >
             <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel('이번 주 카드')}</Text>
           </Pressable>
-          <View style={{ gap: spacing.xs }}>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>초대 코드</Text>
-            <View style={styles.codeRow}>
-              <InviteCodeNote code={data.joinCode} />
-              <CopyCodeButton code={data.joinCode} />
+          <View style={styles.codeRow}>
+            <View style={styles.inlineLabel}>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>초대 코드</Text>
+              <Text style={[styles.code, { color: colors.text }]} selectable>{data.joinCode}</Text>
             </View>
+            <CopyCodeButton code={data.joinCode} />
           </View>
           {isHost ? (
             <View style={styles.codeRow}>
@@ -258,5 +258,6 @@ const styles = StyleSheet.create({
   // 글자 한 줄이라 여백으로 44pt 상자를 만든다(UX 철칙 Fitts).
   linkRow: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  code: { fontFamily: mono.semiBold, fontSize: 14, letterSpacing: 3 },
   inlineLabel: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
 });
