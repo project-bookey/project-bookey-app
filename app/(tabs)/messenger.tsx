@@ -23,8 +23,8 @@ const isPane = (v: unknown): v is Pane => v === 'inbox' || v === 'sent' || v ===
 /**
  * 메신저 구역 — 엽서함(받은·보낸)과 채팅을 하단 탭 하나로 묶는다.
  * 전엔 헤더 왼쪽의 엽서함·채팅 아이콘 둘로 각각 들어갔는데, 사람 사이 오가는 글은 한 자리에
- * 있어야 한다는 요청(2026-09-08)으로 구역이 됐다. 옛 경로 `/postcards`·`/chats` 는 여기로
- * 리다이렉트된다(`?pane=` 로 칸을 지정).
+ * 있어야 한다는 요청(2026-09-08)으로 구역이 됐다. 옛 경로 `/postcards`·`/chats` 는 openSection 으로
+ * 이 구역의 그 칸을 연다(`?pane=` 로 칸을 지정).
  */
 export default function MessengerScreen() {
   const params = useLocalSearchParams<{ pane?: string }>();
