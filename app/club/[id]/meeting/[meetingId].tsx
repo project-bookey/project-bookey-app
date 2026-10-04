@@ -6,7 +6,9 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { ApiError } from '@/api/client';
 import { clubCommunityApi } from '@/api/endpoints';
 import { StatStrip, confirmAsync, notify } from '@/components/club';
+import { todayKst } from '@/components/clubLog';
 import {
+  isTodayOrLater,
   meetingClock,
   meetingClock12,
   meetingDateLong,
@@ -117,14 +119,20 @@ export default function MeetingDetailScreen() {
   }
 
   const state = meetingState(m);
-  const statusLine =
-    state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 모임이에요' : '취소된 모임이에요';
+  // 시작 시각이 지나도 그날(KST)은 진행 중인 모임이다 — 같이 읽기는 모임 자리에서 쓰는 기능이라 그날 안에는 시작할 수 있다.
+  const canStartTogether = isTodayOrLater(m, todayKst());
+  const statusLine = state === 'open'
+    ? '참여를 기다리고 있어요'
+    : state === 'past'
+      ? canStartTogether ? '진행 중인 모임이에요' : '지난 모임이에요'
+      : '취소된 모임이에요';
   const attendees = m.attendees ?? [];
   const full = meetingFull(m);
   // 모임은 멤버 누구나 연다 — 취소는 연 사람(m.host)과 클럽 호스트만.
   const canCancel = isHost || m.host;
   const running = current.data?.meetingId === mid;
   const otherRunning = Boolean(current.data && !running);
+  const otherMeetingId = otherRunning ? current.data?.meetingId : undefined;
   const elapsed = running && current.data
     ? Math.max(0, Math.floor((now - new Date(current.data.startedAt).getTime()) / 1000))
     : 0;
@@ -237,18 +245,34 @@ export default function MeetingDetailScreen() {
           </Text>
           <Text style={[typeScale.caption, { color: colors.textMuted, textAlign: 'center' }]}>
             {otherRunning
-              ? '다른 모임에서 같이 읽는 중이에요.'
+              ? '다른 모임에서 같이 읽는 중이에요. 그 모임에서 끝낼 수 있어요.'
               : running
                 ? '같이 읽는 시간을 재고 있어요.'
-                : "모임에서 '같이 읽기 시작'을 누르고, 다 읽은 뒤 모임 노트에 소감을 함께 남겨 보세요."}
+                : state === 'cancelled'
+                  ? '취소된 모임은 같이 읽기를 시작할 수 없어요.'
+                  : !canStartTogether
+                    ? '모임 날이 지나 같이 읽기를 시작할 수 없어요.'
+                    : "모임에서 '같이 읽기 시작'을 누르고, 다 읽은 뒤 모임 노트에 소감을 함께 남겨 보세요."}
           </Text>
+          {/* 재고 있으면 모임 날이 지났든 취소됐든 언제나 끝낼 수 있다 — 시작만 그날 안으로 묶는다. */}
           <Button
             label={running ? '같이 읽기 끝내기' : '같이 읽기 시작'}
             variant={running ? 'danger' : joinFirst ? 'outline' : 'primary'}
-            disabled={otherRunning || state !== 'open'}
+            disabled={!running && (otherRunning || !canStartTogether)}
             onPress={() => (running ? end.mutate() : start.mutate())}
             loading={start.isPending || end.isPending}
           />
+          {otherMeetingId != null ? (
+            <TextLink
+              label="같이 읽는 모임"
+              onPress={() => router.push({
+                pathname: '/club/[id]/meeting/[meetingId]',
+                params: { id: String(clubId), meetingId: String(otherMeetingId), ...(isHost ? { host: '1' } : {}) },
+              })}
+              accessibilityRole="link"
+              style={styles.togetherLink}
+            />
+          ) : null}
         </Card>
 
         <Card style={{ gap: spacing.sm }}>
@@ -293,6 +317,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
   time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
   link: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
+  // 다른 모임에서 재는 중일 때 그 모임으로 — 가운데 줄 맞춤(카드의 시계·안내와 같은 축).
+  togetherLink: { alignSelf: 'center' },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',
