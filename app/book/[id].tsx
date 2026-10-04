@@ -480,8 +480,9 @@ function Hero({ info, loading, bound, rating, like }: {
             {caption}
           </Text>
           {like ? <BookLike {...like} /> : null}
+          {/* 평점 메모는 기울이지 않는다(2026-10-05 사용자 결정) */}
           {rating ? (
-            <StickyNote rotate={2.5} style={styles.ratingNote}>
+            <StickyNote rotate={0} style={styles.ratingNote}>
               <Text
                 accessibilityLabel={`리뷰 평균 별점 ${rating.average.toFixed(1)}점, ${rating.count}명`}
                 style={[typeScale.monoNumeral, { color: colors.onNote }]}
