@@ -61,6 +61,7 @@ import type {
   StatsSummary,
   TokenResponse,
   UpdatePost,
+  UpdateReview,
   UserProfileView,
   VisitorView,
   WalletView,
@@ -869,6 +870,12 @@ export const reviewApi = {
     body: string;
     tags?: string[];
   }) => api<Review>("/api/v1/reviews", { method: "POST", body }),
+  /** 리뷰 고치기 — 본인 것만. 별점을 비우면 removeRating 으로 지운다. */
+  update: (reviewId: number, body: UpdateReview) =>
+    api<Review>(`/api/v1/reviews/${reviewId}`, { method: "PATCH", body }),
+  /** 리뷰 삭제 — 본인 것만. */
+  remove: (reviewId: number) =>
+    api<void>(`/api/v1/reviews/${reviewId}`, { method: "DELETE" }),
   mine: () => api<Page<Review>>("/api/v1/reviews/me"),
   /** 리뷰 한 건 — 상세 진입·새로고침·딥링크. */
   get: (reviewId: number) => api<Review>(`/api/v1/reviews/${reviewId}`),

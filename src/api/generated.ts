@@ -3672,6 +3672,7 @@ export interface components {
             commentCount: number;
             /** Format: date-time */
             createdAt: string;
+            authorFinished: boolean;
         };
         ReportRequest: {
             reason: string;
@@ -4545,6 +4546,7 @@ export interface components {
             body?: string;
             tags: string[];
             hasSpoiler?: boolean;
+            removeRating?: boolean;
         };
         UpdatePostRequest: {
             /** Format: int64 */
