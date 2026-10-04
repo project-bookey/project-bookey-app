@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrandHeader, SectionNav, type SectionKey } from '@/components/collage';
 import { type SectionRoute, useSectionPager } from '@/components/pager/sectionPager';
+import { AppTourOverlay } from '@/components/tour/AppTourOverlay';
 import { useTourTarget } from '@/components/tour/TourTarget';
 import { useAppTour } from '@/store/appTour';
 import { useTheme } from '@/theme';
@@ -127,47 +128,52 @@ export default function MainTabsLayout() {
   }, [isFocused, pagerReady, pending, forceSelect]);
   const pagesRef = useTourTarget('section-pages');
 
-  // 둘러보기가 이 화면 위에 떠 있는 동안 스크린 리더가 뒤 화면을 읽지 않게 숨긴다 — 둘러보기 카드만 읽힌다.
+  // 둘러보기가 이 화면 위에 떠 있는 동안 스크린 리더가 뒤 화면을 읽지 않게 숨긴다 — 둘러보기 말풍선만 읽힌다.
   const tourActive = useAppTour((s) => s.active);
   const hiddenForTour = tourActive && isFocused;
 
   return (
-    <View
-      style={[styles.root, { backgroundColor: colors.bg }]}
-      aria-hidden={hiddenForTour}
-      accessibilityElementsHidden={hiddenForTour}
-      importantForAccessibility={hiddenForTour ? 'no-hide-descendants' : 'auto'}
-    >
-      <View style={{ paddingTop: insets.top }}>
-        <BrandHeader />
+    <View style={[styles.root, { backgroundColor: colors.bg }]}>
+      {/* 숨김은 내용 묶음에만 건다 — 둘러보기는 그 형제라 스크린 리더가 말풍선을 읽는다. */}
+      <View
+        style={styles.root}
+        aria-hidden={hiddenForTour}
+        accessibilityElementsHidden={hiddenForTour}
+        importantForAccessibility={hiddenForTour ? 'no-hide-descendants' : 'auto'}
+      >
+        <View style={{ paddingTop: insets.top }}>
+          <BrandHeader />
+        </View>
+        <View ref={pagesRef} collapsable={false} style={styles.pages} onLayout={() => setPagerReady(true)}>
+          <AnimatedPagerView
+            ref={pageRef}
+            style={styles.pager}
+            initialPage={initialRouteIndex}
+            // 다섯 메인 화면을 유지해 멀리 있는 탭도 첫 클릭부터 즉시 보이게 한다.
+            offscreenPageLimit={ROUTES.length}
+            overdrag
+            onPageScroll={Animated.event(
+              [{ nativeEvent: { position: pagerPosition, offset: pagerOffset } }],
+              { useNativeDriver: true },
+            )}
+            onPageSelected={(event: PagerViewOnPageSelectedEvent) => selectPage(event.nativeEvent.position)}
+          >
+            <View key="plaza" collapsable={false}><PlazaScreen /></View>
+            <View key="clubs" collapsable={false}><ClubsScreen /></View>
+            <View key="home" collapsable={false}><HomeScreen /></View>
+            <View key="messenger" collapsable={false}><MessengerScreen /></View>
+            <View key="profile" collapsable={false}><ProfileScreen /></View>
+          </AnimatedPagerView>
+        </View>
+        <SectionNav
+          active={ACTIVE_BY_ROUTE[ROUTES[activeIndex]] ?? 'shelf'}
+          onSelect={selectRoute}
+          pagerPosition={pagerPosition}
+          pagerOffset={pagerOffset}
+        />
       </View>
-      <View ref={pagesRef} collapsable={false} style={styles.pages} onLayout={() => setPagerReady(true)}>
-        <AnimatedPagerView
-          ref={pageRef}
-          style={styles.pager}
-          initialPage={initialRouteIndex}
-          // 다섯 메인 화면을 유지해 멀리 있는 탭도 첫 클릭부터 즉시 보이게 한다.
-          offscreenPageLimit={ROUTES.length}
-          overdrag
-          onPageScroll={Animated.event(
-            [{ nativeEvent: { position: pagerPosition, offset: pagerOffset } }],
-            { useNativeDriver: true },
-          )}
-          onPageSelected={(event: PagerViewOnPageSelectedEvent) => selectPage(event.nativeEvent.position)}
-        >
-          <View key="plaza" collapsable={false}><PlazaScreen /></View>
-          <View key="clubs" collapsable={false}><ClubsScreen /></View>
-          <View key="home" collapsable={false}><HomeScreen /></View>
-          <View key="messenger" collapsable={false}><MessengerScreen /></View>
-          <View key="profile" collapsable={false}><ProfileScreen /></View>
-        </AnimatedPagerView>
-      </View>
-      <SectionNav
-        active={ACTIVE_BY_ROUTE[ROUTES[activeIndex]] ?? 'shelf'}
-        onSelect={selectRoute}
-        pagerPosition={pagerPosition}
-        pagerOffset={pagerOffset}
-      />
+      {/* 둘러보기는 이 화면 안에 그린다 — 비추는 요소들과 같은 화면 기준으로 재야 네이티브에서도 구멍이 제자리에 뚫린다. */}
+      <AppTourOverlay />
     </View>
   );
 }
