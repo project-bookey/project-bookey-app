@@ -62,6 +62,10 @@ export default function ClubInfoScreen() {
     mutationFn: () => clubApi.leave(clubId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      // 멤버일 때 받은 클럽 홈 · 미리보기(이미 멤버)가 캐시에 남으면 추천 클럽에서 다시 들어와도 참가 화면 대신
+      // 멤버 홈이 열린다 — 둘 다 다시 받게 한다(홈은 403이 되고, 클럽 홈이 그걸 보고 미리보기로 바꾼다).
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      queryClient.invalidateQueries({ queryKey: ['club', 'preview', clubId] });
       // 클럽 홈 · 정보 둘 다 걷어 내고 목록으로 — 목록이 스택에 없으면 이 화면을 목록으로 바꾼다.
       router.dismissTo('/clubs');
     },
