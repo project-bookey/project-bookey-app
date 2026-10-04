@@ -121,6 +121,8 @@ export default function MeetingDetailScreen() {
     state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 모임이에요' : '취소된 모임이에요';
   const attendees = m.attendees ?? [];
   const full = meetingFull(m);
+  // 모임은 멤버 누구나 연다 — 취소는 연 사람(m.host)과 클럽 호스트만.
+  const canCancel = isHost || m.host;
   const running = current.data?.meetingId === mid;
   const otherRunning = Boolean(current.data && !running);
   const elapsed = running && current.data
@@ -266,7 +268,7 @@ export default function MeetingDetailScreen() {
           />
         </Card>
 
-        {isHost && state === 'open' ? (
+        {canCancel && state === 'open' ? (
           // 파괴적 동작 — 주요 버튼들과 섹션 간격(xl) 이상 떼어 둔다.
           <Button
             label="모임 취소"

@@ -664,6 +664,7 @@ export type ClubMeeting = {
   status: "OPEN" | "CANCELLED";
   attendeeCount: number;
   attending: boolean;
+  /** 내가 연 모임 — 클럽 호스트 여부가 아니다. 연 사람과 클럽 호스트만 모임을 취소할 수 있다. */
   host: boolean;
   attendeeNicknames: string[];
   attendees: ClubMeetingAttendee[];
