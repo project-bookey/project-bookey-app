@@ -9,7 +9,9 @@ import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
-import { CLUB_DESCRIPTION_MAX, ClubBackdrop, ReturnToClubHome, confirmAsync, notify } from '@/components/club';
+import {
+  CLUB_DESCRIPTION_MAX, ClubBackdrop, CopyCodeButton, ReturnToClubHome, confirmAsync, notify,
+} from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
@@ -289,19 +291,22 @@ function SettingsForm({ club }: { club: ClubHome }) {
           <View style={styles.rowBetween}>
             <View>
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
-              <Text style={[styles.code, { color: colors.text }]}>{club.joinCode}</Text>
+              <Text style={[styles.code, { color: colors.text }]} selectable>{club.joinCode}</Text>
             </View>
-            <Button
-              label="새로 만들기"
-              size="sm"
-              variant="outline"
-              loading={rotate.isPending}
-              onPress={async () => {
-                if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
-                  rotate.mutate();
-                }
-              }}
-            />
+            <View style={styles.codeActions}>
+              <CopyCodeButton code={club.joinCode} />
+              <Button
+                label="새로 만들기"
+                size="sm"
+                variant="outline"
+                loading={rotate.isPending}
+                onPress={async () => {
+                  if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
+                    rotate.mutate();
+                  }
+                }}
+              />
+            </View>
           </View>
           <Rule />
           <View style={styles.rowBetween}>
@@ -427,6 +432,7 @@ const styles = StyleSheet.create({
   backdropActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
+  codeActions: { flexDirection: 'row', gap: spacing.sm },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },
   // 행 높이를 동작의 터치 상자(34pt + 위아래 hitSlop 5 = 44pt)보다 넉넉히 — 이웃 멤버 행의 동작과 겹치지 않게.
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingVertical: spacing.sm },
