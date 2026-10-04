@@ -1,9 +1,9 @@
 import * as Google from 'expo-auth-session/providers/google';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type LayoutChangeEvent,
 } from 'react-native';
 
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +28,28 @@ WebBrowser.maybeCompleteAuthSession();
 
 
 const BUTTON_HEIGHT = 48;
+
+/** 경고를 띄우는 자리 — 칸 하나에 걸리는 오류는 그 칸 밑에, 어느 칸에도 걸리지 않는 오류(로그인 실패·소셜 등)는 버튼 바로 위(form)에. */
+type FieldSpot = 'email' | 'nickname' | 'password' | 'identity' | 'code';
+type ErrorSpot = FieldSpot | 'form';
+type FormErrors = Partial<Record<ErrorSpot, string>>;
+
+/** 화면에 놓인 순서 — 경고가 여럿이면 맨 위 칸으로 스크롤한다. */
+const FIELD_ORDER: FieldSpot[] = ['email', 'nickname', 'password', 'identity', 'code'];
+
+/** 서버 오류 코드가 가리키는 칸. 여기 없는 코드(또는 지금 화면에 없는 칸)는 부른 쪽이 정한 자리에 둔다. */
+const SERVER_ERROR_SPOT: Record<string, FieldSpot> = {
+  EMAIL_ALREADY_EXISTS: 'email',
+  EMAIL_REJOIN_BLOCKED: 'email',
+  NICKNAME_ALREADY_EXISTS: 'nickname',
+  EMAIL_CODE_INVALID: 'code',
+  EMAIL_CODE_EXPIRED: 'code',
+  IDENTITY_VERIFICATION_REQUIRED: 'identity',
+  IDENTITY_VERIFICATION_FAILED: 'identity',
+  IDENTITY_ALREADY_REGISTERED: 'identity',
+};
+
+const isEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value) && value.length <= 255;
 
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
@@ -65,7 +87,7 @@ export default function LoginScreen() {
   const onboardingPicks = useOnboarding();
   const [emailLoading, setEmailLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [consent, setConsent] = useState<ConsentDraft>(EMPTY_CONSENT);
   /** 동의를 기다리는 처음 보는 소셜 계정 — 동의하면 이 토큰으로 다시 로그인을 부른다. */
@@ -74,6 +96,64 @@ export default function LoginScreen() {
   const [socialConsentError, setSocialConsentError] = useState<string | null>(null);
 
   const kakao = useKakaoLogin();
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const formY = useRef(0);
+  const fieldY = useRef<Partial<Record<FieldSpot, number>>>({});
+  const trackField = (spot: FieldSpot) => (e: LayoutChangeEvent) => {
+    fieldY.current[spot] = e.nativeEvent.layout.y;
+  };
+
+  /** 한 자리의 경고만 바꾼다(null 이면 지운다) — 다른 칸에 떠 있는 경고는 그대로 둔다. */
+  const putError = (spot: ErrorSpot, message: string | null) => setErrors((prev) => {
+    if ((prev[spot] ?? null) === message) return prev;
+    const next = { ...prev };
+    if (message) next[spot] = message;
+    else delete next[spot];
+    return next;
+  });
+  const setFormError = (message: string | null) => putError('form', message);
+
+  /** 지금 화면에 있는 칸인지 — 가입 폼에만 있는 칸, 인증 방식에 따라 생기는 칸이 있다. */
+  const fieldShown = (spot: FieldSpot) => {
+    const method = signupConfig.data?.verification;
+    switch (spot) {
+      case 'email':
+      case 'password':
+        return true;
+      case 'nickname':
+        return isSignup;
+      case 'identity':
+        return isSignup && method === 'IDENTITY';
+      case 'code':
+        return isSignup && method === 'EMAIL_CODE';
+    }
+  };
+  const errorSpotOf = (e: unknown, fallback: ErrorSpot): ErrorSpot => {
+    const spot = e instanceof ApiError ? SERVER_ERROR_SPOT[e.code] : undefined;
+    return spot && fieldShown(spot) ? spot : fallback;
+  };
+
+  /**
+   * 경고가 뜬 맨 위 칸이 화면 위로 지나가 있으면 그 칸까지 올린다 — 가입 폼은 길어서, 동의 상자 밑 버튼을 누른 자리에서는
+   * 맨 위 이메일 칸이 보이지 않는다. 이미 보이는 칸이면 움직이지 않는다.
+   */
+  const revealFirstError = (found: FormErrors) => {
+    const first = FIELD_ORDER.find((spot) => found[spot]);
+    const y = first ? fieldY.current[first] : undefined;
+    if (y == null) return;
+    const top = Math.max(formY.current + y - spacing.lg, 0);
+    if (top < scrollY.current) {
+      scrollRef.current?.scrollTo({ y: top, animated: true });
+    }
+  };
+
+  /** 경고 하나를 띄우고 그 칸이 보이게 한다 — '코드 받기'를 누른 자리에서 이메일 칸이 위로 지나가 있을 수 있다. */
+  const flagError = (spot: ErrorSpot, message: string) => {
+    putError(spot, message);
+    revealFirstError({ [spot]: message });
+  };
 
   useEffect(() => {
     Apple?.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
@@ -89,7 +169,7 @@ export default function LoginScreen() {
     const idToken = googleResponse?.type === 'success' ? googleResponse.params.id_token : undefined;
     if (!idToken) {
       if (googleResponse?.type === 'error') {
-        setError('Google 로그인을 마치지 못했어요. 다시 시도해 주세요.');
+        setFormError('Google 로그인을 마치지 못했어요. 다시 시도해 주세요.');
       }
       if (googleResponse) {
         setSocialLoading(null);
@@ -97,29 +177,31 @@ export default function LoginScreen() {
       return;
     }
     setSocialLoading('GOOGLE');
-    setError(null);
+    setFormError(null);
     runSocial('GOOGLE', idToken)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Google 로그인을 마치지 못했어요. 다시 시도해 주세요.'))
+      .catch((e) => setFormError(e instanceof Error ? e.message : 'Google 로그인을 마치지 못했어요. 다시 시도해 주세요.'))
       .finally(() => setSocialLoading(null));
   }, [googleResponse, router, socialLogin]);
 
   const requestCode = async () => {
-    if (!email.trim()) {
-      setError('이메일을 먼저 입력해 주세요.');
+    const normalizedEmail = email.trim();
+    putError('code', null);
+    if (!normalizedEmail || !isEmail(normalizedEmail)) {
+      flagError('email', normalizedEmail ? '이메일 주소를 다시 확인해 주세요.' : '이메일을 먼저 입력해 주세요.');
       return;
     }
     setCodeLoading(true);
     setCodeVerified(false);
-    setError(null);
+    putError('email', null);
     try {
-      const result = await authApi.requestEmailCode(email.trim());
+      const result = await authApi.requestEmailCode(normalizedEmail);
       setCodeSent(true);
       // 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
       if (result.devCode) {
         setCode(result.devCode);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : '인증 코드를 보내지 못했어요.');
+      flagError(errorSpotOf(e, 'code'), e instanceof Error ? e.message : '인증 코드를 보내지 못했어요.');
     } finally {
       setCodeLoading(false);
     }
@@ -128,18 +210,22 @@ export default function LoginScreen() {
   const verifyCode = async () => {
     const normalizedEmail = email.trim();
     const normalizedCode = code.trim();
-    if (!normalizedEmail || normalizedCode.length !== 6) {
-      setError('이메일과 6자리 인증 코드를 확인해 주세요.');
+    if (!normalizedEmail) {
+      flagError('email', '이메일을 먼저 입력해 주세요.');
+      return;
+    }
+    if (normalizedCode.length !== 6) {
+      putError('code', '이메일로 받은 6자리 코드를 입력해 주세요.');
       return;
     }
     setCodeVerifyLoading(true);
-    setError(null);
+    putError('code', null);
     try {
       await authApi.verifyEmailCode(normalizedEmail, normalizedCode);
       setCodeVerified(true);
     } catch (e) {
       setCodeVerified(false);
-      setError(e instanceof Error ? e.message : '인증 코드를 확인하지 못했어요.');
+      flagError(errorSpotOf(e, 'code'), e instanceof Error ? e.message : '인증 코드를 확인하지 못했어요.');
     } finally {
       setCodeVerifyLoading(false);
     }
@@ -218,19 +304,19 @@ export default function LoginScreen() {
   const startIdentityVerification = () => {
     const config = signupConfig.data;
     if (!config) return;
-    setError(null);
+    putError('identity', null);
     if (config.identityDevStub) {
       setIdentityId(`dev-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`);
       return;
     }
     if (!config.portoneStoreId || !config.portoneChannelKey) {
-      setError(__DEV__
+      putError('identity', __DEV__
         ? '본인인증 채널이 아직 설정되지 않았어요. (포트원 계약·키 필요)'
         : '지금은 휴대폰 본인인증을 할 수 없어요. 잠시 후 다시 시도해 주세요.');
       return;
     }
     // TODO: @portone/react-native-sdk 본인인증 — 계약 후 키가 나오면 붙인다.
-    setError(__DEV__
+    putError('identity', __DEV__
       ? '포트원 SDK 연동이 아직 준비되지 않았어요.'
       : '지금은 휴대폰 본인인증을 할 수 없어요. 잠시 후 다시 시도해 주세요.');
   };
@@ -239,36 +325,34 @@ export default function LoginScreen() {
     const method = signupConfig.data?.verification;
     const normalizedEmail = email.trim();
     const normalizedNickname = nickname.trim();
-    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || normalizedEmail.length > 255) {
-      setError('이메일 주소를 다시 확인해 주세요.');
-      return;
-    }
-    if (password.length < 8 || password.length > 72) {
-      setError('비밀번호는 8~72자로 정해 주세요.');
-      return;
+    // 잘못된 칸을 한 번에 모두 짚는다 — 하나 고치고 다시 눌러야 다음 칸 경고가 보이지 않게.
+    const found: FormErrors = {};
+    if (!isEmail(normalizedEmail)) {
+      found.email = '이메일 주소를 다시 확인해 주세요.';
     }
     if (isSignup && (!normalizedNickname || normalizedNickname.length > 50)) {
-      setError('닉네임을 50자 안으로 적어 주세요.');
-      return;
+      found.nickname = '닉네임을 50자 안으로 적어 주세요.';
     }
-    if (isSignup && method === 'EMAIL_CODE' && !code.trim()) {
-      setError('이메일로 받은 인증 코드를 입력해 주세요.');
-      return;
-    }
-    if (isSignup && method === 'EMAIL_CODE' && !codeVerified) {
-      setError('이메일 인증 코드를 먼저 확인해 주세요.');
-      return;
+    if (password.length < 8 || password.length > 72) {
+      found.password = '비밀번호는 8~72자로 정해 주세요.';
     }
     if (isSignup && method === 'IDENTITY' && !identityId) {
-      setError('휴대폰 본인인증을 먼저 해 주세요.');
-      return;
+      found.identity = '휴대폰 본인인증을 먼저 해 주세요.';
+    }
+    if (isSignup && method === 'EMAIL_CODE' && !code.trim()) {
+      found.code = '이메일로 받은 인증 코드를 입력해 주세요.';
+    } else if (isSignup && method === 'EMAIL_CODE' && !codeVerified) {
+      found.code = '이메일 인증 코드를 먼저 확인해 주세요.';
     }
     if (isSignup && !consentComplete(consent)) {
-      setError('필수 항목(만 14세 이상, 이용약관, 개인정보 수집·이용)에 모두 동의해 주세요.');
+      found.form = '필수 항목(만 14세 이상, 이용약관, 개인정보 수집·이용)에 모두 동의해 주세요.';
+    }
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      revealFirstError(found);
       return;
     }
     setEmailLoading(true);
-    setError(null);
     try {
       if (isSignup) {
         await emailSignup(
@@ -288,7 +372,8 @@ export default function LoginScreen() {
         router.replace('/home');
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : '인증에 실패했습니다.');
+      const fallback = isSignup ? '가입하지 못했어요. 다시 시도해 주세요.' : '로그인하지 못했어요. 다시 시도해 주세요.';
+      flagError(errorSpotOf(e, 'form'), e instanceof Error ? e.message : fallback);
     } finally {
       setEmailLoading(false);
     }
@@ -298,7 +383,7 @@ export default function LoginScreen() {
     if (!Apple || busy) return; // 네이티브 버튼엔 disabled가 없어 진행 중 중복 실행을 여기서 막는다
 
     setSocialLoading('APPLE');
-    setError(null);
+    setFormError(null);
     try {
       const credential = await Apple.signInAsync({
         requestedScopes: [
@@ -312,7 +397,7 @@ export default function LoginScreen() {
       await runSocial('APPLE', credential.identityToken);
     } catch (e) {
       if ((e as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') {
-        setError(e instanceof Error ? e.message : 'Apple 로그인을 마치지 못했어요. 다시 시도해 주세요.');
+        setFormError(e instanceof Error ? e.message : 'Apple 로그인을 마치지 못했어요. 다시 시도해 주세요.');
       }
     } finally {
       setSocialLoading(null);
@@ -321,19 +406,19 @@ export default function LoginScreen() {
 
   const submitKakao = async () => {
     if (!hasKakaoClient) {
-      setError(__DEV__
+      setFormError(__DEV__
         ? '카카오 로그인 키가 아직 설정되지 않았어요. (.env.local의 EXPO_PUBLIC_KAKAO_REST_KEY)'
         : '지금은 카카오 로그인을 쓸 수 없어요.');
       return;
     }
     setSocialLoading('KAKAO');
-    setError(null);
+    setFormError(null);
     try {
       const accessToken = await kakao.login();
       if (!accessToken) return; // 사용자가 취소
       await runSocial('KAKAO', accessToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '카카오 로그인을 마치지 못했어요. 다시 시도해 주세요.');
+      setFormError(e instanceof Error ? e.message : '카카오 로그인을 마치지 못했어요. 다시 시도해 주세요.');
     } finally {
       setSocialLoading(null);
     }
@@ -341,17 +426,17 @@ export default function LoginScreen() {
 
   const submitGoogle = async () => {
     if (!hasGoogleClient) {
-      setError(__DEV__
+      setFormError(__DEV__
         ? 'Google 로그인 키가 아직 설정되지 않았어요. (.env.local의 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)'
         : '지금은 Google 로그인을 쓸 수 없어요.');
       return;
     }
     setSocialLoading('GOOGLE');
-    setError(null);
+    setFormError(null);
     try {
       await promptGoogle();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Google 로그인 창을 열지 못했어요.');
+      setFormError(e instanceof Error ? e.message : 'Google 로그인 창을 열지 못했어요.');
       setSocialLoading(null);
     }
   };
@@ -364,21 +449,29 @@ export default function LoginScreen() {
   return (
     <View style={styles.screen}>
       <KeyboardArea>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
+          scrollEventThrottle={16}
+        >
           <View>
             <Text style={styles.wordmark}>bookey</Text>
             <View style={styles.wordmarkRule} />
           </View>
 
-          <View style={styles.form}>
-            <View style={styles.field}>
+          <View style={styles.form} onLayout={(e) => { formY.current = e.nativeEvent.layout.y; }}>
+            {/* 칸에 걸린 경고는 그 칸 밑에 — 테두리도 붉게 바꾸고, 그 칸을 고치기 시작하면 지운다(Proximity). */}
+            <View style={styles.field} onLayout={trackField('email')}>
               <Text style={styles.fieldLabel}>이메일</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.email ? styles.inputError : null]}
                 value={email}
                 onChangeText={(value) => {
                   setEmail(value);
                   setCodeVerified(false);
+                  putError('email', null);
                 }}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -390,28 +483,36 @@ export default function LoginScreen() {
                 autoComplete="email"
                 inputMode="email"
               />
+              <FieldError message={errors.email} />
             </View>
             {isSignup ? (
-              <View style={styles.field}>
+              <View style={styles.field} onLayout={trackField('nickname')}>
                 <Text style={styles.fieldLabel}>닉네임</Text>
                 <TextInput
-                  style={styles.input}
-                value={nickname}
-                onChangeText={setNickname}
-                maxLength={50}
+                  style={[styles.input, errors.nickname ? styles.inputError : null]}
+                  value={nickname}
+                  onChangeText={(value) => {
+                    setNickname(value);
+                    putError('nickname', null);
+                  }}
+                  maxLength={50}
                   placeholder="독서가"
                   placeholderTextColor={darkColors.textFaint}
                   accessibilityLabel="닉네임"
                   textContentType="nickname"
                 />
+                <FieldError message={errors.nickname} />
               </View>
             ) : null}
-            <View style={styles.field}>
+            <View style={styles.field} onLayout={trackField('password')}>
               <Text style={styles.fieldLabel}>비밀번호</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.password ? styles.inputError : null]}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  putError('password', null);
+                }}
                 secureTextEntry
                 placeholder="8자 이상"
                 placeholderTextColor={darkColors.textFaint}
@@ -419,6 +520,7 @@ export default function LoginScreen() {
                 textContentType={isSignup ? 'newPassword' : 'password'}
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
               />
+              <FieldError message={errors.password} />
               {/* 비밀번호를 잊었을 때의 길은 비밀번호 칸 바로 아래 — 흔한 자리(Jakob)이자 그 칸과 한 묶음(Proximity). */}
               {!isSignup ? (
                 <Pressable
@@ -436,7 +538,7 @@ export default function LoginScreen() {
               ) : null}
             </View>
             {isSignup && signupConfig.data?.verification === 'IDENTITY' ? (
-              <View style={styles.field}>
+              <View style={styles.field} onLayout={trackField('identity')}>
                 <Text style={styles.fieldLabel}>휴대폰 본인인증</Text>
                 {identityId ? (
                   <View style={[styles.identityDone, { borderColor: darkColors.accent }]}>
@@ -446,7 +548,11 @@ export default function LoginScreen() {
                   <Pressable
                     onPress={startIdentityVerification}
                     accessibilityRole="button"
-                    style={({ pressed }) => [styles.identityButton, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                      styles.identityButton,
+                      errors.identity ? styles.inputError : null,
+                      pressed && styles.pressed,
+                    ]}
                   >
                     <Text style={[typeScale.label, { color: darkColors.text }]}>
                       {signupConfig.data.identityDevStub
@@ -455,18 +561,20 @@ export default function LoginScreen() {
                     </Text>
                   </Pressable>
                 )}
+                <FieldError message={errors.identity} />
               </View>
             ) : null}
             {isSignup && signupConfig.data?.verification === 'EMAIL_CODE' ? (
-              <View style={styles.field}>
+              <View style={styles.field} onLayout={trackField('code')}>
                 <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
                 <View style={styles.codeRow}>
                   <TextInput
-                    style={[styles.input, styles.codeInput]}
+                    style={[styles.input, styles.codeInput, errors.code ? styles.inputError : null]}
                     value={code}
                     onChangeText={(value) => {
                       setCode(value);
                       setCodeVerified(false);
+                      putError('code', null);
                     }}
                     keyboardType="number-pad"
                     maxLength={6}
@@ -490,6 +598,7 @@ export default function LoginScreen() {
                       : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
                   </Pressable>
                 </View>
+                <FieldError message={errors.code} />
                 {codeSent ? (
                   <>
                     <Pressable
@@ -515,8 +624,8 @@ export default function LoginScreen() {
             {isSignup ? (
               <SignupConsentBox colors={darkColors} value={consent} onChange={setConsent} disabled={busy} />
             ) : null}
-            {/* 실패 안내는 누른 버튼 바로 위에 — 아래 '회원가입' 밑에 두면 눈이 닿지 않는다(Proximity). */}
-            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+            {/* 어느 칸에도 걸리지 않는 실패(로그인 실패·소셜 등)는 누른 버튼 바로 위에 — 아래 '회원가입' 밑에 두면 눈이 닿지 않는다. */}
+            <FieldError message={errors.form} />
             <Pressable
               onPress={submitEmail}
               disabled={busy || (isSignup && (!signupConsentComplete || !signupVerificationComplete))}
@@ -533,7 +642,7 @@ export default function LoginScreen() {
             <Pressable
               onPress={() => {
                 setIsSignup(!isSignup);
-                setError(null);
+                setErrors({});
                 setCode('');
                 setCodeSent(false);
                 setCodeVerified(false);
@@ -613,6 +722,11 @@ export default function LoginScreen() {
   );
 }
 
+/** 칸 밑 경고 한 줄 — 없으면 자리를 차지하지 않는다. */
+function FieldError({ message }: { message?: string }) {
+  return message ? <Text style={styles.error} accessibilityRole="alert">{message}</Text> : null;
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: darkColors.bg },
   container: {
@@ -645,6 +759,7 @@ const styles = StyleSheet.create({
     fontFamily: sans.regular,
     fontSize: 15,
   },
+  inputError: { borderColor: darkColors.danger },
   cta: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.sm,
