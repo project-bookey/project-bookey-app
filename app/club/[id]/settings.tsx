@@ -10,7 +10,7 @@ import { clubApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
 import {
-  CLUB_DESCRIPTION_MAX, ClubBackdrop, CopyCodeButton, InviteCodeNote, ReturnToClubHome, confirmAsync, notify,
+  CLUB_DESCRIPTION_MAX, ClubBackdrop, CopyCodeButton, ReturnToClubHome, confirmAsync, notify,
 } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
@@ -288,24 +288,25 @@ function SettingsForm({ club }: { club: ClubHome }) {
         </Section>
 
         <Section title="초대 · 자리">
-          <View style={{ gap: spacing.xs }}>
-            <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
-            <View style={styles.rowBetween}>
-              <InviteCodeNote code={club.joinCode} />
-              <View style={styles.codeActions}>
-                <CopyCodeButton code={club.joinCode} />
-                <Button
-                  label="새로 만들기"
-                  size="sm"
-                  variant="outline"
-                  loading={rotate.isPending}
-                  onPress={async () => {
-                    if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
-                      rotate.mutate();
-                    }
-                  }}
-                />
-              </View>
+          <View style={styles.rowBetween}>
+            <View>
+              <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
+              <Text style={[styles.code, { color: colors.text }]} selectable>{club.joinCode}</Text>
+            </View>
+            {/* 주요 버튼(복사)이 오른쪽 — [새로 만들기][복사] */}
+            <View style={styles.codeActions}>
+              <Button
+                label="새로 만들기"
+                size="sm"
+                variant="outline"
+                loading={rotate.isPending}
+                onPress={async () => {
+                  if (await confirmAsync('초대 코드를 새로 만들까요? 지금 코드는 더 이상 쓸 수 없어요.', '새로 만들기')) {
+                    rotate.mutate();
+                  }
+                }}
+              />
+              <CopyCodeButton code={club.joinCode} />
             </View>
           </View>
           <Rule />
@@ -431,6 +432,7 @@ const styles = StyleSheet.create({
   previewIntro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
   backdropActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   codeActions: { flexDirection: 'row', gap: spacing.sm },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },
   // 행 높이를 동작의 터치 상자(34pt + 위아래 hitSlop 5 = 44pt)보다 넉넉히 — 이웃 멤버 행의 동작과 겹치지 않게.
