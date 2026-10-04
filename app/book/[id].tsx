@@ -975,7 +975,7 @@ function ReviewSection({
   rid: number | null;
   colors: ColorTokens;
   finishedBook: FinishedBook | null;
-  /** 이번 회차를 시작한 때 — 그 뒤에 쓴 내 리뷰가 있으면 이 기록엔 이미 리뷰가 있다(기록당 하나). */
+  /** 이번 회차를 시작한 때 — 그 뒤에 쓴 내 리뷰가 있으면 완독 시트로 또 묻지 않는다(리뷰는 몇 개든 더 쓸 수 있다). */
   roundStartedAt?: string;
   onFinishPromptClose: () => void;
   /** 지금 쓰면 받게 될 검증 배지 — 작성 조각의 메타 줄에 목록 조각과 같은 자리로 미리 붙인다. */
@@ -997,6 +997,7 @@ function ReviewSection({
   const [tab, setTab] = useState<RecordTab>('REVIEW');
   const open = composing;
   const setOpen = onComposingChange;
+  // 방금 리뷰를 남겼는지 — 목록이 다시 오기 전에 완독 시트가 또 뜨지 않게 한다.
   const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
@@ -1020,6 +1021,9 @@ function ReviewSection({
       queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
       setOpen(false);
       setDone(true);
+      // 리뷰는 한 사람이 여러 개 쓸 수 있다 — 다음에 '쓰기'를 누르면 빈 칸에서 시작한다.
+      setRating(0);
+      setBody('');
       if (finishedBook) onFinishPromptClose();
     },
   });
@@ -1033,7 +1037,7 @@ function ReviewSection({
 
   const items = reviews.data?.content ?? [];
 
-  // 이번 회차에 이미 남긴 리뷰가 보이면 완독 시트를 띄우지 않는다. 첫 쪽에 없어 놓치더라도 서버가 중복을 막아 시트에 안내가 뜬다.
+  // 이번 회차에 이미 남긴 리뷰가 보이면 완독 시트로 또 묻지 않는다. 첫 쪽에 없어 놓치면 시트가 뜨지만, 리뷰는 여러 개 쓸 수 있어 그대로 하나 더 남는다.
   const roundStart = roundStartedAt ? new Date(roundStartedAt).getTime() : 0;
   const reviewedThisRound = items.some(
     (review) => review.authorId === myId && new Date(review.createdAt).getTime() >= roundStart,
@@ -1063,7 +1067,7 @@ function ReviewSection({
           accessibilityLabel="독후감 쓰기"
         />
       )
-    : (rid != null && !done && !open ? (
+    : (rid != null && !open ? (
         <FootAction label="쓰기" tone="accent" onPress={() => setOpen(true)} accessibilityLabel="리뷰 쓰기" />
       ) : null);
 
