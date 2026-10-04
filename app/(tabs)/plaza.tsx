@@ -205,13 +205,16 @@ function FinishCard({ item, index, mine, onOpenBook }: {
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: NAV_CLEARANCE, gap: spacing.lg },
   header: { gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xs },
-  // 탭과 쓰기 버튼은 서로 다른 동작 — 오터치를 막게 sm 이상 띄운다.
+  // 탭과 쓰기 버튼은 한 줄 — 탭(가로 ScrollView)이 남는 폭을 채워 버튼은 오른쪽 끝에 붙는다.
+  // 서로 다른 동작이라 오터치를 막게 sm 이상 띄운다.
   chipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
   composeButton: {
-    alignSelf: 'flex-end',
+    flexShrink: 0,
     minHeight: 44,
     justifyContent: 'center',
     borderWidth: hairline,
