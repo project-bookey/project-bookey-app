@@ -48,7 +48,7 @@ function BookmarkBalance() {
       accessibilityLabel={`책갈피 ${balance}개, 구매하기`}
       style={({ pressed }) => [
         styles.bookmarkBadge,
-        { borderColor: colors.line, backgroundColor: colors.surface },
+        { borderColor: colors.control, backgroundColor: colors.surface },
         pressed && styles.pressed,
       ]}
     >

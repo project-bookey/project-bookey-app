@@ -98,7 +98,7 @@ export function AppTourOverlay() {
             <Pressable
               onPress={prev}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.prev, { borderColor: colors.lineStrong }, pressed && pressedStyle]}
+              style={({ pressed }) => [styles.prev, { borderColor: colors.control }, pressed && pressedStyle]}
             >
               <Text style={[typeScale.label, { color: colors.text }]}>이전</Text>
             </Pressable>

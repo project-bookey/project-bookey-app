@@ -17,7 +17,7 @@ import { photoIdsIn, type PhotoRef } from '@/components/post/postPhotos';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { EmptyState, FootAction, linkLabel } from '@/components/ui';
+import { EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -196,18 +196,16 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
         onPress={post.mine ? undefined : () => router.push(`/user/${post.authorId}`)}
       />
 
-      {/* 클럽 독후감이면 어느 클럽의 글인지 — 책 링크와 같은 꼴의 보조 링크(뮤트)로, 누르면 그 클럽 홈으로 */}
+      {/* 클럽 독후감이면 어느 클럽의 글인지 — 앱 공용 글자 링크로, 누르면 그 클럽 홈으로 */}
       {post.clubId != null && post.clubName ? (
-        <Pressable
+        <TextLink
+          label={`클럽 · ${post.clubName}`}
           onPress={() => router.push({ pathname: '/club/[id]', params: { id: String(post.clubId) } })}
-          accessibilityRole="button"
           accessibilityLabel={`${post.clubName} 클럽으로 가기`}
-          style={({ pressed }) => [styles.inlineLink, pressed ? pressedStyle : null]}
-        >
-          <Text numberOfLines={1} style={[typeScale.monoLabel, { color: colors.textMuted }]}>
-            {linkLabel(`클럽 · ${post.clubName}`)}
-          </Text>
-        </Pressable>
+          numberOfLines={1}
+          hitSlop={null}
+          style={styles.inlineLink}
+        />
       ) : null}
 
       {/* ③ 본문 앞 사진 — 본문에 자리가 없는 사진만(사진을 따로 붙이던 옛 글). 예전처럼 본문 앞에 둔다 */}
@@ -287,8 +285,8 @@ const styles = StyleSheet.create({
   loose: { gap: spacing.md },
 
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에, 터치 상자가 sm 이상 떨어지게 xl 간격.
-  footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
+  // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에. 테두리 버튼(FootAction)은 옆으로 넓어지지 않아 sm 간격이면 떨어진다.
+  footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   // 오류 상태의 다시 시도 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
   retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

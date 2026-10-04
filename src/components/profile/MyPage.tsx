@@ -20,7 +20,7 @@ import { FollowSection, type FollowBox } from '@/components/social/FollowSection
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { TourTarget } from '@/components/tour/TourTarget';
 import {
-  Card, EmptyState, Eyebrow, KeyValue, Rule, formatDuration, formatRelative, linkLabel,
+  Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
@@ -192,9 +192,9 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                   accessibilityRole="button"
                   accessibilityLabel="프로필 편집"
                   hitSlop={8}
-                  style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
+                  style={({ pressed }) => [styles.editButton, { borderColor: colors.control }, pressed && styles.pressed]}
                 >
-                  <PencilLine color={colors.textMuted} />
+                  <PencilLine color={colors.text} />
                 </Pressable>
               ) : null}
             </View>
@@ -284,12 +284,12 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 hitSlop={8}
                 style={({ pressed }) => [
                   styles.settingsButton,
-                  { borderColor: colors.line, backgroundColor: colors.surface },
+                  { borderColor: colors.control, backgroundColor: colors.surface },
                   pressed && styles.pressed,
                 ]}
               >
-                <GearLine size={14} color={colors.textMuted} />
-                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>설정</Text>
+                <GearLine size={14} color={colors.text} />
+                <Text style={[typeScale.monoLabel, { color: colors.text }]}>설정</Text>
               </Pressable>
             </TourTarget>
           ) : userId != null ? (
@@ -335,17 +335,12 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               {mine ? '내 서재' : '서재'}
             </Text>
             {mine ? (
-              <Pressable
+              <TextLink
+                label={`${libraryTotal}권 · 전체보기`}
                 onPress={() => router.push('/library')}
                 hitSlop={SHELF_ALL_HIT_SLOP}
-                accessibilityRole="button"
                 accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
-                style={({ pressed }) => pressed && styles.pressed}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
-                  {libraryTotal}권 · {linkLabel('전체보기')}
-                </Text>
-              </Pressable>
+              />
             ) : (
               <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{libraryTotal}권</Text>
             )}
@@ -364,9 +359,9 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 accessibilityRole="button"
                 accessibilityLabel="책 추가"
               >
-                <View style={[styles.shelfGhost, { borderColor: colors.lineStrong }]}>
-                  <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
+                <View style={[styles.shelfGhost, { borderColor: colors.control }]}>
+                  <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
+                  <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
                 </View>
               </Pressable>
               {[0, 1].map((i) => (
@@ -625,7 +620,7 @@ function GearLine({ size, color }: { size: number; color: string }) {
 
 function PencilLine({ color }: { color: string }) {
   return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path
         d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z"
         stroke={color}
@@ -900,7 +895,15 @@ const styles = StyleSheet.create({
   nicknameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   // 시안의 프로필 표제는 히어로보다 작다 — displaySerif 를 22로 줄여 쓴다.
   nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
-  editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  // 프로필 편집으로 가는 유일한 길 — 회색 연필만 있던 때는 버튼으로 보이지 않아 설정 버튼과 같은 네모 상자에 담는다.
+  editButton: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
   settingsButton: {
     height: 30,

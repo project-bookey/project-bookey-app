@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.md,
     borderWidth: hairline,
-    borderColor: darkColors.lineStrong,
+    borderColor: darkColors.control,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
@@ -304,12 +304,15 @@ const styles = StyleSheet.create({
   },
   ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
   ctaDisabled: { opacity: 0.45 },
+  // 로그인 화면의 '처음 가입하기'와 같은 보조 버튼 — 주요 버튼 아래 테두리 버튼.
   ghost: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderColor: darkColors.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ghostLabel: { ...typeScale.label, color: darkColors.textMuted },
+  ghostLabel: { ...typeScale.label, color: darkColors.text },
   pressed: pressedStyle,
 });

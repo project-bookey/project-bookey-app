@@ -121,7 +121,7 @@ export default function OnboardingScreen() {
       <View style={styles.top}>
         <Text style={styles.wordmark}>bookey</Text>
         <Pressable onPress={() => finish(false)} accessibilityRole="button" hitSlop={10}>
-          <Text style={[typeScale.monoLabel, { color: darkColors.textFaint }]}>
+          <Text style={[typeScale.monoLabel, { color: darkColors.textMuted }]}>
             건너뛰기
           </Text>
         </Pressable>
@@ -154,7 +154,7 @@ export default function OnboardingScreen() {
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: selected }}
                     style={[styles.categoryChip, {
-                      borderColor: selected ? darkColors.ink : darkColors.lineStrong,
+                      borderColor: selected ? darkColors.ink : darkColors.control,
                       backgroundColor: selected ? darkColors.ink : darkColors.surface,
                     }]}
                   >
@@ -257,7 +257,7 @@ export default function OnboardingScreen() {
           accessibilityRole="button"
           style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
         >
-          <Text style={[typeScale.label, { color: darkColors.textMuted }]}>이미 계정이 있어요</Text>
+          <Text style={[typeScale.label, { color: darkColors.text }]}>이미 계정이 있어요</Text>
         </Pressable>
       </View>
     </View>
@@ -333,6 +333,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ghost: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  // 기존 회원이 빠져나가는 길 — 글자만 있던 때는 눈에 띄지 않아 주요 버튼 아래 테두리 버튼으로 둔다.
+  ghost: {
+    minHeight: 48,
+    borderRadius: radius.sm,
+    borderWidth: hairline,
+    borderColor: darkColors.control,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pressed: pressedStyle,
 });

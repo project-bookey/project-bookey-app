@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View }
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { SubHeader } from '@/components/collage';
-import { Segmented } from '@/components/ui';
+import { Button, Segmented } from '@/components/ui';
 import { BirthDatePicker } from '@/components/BirthDatePicker';
 import { useAuth } from '@/store/auth';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -175,14 +175,10 @@ export default function ProfilePhotoScreen() {
           </Pressable>
 
           {pickedUri ? (
-            <Pressable onPress={pick} accessibilityRole="button" style={styles.ghost}>
-              <Text style={[typeScale.label, { color: colors.textMuted }]}>다른 사진 고르기</Text>
-            </Pressable>
+            <Button label="다른 사진 고르기" variant="ghost" onPress={pick} style={styles.ghost} />
           ) : null}
           {!editing ? (
-            <Pressable onPress={() => router.replace('/home')} accessibilityRole="button" style={styles.ghost}>
-              <Text style={[typeScale.label, { color: colors.textMuted }]}>나중에 하기</Text>
-            </Pressable>
+            <Button label="나중에 하기" variant="ghost" onPress={() => router.replace('/home')} style={styles.ghost} />
           ) : null}
 
           {error ? (
@@ -252,7 +248,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
-  ghost: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
+  // 회색 글자뿐이라 지나치던 보조 동작 — 앱 공용 ghost 버튼(본문색, 44pt)으로 가운데에 둔다.
+  ghost: { alignSelf: 'center', paddingHorizontal: spacing.md },
   cta: {
     minHeight: 48,
     borderRadius: radius.sm,

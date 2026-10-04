@@ -29,7 +29,7 @@ import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/po
 import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { Button, Card, EmptyState, Eyebrow, linkLabel } from '@/components/ui';
+import { Button, Card, EmptyState, Eyebrow, FootAction, linkLabel } from '@/components/ui';
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
@@ -316,14 +316,13 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
       <SubHeader
         category={editing ? '독후감 고치기' : '독후감 쓰기'}
         right={(
-          <Pressable
-            onPress={() => setMode(mode === 'WRITE' ? 'PREVIEW' : 'WRITE')}
-            accessibilityRole="button"
-            accessibilityLabel={mode === 'WRITE' ? '미리보기' : '계속 쓰기'}
-            style={({ pressed }) => [styles.modeToggle, pressed ? pressedStyle : null]}
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{mode === 'WRITE' ? '미리보기' : '쓰기'}</Text>
-          </Pressable>
+          <View style={styles.modeToggle}>
+            <FootAction
+              label={mode === 'WRITE' ? '미리보기' : '쓰기'}
+              onPress={() => setMode(mode === 'WRITE' ? 'PREVIEW' : 'WRITE')}
+              accessibilityLabel={mode === 'WRITE' ? '미리보기' : '계속 쓰기'}
+            />
+          </View>
         )}
       />
 
@@ -434,24 +433,8 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
           <View style={styles.bottomRow}>
             {mode === 'WRITE' ? (
               <View style={styles.tools}>
-                <Pressable
-                  onPress={() => setQuoting(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="문장 넣기"
-                  style={({ pressed }) => [styles.tool, pressed ? pressedStyle : null]}
-                >
-                  <Text style={[typeScale.monoLabel, { color: colors.text }]}>+ 문장</Text>
-                </Pressable>
-                <Pressable
-                  onPress={insertPhotos}
-                  disabled={photoLocked}
-                  accessibilityRole="button"
-                  accessibilityLabel="사진 넣기"
-                  accessibilityState={{ disabled: photoLocked }}
-                  style={({ pressed }) => [styles.tool, pressed ? pressedStyle : null]}
-                >
-                  <Text style={[typeScale.monoLabel, { color: photoLocked ? colors.textFaint : colors.text }]}>+ 사진</Text>
-                </Pressable>
+                <FootAction label="+ 문장" onPress={() => setQuoting(true)} accessibilityLabel="문장 넣기" />
+                <FootAction label="+ 사진" onPress={insertPhotos} disabled={photoLocked} accessibilityLabel="사진 넣기" />
               </View>
             ) : null}
             <View style={styles.submitGroup}>
@@ -460,7 +443,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 hitSlop={CHIP_HIT_SLOP}
                 accessibilityRole="button"
                 accessibilityLabel={`공개 범위, ${visibilityLabel}`}
-                style={({ pressed }) => [styles.visibilityChip, { borderColor: colors.lineStrong }, pressed ? pressedStyle : null]}
+                style={({ pressed }) => [styles.visibilityChip, { borderColor: colors.control }, pressed ? pressedStyle : null]}
               >
                 <Text style={[typeScale.label, { color: colors.text }]}>{visibilityLabel}</Text>
                 <ChevronDown size={14} color={colors.textMuted} {...iconStroke} />
@@ -644,11 +627,9 @@ const styles = StyleSheet.create({
     borderWidth: hairline,
     borderRadius: radius.sm,
   },
-  // 커서 자리에 넣는 도구 둘 — 터치 상자(좌우로 sm 씩 넓힌다)끼리 sm 이상 떨어지게 xl 간격.
-  tools: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
-  // 11px 모노 라벨이라 글자 상자만으로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  tool: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
-  // 헤더 오른쪽 '미리보기' — 44pt 상자.
+  // 커서 자리에 넣는 도구 둘 — 작은 테두리 버튼(FootAction). 터치 상자는 위아래로만 넓어지니 sm 간격이면 떨어진다.
+  tools: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // 헤더 오른쪽 '미리보기' — 44pt 상자 안의 작은 테두리 버튼.
   modeToggle: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
   // 시트 맨 아래 '책 없이 쓰기' — 모노 한 줄을 44pt 상자로.
   unpick: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },

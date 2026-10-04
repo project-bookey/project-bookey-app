@@ -83,7 +83,7 @@ function CardTab({ cards, onPick }: {
     return (
       <View style={styles.cardNote}>
         <Text style={[typeScale.caption, { color: colors.textMuted }]}>기록 카드를 불러오지 못했어요.</Text>
-        <Button label={linkLabel('다시 시도', 'action')} size="sm" variant="ghost" onPress={() => cards.refetch()} />
+        <Button label={linkLabel('다시 시도', 'action')} size="sm" variant="outline" onPress={() => cards.refetch()} />
       </View>
     );
   }

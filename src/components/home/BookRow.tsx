@@ -4,7 +4,7 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { TiltCover, useCoverEntrance } from '@/components/collage';
 import { useTheme } from '@/theme';
 import { hairline, pressedStyle, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
-import { linkLabel } from '@/components/ui';
+import { TextLink } from '@/components/ui';
 
 export type RowBook = {
   key: string;
@@ -79,15 +79,7 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
           ) : null}
         </View>
         {onPressAll && !empty ? (
-          <Pressable
-            onPress={onPressAll}
-            hitSlop={ALL_HIT_SLOP}
-            style={({ pressed }) => (pressed ? pressedStyle : null)}
-            accessibilityRole="button"
-            accessibilityLabel="전체보기"
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('전체보기')}</Text>
-          </Pressable>
+          <TextLink label="전체보기" onPress={onPressAll} hitSlop={ALL_HIT_SLOP} />
         ) : null}
       </View>
 
@@ -145,9 +137,9 @@ function AddTile({ onPress }: { onPress: () => void }) {
       accessibilityLabel="책 추가"
       style={({ pressed }) => (pressed ? pressedStyle : null)}
     >
-      <View style={[styles.cover, styles.ghost, { borderColor: colors.lineStrong }]}>
-        <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
+      <View style={[styles.cover, styles.ghost, { borderColor: colors.control }]}>
+        <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
+        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
       </View>
     </Pressable>
   );

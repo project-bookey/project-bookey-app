@@ -69,7 +69,7 @@ export default function ClubLogWeekScreen() {
             accessibilityRole="button"
             style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
           >
-            <Text style={[styles.navLabel, { color: colors.textMuted }]}>‹ 지난주</Text>
+            <Text style={[styles.navLabel, { color: colors.text }]}>‹ 지난주</Text>
           </Pressable>
           {monday < thisMonday ? (
             <Pressable
@@ -77,7 +77,7 @@ export default function ClubLogWeekScreen() {
               accessibilityRole="button"
               style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
             >
-              <Text style={[styles.navLabel, { color: colors.textMuted }]}>다음주 ›</Text>
+              <Text style={[styles.navLabel, { color: colors.text }]}>다음주 ›</Text>
             </Pressable>
           ) : null}
         </View>
@@ -121,7 +121,8 @@ const styles = StyleSheet.create({
   weekNav: { flexDirection: 'row', justifyContent: 'space-between' },
   // 11px 글자만으로는 손가락이 닿지 않아 44pt 상자로 키운다(UX 철칙 Fitts).
   navButton: { minHeight: 44, minWidth: 44, justifyContent: 'center' },
-  navLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
+  // 주를 넘기는 유일한 길 — 공용 글자 링크(TextLink)와 같은 12px 본문색.
+  navLabel: { fontFamily: mono.medium, fontSize: 12, letterSpacing: 0.5 },
   cardWrap: { alignItems: 'center' },
   hint: { textAlign: 'center' },
 });

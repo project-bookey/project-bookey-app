@@ -18,7 +18,7 @@ import {
 import { PlaceMap } from '@/components/club/PlaceMap';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
-import { Button, Card, EmptyState, Eyebrow, Loading, formatClock, linkLabel } from '@/components/ui';
+import { Button, Card, EmptyState, Eyebrow, Loading, TextLink, formatClock, linkLabel } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle, sans } from '@/theme/tokens';
 
@@ -256,14 +256,14 @@ export default function MeetingDetailScreen() {
               ? '취소된 모임의 노트는 읽기만 돼요.'
               : '멤버 모두가 같은 대형노트에 그날의 생각·사진·스티커를 함께 붙여요. 다른 사람이 쓰는 모습이 바로 보여요.'}
           </Text>
-          <Pressable
+          <TextLink
+            label="모임 노트"
             onPress={openNote}
             accessibilityRole="link"
             accessibilityLabel="모임 노트 열기"
-            style={({ pressed }) => [styles.link, pressed ? pressedStyle : null]}
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('모임 노트', 'nav')}</Text>
-          </Pressable>
+            hitSlop={null}
+            style={styles.link}
+          />
         </Card>
 
         {isHost && state === 'open' ? (

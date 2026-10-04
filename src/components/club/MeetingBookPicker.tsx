@@ -89,7 +89,7 @@ export function MeetingBookPicker({ visible, selectedId, onSelect, onClose }: {
                 <Text style={[typeScale.caption, styles.emptyText, { color: colors.textMuted }]}>
                   서재를 불러오지 못했어요.
                 </Text>
-                <Button label={linkLabel('다시 시도', 'action')} variant="ghost" onPress={() => library.refetch()} />
+                <Button label={linkLabel('다시 시도', 'action')} variant="outline" onPress={() => library.refetch()} />
               </View>
             ) : (
               <Text style={[styles.empty, { color: colors.textMuted }]}>

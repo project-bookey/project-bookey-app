@@ -1,6 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 import {
-  ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, TextInputProps,
+  ActivityIndicator, AccessibilityRole, Image, Insets, Pressable, StyleSheet, Text, TextInput, TextInputProps,
   View, ViewStyle,
 } from 'react-native';
 
@@ -43,6 +43,41 @@ export function linkLabel(label: string, kind: LinkKind = 'nav'): string {
 /** 재생·일시정지 CTA 의 ▶/⏸ — 읽기를 시작·재개하는 버튼에만 붙인다. 상태 표시("진행 중")에는 쓰지 않는다. */
 export function playLabel(label: string, glyph: '▶' | '⏸' = '▶'): string {
   return `${glyph} ${label}`;
+}
+
+/** 글자 링크(12px 글자 상자 16pt)를 위아래로 넓혀 44pt 터치 상자로 만든다. */
+const LINK_HIT_SLOP = { top: 14, bottom: 14, left: 8, right: 8 };
+
+/**
+ * 글자 링크 — 섹션 머리의 '전체보기 ›', 카드 끝의 '모임 노트 ›' 같은 화면 이동·제자리 링크. 12px 모노를 본문색으로 쓴다:
+ * 11px 회색이던 때는 메타 정보처럼 읽혀서 서재로 가는 유일한 길('전체보기')조차 눈에 띄지 않았다(2026-10-04).
+ * 악센트는 쓰지 않는다 — 화면의 CTA 하나만 강조한다(UX 철칙 Von Restorff). 라벨 글리프는 linkLabel 규칙을 따른다.
+ */
+export function TextLink({
+  label, onPress, kind = 'nav', accessibilityLabel, accessibilityRole = 'button', numberOfLines, hitSlop = LINK_HIT_SLOP, style,
+}: {
+  label: string;
+  onPress: () => void;
+  kind?: LinkKind;
+  accessibilityLabel?: string;
+  accessibilityRole?: AccessibilityRole;
+  numberOfLines?: number;
+  /** null — 상자(style)가 이미 44pt 라 넓히지 않는다. */
+  hitSlop?: Insets | null;
+  style?: ViewStyle;
+}) {
+  const { styles } = useStyles();
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={hitSlop ?? undefined}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel ?? label}
+      style={({ pressed }) => [style, pressed && pressedStyle]}
+    >
+      <Text numberOfLines={numberOfLines} style={styles.textLink}>{linkLabel(label, kind)}</Text>
+    </Pressable>
+  );
 }
 
 /** 카드 — 종이 한 장. 얇은 테두리와 깊은 그림자로 책상 위에 올라온 느낌을 준다. */
@@ -328,49 +363,51 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
 }
 
 /**
- * 푸터 액션 확장 터치 영역(네이티브 전용).
- * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키우고,
- * 네이티브는 그 위에 hitSlop 을 더 얹어 넉넉하게 잡는다.
+ * 카드 발치 액션 — 작은 테두리 버튼(Button outline sm 과 같은 겉모습: 34pt + 위아래 hitSlop 으로 44pt).
+ * 독후감 고치기·삭제, 알림·엽서·채팅 삭제, 호스트 넘기기, 채팅 선물 등이 같이 쓴다. 예전엔 10px 회색 글자뿐이라
+ * 버튼인 줄 몰랐다(2026-10-04) — 상자가 곧 '누를 수 있음'의 신호다. `onPress` 가 없으면(카운터) 상자 없이 글자만 둔다.
+ * '삭제' → '한 번 더'(tone danger)는 테두리까지 빨갛게 바뀌어 상태가 넘어간 것이 보인다.
  */
-const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
-
-/**
- * 카드 푸터 액션 — 10px 모노 라벨 + 36px 터치 상자. 독후감 카드 푸터 등이 같이 쓴다.
- * 10px 활자라 글자 상자(16px)만으로는 손가락이 닿지 않는다 — 여백으로 36px 까지 넓히되,
- * 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다. `onPress` 가 없으면 글자만 같은 상자에 놓는다.
- */
-export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, kind }: {
+export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, disabled }: {
+  /** 버튼 라벨이라 글리프(›)를 붙이지 않는다 — Button 과 같은 규칙. */
   label: string;
   onPress?: () => void;
-  /** 링크 종류 — 주면 linkLabel 규칙(글리프·밑줄)을 따른다. 카운터('좋아요 9')는 비워 둔다. */
-  kind?: LinkKind;
+  disabled?: boolean;
   /** 켜짐(예: 좋아요) — 라벨이 악센트로, accessibilityState.selected 를 낸다. */
   selected?: boolean;
   tone?: 'accent' | 'muted' | 'faint' | 'danger';
-  /** 라벨과 다르게 읽혀야 할 때(예: '책 보기 →' 는 '{제목} 상세'). 없으면 라벨 그대로. */
+  /** 라벨과 다르게 읽혀야 할 때(예: '책 보기' 는 '{제목} 상세'). 없으면 라벨 그대로. */
   accessibilityLabel?: string;
 }) {
   const { styles, colors } = useStyles();
+  // faint(삭제 대기)도 textMuted 까지는 올린다 — textFaint 는 작은 글자 대비 기준(4.5:1)에 못 미친다.
   const color = selected || tone === 'accent'
     ? colors.accent
-    : tone === 'faint' ? colors.textFaint
+    : tone === 'faint' ? colors.textMuted
       : tone === 'danger' ? colors.danger
-        : colors.textMuted;
-  const text = kind ? linkLabel(label, kind) : label;
+        : colors.text;
 
   if (!onPress) {
-    return <Text style={[styles.footLabel, styles.footAction, { color }]}>{text}</Text>;
+    return <Text style={[styles.buttonLabel, styles.buttonLabelSm, { color }]}>{label}</Text>;
   }
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={FOOT_HIT_SLOP}
-      style={({ pressed }) => [styles.footAction, pressed && pressedStyle]}
+      disabled={disabled}
+      hitSlop={SM_HIT_SLOP}
+      style={({ pressed }) => [
+        styles.button,
+        styles.buttonSm,
+        styles.buttonOutline,
+        tone === 'danger' && styles.buttonDanger,
+        disabled && styles.buttonDisabled,
+        pressed && !disabled && pressedStyle,
+      ]}
       accessibilityRole="button"
-      accessibilityState={selected === undefined ? undefined : { selected }}
+      accessibilityState={selected === undefined && !disabled ? undefined : { selected, disabled }}
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Text style={[styles.footLabel, { color }]}>{text}</Text>
+      <Text style={[styles.buttonLabel, styles.buttonLabelSm, { color }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -445,7 +482,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     buttonOutline: {
       backgroundColor: 'transparent',
       borderWidth: hairline,
-      borderColor: colors.lineStrong,
+      borderColor: colors.control,
     },
     buttonGhost: { backgroundColor: 'transparent', minHeight: 44, paddingHorizontal: 0 },
     buttonDanger: {
@@ -492,7 +529,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     segmented: {
       flexDirection: 'row',
       borderWidth: hairline,
-      borderColor: colors.line,
+      borderColor: colors.control,
       backgroundColor: colors.surface,
       borderRadius: radius.sm,
       overflow: 'hidden',
@@ -507,7 +544,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       width: 46,
       height: 26,
       borderWidth: hairline,
-      borderColor: colors.line,
+      borderColor: colors.control,
       backgroundColor: colors.surfaceRaised,
       borderRadius: radius.sm,
       padding: 2,
@@ -546,8 +583,6 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     keyValueLabel: { ...typeScale.caption, color: colors.textMuted },
     keyValueValue: { ...typeScale.monoNumeral, color: colors.text },
-    footLabel: { ...typeScale.monoLabel, fontSize: 10, letterSpacing: 0.4 },
-    // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
-    footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
+    textLink: { ...typeScale.monoLabel, fontSize: 12, color: colors.text },
   });
 }

@@ -50,12 +50,12 @@ export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, r
             accessibilityLabel="사진 추가"
             accessibilityState={{ disabled: !!disabled }}
             style={[styles.tile, styles.ghost, {
-              borderColor: colors.lineStrong,
+              borderColor: colors.control,
               opacity: disabled ? 0.35 : 1,
             }]}
           >
-            <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>사진</Text>
+            <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>사진</Text>
           </Pressable>
         ) : null}
 

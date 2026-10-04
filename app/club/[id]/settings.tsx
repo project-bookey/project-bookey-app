@@ -428,11 +428,10 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },
-  // 행 높이를 동작의 터치 상자(위아래 hitSlop 포함 약 56pt)보다 넉넉히 — 이웃 멤버 행의 동작과 겹치지 않게.
+  // 행 높이를 동작의 터치 상자(34pt + 위아래 hitSlop 5 = 44pt)보다 넉넉히 — 이웃 멤버 행의 동작과 겹치지 않게.
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingVertical: spacing.sm },
-  // FootAction 은 글자 밖으로 양옆 14pt(여백 6 + hitSlop 8)씩 터치 영역이 넓어진다 — 둘이 겹치지 않고
-  // sm 이상 떨어지도록 28 + 8 = 36(xxl)을 띄운다. 파괴적인 '내보내기'가 '호스트 넘기기' 탭에 걸리지 않게.
-  memberActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxl },
+  // FootAction(테두리 버튼)은 옆으로 넓어지지 않는다 — md 간격이면 파괴적인 '내보내기'가 '호스트 넘기기' 탭에 걸리지 않는다.
+  memberActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   kickForm: { gap: spacing.md, paddingBottom: spacing.sm },
   rowButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
 });
