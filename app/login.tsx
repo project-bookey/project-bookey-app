@@ -190,6 +190,20 @@ export default function LoginScreen() {
 
   const submitEmail = async () => {
     const method = signupConfig.data?.verification;
+    const normalizedEmail = email.trim();
+    const normalizedNickname = nickname.trim();
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || normalizedEmail.length > 255) {
+      setError('올바른 이메일 주소를 입력해 주세요.');
+      return;
+    }
+    if (password.length < 8 || password.length > 72) {
+      setError('비밀번호는 8자 이상 72자 이하로 입력해 주세요.');
+      return;
+    }
+    if (isSignup && (!normalizedNickname || normalizedNickname.length > 50)) {
+      setError('닉네임은 1자 이상 50자 이하로 입력해 주세요.');
+      return;
+    }
     if (isSignup && method === 'EMAIL_CODE' && !code.trim()) {
       setError('이메일로 받은 인증 코드를 입력해 주세요.');
       return;
@@ -211,9 +225,9 @@ export default function LoginScreen() {
     try {
       if (isSignup) {
         await emailSignup(
-          email.trim(),
+          normalizedEmail,
           password,
-          nickname.trim(),
+          normalizedNickname,
           method === 'EMAIL_CODE'
             ? { code: code.trim() }
             : method === 'IDENTITY'
@@ -367,8 +381,9 @@ export default function LoginScreen() {
                 <Text style={styles.fieldLabel}>닉네임</Text>
                 <TextInput
                   style={styles.input}
-                  value={nickname}
-                  onChangeText={setNickname}
+                value={nickname}
+                onChangeText={setNickname}
+                maxLength={50}
                   placeholder="독서가"
                   placeholderTextColor={darkColors.textFaint}
                   accessibilityLabel="닉네임"
