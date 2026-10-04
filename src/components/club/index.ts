@@ -6,6 +6,6 @@ export { confirmAsync, notify } from './dialogs';
 export { ClubTabs, clubTabOf, isClubTabKey } from './ClubTabs';
 export { ReturnToClubHome } from './ReturnToClubHome';
 export { StatStrip } from './StatStrip';
-export { CLUB_DESCRIPTION_MAX } from './limits';
+export { CLUB_DESCRIPTION_MAX, CLUB_FREE_MEMBER_LIMIT, CLUB_SEAT_STEP } from './limits';
 export type { StatCell } from './StatStrip';
 export type { ClubTabKey } from './ClubTabs';
