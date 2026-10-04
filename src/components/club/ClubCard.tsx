@@ -2,8 +2,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
-import { Chip, StickyNote } from '@/components/collage';
+import { StickyNote } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
+import { FootAction } from '@/components/ui';
 import { ClubBackdrop } from './ClubBackdrop';
 import { meetingDay } from './meetingTime';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -17,8 +18,8 @@ const BAND_H = 96;
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
  * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 내가 참여한 가장 가까운 모임의 스티키,
  * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람 · 참여할(없으면 다음) 모임.
- * 카드 본문은 누르면 클럽 홈으로, 호스트에게만 붙는 '관리' 칩은 본문 Pressable 의 형제로 둬
- * 웹에서 button 안에 button 이 들어가지 않게 한다.
+ * 카드 본문은 누르면 클럽 홈으로. 호스트에게만 붙는 '관리'는 다른 카드의 발치 동작처럼 카드 맨 아래
+ * 오른쪽의 FootAction 이다 — 본문 Pressable 의 형제로 둬 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
 export function ClubCard({ club, onPress, onManage }: {
   club: ClubSummary;
@@ -58,8 +59,8 @@ export function ClubCard({ club, onPress, onManage }: {
           ) : null}
         </View>
 
-        <View style={styles.body}>
-          <Text numberOfLines={1} style={[styles.name, { color: colors.text }, onManage && styles.nameWithManage]}>
+        <View style={[styles.body, onManage && styles.bodyWithFoot]}>
+          <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
             {club.name}
           </Text>
           {club.description ? (
@@ -75,8 +76,8 @@ export function ClubCard({ club, onPress, onManage }: {
       </Pressable>
 
       {onManage ? (
-        <View style={styles.manage}>
-          <Chip label="관리" onPress={onManage} accessibilityLabel={`${club.name} 관리`} />
+        <View style={styles.foot}>
+          <FootAction label="관리" onPress={onManage} accessibilityLabel={`${club.name} 관리`} />
         </View>
       ) : null}
     </View>
@@ -128,10 +129,10 @@ const styles = StyleSheet.create({
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
   body: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.xs },
-  // 본문 제목과 겹치지 않도록 관리 버튼은 이미지 띠의 오른쪽 아래에 둔다.
-  manage: { position: 'absolute', top: BAND_H - 40, right: spacing.lg },
+  // 발치 버튼이 붙으면 본문 아래를 줄여 버튼이 카드 내용과 한 묶음으로 읽히게 한다.
+  bodyWithFoot: { paddingBottom: spacing.sm },
+  foot: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
-  nameWithManage: { paddingRight: 64 },
   intro: { ...typeScale.caption, lineHeight: 18 },
   next: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3, marginTop: 2 },
   membersLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
