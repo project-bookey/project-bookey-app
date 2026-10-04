@@ -10,7 +10,7 @@ import { clubApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
 import {
-  CLUB_DESCRIPTION_MAX, ClubBackdrop, CopyCodeButton, ReturnToClubHome, confirmAsync, notify,
+  CLUB_DESCRIPTION_MAX, ClubBackdrop, CopyCodeButton, InviteCodeNote, ReturnToClubHome, confirmAsync, notify,
 } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
@@ -289,9 +289,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
 
         <Section title="초대 · 자리">
           <View style={styles.rowBetween}>
-            <View>
+            <View style={{ gap: spacing.xs }}>
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
-              <Text style={[styles.code, { color: colors.text }]} selectable>{club.joinCode}</Text>
+              <InviteCodeNote code={club.joinCode} />
             </View>
             <View style={styles.codeActions}>
               <CopyCodeButton code={club.joinCode} />
@@ -431,7 +431,6 @@ const styles = StyleSheet.create({
   previewIntro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
   backdropActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  code: { fontFamily: mono.semiBold, fontSize: 22, letterSpacing: 1, marginTop: 2 },
   codeActions: { flexDirection: 'row', gap: spacing.sm },
   seat: { fontFamily: mono.semiBold, fontSize: 16, marginTop: 2 },
   // 행 높이를 동작의 터치 상자(34pt + 위아래 hitSlop 5 = 44pt)보다 넉넉히 — 이웃 멤버 행의 동작과 겹치지 않게.
