@@ -1,16 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, reviewApi } from '@/api/endpoints';
-import { invalidateReviewLists, reviewKey } from '@/api/reviewCache';
+import { reviewKey } from '@/api/reviewCache';
 import type { Review } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll } from '@/components/keyboard';
 import { ReviewCard } from '@/components/review/ReviewCard';
 import { ReviewForm } from '@/components/review/ReviewForm';
+import { reviewMutationError, useRemoveReview, useUpdateReview } from '@/components/review/useReviewMutations';
 import { EmptyState, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
@@ -24,7 +25,6 @@ export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const reviewId = Number(id);
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { colors } = useTheme();
   const myId = useAuth((state) => state.user?.id);
 
@@ -45,29 +45,11 @@ export default function ReviewDetailScreen() {
 
   const mine = review.data != null && review.data.authorId === myId;
 
-  // 리뷰가 바뀌거나 사라지면 책의 평점·리뷰 수와 리뷰 목록도 다시 받는다.
-  const refreshLists = () => {
-    invalidateReviewLists(queryClient);
-    if (bookId != null) queryClient.invalidateQueries({ queryKey: ['book', bookId] });
-  };
-
   // 고치기 — 지금 리뷰로 칸을 채워 연다. 취소하면 고친 글은 버린다.
   const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
-  const update = useMutation({
-    mutationFn: (current: Review) => reviewApi.update(reviewId, {
-      body: body.trim(),
-      // 별을 모두 비우면 별점을 지운다 — 별점은 선택이다.
-      ...(rating > 0 ? { rating } : { removeRating: true }),
-      tags: current.tags,
-    }),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(reviewKey(reviewId), updated);
-      refreshLists();
-      setEditing(false);
-    },
-  });
+  const update = useUpdateReview();
   const startEditing = (current: Review) => {
     setRating(current.rating ?? 0);
     setBody(current.body);
@@ -77,31 +59,23 @@ export default function ReviewDetailScreen() {
 
   const { confirm, arm, disarm } = useDeleteConfirm<'review'>();
   const confirming = confirm === 'review';
-  const remove = useMutation({
-    mutationFn: () => reviewApi.remove(reviewId),
-    onSuccess: () => {
-      refreshLists();
-      queryClient.removeQueries({ queryKey: reviewKey(reviewId), exact: true });
-      // 딥링크로 바로 들어왔으면 돌아갈 곳이 없다 — 그 책 화면으로 간다(리뷰가 있어야 지울 수 있으니 bookId 는 있다).
-      if (router.canGoBack()) router.back();
-      else router.replace(`/book/${bookId}`);
-    },
-  });
+  const remove = useRemoveReview();
+  const afterRemove = () => {
+    // 딥링크로 바로 들어왔으면 돌아갈 곳이 없다 — 그 책 화면으로 간다(리뷰가 있어야 지울 수 있으니 bookId 는 있다).
+    if (router.canGoBack()) router.back();
+    else router.replace(`/book/${bookId}`);
+  };
   const pressDelete = () => {
     if (confirming) {
       disarm();
-      remove.mutate();
+      if (review.data) remove.mutate(review.data, { onSuccess: afterRemove });
       return;
     }
     arm('review');
   };
 
-  const updateError = update.isError && !update.isPending
-    ? update.error instanceof ApiError ? update.error.message : '저장하지 못했어요. 다시 시도해 주세요.'
-    : null;
-  const removeError = remove.isError && !remove.isPending
-    ? remove.error instanceof ApiError ? remove.error.message : '삭제하지 못했어요. 다시 시도해 주세요.'
-    : null;
+  const updateError = reviewMutationError(update, '저장하지 못했어요. 다시 시도해 주세요.');
+  const removeError = reviewMutationError(remove, '삭제하지 못했어요. 다시 시도해 주세요.');
 
   const article = review.data ? (
     editing ? (
@@ -112,7 +86,10 @@ export default function ReviewDetailScreen() {
         body={body}
         onBody={setBody}
         submitLabel="저장"
-        onSubmit={() => update.mutate(review.data!)}
+        onSubmit={() => update.mutate(
+          { review: review.data!, rating, body },
+          { onSuccess: () => setEditing(false) },
+        )}
         onCancel={() => setEditing(false)}
         pending={update.isPending}
         error={updateError}

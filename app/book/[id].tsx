@@ -14,7 +14,7 @@ import { Check, Plus } from 'lucide-react-native';
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
-import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
+import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, Review } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
 import { LikeAction } from '@/components/post/LikeAction';
@@ -27,7 +27,9 @@ import { useMyRemark, useSaveRemark } from '@/components/remark/queries';
 import { FinishReviewSheet, type FinishedBook } from '@/components/review/FinishReviewSheet';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
+import { reviewMutationError, useRemoveReview, useUpdateReview } from '@/components/review/useReviewMutations';
 import { Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import { getLagStyle, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -110,6 +112,8 @@ export default function BookDetailScreen() {
   const [finishPromptClosed, setFinishPromptClosed] = useState(false);
   // 리뷰를 쓰는 중인지 — 그동안은 하단 '독서 시작'을 숨겨 초록 버튼을 '남기기' 하나로 둔다(UX 철칙 Von Restorff).
   const [reviewComposing, setReviewComposing] = useState(false);
+  // 목록에서 내 리뷰를 고치는 중 — 쓰는 칸이 열려 있으니 하단 CTA 를 숨긴다(쓰기와 같은 까닭).
+  const [reviewEditing, setReviewEditing] = useState(false);
   // 한 마디 시트 — 하차한 그 순간에 올라오고, 내 진척 카드의 '한 마디 남기기'·'고치기'도 같은 시트를 연다.
   const [remarkSheetOpen, setRemarkSheetOpen] = useState(false);
 
@@ -359,11 +363,12 @@ export default function BookDetailScreen() {
             onFinishPromptClose={() => setFinishPromptClosed(true)}
             composing={reviewComposing}
             onComposingChange={setReviewComposing}
+            onEditingChange={setReviewEditing}
           />
         </View>
       </KeyboardScroll>
 
-      {hasStartCta && !keyboardOpen && !reviewComposing ? (
+      {hasStartCta && !keyboardOpen && !reviewComposing && !reviewEditing ? (
         // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '메모 남기기'와 같은 만듦새.
         <LinearGradient
           colors={[`${colors.bg}00`, colors.bg]}
@@ -928,7 +933,7 @@ function useBookReviews(bookId: number) {
  * 시트와 인라인 폼이 같은 별점·글을 나눠 쓴다.
  */
 function ReviewSection({
-  bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose, composing, onComposingChange,
+  bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose, composing, onComposingChange, onEditingChange,
 }: {
   bookId: number;
   rid: number | null;
@@ -940,6 +945,8 @@ function ReviewSection({
   /** 작성 폼이 펼쳐져 있는지 — 화면이 하단 CTA 를 숨기려고 쥔다. */
   composing: boolean;
   onComposingChange: (composing: boolean) => void;
+  /** 목록에서 내 리뷰를 고치는 칸이 열려 있는지 — 이것도 하단 CTA 를 숨긴다. */
+  onEditingChange: (editing: boolean) => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -961,10 +968,41 @@ function ReviewSection({
   const [remarkDraft, setRemarkDraft] = useState('');
   const [remarkPassed, setRemarkPassed] = useState(false);
 
-  // 탭을 바꾸면 펼쳐져 있던 작성 폼은 닫는다 — 다른 탭 밑에 폼이 숨어 있지 않게.
+  // 내 리뷰 고치기·삭제 — 목록 조각 오른쪽 아래 버튼으로 상세에 들어가지 않고 그 자리에서 다룬다.
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editBody, setEditBody] = useState('');
+  const update = useUpdateReview();
+  const remove = useRemoveReview();
+  const { confirm: deleteTarget, arm: armDelete, disarm: disarmDelete } = useDeleteConfirm<number>();
+  const setEditing = (id: number | null) => {
+    setEditingId(id);
+    onEditingChange(id != null);
+  };
+  const startEdit = (review: Review) => {
+    // 새 리뷰 칸은 접는다 — 쓰는 칸이 한 번에 하나만 열리게.
+    setOpen(false);
+    update.reset();
+    setEditRating(review.rating ?? 0);
+    setEditBody(review.body);
+    setEditing(review.id);
+  };
+  const pressDelete = (review: Review) => {
+    if (deleteTarget === review.id) {
+      disarmDelete();
+      remove.mutate(review);
+      return;
+    }
+    armDelete(review.id);
+  };
+  const updateError = reviewMutationError(update, '저장하지 못했어요. 다시 시도해 주세요.');
+  const removeError = reviewMutationError(remove, '삭제하지 못했어요. 다시 시도해 주세요.');
+
+  // 탭을 바꾸면 펼쳐져 있던 작성·고치기 칸은 닫는다 — 다른 탭 밑에 폼이 숨어 있지 않게.
   const switchTab = (next: RecordTab) => {
     if (next === tab) return;
     setOpen(false);
+    setEditing(null);
     setTab(next);
   };
 
@@ -1037,7 +1075,12 @@ function ReviewSection({
         />
       )
     : (rid != null && !open ? (
-        <FootAction label="쓰기" tone="accent" onPress={() => setOpen(true)} accessibilityLabel="리뷰 쓰기" />
+        <FootAction
+          label="쓰기"
+          tone="accent"
+          onPress={() => { setEditing(null); setOpen(true); }}
+          accessibilityLabel="리뷰 쓰기"
+        />
       ) : null);
 
   return (
@@ -1077,14 +1120,37 @@ function ReviewSection({
             </Card>
           ) : (
             <View style={styles.reviewList}>
-              {/* 붙인 메모 조각 — 반듯하게 쌓는다. 눌러서 전문을 읽는다. */}
+              {/* 붙인 메모 조각 — 반듯하게 쌓는다. 눌러서 전문을 읽는다. 내 리뷰는 '고치기'를 누르면 그 자리가 쓰는 칸이 된다. */}
               {items.map((review) => (
-                <ReviewScrap
-                  key={review.id}
-                  review={review}
-                  onPress={() => router.push(`/review/${review.id}`)}
-                />
+                editingId === review.id ? (
+                  <ReviewForm
+                    key={review.id}
+                    nickname={review.authorNickname}
+                    rating={editRating}
+                    onRating={setEditRating}
+                    body={editBody}
+                    onBody={setEditBody}
+                    submitLabel="저장"
+                    onSubmit={() => update.mutate(
+                      { review, rating: editRating, body: editBody },
+                      { onSuccess: () => setEditing(null) },
+                    )}
+                    onCancel={() => setEditing(null)}
+                    pending={update.isPending}
+                    error={updateError}
+                  />
+                ) : (
+                  <ReviewScrap
+                    key={review.id}
+                    review={review}
+                    onPress={() => router.push(`/review/${review.id}`)}
+                    onEdit={review.authorId === myId ? () => startEdit(review) : undefined}
+                    onDelete={review.authorId === myId && !remove.isPending ? () => pressDelete(review) : undefined}
+                    deleteConfirming={deleteTarget === review.id}
+                  />
+                )
               ))}
+              {removeError ? <Text style={[typeScale.caption, { color: colors.danger }]}>{removeError}</Text> : null}
             </View>
           )}
         </>
