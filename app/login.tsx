@@ -89,7 +89,7 @@ export default function LoginScreen() {
     const idToken = googleResponse?.type === 'success' ? googleResponse.params.id_token : undefined;
     if (!idToken) {
       if (googleResponse?.type === 'error') {
-        setError('Google 로그인을 완료하지 못했습니다.');
+        setError('Google 로그인을 마치지 못했어요. 다시 시도해 주세요.');
       }
       if (googleResponse) {
         setSocialLoading(null);
@@ -99,7 +99,7 @@ export default function LoginScreen() {
     setSocialLoading('GOOGLE');
     setError(null);
     runSocial('GOOGLE', idToken)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Google 로그인에 실패했습니다.'))
+      .catch((e) => setError(e instanceof Error ? e.message : 'Google 로그인을 마치지 못했어요. 다시 시도해 주세요.'))
       .finally(() => setSocialLoading(null));
   }, [googleResponse, router, socialLogin]);
 
@@ -119,7 +119,7 @@ export default function LoginScreen() {
         setCode(result.devCode);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : '인증 코드를 요청하지 못했습니다.');
+      setError(e instanceof Error ? e.message : '인증 코드를 보내지 못했어요.');
     } finally {
       setCodeLoading(false);
     }
@@ -139,7 +139,7 @@ export default function LoginScreen() {
       setCodeVerified(true);
     } catch (e) {
       setCodeVerified(false);
-      setError(e instanceof Error ? e.message : '인증 코드를 확인하지 못했습니다.');
+      setError(e instanceof Error ? e.message : '인증 코드를 확인하지 못했어요.');
     } finally {
       setCodeVerifyLoading(false);
     }
@@ -224,11 +224,15 @@ export default function LoginScreen() {
       return;
     }
     if (!config.portoneStoreId || !config.portoneChannelKey) {
-      setError('본인인증 채널이 아직 설정되지 않았습니다. (포트원 계약·키 필요)');
+      setError(__DEV__
+        ? '본인인증 채널이 아직 설정되지 않았어요. (포트원 계약·키 필요)'
+        : '지금은 휴대폰 본인인증을 할 수 없어요. 잠시 후 다시 시도해 주세요.');
       return;
     }
     // TODO: @portone/react-native-sdk 본인인증 — 계약 후 키가 나오면 붙인다.
-    setError('포트원 SDK 연동이 아직 준비되지 않았습니다.');
+    setError(__DEV__
+      ? '포트원 SDK 연동이 아직 준비되지 않았어요.'
+      : '지금은 휴대폰 본인인증을 할 수 없어요. 잠시 후 다시 시도해 주세요.');
   };
 
   const submitEmail = async () => {
@@ -236,15 +240,15 @@ export default function LoginScreen() {
     const normalizedEmail = email.trim();
     const normalizedNickname = nickname.trim();
     if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || normalizedEmail.length > 255) {
-      setError('올바른 이메일 주소를 입력해 주세요.');
+      setError('이메일 주소를 다시 확인해 주세요.');
       return;
     }
     if (password.length < 8 || password.length > 72) {
-      setError('비밀번호는 8자 이상 72자 이하로 입력해 주세요.');
+      setError('비밀번호는 8~72자로 정해 주세요.');
       return;
     }
     if (isSignup && (!normalizedNickname || normalizedNickname.length > 50)) {
-      setError('닉네임은 1자 이상 50자 이하로 입력해 주세요.');
+      setError('닉네임을 50자 안으로 적어 주세요.');
       return;
     }
     if (isSignup && method === 'EMAIL_CODE' && !code.trim()) {
@@ -256,11 +260,11 @@ export default function LoginScreen() {
       return;
     }
     if (isSignup && method === 'IDENTITY' && !identityId) {
-      setError('휴대폰 본인인증을 먼저 완료해 주세요.');
+      setError('휴대폰 본인인증을 먼저 해 주세요.');
       return;
     }
     if (isSignup && !consentComplete(consent)) {
-      setError('필수 동의(만 14세 이상·이용약관·개인정보 수집·이용)를 모두 확인해 주세요.');
+      setError('필수 항목(만 14세 이상, 이용약관, 개인정보 수집·이용)에 모두 동의해 주세요.');
       return;
     }
     setEmailLoading(true);
@@ -303,12 +307,12 @@ export default function LoginScreen() {
         ],
       });
       if (!credential.identityToken) {
-        throw new Error('Apple 인증 토큰을 받지 못했습니다.');
+        throw new Error('Apple 로그인을 마치지 못했어요. 다시 시도해 주세요.');
       }
       await runSocial('APPLE', credential.identityToken);
     } catch (e) {
       if ((e as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') {
-        setError(e instanceof Error ? e.message : 'Apple 로그인에 실패했습니다.');
+        setError(e instanceof Error ? e.message : 'Apple 로그인을 마치지 못했어요. 다시 시도해 주세요.');
       }
     } finally {
       setSocialLoading(null);
@@ -317,7 +321,9 @@ export default function LoginScreen() {
 
   const submitKakao = async () => {
     if (!hasKakaoClient) {
-      setError('카카오 로그인 키가 아직 설정되지 않았습니다. (.env.local의 EXPO_PUBLIC_KAKAO_REST_KEY)');
+      setError(__DEV__
+        ? '카카오 로그인 키가 아직 설정되지 않았어요. (.env.local의 EXPO_PUBLIC_KAKAO_REST_KEY)'
+        : '지금은 카카오 로그인을 쓸 수 없어요.');
       return;
     }
     setSocialLoading('KAKAO');
@@ -327,7 +333,7 @@ export default function LoginScreen() {
       if (!accessToken) return; // 사용자가 취소
       await runSocial('KAKAO', accessToken);
     } catch (e) {
-      setError(e instanceof Error ? e.message : '카카오 로그인에 실패했습니다.');
+      setError(e instanceof Error ? e.message : '카카오 로그인을 마치지 못했어요. 다시 시도해 주세요.');
     } finally {
       setSocialLoading(null);
     }
@@ -335,7 +341,9 @@ export default function LoginScreen() {
 
   const submitGoogle = async () => {
     if (!hasGoogleClient) {
-      setError('Google 로그인 키가 아직 설정되지 않았습니다. (.env.local의 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)');
+      setError(__DEV__
+        ? 'Google 로그인 키가 아직 설정되지 않았어요. (.env.local의 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID)'
+        : '지금은 Google 로그인을 쓸 수 없어요.');
       return;
     }
     setSocialLoading('GOOGLE');
@@ -343,7 +351,7 @@ export default function LoginScreen() {
     try {
       await promptGoogle();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Google 로그인 창을 열지 못했습니다.');
+      setError(e instanceof Error ? e.message : 'Google 로그인 창을 열지 못했어요.');
       setSocialLoading(null);
     }
   };
@@ -499,7 +507,7 @@ export default function LoginScreen() {
                             {codeVerified ? '✓ 이메일 인증 완료' : '인증 코드 확인'}
                           </Text>}
                     </Pressable>
-                    <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 입력해 확인해 주세요. (10분 유효)</Text>
+                    <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 10분 안에 입력해 주세요.</Text>
                   </>
                 ) : null}
               </View>
@@ -507,7 +515,7 @@ export default function LoginScreen() {
             {isSignup ? (
               <SignupConsentBox colors={darkColors} value={consent} onChange={setConsent} disabled={busy} />
             ) : null}
-            {/* 실패 안내는 누른 버튼 바로 위에 — 아래 '처음 가입하기' 밑에 두면 눈이 닿지 않는다(Proximity). */}
+            {/* 실패 안내는 누른 버튼 바로 위에 — 아래 '회원가입' 밑에 두면 눈이 닿지 않는다(Proximity). */}
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
             <Pressable
               onPress={submitEmail}
@@ -536,7 +544,7 @@ export default function LoginScreen() {
               style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
             >
               <Text style={styles.ghostLabel}>
-                {isSignup ? '로그인으로 돌아가기' : '처음 가입하기'}
+                {isSignup ? '로그인으로 돌아가기' : '회원가입'}
               </Text>
             </Pressable>
           </View>

@@ -50,20 +50,20 @@ export default function ReviewDetailScreen() {
 
   const placeholder = !Number.isFinite(reviewId) ? (
     <EmptyState
-      title="리뷰를 불러오지 못했습니다"
-      description="지워졌거나 없는 리뷰입니다."
+      title="리뷰를 불러오지 못했어요"
+      description="지워졌거나 없는 리뷰예요."
     />
   ) : review.isLoading ? (
     <View style={[styles.skeleton, { backgroundColor: colors.surface }]} />
   ) : review.isError ? (
     review.error instanceof ApiError && review.error.status === 404 ? (
       <EmptyState
-        title="리뷰를 불러오지 못했습니다"
-        description="지워졌거나 없는 리뷰입니다."
+        title="리뷰를 불러오지 못했어요"
+        description="지워졌거나 없는 리뷰예요."
       />
     ) : (
       <EmptyState
-        title="리뷰를 불러오지 못했습니다"
+        title="리뷰를 불러오지 못했어요"
         description="잠시 후 다시 시도해 주세요."
         action={
           <Pressable onPress={() => review.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">

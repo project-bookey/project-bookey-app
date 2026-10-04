@@ -165,19 +165,19 @@ export const coverShadow: Record<ThemeMode, { rest: ViewStyle; lifted: ViewStyle
 /** 지연 단계(§F4) → 색. 팔레트를 따라가도록 함수로 제공한다. */
 export function getLagStyle(colors: ColorTokens): Record<string, { label: string; fg: string; bg: string }> {
   return {
-    L0_NORMAL: { label: '정상', fg: colors.textMuted, bg: colors.surfaceRaised },
-    L1_CAUTION: { label: '주의', fg: colors.warn, bg: colors.warnSoft },
-    L2_DELAYED: { label: '지연', fg: colors.warn, bg: colors.warnSoft },
-    L3_SERIOUS: { label: '심각', fg: colors.danger, bg: colors.dangerSoft },
-    L4_NEGLECTED: { label: '방치', fg: colors.danger, bg: colors.dangerSoft },
+    L0_NORMAL: { label: '순조로움', fg: colors.textMuted, bg: colors.surfaceRaised },
+    L1_CAUTION: { label: '조금 늦음', fg: colors.warn, bg: colors.warnSoft },
+    L2_DELAYED: { label: '늦음', fg: colors.warn, bg: colors.warnSoft },
+    L3_SERIOUS: { label: '많이 늦음', fg: colors.danger, bg: colors.dangerSoft },
+    L4_NEGLECTED: { label: '오래 쉼', fg: colors.danger, bg: colors.dangerSoft },
   };
 }
 
 /** 페이스 → 색. 긍정 상태는 악센트가 겸한다. */
 export function getPaceStyle(colors: ColorTokens): Record<string, { label: string; fg: string; bg: string }> {
   return {
-    ON_TRACK: { label: '순항', fg: colors.accent, bg: colors.accentSoft },
-    BEHIND: { label: '뒤처짐', fg: colors.warn, bg: colors.warnSoft },
-    AT_RISK: { label: '위험', fg: colors.danger, bg: colors.dangerSoft },
+    ON_TRACK: { label: '순조로움', fg: colors.accent, bg: colors.accentSoft },
+    BEHIND: { label: '조금 늦음', fg: colors.warn, bg: colors.warnSoft },
+    AT_RISK: { label: '많이 늦음', fg: colors.danger, bg: colors.dangerSoft },
   };
 }

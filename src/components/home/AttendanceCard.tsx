@@ -51,7 +51,9 @@ export function AttendanceCard() {
               ? '오늘 출석을 마쳤어요. 내일 다시 만나요.'
               : completed
                 ? '다음 달 1일에 새로운 출석판이 열려요.'
-                : `${data.nextRewardDay}일째에 ${data.nextRewardType === 'POSTCARD' ? '엽서 1장' : '우표 1개'}를 드려요.`}
+                : data.nextRewardType === 'POSTCARD'
+                  ? `${data.nextRewardDay}일째 출석하면 엽서 1장을 드려요.`
+                  : `${data.nextRewardDay}일째 출석하면 우표 1개를 드려요.`}
         </Text>
       </View>
       <Pressable
@@ -66,7 +68,7 @@ export function AttendanceCard() {
         ]}
       >
         <Text style={[typeScale.label, { color: done ? colors.textMuted : colors.onAccent }]}>
-          {checkIn.isPending ? '확인 중…' : done ? '출석 완료 ✓' : completed ? '28일 완료' : '출석하기'}
+          {checkIn.isPending ? '확인 중…' : done ? '출석 완료' : completed ? '이번 달 출석 끝' : '출석하기'}
         </Text>
       </Pressable>
       <Pressable
@@ -81,14 +83,14 @@ export function AttendanceCard() {
         ]}
       >
         <Text style={[typeScale.monoLabel, { color: colors.text }]}>
-          {expanded ? '달력 접기 ︿' : '달력 보기 ﹀'}
+          {expanded ? '달력 접기' : '달력 보기'}
         </Text>
       </Pressable>
       {expanded ? (
       <View style={styles.board} accessibilityLabel={`이번 달 ${data.monthlyAttendanceDays}일 출석`}>
         <View style={styles.calendarHeader}>
           <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{monthLabel} 출석 달력</Text>
-          <Text style={[typeScale.caption, { color: colors.textFaint }]}>매달 1일 초기화</Text>
+          <Text style={[typeScale.caption, { color: colors.textFaint }]}>매달 1일에 새로 시작해요</Text>
         </View>
         {[0, 1, 2, 3].map((week) => (
           <View key={week} style={styles.weekRow}>

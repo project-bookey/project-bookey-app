@@ -42,7 +42,7 @@ export default function WalletScreen() {
         <View style={styles.block}>
           <Card>
             <View style={styles.head}>
-              <Eyebrow>보유</Eyebrow>
+              <Eyebrow>내가 가진 것</Eyebrow>
               {subscribed ? <Tag label="구독 중" fg={colors.accent} bg={colors.accentSoft} /> : null}
             </View>
             {wallet.isError ? (
@@ -108,7 +108,7 @@ export default function WalletScreen() {
             <Text style={[typeScale.body, styles.copy, { color: colors.textMuted }]}>
               {subscribed
                 ? '방문자 확인 같은 구독 혜택을 쓰고 있어요.'
-                : `방문자 확인 등 소셜 신호를 더 자세히 봅니다.${price != null ? ` 월 ${price.toLocaleString()}원.` : ''}`}
+                : `내 페이지 방문자와 좋아요 누른 사람을 볼 수 있어요.${price != null ? ` 월 ${price.toLocaleString()}원.` : ''}`}
             </Text>
             <View style={styles.actions}>
               {subscribed ? (

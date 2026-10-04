@@ -55,7 +55,7 @@ export function useSocialTokens() {
       try {
         // 연동엔 이름·이메일이 필요 없다 — 계정 식별용 ID 토큰만 받는다.
         const credential = await Apple.signInAsync({ requestedScopes: [] });
-        if (!credential.identityToken) throw new Error('Apple 인증 토큰을 받지 못했습니다.');
+        if (!credential.identityToken) throw new Error('Apple 로그인을 마치지 못했어요. 다시 시도해 주세요.');
         return credential.identityToken;
       } catch (e) {
         if ((e as { code?: string })?.code === 'ERR_REQUEST_CANCELED') return null;
@@ -63,13 +63,13 @@ export function useSocialTokens() {
       }
     }
     if (provider === 'KAKAO') {
-      if (!hasKakaoClient) throw new Error('카카오 로그인 키가 아직 설정되지 않았습니다.');
+      if (!hasKakaoClient) throw new Error('지금은 카카오 로그인을 쓸 수 없어요.');
       return kakao.login();
     }
-    if (!hasGoogleClient || !googleRequest) throw new Error('Google 로그인 키가 아직 설정되지 않았습니다.');
+    if (!hasGoogleClient || !googleRequest) throw new Error('지금은 Google 로그인을 쓸 수 없어요.');
     const result = await promptGoogle();
     if (result.type === 'success') return result.params.id_token ?? null;
-    if (result.type === 'error') throw new Error('Google 인증을 완료하지 못했습니다.');
+    if (result.type === 'error') throw new Error('Google 로그인을 마치지 못했어요. 다시 시도해 주세요.');
     return null;
   };
 

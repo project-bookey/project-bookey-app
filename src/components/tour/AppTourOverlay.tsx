@@ -132,7 +132,7 @@ export function AppTourOverlay() {
     );
   }, [visible, holes, step, item]);
 
-  // 마치기·건너뛰기 모두 다시 띄우지 않게 남기고 서가로 돌아온다 — 책을 찾는 자리에서 앱을 시작하게.
+  // 마치기·건너뛰기 모두 다시 띄우지 않게 남기고 홈으로 돌아온다 — 책을 찾는 자리에서 앱을 시작하게.
   const close = () => {
     if (userId != null) markSeen(userId);
     showSection('home');

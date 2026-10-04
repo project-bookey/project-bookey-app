@@ -30,7 +30,7 @@ function dayOf(iso?: string): string | null {
 }
 
 /**
- * 함께 독서 기록 카드 면 — 정사각형 종이 한 장(헤어라인): 모노 아이브로우, 큰 모노 시간, 명조 클럽 이름,
+ * 같이 읽기 기록 카드 면 — 정사각형 종이 한 장(헤어라인): 모노 아이브로우, 큰 모노 시간, 명조 클럽 이름,
  * 모임 제목·날짜·닉네임 한 줄씩. 노트 스티커와 스티커 고르기 미리보기가 같은 면을 쓴다.
  */
 export function ActivityCardFace({ card, size }: { card: ActivityCardSnapshot; size: number }) {
@@ -60,7 +60,7 @@ export function ActivityCardFace({ card, size }: { card: ActivityCardSnapshot; s
         numberOfLines={1}
         style={{ fontFamily: mono.semiBold, fontSize: size * C.eyebrow, letterSpacing: 1, color: colors.textFaint }}
       >
-        함께 독서
+        같이 읽기
       </Text>
       <View style={{ gap: size * C.gap }}>
         <Text

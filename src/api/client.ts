@@ -166,7 +166,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     throw new ApiError(
       response.status,
       data?.code ?? 'UNKNOWN',
-      fieldMessage || data?.message || '요청을 처리하지 못했습니다.',
+      fieldMessage || data?.message || '처리하지 못했어요. 잠시 후 다시 시도해 주세요.',
     );
   }
   return data as T;

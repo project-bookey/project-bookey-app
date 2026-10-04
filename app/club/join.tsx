@@ -42,7 +42,7 @@ export default function ClubJoinScreen() {
       queryClient.invalidateQueries({ queryKey: ['library'] });
       router.replace(`/club/${club.id}`);
     },
-    onError: (e) => setError(e instanceof ApiError ? e.message : '참가하지 못했습니다.'),
+    onError: (e) => setError(e instanceof ApiError ? e.message : '참가하지 못했어요.'),
   });
 
   const errorStyle = [typeScale.caption, { color: colors.danger }];
@@ -72,12 +72,12 @@ export default function ClubJoinScreen() {
               ]}
             />
             <Text style={[styles.hint, { color: colors.textFaint }]}>
-              대소문자와 하이픈은 자동으로 정리됩니다.
+              대문자·소문자나 하이픈(-)은 신경 쓰지 않아도 돼요.
             </Text>
           </View>
 
           {ready && preview.isError ? (
-            <Text style={errorStyle}>유효하지 않은 초대 코드입니다.</Text>
+            <Text style={errorStyle}>없는 초대 코드예요. 다시 확인해 주세요.</Text>
           ) : null}
 
           {club ? (
@@ -105,7 +105,7 @@ export default function ClubJoinScreen() {
                 ]}
               />
               {club.alreadyMember ? (
-                <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가 중인 클럽입니다.</Text>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>이미 참가한 클럽이에요.</Text>
               ) : club.joinBlockedReason ? (
                 <Text style={errorStyle}>{club.joinBlockedReason}</Text>
               ) : null}
@@ -114,17 +114,17 @@ export default function ClubJoinScreen() {
 
           {club?.joinable ? (
             <View style={[styles.section, { borderTopColor: colors.line }]}>
-              <Eyebrow>참가하면 이렇게 됩니다</Eyebrow>
+              <Eyebrow>참가하면 이렇게 돼요</Eyebrow>
               <Text style={[styles.consentText, { color: colors.textMuted }]}>
-                · 클럽이 지금 읽는 책이 내 서재에 자동으로 등록됩니다 — 모임마다 책이 바뀌면 그 책도요{'\n'}
-                · 내 <Text style={[styles.bold, { color: colors.text }]}>진행률 · 누적 독서시간 · 마지막 독서 시각</Text>이 클럽원에게 보입니다{'\n'}
-                · 세션 메모, 다른 책의 기록, 개인 독후감은 <Text style={[styles.bold, { color: colors.text }]}>공유되지 않습니다</Text>
+                · 클럽이 지금 읽는 책이 내 서재에 저절로 담겨요. 모임마다 책이 바뀌면 그 책도 담겨요{'\n'}
+                · 내 <Text style={[styles.bold, { color: colors.text }]}>진도, 지금까지 읽은 시간, 마지막으로 읽은 때</Text>가 멤버에게 보여요{'\n'}
+                · 독서 일지, 다른 책의 기록, 내 독후감은 <Text style={[styles.bold, { color: colors.text }]}>보이지 않아요</Text>
               </Text>
 
               <Rule />
               <Toggle
-                label="진척 공개"
-                description="끄면 리더보드에 '비공개'로 표시되고 클럽 평균 계산에서 빠집니다."
+                label="내 진도 공개"
+                description="끄면 멤버 목록에 내 진도가 '비공개'로 보이고, 클럽 평균에서도 빠져요."
                 value={shareProgress}
                 onChange={setShareProgress}
               />

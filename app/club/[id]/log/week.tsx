@@ -46,7 +46,7 @@ export default function ClubLogWeekScreen() {
     setNotice(null);
     try {
       const result = await sharePng(cardRef, {
-        ...EXPORT, fileName: `bookey-readlog-${monday}.png`, title: '이번 주 읽기로그 카드',
+        ...EXPORT, fileName: `bookey-readlog-${monday}.png`, title: '이번 주 카드',
       });
       if (result === 'unavailable') setNotice('이 기기에서는 공유를 쓸 수 없어요.');
     } catch {
@@ -77,7 +77,7 @@ export default function ClubLogWeekScreen() {
               accessibilityRole="button"
               style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
             >
-              <Text style={[styles.navLabel, { color: colors.text }]}>다음주 ›</Text>
+              <Text style={[styles.navLabel, { color: colors.text }]}>다음 주 ›</Text>
             </Pressable>
           ) : null}
         </View>
@@ -85,14 +85,14 @@ export default function ClubLogWeekScreen() {
         {week.isLoading ? (
           <Loading />
         ) : !data ? (
-          <Text style={[typeScale.body, { color: colors.danger }]}>카드를 불러오지 못했습니다.</Text>
+          <Text style={[typeScale.body, { color: colors.danger }]}>카드를 불러오지 못했어요.</Text>
         ) : empty ? (
           <MemoScrap rotate={-1}>
             <Text style={[typeScale.quote, { color: colors.text, fontSize: 15, lineHeight: 24 }]}>
-              이 주에는 아직 모인 조각이 없어요.
+              이 주에는 아직 모인 메모가 없어요.
             </Text>
             <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.xs }]}>
-              읽기를 마치고 조각을 남기면 일요일 밤 카드 한 장으로 모여요.
+              읽기를 마치고 메모를 남기면 일요일 밤 카드 한 장으로 모여요.
             </Text>
           </MemoScrap>
         ) : (
@@ -101,7 +101,7 @@ export default function ClubLogWeekScreen() {
               <WeekCard ref={cardRef} week={data} width={cardWidth} />
             </View>
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
-              내 진도보다 뒤 쪽에 붙은 조각은 카드에 들어가지 않아요.
+              내가 아직 안 읽은 쪽의 메모는 카드에 넣지 않아요.
             </Text>
             {notice ? (
               <Text style={[typeScale.caption, { color: colors.danger, textAlign: 'center' }]} accessibilityRole="alert">

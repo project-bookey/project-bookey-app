@@ -5,8 +5,8 @@ import type { VerificationLevel } from '@/api/types';
  * 도서 상세 조각·리뷰 카드·완독 미리보기가 같은 말을 써야 해서 여기 한 곳에 둔다.
  */
 export const VERIFICATION_LABEL: Record<VerificationLevel, string> = {
-  VERIFIED_FULL: '완독 검증',
-  VERIFIED_PARTIAL: '부분 검증',
-  UNVERIFIED: '미검증',
+  VERIFIED_FULL: '완독 확인',
+  VERIFIED_PARTIAL: '일부 확인',
+  UNVERIFIED: '확인 전',
   FLAGGED: '검토 중',
 };

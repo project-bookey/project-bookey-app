@@ -60,7 +60,7 @@ export default function PasswordResetScreen() {
       // 새 코드를 받으면 이전 코드는 못 쓴다. 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
       setCode(result.devCode ?? '');
     } catch (e) {
-      setError(e instanceof Error ? e.message : '코드를 보내지 못했습니다.');
+      setError(e instanceof Error ? e.message : '코드를 보내지 못했어요.');
     } finally {
       setSending(false);
     }
@@ -95,7 +95,7 @@ export default function PasswordResetScreen() {
       }
       router.replace('/home');
     } catch (e) {
-      setError(e instanceof Error ? e.message : '비밀번호를 바꾸지 못했습니다.');
+      setError(e instanceof Error ? e.message : '비밀번호를 바꾸지 못했어요.');
       setSaving(false);
     }
   };
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
   ctaDisabled: { opacity: 0.45 },
-  // 로그인 화면의 '처음 가입하기'와 같은 보조 버튼 — 주요 버튼 아래 테두리 버튼.
+  // 로그인 화면의 '회원가입'과 같은 보조 버튼 — 주요 버튼 아래 테두리 버튼.
   ghost: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.sm,

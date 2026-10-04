@@ -125,5 +125,5 @@ export function findBookeyChatSticker(body: string | null | undefined): BookeyCh
 
 export function chatMessagePreview(body: string | null | undefined): string {
   if (!body) return '';
-  return findBookeyChatSticker(body) ? 'BOOKEY 이모티콘' : body;
+  return findBookeyChatSticker(body) ? '(이모티콘)' : body;
 }

@@ -79,7 +79,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
         }]}
         value={body}
         onChangeText={(next) => { setBody(next); setError(null); }}
-        placeholder="딱 16글자로 나를 어필하세요"
+        placeholder="16글자로 나를 소개해 보세요"
         placeholderTextColor={colors.textFaint}
         multiline
         onFocus={() => reveal(actionsRef)}
@@ -93,7 +93,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
       <View style={[styles.stampRow, { borderTopColor: colors.line }]}>
         <Toggle
           label="우표 동봉"
-          description={`내 우표 1개를 붙여 상대가 무료로 답장하게 합니다 (보유 ${wallet.data?.stampBalance ?? 0}개)`}
+          description={`내 우표 1개를 같이 보내면 상대가 무료로 답장할 수 있어요 (가진 우표 ${wallet.data?.stampBalance ?? 0}개)`}
           value={attachStamp}
           onChange={setAttachStamp}
         />

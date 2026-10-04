@@ -91,7 +91,7 @@ function CardTab({ cards, onPick }: {
   if (list.length === 0) {
     return (
       <Text style={[typeScale.caption, styles.cardNote, { color: colors.textMuted }]}>
-        아직 기록 카드가 없어요. 클럽 모임에서 함께 독서를 끝내면 카드가 생겨요.
+        아직 기록 카드가 없어요. 클럽 모임에서 같이 읽기를 끝내면 카드가 생겨요.
       </Text>
     );
   }
@@ -102,7 +102,7 @@ function CardTab({ cards, onPick }: {
           key={c.id}
           onPress={() => onPick(c)}
           accessibilityRole="button"
-          accessibilityLabel={`${c.clubName ?? '클럽'} 함께 독서 ${formatClock(c.durationSec)} 카드 붙이기`}
+          accessibilityLabel={`${c.clubName ?? '클럽'} 같이 읽기 ${formatClock(c.durationSec)} 카드 붙이기`}
           style={({ pressed }) => (pressed ? pressedStyle : null)}
         >
           <ActivityCardFace card={snapshotOf(c)} size={CARD_PREVIEW} />

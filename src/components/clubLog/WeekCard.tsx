@@ -65,7 +65,7 @@ export const WeekCard = forwardRef<View, { week: ClubLogWeek; width: number }>(f
 
       <View style={{ gap: s(8) }}>
         <Text style={{ fontFamily: mono.semiBold, fontSize: s(10), letterSpacing: s(2), color: colors.accent }}>
-          읽기로그 · {weekTitle(week.weekStart)}
+          함께 읽은 기록 · {weekTitle(week.weekStart)}
         </Text>
         <Text style={{ fontFamily: serif.extraBold, fontSize: s(26), lineHeight: s(35), letterSpacing: -0.5 * u, color: colors.text }}>
           {week.clubName},{'\n'}이번 주
@@ -121,7 +121,7 @@ export const WeekCard = forwardRef<View, { week: ClubLogWeek; width: number }>(f
             {summary.pagesRead.toLocaleString()}쪽
           </Text>
           <Text style={{ fontFamily: mono.regular, fontSize: s(10), marginTop: s(2), color: colors.onNote }}>
-            {summary.readerCount}명 · {formatDuration(summary.durationSec)} · {summary.logCount}조각
+            {summary.readerCount}명 · {formatDuration(summary.durationSec)} · 메모 {summary.logCount}개
           </Text>
         </View>
       </View>

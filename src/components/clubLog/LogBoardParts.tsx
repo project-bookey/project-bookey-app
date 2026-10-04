@@ -16,11 +16,11 @@ function elapsedLabel(startedAt: string): string {
  * 닉네임 끝이 숫자·영문이면 이/가를 고를 수 없어서 '님이'로 통일한다.
  */
 export function readersLabel(readers: ReadingNow[]): string {
-  if (readers.length <= 2) return `${readers.map((r) => r.nickname).join(', ')} 님이`;
-  return `${readers[0].nickname} 님 외 ${readers.length - 1}명이`;
+  if (readers.length <= 2) return `${readers.map((r) => `${r.nickname}님`).join(', ')}이`;
+  return `${readers[0].nickname}님 외 ${readers.length - 1}명이`;
 }
 
-/** 지금 읽는 중 — 클럽 홈 '읽기 조각' 위의 한 줄. 점 · 문구 · 경과 · (선택) 합류. 아무도 없으면 그리지 않는다. */
+/** 지금 읽는 중 — 클럽 홈 '메모' 위의 한 줄. 점 · 문구 · 경과 · (선택) 같이 읽기. 아무도 없으면 그리지 않는다. */
 export function ReadingNowLine({ readers, onJoin }: { readers: ReadingNow[]; onJoin?: () => void }) {
   const { colors } = useTheme();
   if (readers.length === 0) return null;
@@ -36,7 +36,7 @@ export function ReadingNowLine({ readers, onJoin }: { readers: ReadingNow[]; onJ
         </Text>
         <Text style={[styles.monoCaption, { color: colors.textMuted }]}>{elapsedLabel(earliest.startedAt)}</Text>
       </View>
-      {onJoin ? <Button label="합류" size="sm" variant="outline" onPress={onJoin} /> : null}
+      {onJoin ? <Button label="같이 읽기" size="sm" variant="outline" onPress={onJoin} /> : null}
     </View>
   );
 }

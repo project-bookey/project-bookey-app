@@ -130,7 +130,7 @@ export type PostComment = Schemas['PostCommentView'];
 export type CreatePostComment = Schemas['CreatePostCommentRequest'];
 
 // ── 고객문의 · FAQ ───────────────────────────────────────
-/** 문의 한 건과 답변 — 1문 1답. 답변한 관리자는 내려오지 않는다(앱은 '북키 답변'으로만 보여 준다). */
+/** 문의 한 건과 답변 — 1문 1답. 답변한 관리자는 내려오지 않는다(앱은 'Bookey 답변'으로만 보여 준다). */
 export type Inquiry = Schemas['InquiryView'];
 export type InquirySummary = Schemas['InquirySummaryView'];
 export type InquiryStatus = Inquiry['status'];

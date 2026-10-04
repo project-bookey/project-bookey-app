@@ -9,7 +9,7 @@ import { consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type
 
 /**
  * 처음 보는 소셜 계정의 가입 동의 — 서버가 LEGAL_CONSENT_REQUIRED 로 돌려보내면 띄운다.
- * 동의하면 같은 소셜 토큰으로 다시 로그인을 부른다(계정은 그때 만들어진다). 버튼 순서는 [취소][동의하고 가입].
+ * 동의하면 같은 소셜 토큰으로 다시 로그인을 부른다(계정은 그때 만들어진다). 버튼 순서는 [취소][동의하고 가입하기].
  */
 export function SocialConsentSheet({ visible, colors, busy, error, onCancel, onSubmit }: {
   visible: boolean;
@@ -61,7 +61,7 @@ export function SocialConsentSheet({ visible, colors, busy, error, onCancel, onS
           >
             {busy
               ? <ActivityIndicator color={colors.onAccent} />
-              : <Text style={styles.submitLabel}>동의하고 가입</Text>}
+              : <Text style={styles.submitLabel}>동의하고 가입하기</Text>}
           </Pressable>
         </View>
       </View>

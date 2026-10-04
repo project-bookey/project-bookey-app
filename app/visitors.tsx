@@ -23,8 +23,8 @@ export default function VisitorsScreen() {
       <SubHeader category="방문자" onBack={() => router.back()} />
       {gated ? (
         <EmptyState
-          title="구독 회원 전용이에요"
-          description="해당 기능은 구독자 전용 기능이에요! 구독하면 누가 다녀갔는지 볼 수 있어요."
+          title="구독하면 볼 수 있어요"
+          description="구독하면 누가 내 페이지에 다녀갔는지 볼 수 있어요."
           action={(
             <Pressable
               onPress={() => router.push({ pathname: '/subscription', params: { feature: 'visitors' } })}
@@ -66,7 +66,7 @@ export default function VisitorsScreen() {
           )}
           ListEmptyComponent={
             list.isLoading ? null : (
-              <EmptyState title="아직 방문자가 없어요" description="피드에 독후감을 올려보세요." />
+              <EmptyState title="아직 방문자가 없어요" description="광장에 독후감을 올려 보세요." />
             )
           }
         />

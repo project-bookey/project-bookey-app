@@ -33,7 +33,7 @@ function normalizeQuantity(value: string): number {
 }
 
 function checkoutLabel() {
-  return '결제창으로 구매하기';
+  return '구매하기';
 }
 
 export default function BookmarksScreen() {
@@ -66,13 +66,13 @@ export default function BookmarksScreen() {
     await finishTransaction({ purchase, isConsumable: true });
     pendingCheckout.current = null;
     await AsyncStorage.removeItem(PENDING_CHECKOUT_KEY);
-    setNotice(`결제가 완료되었습니다. 책갈피 ${nextWallet.bookmarkBalance}개를 보유하고 있습니다.`);
+    setNotice(`결제를 마쳤어요. 이제 책갈피가 ${nextWallet.bookmarkBalance}개예요.`);
   };
   const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
     onPurchaseSuccess: (purchase) => void completePurchase(purchase).catch((e) => {
-      setNotice(e instanceof Error ? e.message : '결제 검증에 실패했습니다.');
+      setNotice(e instanceof Error ? e.message : '결제를 확인하지 못했어요. 잠시 후 다시 확인해 주세요.');
     }),
-    onPurchaseError: (e) => setNotice(e.message || '스토어 결제를 완료하지 못했습니다.'),
+    onPurchaseError: (e) => setNotice(e.message || '스토어 결제를 마치지 못했어요.'),
   });
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function BookmarksScreen() {
     onSuccess: async (view) => {
       if (Platform.OS === 'web') {
         if (!view.checkoutUrl) {
-          setNotice('결제창을 열 수 없습니다.');
+          setNotice('결제창을 열지 못했어요.');
           return;
         }
         await WebBrowser.openBrowserAsync(view.checkoutUrl);
@@ -120,7 +120,7 @@ export default function BookmarksScreen() {
   const error = checkout.error instanceof ApiError
     ? checkout.error.message
     : checkout.error
-      ? '결제를 시작하지 못했습니다.'
+      ? '결제를 시작하지 못했어요.'
       : null;
 
   const setAmount = (next: number) => {
@@ -138,7 +138,7 @@ export default function BookmarksScreen() {
             <Eyebrow>BOOKMARK</Eyebrow>
             <Text style={[styles.title, { color: colors.text }]}>책갈피 충전</Text>
             <Text style={[typeScale.body, styles.copy, { color: colors.textMuted }]}>
-              책갈피는 엽서와 우표로 교환해 대화를 이어갈 때 사용합니다.
+              책갈피는 엽서나 우표로 바꿔서 다른 독자와 이야기를 이어 갈 때 써요.
             </Text>
             <View style={styles.priceRow}>
               <Text style={[styles.price, { color: colors.text }]}>200원</Text>
@@ -200,7 +200,7 @@ export default function BookmarksScreen() {
               <Text style={[typeScale.bodyStrong, { color: colors.text }]}>개</Text>
             </View>
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
-              10개부터 구매 수량의 10%를 추가로 드립니다.
+              10개 이상 사면 10%를 더 드려요.
             </Text>
           </Card> : null}
 
@@ -236,10 +236,10 @@ export default function BookmarksScreen() {
                 {notice}
               </Text>
             ) : Platform.OS !== 'web' && !PRESETS.includes(quantity as typeof PRESETS[number]) ? (
-              <Text style={[typeScale.caption, styles.notice, { color: colors.textMuted }]}>5개, 10개, 50개 묶음 중 하나를 선택해 주세요.</Text>
+              <Text style={[typeScale.caption, styles.notice, { color: colors.textMuted }]}>5개, 10개, 50개 묶음 중 하나를 골라 주세요.</Text>
             ) : !PAYMENTS_ENABLED ? (
               <Text style={[typeScale.caption, styles.notice, { color: colors.textMuted }]}> 
-                안전한 인앱 결제를 준비하고 있습니다.
+                앱 결제를 준비하고 있어요.
               </Text>
             ) : null}
             {/* 환불 조건은 결제 버튼 바로 아래에 — 구매 전에 표시한다(이용약관 제7조). 앱 결제는 마켓이 환불한다. */}
