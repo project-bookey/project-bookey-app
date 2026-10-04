@@ -4,15 +4,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
- * 2탭 확인 버튼 — 1탭에 질문 + [확정][취소]로 전환되고, 확정 시 onConfirm을 실행한다.
+ * 2탭 확인 버튼 — 1탭에 질문 + [확인][취소]로 전환되고, 확인 시 onConfirm을 실행한다.
  * pending이 true→false로 떨어지면(성공·실패 무관) 자동으로 원래 버튼으로 복귀한다.
  * 실패 안내 캡션은 호출부가 뮤테이션 상태로 표시한다.
  */
-export function ConfirmButton({ label, question, confirmLabel = '확정', tone = 'ink', variant = 'outline', pending = false, onConfirm }: {
+export function ConfirmButton({ label, question, confirmLabel = '확인', tone = 'ink', variant = 'outline', pending = false, onConfirm }: {
   label: string;
   question: string;
   confirmLabel?: string;
-  /** 확정 버튼 색 — ink(완독 등) | danger(하차 등). 제자리 확인은 화면의 CTA 가 아니라 악센트를 쓰지 않는다. */
+  /** 확인 버튼 색 — ink(완독 등) | danger(하차 등). 제자리 확인은 화면의 CTA 가 아니라 악센트를 쓰지 않는다. */
   tone?: 'ink' | 'danger';
   /** 대기 상태 버튼 모양 */
   variant?: 'outline' | 'ghost';

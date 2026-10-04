@@ -63,12 +63,12 @@ export function PostcardList({ box }: { box: PostcardBox }) {
             list.isLoading ? null : box === 'INBOX' ? (
               <EmptyState
                 title="아직 받은 엽서가 없어요"
-                description="피드에 독후감을 올리면 엽서가 도착할 거예요."
+                description="광장에 독후감을 올리면 엽서가 올 거예요."
               />
             ) : (
               <EmptyState
                 title="아직 보낸 엽서가 없어요"
-                description="피드에서 마음에 드는 독후감에 엽서를 보내보세요."
+                description="광장에서 마음에 드는 독후감에 엽서를 보내 보세요."
               />
             )
           }
@@ -190,7 +190,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
               }]}
               value={body}
               onChangeText={(next) => { setBody(next); setError(null); }}
-              placeholder="답장도 딱 16글자"
+              placeholder="답장도 16글자까지"
               placeholderTextColor={colors.textFaint}
               accessibilityLabel="답장 본문"
               onFocus={() => reveal(replyActionsRef)}
@@ -208,7 +208,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
             <View ref={replyActionsRef} style={styles.actions}>
               <Button label="취소" variant="outline" size="sm" onPress={() => setReplying(false)} />
               <Button
-                label={card.stampAttached ? '무료로 답장' : '우표 1개로 답장'}
+                label={card.stampAttached ? '무료로 보내기' : '우표 1개로 보내기'}
                 size="sm"
                 onPress={() => reply.mutate()}
                 loading={reply.isPending}
@@ -220,7 +220,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
           <View style={styles.actions}>
             {/* 받은 엽서마다 붙는 버튼이라 outline — primary 는 열린 답장 칸의 보내기 하나뿐이다. */}
             <Button
-              label={card.stampAttached ? '무료로 답장하기' : '답장하기 (우표 1개)'}
+              label="답장 쓰기"
               variant="outline"
               size="sm"
               onPress={() => setReplying(true)}

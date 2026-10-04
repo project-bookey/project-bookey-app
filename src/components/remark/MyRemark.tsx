@@ -35,10 +35,10 @@ export function MyRemark({ rid, bookId, book, kind, sheetOpen, onSheetOpenChange
       {remark ? (
         // 라벨·한 줄·버튼이 한 묶음 — 안쪽은 xs~sm 로 붙인다.
         <View style={styles.block}>
-          <Eyebrow>내 한 마디</Eyebrow>
+          <Eyebrow>내 한 줄평</Eyebrow>
           <Text style={[styles.body, { color: colors.text }]}>“{remark.body}”</Text>
           <View style={styles.actions}>
-            <FootAction label="고치기" onPress={() => onSheetOpenChange(true)} accessibilityLabel="한 마디 고치기" />
+            <FootAction label="고치기" onPress={() => onSheetOpenChange(true)} accessibilityLabel="한 줄평 고치기" />
             {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'. */}
             <FootAction
               label={confirm ? '한 번 더' : '삭제'}
@@ -47,16 +47,16 @@ export function MyRemark({ rid, bookId, book, kind, sheetOpen, onSheetOpenChange
               onPress={() => {
                 if (confirm) { disarm(); remove.mutate(); } else arm(true);
               }}
-              accessibilityLabel={confirm ? '한 마디 삭제 확인' : '한 마디 삭제'}
+              accessibilityLabel={confirm ? '한 줄평 삭제 확인' : '한 줄평 삭제'}
             />
           </View>
         </View>
       ) : mine.isSuccess ? (
         <View style={styles.emptyRow}>
           <Text style={[typeScale.caption, styles.emptyText, { color: colors.textMuted }]}>
-            책을 덮으며 한 마디 남겨 보세요
+            책을 덮으며 한 줄평을 남겨 보세요
           </Text>
-          <FootAction label="한 마디 남기기" onPress={() => onSheetOpenChange(true)} />
+          <FootAction label="한 줄평 남기기" onPress={() => onSheetOpenChange(true)} />
         </View>
       ) : null}
       {remove.isError && !remove.isPending ? (

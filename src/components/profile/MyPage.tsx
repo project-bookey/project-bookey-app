@@ -29,7 +29,7 @@ import { rowOffsetY, sans, serif, tiltFor } from '@/theme/tokens';
 
 /** 아바타 지름(px) — 시안 A. 글줄 가운데에 앉히므로 이름·핸들·팔로우 세 줄 높이보다 조금 크다. */
 const AVATAR = 88;
-/** 선반에 올리는 최대 권수 — 넘치면 '전체보기'로 넘긴다. */
+/** 선반에 올리는 최대 권수 — 넘치면 '전체 보기'로 넘긴다. */
 const SHELF_CAP = 10;
 /** 선반 표지 폭(px) — 시안 2e 기준. */
 const SHELF_COVER_W = 100;
@@ -44,7 +44,7 @@ const POSTS_PAGE = 10;
  */
 const SOCIAL_HIT_SLOP = { top: 11, bottom: 11, left: 6, right: 6 };
 /**
- * 서재 '전체보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14.
+ * 서재 '전체 보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14.
  * 선반이 '기록' 묶음의 첫머리라 위는 묶음 간격(36) 안에 머물고, 아래는 선반 표지 위에서 멈춘다.
  */
 const SHELF_ALL_HIT_SLOP = { top: 16, bottom: 14, left: 8, right: spacing.lg };
@@ -139,7 +139,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
   if (!mine && profile.isError) {
     return (
       <View style={styles.missing}>
-        <EmptyState title="독자를 찾을 수 없습니다" description="탈퇴했거나 잘못된 주소입니다." />
+        <EmptyState title="사용자를 찾을 수 없어요" description="탈퇴했거나 주소가 잘못됐어요." />
       </View>
     );
   }
@@ -328,10 +328,10 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
             </Text>
             {mine ? (
               <TextLink
-                label={`${libraryTotal}권 · 전체보기`}
+                label={`${libraryTotal}권 · 전체 보기`}
                 onPress={() => router.push('/library')}
                 hitSlop={SHELF_ALL_HIT_SLOP}
-                accessibilityLabel={`서재 전체보기, 총 ${libraryTotal}권`}
+                accessibilityLabel={`서재 전체 보기, 총 ${libraryTotal}권`}
               />
             ) : (
               <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{libraryTotal}권</Text>
@@ -394,9 +394,9 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               {stats.data ? (
                 <>
                   <View style={styles.statRow}>
-                    <StatCell label="현재 스트릭" value={`${stats.data.currentStreakDays}일`} />
+                    <StatCell label="연속 독서" value={`${stats.data.currentStreakDays}일`} />
                     <VRule />
-                    <StatCell label="최장 스트릭" value={`${stats.data.longestStreakDays}일`} />
+                    <StatCell label="최장연속" value={`${stats.data.longestStreakDays}일`} />
                     <VRule />
                     <StatCell label="이번 주" value={formatDuration(stats.data.weekDurationSec)} />
                   </View>
@@ -413,19 +413,19 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                   </View>
                   <View style={{ marginTop: spacing.sm }}>
                     <Rule />
-                    <KeyValue label="총 독서시간" value={formatDuration(stats.data.totalDurationSec)} />
+                    <KeyValue label="총 독서 시간" value={formatDuration(stats.data.totalDurationSec)} />
                     <Rule />
                     <KeyValue label="오늘" value={formatDuration(stats.data.todayDurationSec)} />
                     <Rule />
                     <KeyValue
-                      label="기록한 날"
+                      label="읽은 날"
                       value={`${heatDaily.filter((d) => d.sessionCount > 0).length}일 / ${heatDaily.length}일`}
                     />
                   </View>
                 </>
               ) : (
                 <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-                  통계를 불러오지 못했습니다.
+                  통계를 불러오지 못했어요.
                 </Text>
               )}
             </Card>
@@ -471,7 +471,7 @@ function MyWalletRow() {
       <Pressable
         onPress={() => router.push('/wallet')}
         accessibilityRole="button"
-        accessibilityLabel={`지갑, 책갈피 ${wallet.data?.bookmarkBalance ?? 0}개 · 엽서 ${wallet.data?.postcardBalance ?? 0}장 · 무료엽서 ${wallet.data?.freePostcardsLeftToday ?? 0}장 · 우표 ${wallet.data?.stampBalance ?? 0}개, 교환·구독 열기`}
+        accessibilityLabel={`지갑, 책갈피 ${wallet.data?.bookmarkBalance ?? 0}개 · 엽서 ${wallet.data?.postcardBalance ?? 0}장 · 무료 엽서 ${wallet.data?.freePostcardsLeftToday ?? 0}장 · 우표 ${wallet.data?.stampBalance ?? 0}개, 교환·구독 열기`}
         style={({ pressed }) => [styles.walletPress, pressed && styles.pressed]}
       >
         <MemoScrap rotate={-0.8} style={styles.walletMemo}>
@@ -482,7 +482,7 @@ function MyWalletRow() {
           <View style={styles.walletRow}>
             <WalletCell value={wallet.data?.bookmarkBalance ?? 0} label="책갈피" />
             <WalletCell value={wallet.data?.postcardBalance ?? 0} label="엽서" />
-            <WalletCell value={wallet.data?.freePostcardsLeftToday ?? 0} label="무료엽서" />
+            <WalletCell value={wallet.data?.freePostcardsLeftToday ?? 0} label="무료 엽서" />
             <WalletCell value={wallet.data?.stampBalance ?? 0} label="우표" />
           </View>
         </MemoScrap>
@@ -533,7 +533,7 @@ function PublicPosts({ userId }: { userId: number }) {
           }
         />
       ) : items.length === 0 ? (
-        <EmptyState title="아직 공개 독후감이 없습니다" />
+        <EmptyState title="아직 공개한 독후감이 없어요" />
       ) : (
         <>
           {items.map((item) => (

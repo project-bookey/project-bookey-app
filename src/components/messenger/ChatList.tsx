@@ -80,7 +80,7 @@ export function ChatList() {
           <EmptyState
             illustration
             title="아직 채팅이 없어요"
-            description="엽서에 답장이 오가면 그 사람과 채팅을 열 수 있습니다."
+            description="엽서와 답장을 주고받으면 그 사람과 채팅할 수 있어요."
           />
         )
       }
@@ -118,7 +118,7 @@ function ChatRow({ chat, confirming, onOpen, onDelete }: {
           >
             {chat.lastMessageBody
               ? chatMessagePreview(chat.lastMessageBody)
-              : '엽서로 연결됐어요 — 첫 인사를 건네보세요'}
+              : '엽서로 연결됐어요. 첫 인사를 건네 보세요'}
           </Text>
         </View>
       </Pressable>

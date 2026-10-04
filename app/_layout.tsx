@@ -62,10 +62,10 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" options={{ title: 'BOOKEY' }} />
             <Stack.Screen name="library" options={{ title: '서재' }} />
-            <Stack.Screen name="book-search" options={{ title: '도서 탐색' }} />
+            <Stack.Screen name="book-search" options={{ title: '탐색' }} />
             <Stack.Screen name="login" options={{ title: '로그인', gestureEnabled: false }} />
             <Stack.Screen name="password-reset" options={{ title: '비밀번호 찾기' }} />
-            <Stack.Screen name="onboarding" options={{ title: '환영합니다' }} />
+            <Stack.Screen name="onboarding" options={{ title: '시작하기' }} />
             <Stack.Screen name="profile-photo" options={{ title: '프로필 사진', gestureEnabled: false }} />
             <Stack.Screen name="profile-edit" options={{ title: '프로필 편집' }} />
             <Stack.Screen name="notifications" options={{ title: '알림' }} />
@@ -84,18 +84,18 @@ export default function RootLayout() {
             <Stack.Screen name="club/[id]/chat" options={{ title: '클럽 채팅' }} />
             <Stack.Screen name="club/[id]/seats" options={{ title: '자리 늘리기' }} />
             <Stack.Screen name="club/[id]/settings" options={{ title: '클럽 설정' }} />
-            <Stack.Screen name="club/[id]/log/index" options={{ title: '읽기로그' }} />
-            <Stack.Screen name="club/[id]/log/new" options={{ title: '한 조각 남기기' }} />
+            <Stack.Screen name="club/[id]/log/index" options={{ title: '메모' }} />
+            <Stack.Screen name="club/[id]/log/new" options={{ title: '메모 남기기' }} />
             <Stack.Screen name="club/[id]/log/week" options={{ title: '이번 주 카드' }} />
-            <Stack.Screen name="club/[id]/log/[postId]" options={{ title: '조각' }} />
+            <Stack.Screen name="club/[id]/log/[postId]" options={{ title: '메모' }} />
             <Stack.Screen name="club/[id]/note/[meetingId]" options={{ title: '모임 노트' }} />
-            <Stack.Screen name="book/[id]" options={{ title: '도서' }} />
-            <Stack.Screen name="user/[id]" options={{ title: '마이페이지' }} />
+            <Stack.Screen name="book/[id]" options={{ title: '책 정보' }} />
+            <Stack.Screen name="user/[id]" options={{ title: '프로필' }} />
             <Stack.Screen name="postcards" options={{ title: '엽서함' }} />
             <Stack.Screen name="visitors" options={{ title: '방문자' }} />
             <Stack.Screen name="follows" options={{ title: '팔로우' }} />
             <Stack.Screen name="chats" options={{ title: '채팅' }} />
-            <Stack.Screen name="chat/[id]" options={{ title: '대화' }} />
+            <Stack.Screen name="chat/[id]" options={{ title: '채팅' }} />
             <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
             <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />

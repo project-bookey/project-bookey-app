@@ -45,7 +45,7 @@ function normalizeBirthDate(value: string): string | null {
 
 /**
  * 프로필 사진 등록·변경. 가입 직후에는 건너뛰고 나중에 프로필에서 바꿀 수 있다.
- * 가입 직후 단계의 성별·생년월일은 [선택] 정보 — 넣고 '동의하고 시작'을 누르면 먼저 선택 동의(PROFILE_OPTIONAL)를
+ * 가입 직후 단계의 성별·생년월일은 [선택] 정보 — 넣고 '동의하고 시작하기'를 누르면 먼저 선택 동의(PROFILE_OPTIONAL)를
  * 기록한 뒤 저장한다(서버가 동의 없이는 받지 않는다). 사진만 올리거나 '나중에 하기'로 넘어가도 된다.
  */
 export default function ProfilePhotoScreen() {
@@ -78,14 +78,14 @@ export default function ProfilePhotoScreen() {
   // 막히거나 '나중에 하기'로 버려지지 않게(UX 철칙 Hick). 변경 화면은 사진이 있어야 저장한다.
   const demographicsEntered = !editing && (birthDate.trim().length > 0 || gender !== 'PREFER_NOT_TO_SAY');
   const canSubmit = editing ? pickedUri != null : demographicsEntered || pickedUri != null;
-  const submitLabel = editing ? '저장' : demographicsEntered ? '동의하고 시작' : '등록하고 시작하기';
+  const submitLabel = editing ? '저장' : demographicsEntered ? '동의하고 시작하기' : '저장하고 시작하기';
 
   const upload = async () => {
     if (!canSubmit || uploading) return;
     const birthDateText = birthDate.trim();
     const normalizedBirthDate = birthDateText ? normalizeBirthDate(birthDateText) : null;
     if (birthDateText && !normalizedBirthDate) {
-      setError('생년월일을 YYYYMMDD 또는 YYYY-MM-DD 형식으로 입력해 주세요.');
+      setError('생년월일을 19950101처럼 숫자 8자리로 적어 주세요.');
       return;
     }
     setUploading(true);
@@ -121,7 +121,7 @@ export default function ProfilePhotoScreen() {
       else router.replace(editing ? '/profile' : '/home');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'STORAGE_DISABLED') {
-        setError('사진 업로드 저장소가 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.');
+        setError('지금은 사진을 올릴 수 없어요. 잠시 후 다시 시도해 주세요.');
       } else {
         setError(e instanceof ApiError ? e.message : '사진을 올리지 못했어요. 다시 시도해 주세요.');
       }
@@ -138,7 +138,7 @@ export default function ProfilePhotoScreen() {
         <View style={styles.body}>
           <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>PROFILE</Text>
           <Text style={[styles.title, { color: colors.text }]}>
-            {editing ? '프로필 사진 변경' : '프로필 사진을 올려주세요'}
+            {editing ? '프로필 사진 바꾸기' : '프로필 사진을 올려 주세요'}
           </Text>
 
           {!editing ? (
@@ -160,7 +160,7 @@ export default function ProfilePhotoScreen() {
               {/* 선택 정보 고지 — 넣는 자리 바로 아래(Proximity). 원문은 '자세히'. */}
               <View style={styles.optionalNote}>
                 <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                  [선택] 성별·생년월일은 맞춤 추천과 또래 독서 통계에만 써요. 넣고 '동의하고 시작'을 누르면 수집·이용에 동의하게 되고, 프로필 편집에서 언제든 지울 수 있어요.
+                  [선택] 성별과 생년월일은 맞춤 추천과 또래 독서 통계에만 써요. 적고 '동의하고 시작하기'를 누르면 수집·이용에 동의한 것으로 보고, 프로필 편집에서 언제든 지울 수 있어요.
                 </Text>
                 <Pressable
                   onPress={() => setOptionalDocOpen(true)}
@@ -175,8 +175,8 @@ export default function ProfilePhotoScreen() {
           ) : null}
           <Text style={[styles.copy, { color: colors.textMuted }]}>
             {editing
-              ? '피드와 엽서에서 보일 사진을 새로 고를 수 있어요.'
-              : `피드와 엽서에서 나를 알아보게 하는 얼굴이에요.\n나중에 프로필에서 다시 등록할 수 있어요.`}
+              ? '광장과 엽서에 보일 사진을 새로 고를 수 있어요.'
+              : `광장과 엽서에서 나를 알아보게 해 주는 얼굴이에요.\n나중에 프로필에서 올려도 돼요.`}
           </Text>
 
           <Pressable
@@ -194,7 +194,7 @@ export default function ProfilePhotoScreen() {
                 { borderColor: colors.lineStrong, backgroundColor: colors.surface },
               ]}>
                 <CameraGlyph color={colors.textFaint} />
-                <Text style={[typeScale.caption, { color: colors.textFaint }]}>탭해서 고르기</Text>
+                <Text style={[typeScale.caption, { color: colors.textFaint }]}>눌러서 고르기</Text>
               </View>
             )}
           </Pressable>

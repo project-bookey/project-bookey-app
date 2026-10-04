@@ -57,7 +57,7 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
     return (
       <Card>
         <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-          아직 이 책의 독후감이 없어요. 첫 글을 남겨보세요.
+          아직 이 책의 독후감이 없어요. 첫 글을 남겨 보세요.
         </Text>
       </Card>
     );

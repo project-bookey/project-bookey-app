@@ -26,7 +26,7 @@ export function useKakaoLogin() {
     const result = await promptAsync();
     if (result.type === 'cancel' || result.type === 'dismiss') return null;
     if (result.type !== 'success' || !result.params.code) {
-      throw new Error('카카오 로그인에 실패했습니다.');
+      throw new Error('카카오 로그인을 마치지 못했어요. 다시 시도해 주세요.');
     }
     const token = await exchangeCodeAsync(
       { clientId, code: result.params.code, redirectUri },

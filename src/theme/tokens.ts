@@ -135,9 +135,9 @@ export const pressedStyle = { opacity: 0.72 } as const;
 export const iconStroke = { strokeWidth: 2, strokeLinecap: 'square', strokeLinejoin: 'miter' } as const;
 
 export const statusLabel: Record<string, string> = {
-  WANT_TO_READ: '읽고 싶은',
+  WANT_TO_READ: '읽고 싶음',
   READING: '읽는 중',
-  PAUSED: '멈춤',
+  PAUSED: '쉬는 중',
   FINISHED: '완독',
   ABANDONED: '하차',
 };

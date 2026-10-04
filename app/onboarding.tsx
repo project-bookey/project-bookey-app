@@ -29,7 +29,7 @@ const GUIDE_STEPS: { eyebrow: string; title: string; body: string }[] = [
   {
     eyebrow: 'WELCOME',
     title: '만나서 반가워요',
-    body: 'bookey는 읽기로 한 책을\n진짜로 다 읽게 만드는 독서 앱이에요.\n취향을 알려주시면 바로 시작할게요.',
+    body: 'Bookey는 읽기로 한 책을\n끝까지 읽게 도와주는 독서 앱이에요.\n취향을 알려 주시면 바로 시작할게요.',
   },
 ];
 
@@ -143,7 +143,7 @@ export default function OnboardingScreen() {
           <View style={styles.pickerStep}>
             <Text style={[typeScale.monoEyebrow, { color: darkColors.accent }]}>TASTE</Text>
             <Text style={styles.title}>어떤 책을 좋아하세요?</Text>
-            <Text style={styles.copy}>골라주시면 피드와 추천이 그 취향을 따라가요. (최대 {CATEGORY_MAX}개)</Text>
+            <Text style={styles.copy}>고른 취향에 맞춰 광장과 추천 책을 보여 드려요. (최대 {CATEGORY_MAX}개)</Text>
             <View style={styles.categoryGrid}>
               {categoryItems.map((category) => {
                 const selected = categories.includes(category);
@@ -171,8 +171,8 @@ export default function OnboardingScreen() {
         ) : (
           <View style={styles.pickerStep}>
             <Text style={[typeScale.monoEyebrow, { color: darkColors.accent }]}>SHELF</Text>
-            <Text style={styles.title}>읽고 싶은 책 {BOOK_PICK_TARGET}권만 골라볼까요?</Text>
-            <Text style={styles.copy}>가입하면 서재의 "읽고 싶은 책"에 담아드려요.</Text>
+            <Text style={styles.title}>읽고 싶은 책 {BOOK_PICK_TARGET}권만 골라 볼까요?</Text>
+            <Text style={styles.copy}>가입하면 서재의 '읽고 싶음'에 담아 드려요.</Text>
             {books.isLoading ? (
               <View style={styles.booksLoading}>
                 <ActivityIndicator color={darkColors.accent} />
@@ -216,7 +216,7 @@ export default function OnboardingScreen() {
                 })}
                 {bookItems.length === 0 ? (
                   <Text style={[typeScale.body, { color: darkColors.textMuted }]}>
-                    아직 보여드릴 책이 없어요. 그냥 가입하고 골라도 돼요.
+                    아직 보여 드릴 책이 없어요. 가입한 뒤에 골라도 돼요.
                   </Text>
                 ) : null}
               </ScrollView>

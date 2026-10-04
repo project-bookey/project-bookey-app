@@ -30,7 +30,7 @@ export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactEl
       ListHeaderComponent={ListHeaderComponent}
       errorTitle="독후감을 불러오지 못했어요"
       emptyTitle="아직 독후감이 없어요"
-      emptyDescription="첫 독후감을 남겨보세요."
+      emptyDescription="첫 독후감을 남겨 보세요."
     />
   );
 }

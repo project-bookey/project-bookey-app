@@ -31,7 +31,7 @@ export default function UserProfileScreen() {
       {Number.isInteger(userId) ? (
         <MyPage userId={userId} mine={false} />
       ) : (
-        <EmptyState title="독자를 찾을 수 없습니다" description="잘못된 주소입니다." />
+        <EmptyState title="사용자를 찾을 수 없어요" description="주소가 잘못됐어요." />
       )}
     </PaperScreen>
   );

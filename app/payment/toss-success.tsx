@@ -51,11 +51,11 @@ export default function TossPaymentSuccessScreen() {
   const verifyPayment = useMutation({
     mutationFn: () => {
       if (!verifyBody) {
-        throw new ApiError(400, 'INVALID_REQUEST', '결제 승인 정보가 부족합니다.');
+        throw new ApiError(400, 'INVALID_REQUEST', '결제 정보가 모자라 확인하지 못했어요.');
       }
       if (verifyBody.kind === 'BOOKMARK_PURCHASE') {
         if (!Number.isFinite(verifyBody.quantity)) {
-          throw new ApiError(400, 'INVALID_REQUEST', '구매 수량 정보가 부족합니다.');
+          throw new ApiError(400, 'INVALID_REQUEST', '구매 수량 정보가 모자라 확인하지 못했어요.');
         }
         return bookmarkPurchaseApi.verify({
           provider: verifyBody.provider,
@@ -83,7 +83,7 @@ export default function TossPaymentSuccessScreen() {
   const error = verifyPayment.error instanceof ApiError
     ? verifyPayment.error.message
     : verifyPayment.error
-      ? '결제를 검증하지 못했습니다.'
+      ? '결제를 확인하지 못했어요.'
       : null;
 
   return (
@@ -91,18 +91,18 @@ export default function TossPaymentSuccessScreen() {
       <SubHeader category="결제" onBack={() => router.replace(verifyBody?.kind === 'BOOKMARK_PURCHASE' ? '/bookmarks' : '/subscription')} />
       <View style={styles.container}>
         <Card style={styles.card}>
-          <Eyebrow>{verifyBody?.kind === 'BOOKMARK_PURCHASE' ? 'BOOKMARK' : 'BOOKEY PLUS'}</Eyebrow>
+          <Eyebrow>{verifyBody?.kind === 'BOOKMARK_PURCHASE' ? '책갈피' : '구독'}</Eyebrow>
           <Text style={[styles.title, { color: colors.text }]}>
             {verifyPayment.isSuccess
-              ? verifyBody?.kind === 'BOOKMARK_PURCHASE' ? '책갈피가 충전되었습니다.' : '구독이 시작되었습니다.'
-              : '결제를 확인하고 있습니다.'}
+              ? verifyBody?.kind === 'BOOKMARK_PURCHASE' ? '책갈피를 충전했어요.' : '구독을 시작했어요.'
+              : '결제를 확인하고 있어요.'}
           </Text>
           <Text style={[typeScale.body, { color: error ? colors.warn : colors.textMuted }]}>
             {error ?? (verifyPayment.isSuccess
               ? verifyBody?.kind === 'BOOKMARK_PURCHASE'
-                ? '구매한 책갈피를 지갑에 반영했습니다.'
-                : '매월 엽서와 우표가 지급되고, 구독자 전용 기능을 사용할 수 있습니다.'
-              : '토스 결제 결과를 서버에서 다시 검증하는 중입니다.')}
+                ? '산 책갈피를 지갑에 넣었어요.'
+                : '매달 엽서와 우표를 드리고, 구독 기능을 바로 쓸 수 있어요.'
+              : '토스 결제 결과를 확인하고 있어요.')}
           </Text>
           <Button
             label={verifyPayment.isSuccess

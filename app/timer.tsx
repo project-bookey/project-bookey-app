@@ -43,7 +43,7 @@ export default function TimerScreen() {
   const [endPage, setEndPage] = useState('');
   const [totalPagesInput, setTotalPagesInput] = useState('');
   const [memo, setMemo] = useState('');
-  // 쪽수·메모를 누르면 그 칸과 '세션 종료'가 함께 키보드 위로 올라오게.
+  // 쪽수·메모를 누르면 그 칸과 '독서 마치기'가 함께 키보드 위로 올라오게.
   const scrollRef = useRef<ScrollView>(null);
   const endFormRef = useRef<View>(null);
   const revealAbove = useScrollReveal(scrollRef);
@@ -153,7 +153,7 @@ export default function TimerScreen() {
   const end = useMutation({
     mutationFn: () => {
       if (!session || end.isPending) {
-        throw new Error('종료할 세션이 없습니다.');
+        throw new Error('끝낼 독서가 없어요.');
       }
       const ratio = totalMs.current > 0 ? foregroundMs.current / totalMs.current : 1;
       return sessionApi.end(session.id, {
@@ -195,10 +195,10 @@ export default function TimerScreen() {
       if (error instanceof ApiError && error.status === 409) {
         queryClient.setQueryData(['session', 'current'], null);
         queryClient.invalidateQueries({ queryKey: ['library'] });
-        setEndError('이미 종료된 세션입니다. 화면을 새로고침했습니다.');
+        setEndError('이미 끝난 독서예요. 화면을 새로 불러왔어요.');
         return;
       }
-      setEndError(error instanceof Error ? error.message : '세션 종료에 실패했습니다.');
+      setEndError(error instanceof Error ? error.message : '독서를 마치지 못했어요. 다시 시도해 주세요.');
     },
   });
 
@@ -224,11 +224,11 @@ export default function TimerScreen() {
   const startPage = session?.startPage ?? progress?.currentPage ?? 0;
   const pageError = running && endPage.length > 0
     ? typedPage < startPage
-      ? `시작 쪽수(${startPage}쪽)보다 작게 기록할 수 없습니다.`
+      ? `시작한 쪽(${startPage}쪽)보다 앞쪽은 적을 수 없어요.`
       : totalPages > 0 && typedPage > totalPages
-        ? `전체 ${totalPages}쪽을 넘을 수 없습니다.`
+        ? `전체 ${totalPages}쪽보다 많이 적을 수 없어요.`
         : typedPage > 20_000
-          ? '쪽수는 20,000 이하로 입력해 주세요.'
+          ? '쪽수는 20,000 이하로 적어 주세요.'
           : null
     : null;
 
@@ -274,7 +274,7 @@ export default function TimerScreen() {
 
         <View style={styles.progressBlock}>
           <View style={styles.progressHead}>
-            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>현재 진척</Text>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지금 진도</Text>
             <Text style={[styles.progressPercent, { color: colors.accent }]}>
               {displayRate != null ? percent(displayRate) : '총쪽수 미등록'}
             </Text>
@@ -285,8 +285,8 @@ export default function TimerScreen() {
         {progress && totalPages === 0 ? (
           <View style={[styles.totalPagesCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
             <View style={styles.totalPagesCopy}>
-              <Text style={[typeScale.bodyStrong, { color: colors.text }]}>총쪽수를 알려주세요</Text>
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>등록하면 진척률과 완독 검증에 사용됩니다.</Text>
+              <Text style={[typeScale.bodyStrong, { color: colors.text }]}>이 책은 모두 몇 쪽인가요?</Text>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>적어 두면 진도를 계산하고 완독을 확인할 때 써요.</Text>
             </View>
             <View style={styles.totalPagesRow}>
               <TextInput
@@ -296,11 +296,11 @@ export default function TimerScreen() {
                 maxLength={5}
                 placeholder="예: 320"
                 placeholderTextColor={colors.textFaint}
-                accessibilityLabel="책 총쪽수"
+                accessibilityLabel="책 전체 쪽수"
                 style={[styles.totalPagesInput, { color: colors.text, borderColor: colors.lineStrong }]}
               />
               <Button
-                label="등록"
+                label="저장"
                 variant="outline"
                 onPress={() => saveTotalPages.mutate()}
                 loading={saveTotalPages.isPending}
@@ -308,7 +308,7 @@ export default function TimerScreen() {
               />
             </View>
             {saveTotalPages.isError ? (
-              <Text style={[styles.pageError, { color: colors.danger }]}>총쪽수를 저장하지 못했습니다.</Text>
+              <Text style={[styles.pageError, { color: colors.danger }]}>쪽수를 저장하지 못했어요.</Text>
             ) : null}
           </View>
         ) : null}
@@ -347,7 +347,7 @@ export default function TimerScreen() {
             <TextInput
               value={memo}
               onChangeText={setMemo}
-              placeholder="이번 세션 메모 (선택)"
+              placeholder="독서 일지 (선택)"
               placeholderTextColor={colors.textFaint}
               onFocus={() => revealAbove(endFormRef)}
               style={[
@@ -357,7 +357,7 @@ export default function TimerScreen() {
               multiline
             />
             <Button
-              label="세션 종료"
+              label="독서 마치기"
               style={styles.endButton}
               onPress={() => {
                 Keyboard.dismiss();
@@ -379,11 +379,11 @@ export default function TimerScreen() {
             />
             {start.isError ? (
               <Text style={[styles.error, { color: colors.danger }]}>
-                {start.error instanceof ApiError ? start.error.message : '독서를 시작하지 못했습니다.'}
+                {start.error instanceof ApiError ? start.error.message : '독서를 시작하지 못했어요.'}
               </Text>
             ) : null}
             <Text style={[styles.hint, { color: colors.textFaint }]}>
-              누적 {formatDuration(progress?.totalDurationSec ?? 0)} 읽었습니다.
+              지금까지 {formatDuration(progress?.totalDurationSec ?? 0)} 읽었어요.
             </Text>
           </View>
         )}
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     minHeight: 64,
-    maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '세션 종료'가 키보드 밑으로 밀려나지 않게
+    maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '독서 마치기'가 키보드 밑으로 밀려나지 않게
     fontFamily: serif.regular,
     fontSize: 15,
     textAlignVertical: 'top',

@@ -63,8 +63,8 @@ function groupNumber(value: number): string {
 }
 
 const VERIFICATION_FLAG_LABEL: Record<string, string> = {
-  instant_finish: '독서시간이 너무 짧아 완독 기록을 확인하기 어려워요',
-  abnormal_speed: '짧은 시간에 기록된 쪽수가 너무 많아요',
+  instant_finish: '읽은 시간이 너무 짧아서 완독을 확인하기 어려워요',
+  abnormal_speed: '짧은 시간에 읽은 쪽이 너무 많게 기록됐어요',
   bulk_finish: '하루 동안 완독 처리된 책이 너무 많아요',
   idle_timer: '타이머 실행 중 앱 사용 기록이 부족해요',
   suspect_idle: '장시간 활동 없이 타이머가 실행됐어요',
@@ -89,7 +89,7 @@ function pickRating(detail?: BookDetail): RatingPick | null {
 function headerCategory(info?: BookSummary): string {
   const genre = info?.category?.trim();
   const year = info?.publishedAt?.match(/^\d{4}/)?.[0];
-  return [genre || '도서', year].filter(Boolean).join(' · ');
+  return [genre || '책', year].filter(Boolean).join(' · ');
 }
 
 /** '9.12' — 해가 다르면 '2025.12.30'. 읽은 기간 줄에 쓴다. */
@@ -262,7 +262,7 @@ export default function BookDetailScreen() {
           {record.data && progress ? (
             <Card style={styles.cardGap}>
               <View style={styles.cardHead}>
-                <Eyebrow>내 진척</Eyebrow>
+                <Eyebrow>내 진도</Eyebrow>
                 {lag && progress.lagLevel !== 'L0_NORMAL' ? (
                   <Tag label={lag.label} fg={lag.fg} bg={lag.bg} />
                 ) : null}
@@ -272,9 +272,9 @@ export default function BookDetailScreen() {
 
               <View style={styles.kvBlock}>
                 <KeyValue label="누적 독서시간" value={formatDuration(progress.totalDurationSec)} />
-                <KeyValue label="최근 7일 페이스" value={`${(progress.actualDailyPace ?? 0).toFixed(1)}쪽/일`} />
+                <KeyValue label="최근 7일 하루 평균" value={`${(progress.actualDailyPace ?? 0).toFixed(1)}쪽`} />
                 {progress.requiredDailyPace != null ? (
-                  <KeyValue label="필요 페이스" value={`${progress.requiredDailyPace.toFixed(1)}쪽/일`} />
+                  <KeyValue label="하루에 읽어야 할 양" value={`${progress.requiredDailyPace.toFixed(1)}쪽`} />
                 ) : null}
                 {progress.estimatedFinishDate ? (
                   <KeyValue label="예상 완독일" value={progress.estimatedFinishDate} />
@@ -338,7 +338,7 @@ export default function BookDetailScreen() {
 
           {verification.data ? (
             <Card style={styles.cardGap}>
-              <Eyebrow>리뷰 검증 상태</Eyebrow>
+              <Eyebrow>완독 확인 상태</Eyebrow>
               <View style={styles.verifyHead}>
                 <Text style={[typeScale.titleSerif, { color: colors.text }]}>
                   {VERIFICATION_LABEL[verification.data.expectedLevel]}
@@ -349,9 +349,9 @@ export default function BookDetailScreen() {
               </View>
               <View style={styles.kvBlock}>
                 <KeyValue label="읽은 범위" value={percent(verification.data.coverage)} />
-                <KeyValue label="타이머 세션" value={`${verification.data.timerSessionCount}회`} />
+                <KeyValue label="타이머로 읽은 횟수" value={`${verification.data.timerSessionCount}번`} />
                 <KeyValue
-                  label="인정 독서시간"
+                  label="확인된 독서 시간"
                   value={`${verification.data.verifiedMinutes}분 / 최소 ${verification.data.requiredMinutes}분`}
                 />
               </View>
@@ -382,7 +382,7 @@ export default function BookDetailScreen() {
 
           {sessions.data && sessions.data.length > 0 ? (
             <View style={styles.section}>
-              <SectionHeader title="세션 기록" />
+              <SectionHeader title="읽은 기록" />
               <Card style={styles.listCard}>
                 {sessions.data.slice(0, 8).map((session, index) => (
                   <View
@@ -397,8 +397,8 @@ export default function BookDetailScreen() {
                         {session.startPage ?? 0} → {session.endPage ?? session.startPage ?? 0}쪽
                       </Text>
                       <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                        {formatRelative(session.startedAt)} · {session.source === 'TIMER' ? '타이머' : '수동'}
-                        {!session.countedForVerification ? ' · 검증 제외' : ''}
+                        {formatRelative(session.startedAt)} · {session.source === 'TIMER' ? '타이머' : '직접 입력'}
+                        {!session.countedForVerification ? ' · 확인에서 빠짐' : ''}
                       </Text>
                     </View>
                     <Text style={[typeScale.monoNumeral, { color: colors.textMuted }]}>
@@ -425,7 +425,7 @@ export default function BookDetailScreen() {
       </KeyboardScroll>
 
       {hasStartCta && !keyboardOpen && !reviewComposing ? (
-        // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '한 조각 남기기'와 같은 만듦새.
+        // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '메모 남기기'와 같은 만듦새.
         <LinearGradient
           colors={[`${colors.bg}00`, colors.bg]}
           locations={[0, 0.45]}
@@ -647,7 +647,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
                 borderColor: colors.control, opacity: add.isPending ? 0.6 : 1,
               }]}
             >
-              <Text style={[typeScale.label, { color: colors.text }]}>+ 읽고 싶은</Text>
+              <Text style={[typeScale.label, { color: colors.text }]}>+ 읽고 싶은 책</Text>
             </Pressable>
             <Pressable
               disabled={add.isPending}
@@ -720,10 +720,10 @@ function StatStrip({ detail, rating, colors }: {
     cells.push({
       key: 'rating',
       value: `★ ${rating.average.toFixed(1)}`,
-      label: rating.verified ? '검증 완독 평점' : '전체 평점',
+      label: rating.verified ? '완독자 평점' : '전체 평점',
     });
   }
-  cells.push({ key: 'reviews', value: groupNumber(detail.verifiedReviewCount), label: '끝까지 읽은 리뷰' });
+  cells.push({ key: 'reviews', value: groupNumber(detail.verifiedReviewCount), label: '완독자 리뷰' });
   // 좋아요 수는 앱 어디서나 하트를 앞에 단다 — 평점 칸의 ★ 자리와 같다.
   cells.push({
     key: 'likes',
@@ -765,7 +765,7 @@ function Description({ text, colors }: { text: string; colors: ColorTokens }) {
       </Text>
       <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" style={styles.moreLink}>
         <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
-          {expanded ? '접기 ↑' : '더보기 ↓'}
+          {expanded ? '접기' : '더 보기'}
         </Text>
       </Pressable>
     </View>
@@ -787,7 +787,7 @@ function TableOfContents({ text, colors }: { text: string; colors: ColorTokens }
       </Text>
       <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" style={styles.moreLink}>
         <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
-          {expanded ? '접기 ↑' : '더보기 ↓'}
+          {expanded ? '접기' : '더 보기'}
         </Text>
       </Pressable>
     </View>
@@ -944,7 +944,7 @@ function ProgressEditor({ rid, progress, colors }: {
         {...pan.panHandlers}
         onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; }}
         accessibilityRole="adjustable"
-        accessibilityLabel="진척도 조절"
+        accessibilityLabel="진도 조절"
         accessibilityValue={{ min: 0, max: total, now: page }}
         style={styles.trackTouch}
       >

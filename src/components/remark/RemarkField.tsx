@@ -24,8 +24,8 @@ export function RemarkField({ value, onChange, kind }: {
   const { colors } = useTheme();
   return (
     <Field
-      label="책을 덮으며 한 마디"
-      hint={`${value.length}/${REMARK_MAX}자 · 이 책 페이지에 돌아가며 보여요`}
+      label="책을 덮으며 한 줄평"
+      hint={`${value.length}/${REMARK_MAX}자 · 책 정보 화면에 다른 독자의 것과 번갈아 보여요`}
       value={value}
       onChangeText={(text) => onChange(text.replace(/\s*\n\s*/g, ' '))}
       placeholder={PLACEHOLDER[kind]}
@@ -33,7 +33,7 @@ export function RemarkField({ value, onChange, kind }: {
       multiline
       submitBehavior="blurAndSubmit"
       returnKeyType="done"
-      accessibilityLabel="한 마디"
+      accessibilityLabel="한 줄평"
       style={[styles.input, { backgroundColor: colors.surfaceDeep }]}
     />
   );

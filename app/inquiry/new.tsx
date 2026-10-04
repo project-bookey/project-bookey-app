@@ -146,7 +146,7 @@ export default function InquiryNewScreen() {
                 notice={photos.notice}
               />
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                오류 화면을 붙이면 더 빨리 확인할 수 있어요.
+                오류가 난 화면을 찍어 붙이면 더 빨리 확인할 수 있어요.
               </Text>
             </View>
           </View>

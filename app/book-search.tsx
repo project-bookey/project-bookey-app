@@ -19,7 +19,7 @@ import { serif } from '@/theme/tokens';
 const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as unknown as TextStyle) : null;
 
 /**
- * '상황으로' 무드 칩 — 클라이언트 고정 매핑(서버 태그 연동 전 임시).
+ * '이럴 때 읽어요' 무드 칩 — 클라이언트 고정 매핑(서버 태그 연동 전 임시).
  * 탭하면 query 문자열을 입력창에 그대로 채워 기존 디바운스 검색 흐름을 그대로 탄다.
  */
 const MOOD_QUERIES: ReadonlyArray<{ label: string; query: string }> = [
@@ -44,7 +44,7 @@ export default function SearchScreen() {
   const inputRef = useRef<TextInput>(null);
   /** 담기 칩이 열려 있는 행의 책 id — 한 번에 한 행만 연다. */
   const [openAddId, setOpenAddId] = useState<number | null>(null);
-  /** 이 세션에서 담기 완료한 책 id — '담김 ✓' 표시용. */
+  /** 이 세션에서 담기 완료한 책 id — '담았어요' 표시용. */
   const [addedIds, setAddedIds] = useState<ReadonlySet<number>>(new Set());
   /** 담기 실패한 책 id — 실패 메시지 표시용. */
   const [failedId, setFailedId] = useState<number | null>(null);
@@ -95,7 +95,7 @@ export default function SearchScreen() {
 
   const results = search.data ?? [];
 
-  // '오늘의 한 칸' — 추천 캐시에서 날짜 시드로 고정한 하루 한 권(자정마다 바뀐다).
+  // '오늘의 한 권' — 추천 캐시에서 날짜 시드로 고정한 하루 한 권(자정마다 바뀐다).
   const recommendedList = recommended.data ?? [];
   const todaySeed = Number(new Date().toISOString().slice(0, 10).replace(/-/g, ''));
   const todayPick = recommendedList.length > 0 ? recommendedList[todaySeed % recommendedList.length] : null;
@@ -142,7 +142,7 @@ export default function SearchScreen() {
       {!searching ? (
         <ScrollView contentContainerStyle={styles.explore} keyboardShouldPersistTaps="handled">
           <View style={styles.moodSection}>
-            <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>상황으로</Text>
+            <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>이럴 때 읽어요</Text>
             <View style={styles.moodChips}>
               {MOOD_QUERIES.map((mood) => (
                 <Chip
@@ -163,7 +163,7 @@ export default function SearchScreen() {
           ) : null}
 
           <BookRow
-            title="서점 직원이 골랐습니다"
+            title="서점 직원이 골랐어요"
             staggered
             loading={recommended.isLoading}
             books={(recommended.data ?? []).map((b): RowBook => ({
@@ -212,9 +212,9 @@ export default function SearchScreen() {
               </View>
             ) : (
               <View style={styles.empty}>
-                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>결과가 없어요</Text>
+                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>검색 결과가 없어요</Text>
                 <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                  다른 검색어로 시도해보세요.
+                  다른 말로 찾아보세요.
                 </Text>
               </View>
             )
@@ -242,21 +242,21 @@ export default function SearchScreen() {
 }
 
 /**
- * '오늘의 한 칸' — 오려 붙인 메모 조각에 오늘의 추천 한 권을 얹는다.
+ * '오늘의 한 권' — 오려 붙인 메모 조각에 오늘의 추천 한 권을 얹는다.
  * 표지 탭만 상세로 이동한다(카드 전체는 눌리지 않는다 — 중첩 프레서블 방지).
  */
 function TodayPick({ book, onPress }: { book: BookSummary; onPress: () => void }) {
   const { colors } = useTheme();
   const timeLine = book.totalPages
-    ? `약 ${Math.max(1, Math.round(book.totalPages / 150))}시간이면 끝납니다`
-    : '가볍게 펼쳐보기 좋은 책';
+    ? `${Math.max(1, Math.round(book.totalPages / 150))}시간쯤이면 다 읽어요`
+    : '가볍게 펼쳐 보기 좋은 책';
 
   return (
     <View style={styles.todayWrap}>
       <MemoScrap rotate={-1.5} style={styles.todayCard}>
         <View style={styles.todayHeader}>
-          <Text style={[styles.todayTitle, { color: colors.text }]}>오늘의 한 칸</Text>
-          <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>랜덤</Text>
+          <Text style={[styles.todayTitle, { color: colors.text }]}>오늘의 한 권</Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>무작위 추천</Text>
         </View>
         <View style={styles.todayBody}>
           <TiltCover
@@ -284,7 +284,7 @@ function TodayPick({ book, onPress }: { book: BookSummary; onPress: () => void }
   );
 }
 
-/** 결과 행 — 우측 담기 영역은 담기 → 상태 칩 2개 → 담김 ✓ 의 3상태. */
+/** 결과 행 — 우측 담기 영역은 담기 → 상태 칩 2개 → 담았어요 의 3상태. */
 function ResultRow({ book, colors, choosing, added, failed, pending, onPress, onOpenAdd, onPick }: {
   book: BookSummary;
   colors: ColorTokens;
@@ -328,13 +328,13 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
       </Pressable>
 
       {added ? (
-        <Chip label="담김 ✓" active />
+        <Chip label="담았어요" active />
       ) : choosing ? (
         <View style={styles.chipGroup}>
           {(
             [
               { status: 'READING', label: '읽는 중' },
-              { status: 'WANT_TO_READ', label: '읽고 싶은' },
+              { status: 'WANT_TO_READ', label: '읽고 싶음' },
             ] as const
           ).map((c) => (
             <Chip key={c.status} label={c.label} disabled={pending} onPress={() => onPick(c.status)} />

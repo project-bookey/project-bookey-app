@@ -13,8 +13,10 @@ export default function TossPaymentFailScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ code?: string; message?: string; kind?: string }>();
-  const message = one(params.message) ?? '결제가 완료되지 않았습니다.';
   const code = one(params.code);
+  // 토스는 사용자가 결제창을 닫으면 PAY_PROCESS_CANCELED 로 돌려보낸다 — 그때만 '취소', 나머지는 실패다.
+  const cancelled = code === 'PAY_PROCESS_CANCELED' || code === 'USER_CANCEL';
+  const message = one(params.message) ?? '결제를 마치지 못했어요.';
   const isBookmarkPurchase = one(params.kind) === 'BOOKMARK_PURCHASE';
 
   return (
@@ -22,10 +24,10 @@ export default function TossPaymentFailScreen() {
       <SubHeader category="결제" onBack={() => router.replace(isBookmarkPurchase ? '/bookmarks' : '/subscription')} />
       <View style={styles.container}>
         <Card style={styles.card}>
-          <Eyebrow>{isBookmarkPurchase ? 'BOOKMARK' : 'BOOKEY PLUS'}</Eyebrow>
-          <Text style={[styles.title, { color: colors.text }]}>결제가 취소되었습니다.</Text>
+          <Eyebrow>{isBookmarkPurchase ? '책갈피' : '구독'}</Eyebrow>
+          <Text style={[styles.title, { color: colors.text }]}>{cancelled ? '결제를 취소했어요' : '결제를 마치지 못했어요'}</Text>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>
-            {code ? `[${code}] ` : ''}{message}
+            {message}
           </Text>
           <Button
             label={isBookmarkPurchase ? '책갈피 화면으로 돌아가기' : '구독 화면으로 돌아가기'}

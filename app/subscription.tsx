@@ -23,7 +23,7 @@ const PAYMENTS_ENABLED = process.env.EXPO_PUBLIC_ENABLE_PAYMENTS === 'true';
 const SUBSCRIPTION_PRODUCT_ID = process.env.EXPO_PUBLIC_SUBSCRIPTION_PRODUCT_ID || 'bookey.plus.monthly';
 const PENDING_CHECKOUT_KEY = 'bookey.pendingSubscriptionCheckout';
 /** 구독을 받는 앱 마켓 — 웹에는 구독 결제가 없어 묶어 부른다. */
-const STORE_NAME = Platform.OS === 'ios' ? 'App Store' : Platform.OS === 'android' ? 'Google Play' : '앱 마켓';
+const STORE_NAME = Platform.OS === 'ios' ? 'App Store' : Platform.OS === 'android' ? 'Google Play' : '스토어';
 const LOCAL_STOREKIT_TEST = __DEV__
   && Platform.OS === 'ios'
   && process.env.EXPO_PUBLIC_LOCAL_STOREKIT_TEST === 'true';
@@ -58,13 +58,13 @@ export default function SubscriptionScreen() {
     pendingCheckout.current = null;
     await AsyncStorage.removeItem(PENDING_CHECKOUT_KEY);
     await wallet.refetch();
-    setNotice('구독이 시작되었습니다.');
+    setNotice('구독을 시작했어요.');
   };
   const { connected, subscriptions, fetchProducts, requestPurchase, finishTransaction } = useIAP({
     onPurchaseSuccess: (purchase) => void completePurchase(purchase).catch((e) => {
-      setNotice(e instanceof Error ? e.message : '결제 검증에 실패했습니다.');
+      setNotice(e instanceof Error ? e.message : '결제를 확인하지 못했어요. 잠시 후 다시 확인해 주세요.');
     }),
-    onPurchaseError: (e) => setNotice(e.message || '스토어 결제를 완료하지 못했습니다.'),
+    onPurchaseError: (e) => setNotice(e.message || '스토어 결제를 마치지 못했어요.'),
   });
 
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function SubscriptionScreen() {
   const error = checkout.error instanceof ApiError
     ? checkout.error.message
     : checkout.error
-      ? '결제를 시작하지 못했습니다.'
+      ? '결제를 시작하지 못했어요.'
       : null;
 
   return (
@@ -117,12 +117,12 @@ export default function SubscriptionScreen() {
         <View style={styles.block}>
           <Card style={styles.hero}>
             <Tag label="BOOKEY PLUS" fg={colors.accent} bg={colors.accentSoft} />
-            <Text style={[styles.title, { color: colors.text }]}>해당 기능은 구독자 전용 기능이에요!</Text>
+            <Text style={[styles.title, { color: colors.text }]}>구독하면 쓸 수 있는 기능이에요</Text>
             {featureCopy ? (
               <Text style={[typeScale.body, { color: colors.textMuted }]}>{featureCopy}</Text>
             ) : null}
             <Text style={[typeScale.body, { color: colors.textMuted }]}>
-              구독하면 소셜 신호를 더 자세히 보고, 매달 엽서와 우표를 받아 대화를 이어갈 수 있습니다.
+              구독하면 내 페이지 방문자와 좋아요 누른 사람을 볼 수 있고, 매달 엽서와 우표를 받아요.
             </Text>
             <View style={styles.priceRow}>
               <Text style={[styles.price, { color: colors.text }]}>{price}</Text>
@@ -133,13 +133,13 @@ export default function SubscriptionScreen() {
           <Card>
             <Eyebrow>포함 혜택</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
-              <KeyValue label="매월 지급" value="엽서 50장 · 우표 30개" />
+              <KeyValue label="매달 드려요" value="엽서 50장 · 우표 30개" />
               <Rule />
-              <KeyValue label="방문자" value="내 페이지 방문자 열람" />
+              <KeyValue label="방문자" value="내 페이지 방문자 보기" />
               <Rule />
-              <KeyValue label="좋아요" value="내 글을 좋아한 사람 열람" />
+              <KeyValue label="좋아요" value="내 글에 좋아요 누른 사람 보기" />
               <Rule />
-              <KeyValue label="무료 엽서" value="매일 5장 기본 제공 유지" />
+              <KeyValue label="무료 엽서" value="지금처럼 매일 5장 무료" />
             </View>
           </Card>
 
@@ -173,11 +173,11 @@ export default function SubscriptionScreen() {
               </Text>
             ) : !PAYMENTS_ENABLED ? (
               <Text style={[typeScale.caption, styles.note, { color: colors.textMuted }]}> 
-                스토어 인앱 결제를 준비하고 있습니다.
+                앱 결제를 준비하고 있어요.
               </Text>
             ) : (
               <Text style={[typeScale.caption, styles.note, { color: colors.textFaint }]}>
-                앱 결제 완료 후 서버에서 결제를 다시 검증합니다.
+                결제가 끝나면 Bookey에서 한 번 더 확인해요.
               </Text>
             )}
             {/* 자동 갱신 구독의 구매 전 고지 — 갱신·해지 방법과 약관·개인정보·환불 링크(App Store 심사 3.1.2 요건). */}

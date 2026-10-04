@@ -19,11 +19,11 @@ import type { ThemePreference } from '@/store/themePreference';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 const TONES: { value: NotifyTone; label: string; sample: string }[] = [
-  { value: 'GENTLE', label: '다정', sample: '12쪽 남았어요. 오늘 10분이면 끝나요.' },
-  { value: 'FACT', label: '팩트', sample: '5일 미독. 완독 예상일이 9/12 -> 10/3으로 밀립니다.' },
+  { value: 'GENTLE', label: '다정', sample: '『책 제목』 12쪽 남았어요. 오늘 10분이면 한 걸음 나아가요.' },
+  { value: 'FACT', label: '팩트', sample: '5일째 읽지 않음. 이 속도면 완독 예상일 9/12 → 10/3.' },
   { value: 'SPARTA', label: '스파르타', sample: '5일째 안 읽음. 책이 당신을 노려보고 있습니다.' },
   { value: 'TSUNDERE', label: '츤데레', sample: '뭐, 안 읽어도 상관없는데. 남은 12쪽이 좀 불쌍하긴 하네.' },
-  { value: 'SILENT', label: '무음', sample: '푸시 없이 인앱 배지로만 알립니다.' },
+  { value: 'SILENT', label: '무음', sample: '휴대폰 알림 없이 앱 안에서만 알려요.' },
 ];
 
 /** 연동할 수 있는 소셜 계정 — 로그인 화면의 버튼과 같은 순서. */
@@ -34,9 +34,9 @@ const SOCIAL_PROVIDERS: { value: SocialProvider; label: string }[] = [
 ];
 
 const THEMES: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: '시스템' },
-  { value: 'light', label: '라이트' },
-  { value: 'dark', label: '다크' },
+  { value: 'system', label: '기기 설정' },
+  { value: 'light', label: '밝게' },
+  { value: 'dark', label: '어둡게' },
 ];
 
 /** 광고성 정보 수신 동의를 마지막으로 바꾼 날 — '2026년 10월 4일'. 처리 결과 안내(정보통신망법 제50조 ⑧)에 쓴다. */
@@ -93,9 +93,9 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={[styles.block, styles.settings]}>
           <View>
-            <Eyebrow>재촉 톤</Eyebrow>
+            <Eyebrow>알림 말투</Eyebrow>
             <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-              같은 상황이라도 어떻게 말을 걸지 고를 수 있습니다.
+              같은 알림도 어떤 말투로 받을지 고를 수 있어요.
             </Text>
             <View style={[styles.toneList, { borderColor: colors.line }]}>
               {TONES.map((tone) => {
@@ -139,19 +139,19 @@ export default function SettingsScreen() {
             <Eyebrow>알림</Eyebrow>
             <View style={{ marginTop: spacing.sm }}>
               <KeyValue
-                label="조용 시간"
+                label="방해 금지 시간"
                 value={`${user?.quietHoursStart ?? 22}:00 - ${user?.quietHoursEnd ?? 8}:00`}
               />
               <Rule />
               <KeyValue
-                label="하루 최대"
-                value={`개인 ${user?.dailyNotifyCap ?? 2}건 · 클럽 ${user?.clubNotifyCap ?? 3}건`}
+                label="하루에 받는 알림"
+                value={`내 독서 ${user?.dailyNotifyCap ?? 2}건 · 클럽 ${user?.clubNotifyCap ?? 3}건`}
               />
               <Rule />
               <View style={styles.switchRow}>
                 <Toggle
                   label="찌르기 받기"
-                  description="클럽원이 프리셋 문구로 보내는 가벼운 재촉입니다."
+                  description="클럽 멤버가 정해진 문구로 보내는 가벼운 재촉이에요."
                   value={user?.allowNudge ?? true}
                   onChange={(value) => updateSettings.mutate({ allowNudge: value })}
                 />
@@ -161,7 +161,7 @@ export default function SettingsScreen() {
               <View style={styles.switchRow}>
                 <Toggle
                   label="혜택·이벤트 소식 받기"
-                  description="광고성 정보를 앱 푸시·이메일로 받습니다. 밤 9시~아침 8시에는 보내지 않아요."
+                  description="광고성 정보를 앱 알림과 이메일로 받아요. 밤 9시부터 아침 8시까지는 보내지 않아요."
                   value={marketing?.agreed ?? false}
                   onChange={(value) => {
                     if (!setMarketing.isPending) setMarketing.mutate(value);
@@ -182,7 +182,7 @@ export default function SettingsScreen() {
               <Segmented options={THEMES} value={preference} onChange={setPreference} />
             </View>
             <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-              시스템은 기기 설정을 따릅니다.
+              기기 설정을 고르면 휴대폰의 화면 모드를 따라가요.
             </Text>
           </Card>
 
@@ -249,7 +249,7 @@ export default function SettingsScreen() {
                 // Alert.alert 는 웹에서 버튼 대화상자를 띄우지 못해 웹에선 아무 일도 없었다 — confirmAsync 로 맞춘다.
                 onPress={async () => {
                   const ok = await confirmAsync(
-                    '계정을 삭제할까요? 프로필과 로그인 정보가 영구 삭제되며 복구할 수 없습니다. 스토어 구독은 별도로 취소해야 합니다.',
+                    '계정을 삭제할까요? 프로필과 로그인 정보가 모두 지워지고 되살릴 수 없어요. 스토어에서 결제한 구독은 따로 해지해 주세요.',
                     '영구 삭제',
                   );
                   if (!ok) return;
@@ -271,7 +271,7 @@ export default function SettingsScreen() {
 
 /**
  * 소셜 로그인 연동 — 연동하지 않은 소셜 계정으로 로그인하면 서버가 별도 계정을 새로 만든다(이메일이 같으면 막는다).
- * 이메일로 가입한 사람이 여기서 연동해 두면 다음부터 같은 계정에 애플·카카오·구글로 로그인할 수 있다.
+ * 이메일로 가입한 사람이 여기서 연동해 두면 다음부터 같은 계정에 Apple·카카오·Google 로 로그인할 수 있다.
  * 연동 상태는 내 정보(linkedProviders·hasPassword)를 따른다.
  */
 function SocialLinkCard() {
@@ -313,7 +313,7 @@ function SocialLinkCard() {
     <Card>
       <Eyebrow>소셜 로그인 연동</Eyebrow>
       <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-        연동해 두면 다음부터 이 계정에 애플·카카오·구글로 로그인할 수 있어요.
+        연동해 두면 다음부터 Apple·카카오·Google 계정으로도 로그인할 수 있어요.
       </Text>
       <View style={styles.linkList}>
         {providers.map((provider, index) => {

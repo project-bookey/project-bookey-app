@@ -120,7 +120,7 @@ export default function PostEditorScreen() {
   if (loaded && !loaded.mine) {
     return (
       <Shell category={category}>
-        <EmptyState title="고칠 수 없는 글입니다" description="내가 쓴 글만 고칠 수 있어요." />
+        <EmptyState title="고칠 수 없는 글이에요" description="내가 쓴 글만 고칠 수 있어요." />
       </Shell>
     );
   }
@@ -384,7 +384,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
               {bodyMd.trim() ? (
                 <PostBody md={bodyMd} photoOf={photoOf} />
               ) : (
-                <Text style={[typeScale.caption, { color: colors.textFaint }]}>미리볼 내용이 없어요</Text>
+                <Text style={[typeScale.caption, { color: colors.textFaint }]}>미리 볼 내용이 없어요</Text>
               )}
             </Card>
           )}
