@@ -157,10 +157,16 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   const data = text ? JSON.parse(text) : undefined;
 
   if (!response.ok) {
+    const fieldMessage = Array.isArray(data?.errors)
+      ? data.errors
+          .map((error: { field?: string; reason?: string }) => error?.reason)
+          .filter(Boolean)
+          .join('\n')
+      : '';
     throw new ApiError(
       response.status,
       data?.code ?? 'UNKNOWN',
-      data?.message ?? '요청을 처리하지 못했습니다.',
+      fieldMessage || data?.message || '요청을 처리하지 못했습니다.',
     );
   }
   return data as T;
