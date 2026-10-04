@@ -32,6 +32,10 @@ import { pressedStyle, sans } from '@/theme/tokens';
  * 함께 독서를 끝내면 그 모임의 공유 노트로 간다 — 멤버 모두가 같은 대형노트에 그날을 함께 남긴다.
  * 노트는 모임 상세에서 언제든 다시 열 수 있다.
  */
+
+/** 같이 읽기는 4시간까지만 센다 — 서버 ClubActivitySession.MAX_DURATION 과 같은 값. 넘기면 시계도 4시간에 세운다. */
+const TOGETHER_MAX_SEC = 4 * 60 * 60;
+
 export default function MeetingDetailScreen() {
   const { id, meetingId, host } = useLocalSearchParams<{ id: string; meetingId: string; host?: string }>();
   const clubId = Number(id);
@@ -134,8 +138,9 @@ export default function MeetingDetailScreen() {
   const otherRunning = Boolean(current.data && !running);
   const otherMeetingId = otherRunning ? current.data?.meetingId : undefined;
   const elapsed = running && current.data
-    ? Math.max(0, Math.floor((now - new Date(current.data.startedAt).getTime()) / 1000))
+    ? Math.min(TOGETHER_MAX_SEC, Math.max(0, Math.floor((now - new Date(current.data.startedAt).getTime()) / 1000)))
     : 0;
+  const capped = elapsed >= TOGETHER_MAX_SEC;
   const openMap = () => {
     const q = m.latitude != null && m.longitude != null ? `${m.latitude},${m.longitude}` : m.address;
     void Linking.openURL(m.mapUrl ?? `https://maps.google.com/?q=${encodeURIComponent(q)}`);
@@ -247,7 +252,9 @@ export default function MeetingDetailScreen() {
             {otherRunning
               ? '다른 모임에서 같이 읽는 중이에요. 그 모임에서 끝낼 수 있어요.'
               : running
-                ? '같이 읽는 시간을 재고 있어요.'
+                ? capped
+                  ? '같이 읽기는 4시간까지만 기록돼요. 끝내기를 눌러 주세요.'
+                  : '같이 읽는 시간을 재고 있어요.'
                 : state === 'cancelled'
                   ? '취소된 모임은 같이 읽기를 시작할 수 없어요.'
                   : !canStartTogether
