@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -16,7 +16,6 @@ import { PersonGlyph } from '@/components/Avatar';
 import { KeyboardScroll } from '@/components/keyboard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { FollowButton } from '@/components/social/FollowButton';
-import { FollowSection, type FollowBox } from '@/components/social/FollowSection';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { TourTarget } from '@/components/tour/TourTarget';
 import {
@@ -38,10 +37,10 @@ const HEATMAP_DAYS = 90;
 /** 남의 공개 독후감을 한 번에 받는 편수. */
 const POSTS_PAGE = 10;
 /**
- * 팔로워·팔로잉 터치 상자 — 12px 글줄(≈14)에 위 14·아래 16 을 더해 44pt 를 넘긴다.
- * 위는 닉네임 옆 연필 버튼의 hitSlop 아래에서 멈추고, 아래는 묶음 간격(36) 안에 머문다.
+ * 팔로워·팔로잉 터치 상자 — 14px 글줄(20)에 위아래 12 씩 더해 44pt.
+ * 위는 핸들 줄 안에서 멈춰 닉네임 옆 연필 버튼의 hitSlop 과 겹치지 않고, 아래는 묶음 간격(36) 안에 머문다.
  */
-const SOCIAL_HIT_SLOP = { top: 14, bottom: 16, left: 8, right: 8 };
+const SOCIAL_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 /**
  * 서재 '전체보기' 터치 상자 — 11px 글줄(≈15)에 위 16·아래 14.
  * 선반이 '기록' 묶음의 첫머리라 위는 묶음 간격(36) 안에 머물고, 아래는 선반 표지 위에서 멈춘다.
@@ -56,7 +55,7 @@ const SHELF_ALL_HIT_SLOP = { top: 16, bottom: 14, left: 8, right: spacing.lg };
  *     남은 오른쪽 팔로우 칩과 팔로워 줄 아래 채팅·엽서 링크(시안 A) — 팔로우는 이 화면에서만 한다.
  *  2. 오늘(나만): 지갑 메모/방문 노트, 출석.
  *  3. 기록: 서재 선반 · 기록 카드(스트릭·히트맵) · 내 독후감 링크(남은 공개 독후감).
- * 나만 맨 끝에 팔로우 목록이 붙는다 — 프로필의 팔로워·팔로잉 숫자가 내려보내는 자리다.
+ * 내 팔로워·팔로잉 숫자를 누르면 팔로우 목록 화면(/follows)으로 넘어간다.
  * 남의 서재·통계는 /users/{id}/library · /users/{id}/stats 로 받는다(각오 메모는 서버가 비워 보낸다).
  */
 export function MyPage({ userId, mine }: { userId: number | undefined; mine: boolean }) {
@@ -64,10 +63,6 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
   const { colors } = useTheme();
   const me = useAuth((s) => s.user);
   const ready = userId != null;
-  const scrollRef = useRef<ScrollView>(null);
-  // 팔로우 섹션의 세로 위치 — onLayout 으로 받아 두고 숫자를 누르면 그 자리로 스크롤한다.
-  const followY = useRef(0);
-  const [followBox, setFollowBox] = useState<FollowBox>('FOLLOWER');
   // 남의 페이지 동작(시안 A) — 채팅·엽서 링크는 프로필 줄 안에, 엽서 작성 칸은 그 아래에 펼친다.
   const [composing, setComposing] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -79,9 +74,8 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
     },
     onError: (e) => setChatError(e instanceof ApiError ? e.message : '채팅을 열지 못했어요.'),
   });
-  const openFollows = (box: FollowBox) => {
-    setFollowBox(box);
-    scrollRef.current?.scrollTo({ y: Math.max(0, followY.current - spacing.lg), animated: true });
+  const openFollows = (tab: 'FOLLOWER' | 'FOLLOWING') => {
+    router.push({ pathname: '/follows', params: { tab } });
   };
 
   // 내 서재·통계는 홈·서재 화면과 같은 캐시 키를 쓴다 — 서가 탭을 거쳐 왔다면 그대로 재사용된다.
@@ -160,7 +154,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
   const followingCount = p?.followingCount ?? 0;
 
   return (
-    <KeyboardScroll ref={scrollRef} contentContainerStyle={styles.container}>
+    <KeyboardScroll contentContainerStyle={styles.container}>
       {/* 1. 프로필 — 사진·이름·팔로워/팔로잉에 편집·설정을 붙인다(남의 페이지는 팔로우·채팅·엽서). */}
       <View style={styles.group}>
         <View style={styles.profileRow}>
@@ -203,7 +197,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               @{handle ?? '—'} · 완독 {counts?.finished ?? 0}권
             </Text>
             {mine ? (
-              // 숫자를 누르면 아래 팔로우 섹션으로 내려가며 그 탭이 열린다 (§14.3)
+              // 숫자를 누르면 팔로우 목록 화면으로 넘어가며 그 칸이 열린다 (§14.3)
               <View style={styles.profileSocial}>
                 <Pressable
                   onPress={() => openFollows('FOLLOWER')}
@@ -214,7 +208,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 >
                   <SocialCount label="팔로워" value={followerCount} />
                 </Pressable>
-                <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+                <Text style={[styles.socialText, { color: colors.textMuted }]}>·</Text>
                 <Pressable
                   onPress={() => openFollows('FOLLOWING')}
                   accessibilityRole="button"
@@ -229,12 +223,12 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               <>
                 <View style={styles.profileSocial}>
                   <SocialCount label="팔로워" value={followerCount} />
-                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
+                  <Text style={[styles.socialText, { color: colors.textMuted }]}>·</Text>
                   <SocialCount label="팔로잉" value={followingCount} />
                   {p?.mutual || p?.followsMe ? (
                     <>
-                      <Text style={[typeScale.caption, { color: colors.textMuted }]}>·</Text>
-                      <Text style={[typeScale.caption, { color: p.mutual ? colors.accent : colors.textFaint }]}>
+                      <Text style={[styles.socialText, { color: colors.textMuted }]}>·</Text>
+                      <Text style={[styles.socialText, { color: p.mutual ? colors.accent : colors.textFaint }]}>
                         {p.mutual ? '맞팔로우' : '나를 팔로우'}
                       </Text>
                     </>
@@ -442,14 +436,6 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
 
         {mine ? <MyScraps /> : userId != null ? <PublicPosts userId={userId} /> : null}
       </View>
-
-      {/* 팔로우 목록 — 프로필의 팔로워·팔로잉 숫자가 내려보내는 자리라 맨 끝에 둔다.
-          onLayout 의 y 를 스크롤 좌표로 쓰므로 묶음 안이 아니라 스크롤 콘텐츠 바로 아래에 둔다. */}
-      {mine ? (
-        <View style={styles.block} onLayout={(e) => { followY.current = e.nativeEvent.layout.y; }}>
-          <FollowSection box={followBox} onChangeBox={setFollowBox} />
-        </View>
-      ) : null}
     </KeyboardScroll>
   );
 }
@@ -458,7 +444,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
 function SocialCount({ label, value }: { label: string; value: number }) {
   const { colors } = useTheme();
   return (
-    <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+    <Text style={[styles.socialText, { color: colors.textMuted }]}>
       {label}{' '}
       <Text style={[styles.profileCount, { color: colors.text }]}>{value}</Text>
     </Text>
@@ -916,9 +902,15 @@ const styles = StyleSheet.create({
   },
   settingsTarget: { alignSelf: 'flex-end' },
   profileMeta: { letterSpacing: 0.4 },
-  // 팔로워·팔로잉 숫자만 본문색 세미볼드 — 캡션 크기는 바깥 Text 가 정한다.
+  // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 14 로 키웠다(2026-10-04).
+  socialText: { fontFamily: sans.regular, fontSize: 14, lineHeight: 20 },
+  // 숫자만 본문색 세미볼드 — 크기는 바깥 Text(socialText)가 정한다.
   profileCount: { fontFamily: sans.semiBold },
-  profileSocial: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start' },
+  // 360pt 폭에 숫자가 커지면 '팔로잉' 칸이 다음 줄로 넘어간다 — 잘리거나 설정 버튼 밑으로 파고들지 않게.
+  profileSocial: {
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center',
+    columnGap: spacing.sm, rowGap: spacing.xs, alignSelf: 'flex-start',
+  },
   pressed: pressedStyle,
 
   scrapRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
