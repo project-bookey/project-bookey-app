@@ -2,7 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View,
+  ActivityIndicator, AppState, FlatList, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -11,6 +11,7 @@ import {
   ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, chatListContent,
 } from '@/components/chat/ChatParts';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea } from '@/components/keyboard';
 import { NoteSheet } from '@/components/note/NoteSheet';
 import { Button, Card, FootAction, Loading } from '@/components/ui';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
@@ -176,11 +177,7 @@ export default function ClubChatScreen() {
     <PaperScreen>
       {header}
       {giftSheet}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
-        style={styles.fill}
-      >
+      <KeyboardArea>
         <FlatList
           style={styles.fill}
           inverted
@@ -223,7 +220,7 @@ export default function ClubChatScreen() {
             loading={send.isPending}
           />
         </ChatInputBar>
-      </KeyboardAvoidingView>
+      </KeyboardArea>
     </PaperScreen>
   );
 }

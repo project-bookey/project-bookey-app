@@ -1,7 +1,7 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -22,6 +22,7 @@ import {
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
 import { TiltCover } from '@/components/collage';
+import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Eyebrow, Field, Loading, linkLabel } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -64,6 +65,10 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
   const qc = useQueryClient();
   const { colors } = useTheme();
   const [open, setOpen] = useState(initialOpen && isHost);
+  // 폼 아래쪽 칸(최대 인원·설명)을 누르면 '모임 열기'까지 키보드 위로 올린다.
+  const scrollRef = useRef<ScrollView>(null);
+  const submitRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
   const [showDate, setShowDate] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [showAddress, setShowAddress] = useState(false);
@@ -177,7 +182,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
           <Button label={open ? '닫기' : '모임 만들기'} variant="outline" onPress={() => setOpen((v) => !v)} />
         ) : null}
       </View>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardScroll ref={scrollRef} contentContainerStyle={styles.container}>
         {open ? (
           <View style={[styles.form, { borderColor: colors.lineStrong }]}>
             <Eyebrow>새 모임</Eyebrow>
@@ -294,6 +299,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
               placeholder="예: 8"
               keyboardType="number-pad"
               maxLength={4}
+              onFocus={() => revealAbove(submitRef)}
             />
             <Field
               label="설명 (선택)"
@@ -301,8 +307,12 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
               onChangeText={(description) => setForm((f) => ({ ...f, description }))}
               placeholder="어디까지 읽고 올지, 준비할 것"
               multiline
+              style={styles.description}
+              onFocus={() => revealAbove(submitRef)}
             />
-            <Button label="모임 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} style={styles.submit} />
+            <View ref={submitRef} style={styles.submit}>
+              <Button label="모임 열기" onPress={submit} disabled={!canCreate} loading={create.isPending} />
+            </View>
             {!canCreate ? (
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                 제목과 장소를 정하면 열 수 있어요.
@@ -339,7 +349,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
             ))}
           </View>
         )}
-      </ScrollView>
+      </KeyboardScroll>
     </View>
   );
 }
@@ -435,6 +445,7 @@ const styles = StyleSheet.create({
   form: { marginTop: spacing.lg, borderWidth: hairline, borderRadius: radius.sm, padding: spacing.lg, gap: spacing.md },
   // 입력들과 떼어 둔다 — 폼 간격(md)에 md 를 더해 xl.
   submit: { marginTop: spacing.md },
+  description: { maxHeight: 160 }, // 길어지면 칸 안에서 스크롤 — '모임 열기'가 키보드 밑으로 밀려나지 않게
   pickRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   pick: {
     flex: 1,

@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { inquiryApi } from '@/api/endpoints';
 import type { InquiryCategory } from '@/api/types';
 import { Chip, PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
 import { deviceSummary, inquiryDevice } from '@/components/inquiry/deviceInfo';
 import { clearInquiryDraft, readInquiryDraft, saveInquiryDraft } from '@/components/inquiry/draft';
 import {
@@ -31,7 +31,6 @@ export default function InquiryNewScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ category?: string; body?: string }>();
   const categories = useInquiryCategories();
   const userId = useAuth((state) => state.user?.id);
@@ -88,7 +87,7 @@ export default function InquiryNewScreen() {
       <SubHeader category="문의하기" />
 
       {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(클럽 만들기와 같은 이유). */}
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardArea>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
           <View>
             <Eyebrow>문의 유형</Eyebrow>
@@ -158,12 +157,7 @@ export default function InquiryNewScreen() {
         </ScrollView>
 
         {/* 하단 띠 — ScrollView 의 형제라 키보드가 뜨면 그 위에 붙는다. 실패 안내는 버튼 바로 위(UX 철칙 Proximity). */}
-        <View
-          style={[
-            styles.bottomBar,
-            { backgroundColor: colors.bg, borderTopColor: colors.line, paddingBottom: Math.max(insets.bottom, spacing.lg) },
-          ]}
-        >
+        <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
           {error ? <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text> : null}
           <Button
             label="보내기"
@@ -177,14 +171,13 @@ export default function InquiryNewScreen() {
               });
             }}
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardDock>
+      </KeyboardArea>
     </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   sectionBody: { marginTop: spacing.sm, gap: spacing.xs },
   // 줄바꿈되는 칩 — 칩 hitSlop(위아래 7) 끼리 겹치지 않게 줄 사이를 md 로 띄운다.

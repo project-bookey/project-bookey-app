@@ -13,6 +13,7 @@ import {
   MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/Avatar';
+import { KeyboardScroll } from '@/components/keyboard';
 import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { FollowButton } from '@/components/social/FollowButton';
 import { FollowSection, type FollowBox } from '@/components/social/FollowSection';
@@ -159,7 +160,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
   const followingCount = p?.followingCount ?? 0;
 
   return (
-    <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
+    <KeyboardScroll ref={scrollRef} contentContainerStyle={styles.container}>
       {/* 1. 프로필 — 사진·이름·팔로워/팔로잉에 편집·설정을 붙인다(남의 페이지는 팔로우·채팅·엽서). */}
       <View style={styles.group}>
         <View style={styles.profileRow}>
@@ -454,7 +455,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
           <FollowSection box={followBox} onChangeBox={setFollowBox} />
         </View>
       ) : null}
-    </ScrollView>
+    </KeyboardScroll>
   );
 }
 

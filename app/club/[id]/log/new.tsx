@@ -8,6 +8,7 @@ import { ApiError } from '@/api/client';
 import { clubApi, libraryApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
 import { clubLogKeys, kstTime, todayKst, useMyClubRecord } from '@/components/clubLog';
 import { Button, Card, Eyebrow, Toggle, formatDuration } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -139,6 +140,7 @@ export default function ClubLogNewScreen() {
           </Pressable>
         }
       />
+      <KeyboardArea>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {fromSession ? (
           <Card style={styles.summary}>
@@ -228,18 +230,24 @@ export default function ClubLogNewScreen() {
             onChange={setAnchor}
           />
         ) : null}
+      </ScrollView>
 
+      {/*
+        하단 띠 — 독후감 쓰기·클럽 만들기와 같은 자리(ScrollView 의 형제)라 한 줄·쪽수를 적는 동안에도 키보드 위에 붙어
+        엄지가 닿는다(UX 철칙 Fitts). 실패 안내도 버튼 바로 위에(Proximity).
+      */}
+      <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
         {notice ? (
           <Text style={[typeScale.caption, { color: colors.danger }]} accessibilityRole="alert">{notice}</Text>
         ) : null}
-
         <Button
           label="클럽 보드에 붙이기"
           onPress={() => submit.mutate()}
           loading={submit.isPending}
           disabled={!canSubmit}
         />
-      </ScrollView>
+      </KeyboardDock>
+      </KeyboardArea>
     </PaperScreen>
   );
 }
@@ -261,6 +269,14 @@ const CORNER = 22;
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
+  bottomBar: {
+    ...layout.content,
+    width: '100%',
+    gap: spacing.xs,
+    borderTopWidth: hairline,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
   summary: { flexDirection: 'row', alignItems: 'stretch' },
   summaryValue: { fontFamily: mono.semiBold, fontSize: 14 },
   vRule: { width: hairline, marginHorizontal: spacing.md },

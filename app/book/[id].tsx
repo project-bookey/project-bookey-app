@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  Keyboard, KeyboardAvoidingView, LayoutChangeEvent, Linking, Modal, PanResponder, Platform, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, View,
+  LayoutChangeEvent, Linking, Modal, PanResponder, Pressable,
+  StyleSheet, Text, TextInput, View,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
 import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
+import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { VERIFICATION_LABEL } from '@/components/review/verification';
 import { Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
@@ -152,7 +153,7 @@ export default function BookDetailScreen() {
   const rating = pickRating(book.data);
   // 내 기록이 있으면 '독서 시작'을 화면 하단에 붙여 둔다 — 진척 카드 안에 두면 소개·목차를 한참
   // 내려야 닿는다(UX 철칙 Fitts). 누르면 타이머가 바로 측정을 시작한다.
-  // 키보드가 떠 있는 동안(리뷰 쓰기)은 숨긴다 — 안드로이드는 창이 줄어들어 CTA 가 입력창을 덮는다.
+  // 키보드가 떠 있는 동안(리뷰 쓰기)은 숨긴다 — 리뷰 폼이 키보드 위로 올라오면 그 자리를 CTA 가 덮는다.
   const keyboardOpen = useKeyboardOpen();
   const hasStartCta = record.data != null && progress != null;
   const ctaBottom = Math.max(insets.bottom, spacing.lg);
@@ -161,7 +162,8 @@ export default function BookDetailScreen() {
     <PaperScreen>
       <SubHeader category={headerCategory(info)} />
 
-      <ScrollView
+      {/* 리뷰 쓰기 폼이 키보드에 묻히지 않게 — 입력을 누르면 '남기기'까지 키보드 위로 올라온다. */}
+      <KeyboardScroll
         contentContainerStyle={[
           styles.container,
           // 고정 CTA(버튼 46 + 위아래 여백)에 마지막 섹션이 가리지 않게 그만큼 더 띄운다.
@@ -339,7 +341,7 @@ export default function BookDetailScreen() {
 
           <ReviewSection bookId={bookId} rid={rid} colors={colors} />
         </View>
-      </ScrollView>
+      </KeyboardScroll>
 
       {hasStartCta && !keyboardOpen ? (
         // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '한 조각 남기기'와 같은 만듦새.
@@ -358,20 +360,6 @@ export default function BookDetailScreen() {
       ) : null}
     </PaperScreen>
   );
-}
-
-/** 키보드가 떠 있는지 — 하단 고정 CTA 를 잠시 거둘 때 쓴다. */
-function useKeyboardOpen(): boolean {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', () => setOpen(true));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setOpen(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  return open;
 }
 
 /**
@@ -602,10 +590,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
         animationType="fade"
         onRequestClose={() => setCommitmentOpen(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.commitmentBackdrop}
-        >
+        <KeyboardArea style={styles.commitmentBackdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setCommitmentOpen(false)} />
           <View style={[styles.commitmentDialog, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]}>
             <Text maxFontSizeMultiplier={1.15} style={[styles.commitmentTitle, { color: colors.text }]}>
@@ -635,7 +620,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
               />
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardArea>
       </Modal>
     </>
   );
@@ -941,6 +926,9 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
   const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
+  // 리뷰 칸을 누르면 그 밑 '남기기'까지 키보드 위로 올린다.
+  const reveal = useKeyboardReveal();
+  const formActionsRef = useRef<View>(null);
 
   // 탭을 바꾸면 펼쳐져 있던 작성 폼은 닫는다 — 다른 탭 밑에 폼이 숨어 있지 않게.
   const switchTab = (next: RecordTab) => {
@@ -1013,6 +1001,7 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
                 placeholder="이 책은 어땠나요?"
                 placeholderTextColor={colors.textFaint}
                 multiline
+                onFocus={() => reveal(formActionsRef)}
                 style={[styles.reviewInput, {
                   backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
                 }]}
@@ -1021,7 +1010,7 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
                 <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
               ) : null}
               {/* 앱 전체 순서 — [취소][주요 버튼]. 짧은 글은 '남기기'(댓글·한 마디와 같은 말). */}
-              <View style={styles.formActions}>
+              <View ref={formActionsRef} style={styles.formActions}>
                 <Button
                   label="취소"
                   variant="outline"
@@ -1137,6 +1126,7 @@ const styles = StyleSheet.create({
   commitmentDescription: { ...typeScale.caption, fontSize: 14, lineHeight: 20, marginBottom: spacing.xs },
   commitmentInput: {
     minHeight: 78,
+    maxHeight: 160, // 길어져도 '독서 시작'이 키보드 위 대화상자 안에 남게
     borderWidth: hairline,
     borderRadius: radius.md,
     padding: spacing.md,
@@ -1177,6 +1167,7 @@ const styles = StyleSheet.create({
   formCard: { gap: spacing.md },
   reviewInput: {
     minHeight: 96,
+    maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '남기기'가 키보드 밑으로 밀려나지 않게
     borderRadius: radius.md,
     borderWidth: hairline,
     padding: spacing.md,

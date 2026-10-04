@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
 import { Button, Card, Eyebrow, Segmented } from '@/components/ui';
 import { BirthDatePicker } from '@/components/BirthDatePicker';
 import { useAuth } from '@/store/auth';
@@ -81,7 +82,8 @@ export default function ProfileEditScreen() {
   return (
     <PaperScreen>
       <SubHeader category="프로필 편집" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardArea>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {/* 사진은 여기서 바꾸지 않는다 — '나' 화면의 아바타를 누르는 길 하나로 모았다. */}
         <View style={styles.block}>
           <Card>
@@ -128,18 +130,19 @@ export default function ProfileEditScreen() {
               />
             </View>
           </Card>
-
-          <View style={styles.footer}>
-            <Button
-              label="저장"
-              size="sm"
-              disabled={!canSave || save.isPending}
-              loading={save.isPending}
-              onPress={() => save.mutate()}
-            />
-          </View>
         </View>
       </ScrollView>
+
+      {/* 하단 띠 — 다른 쓰기 화면과 같은 자리라 닉네임을 적는 동안에도 키보드 위에 붙어 엄지가 닿는다(UX 철칙 Fitts). */}
+      <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
+        <Button
+          label="저장"
+          disabled={!canSave || save.isPending}
+          loading={save.isPending}
+          onPress={() => save.mutate()}
+        />
+      </KeyboardDock>
+      </KeyboardArea>
     </PaperScreen>
   );
 }
@@ -156,12 +159,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     fontSize: 16,
   },
-  footer: {
-    marginTop: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: spacing.md,
+  bottomBar: {
+    ...layout.content,
+    width: '100%',
+    borderTopWidth: hairline,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   counter: { marginTop: spacing.xs, textAlign: 'right' },
   error: { marginTop: spacing.sm, lineHeight: 18 },

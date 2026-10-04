@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
@@ -11,6 +11,7 @@ import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
 import { CLUB_DESCRIPTION_MAX, ClubBackdrop, confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
 import {
   Button, EmptyState, Eyebrow, Field, FootAction, KeyValue, Loading, Rule, Segmented, Tag, Toggle, linkLabel,
@@ -77,6 +78,11 @@ function SettingsForm({ club }: { club: ClubHome }) {
 
   const [name, setName] = useState(club.name);
   const [description, setDescription] = useState(club.description ?? '');
+  // 이름·소개 칸을 누르면 '저장'까지, 내보내는 이유 칸을 누르면 '내보내기'까지 키보드 위로 올린다.
+  const scrollRef = useRef<ScrollView>(null);
+  const saveRef = useRef<View>(null);
+  const kickActionsRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
   const [kickTarget, setKickTarget] = useState<MemberProgress | null>(null);
   const [kickReason, setKickReason] = useState('');
 
@@ -172,7 +178,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
   return (
     <PaperScreen>
       <SubHeader category="클럽 설정" />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardScroll ref={scrollRef} contentContainerStyle={styles.container}>
         {/* 미리보기 — 클럽 홈 머리가 어떻게 보이는지 그대로. 입력 중인 이름 · 한 줄 소개가 바로 비친다 */}
         <View style={{ gap: spacing.sm }}>
           <View style={[styles.preview, { borderColor: colors.line }]}>
@@ -224,7 +230,14 @@ function SettingsForm({ club }: { club: ClubHome }) {
         </View>
 
         <Section title="기본 정보">
-          <Field label="클럽 이름" value={name} onChangeText={setName} maxLength={60} placeholder="예: 회사 독서 클럽" />
+          <Field
+            label="클럽 이름"
+            value={name}
+            onChangeText={setName}
+            maxLength={60}
+            placeholder="예: 회사 독서 클럽"
+            onFocus={() => revealAbove(saveRef)}
+          />
           <Field
             label="한 줄 소개"
             hint={`${description.trim().length}/${CLUB_DESCRIPTION_MAX}자 · 클럽 홈 맨 위와 클럽 목록에 보여요`}
@@ -232,18 +245,21 @@ function SettingsForm({ club }: { club: ClubHome }) {
             value={description}
             onChangeText={setDescription}
             placeholder="예: 토요일 새벽마다 한 권씩 함께 읽어요"
+            onFocus={() => revealAbove(saveRef)}
           />
-          <Button
-            label="저장"
-            size="sm"
-            disabled={!infoDirty || name.trim().length === 0 || descriptionTooLong}
-            loading={update.isPending}
-            onPress={() =>
-              update.mutate(
-                { name: name.trim(), description: description.trim() },
-                { onSuccess: () => notify('저장했어요.') },
-              )}
-          />
+          <View ref={saveRef}>
+            <Button
+              label="저장"
+              size="sm"
+              disabled={!infoDirty || name.trim().length === 0 || descriptionTooLong}
+              loading={update.isPending}
+              onPress={() =>
+                update.mutate(
+                  { name: name.trim(), description: description.trim() },
+                  { onSuccess: () => notify('저장했어요.') },
+                )}
+            />
+          </View>
         </Section>
 
         <Section title="공개 범위" gap={spacing.sm}>
@@ -343,8 +359,9 @@ function SettingsForm({ club }: { club: ClubHome }) {
                     onChangeText={setKickReason}
                     maxLength={200}
                     placeholder="기록에 남아요"
+                    onFocus={() => revealAbove(kickActionsRef)}
                   />
-                  <View style={styles.rowButtons}>
+                  <View ref={kickActionsRef} style={styles.rowButtons}>
                     <Button label="취소" size="sm" variant="outline" onPress={() => setKickTarget(null)} />
                     <Button
                       label="내보내기"
@@ -377,7 +394,7 @@ function SettingsForm({ club }: { club: ClubHome }) {
             />
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardScroll>
     </PaperScreen>
   );
 }

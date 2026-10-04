@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { authApi } from '@/api/endpoints';
+import { KeyboardArea } from '@/components/keyboard';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
 
@@ -101,10 +102,7 @@ export default function PasswordResetScreen() {
 
   return (
     <View style={styles.screen}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.fill}
-      >
+      <KeyboardArea>
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <Pressable
             onPress={goBack}
@@ -241,14 +239,13 @@ export default function PasswordResetScreen() {
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardArea>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: darkColors.bg },
-  fill: { flex: 1 },
   header: {
     paddingHorizontal: spacing.lg,
     maxWidth: 460,

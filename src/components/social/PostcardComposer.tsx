@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
+import { useKeyboardReveal } from '@/components/keyboard';
 import { countGraphemes } from '@/lib/graphemes';
 import { Button, Card, Toggle } from '@/components/ui';
 import { hairline, radius, sans, spacing, typeScale, useTheme } from '@/theme';
@@ -25,6 +26,9 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [body, setBody] = useState('');
+  // 칸을 누르면 '엽서 보내기'까지 키보드 위로 올린다(감싼 KeyboardScroll 이 있을 때).
+  const reveal = useKeyboardReveal();
+  const actionsRef = useRef<View>(null);
   const [attachStamp, setAttachStamp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
@@ -78,6 +82,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
         placeholder="딱 16글자로 나를 어필하세요"
         placeholderTextColor={colors.textFaint}
         multiline
+        onFocus={() => reveal(actionsRef)}
         accessibilityLabel="엽서 본문"
       />
       <Text style={[typeScale.monoLabel, styles.counter, { color: over ? colors.danger : colors.textFaint }]}>
@@ -105,7 +110,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
         </Text>
       ) : null}
 
-      <View style={styles.actions}>
+      <View ref={actionsRef} style={styles.actions}>
         <Button label="취소" variant="outline" onPress={onDone} />
         <Button
           label={send.isPending ? '보내는 중…' : '엽서 보내기'}
@@ -120,6 +125,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
 const styles = StyleSheet.create({
   input: {
     minHeight: 72,
+    maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '엽서 보내기'가 키보드 밑으로 밀려나지 않게
     borderRadius: radius.md,
     borderWidth: hairline,
     padding: spacing.md,

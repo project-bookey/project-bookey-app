@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView,
+  ActivityIndicator, Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
@@ -18,6 +18,7 @@ import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
 import { LEGAL_DOCUMENTS, LEGAL_VERSION, LegalDocumentKey } from '@/legal/documents';
+import { KeyboardArea } from '@/components/keyboard';
 import { linkLabel } from '@/components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -345,11 +346,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.screen}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.fill}
-      >
-        <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardArea>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View>
             <Text style={styles.wordmark}>bookey</Text>
             <View style={styles.wordmarkRule} />
@@ -603,7 +601,7 @@ export default function LoginScreen() {
             </View>
           ) : null}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardArea>
       <Modal
         visible={legalOpen != null}
         animationType="slide"
@@ -651,7 +649,6 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: darkColors.bg },
-  fill: { flex: 1 },
   container: {
     flexGrow: 1,
     justifyContent: 'center',

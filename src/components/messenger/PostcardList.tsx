@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import type { PostcardView } from '@/api/types';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
 import { NAV_CLEARANCE } from '@/components/collage';
+import { KeyboardArea, KeyboardRevealProvider, useKeyboardReveal } from '@/components/keyboard';
 import { Button, Card, EmptyState, FootAction, Tag, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
@@ -34,36 +35,46 @@ export function PostcardList({ box }: { box: PostcardBox }) {
   });
 
   const items = list.data?.content ?? [];
+  // 답장 칸을 누르면 그 밑 보내기 버튼까지 키보드 위로 올린다. FlatList 의 getScrollResponder() 는 실제로는
+  // 안쪽 ScrollView 를 돌려준다(타입 선언만 어긋나 있다).
+  const listRef = useRef<FlatList<PostcardView>>(null);
+  const getScroll = useCallback(() => listRef.current?.getScrollResponder() as unknown as ScrollView | null, []);
 
   return (
-    <FlatList
-      data={items}
-      keyExtractor={(card) => String(card.id)}
-      contentContainerStyle={styles.list}
-      ListHeaderComponent={
-        wallet.data ? (
-          <Text style={[typeScale.caption, styles.wallet, { color: colors.textFaint }]}>
-            오늘 무료 엽서 {wallet.data.freePostcardsLeftToday}장 · 보유 엽서{' '}
-            {wallet.data.postcardBalance}장 · 우표 {wallet.data.stampBalance}개
-          </Text>
-        ) : null
-      }
-      renderItem={({ item }) => <PostcardRow card={item} box={box} />}
-      ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
-      ListEmptyComponent={
-        list.isLoading ? null : box === 'INBOX' ? (
-          <EmptyState
-            title="아직 받은 엽서가 없어요"
-            description="피드에 독후감을 올리면 엽서가 도착할 거예요."
-          />
-        ) : (
-          <EmptyState
-            title="아직 보낸 엽서가 없어요"
-            description="피드에서 마음에 드는 독후감에 엽서를 보내보세요."
-          />
-        )
-      }
-    />
+    <KeyboardArea>
+      <KeyboardRevealProvider getScroll={getScroll}>
+        <FlatList
+          ref={listRef}
+          data={items}
+          keyExtractor={(card) => String(card.id)}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            wallet.data ? (
+              <Text style={[typeScale.caption, styles.wallet, { color: colors.textFaint }]}>
+                오늘 무료 엽서 {wallet.data.freePostcardsLeftToday}장 · 보유 엽서{' '}
+                {wallet.data.postcardBalance}장 · 우표 {wallet.data.stampBalance}개
+              </Text>
+            ) : null
+          }
+          renderItem={({ item }) => <PostcardRow card={item} box={box} />}
+          ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+          ListEmptyComponent={
+            list.isLoading ? null : box === 'INBOX' ? (
+              <EmptyState
+                title="아직 받은 엽서가 없어요"
+                description="피드에 독후감을 올리면 엽서가 도착할 거예요."
+              />
+            ) : (
+              <EmptyState
+                title="아직 보낸 엽서가 없어요"
+                description="피드에서 마음에 드는 독후감에 엽서를 보내보세요."
+              />
+            )
+          }
+        />
+      </KeyboardRevealProvider>
+    </KeyboardArea>
   );
 }
 
@@ -73,6 +84,8 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
   const { colors } = useTheme();
   const [replying, setReplying] = useState(false);
   const [body, setBody] = useState('');
+  const reveal = useKeyboardReveal();
+  const replyActionsRef = useRef<View>(null);
   const [error, setError] = useState<string | null>(null);
   const { confirm, arm, disarm } = useDeleteConfirm<number>();
   const confirmingDelete = confirm === card.id;
@@ -180,6 +193,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
               placeholder="답장도 딱 16글자"
               placeholderTextColor={colors.textFaint}
               accessibilityLabel="답장 본문"
+              onFocus={() => reveal(replyActionsRef)}
             />
             <Text style={[typeScale.monoLabel, styles.counter, {
               color: over ? colors.danger : colors.textFaint,
@@ -191,7 +205,7 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
                 {error}
               </Text>
             ) : null}
-            <View style={styles.actions}>
+            <View ref={replyActionsRef} style={styles.actions}>
               <Button label="취소" variant="outline" size="sm" onPress={() => setReplying(false)} />
               <Button
                 label={card.stampAttached ? '무료로 답장' : '우표 1개로 답장'}

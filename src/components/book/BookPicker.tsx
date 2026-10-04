@@ -151,7 +151,12 @@ export function BookPicker({ picker, autoFocus }: {
       />
 
       {candidates.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.pickRow}
+        >
           {candidates.map((candidate) => {
             const isPicked = selected?.bookId === candidate.bookId;
             return (
