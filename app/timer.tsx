@@ -21,8 +21,9 @@ const PAGE_INPUT_ACCESSORY_ID = 'timer-page-input-toolbar';
 /**
  * 독서 타이머 (§F3).
  *
- * 경과 시간은 매초 더하는 대신 <b>시작 시각과 현재 시각의 차</b>로 계산한다.
+ * 경과 시간은 매초 더하는 대신 <b>시작 시각과 현재 시각의 차</b>에서 쉰 시간을 빼서 계산한다.
  * 앱이 백그라운드로 가거나 죽어도 복원되고, 클라이언트 시계 조작에도 서버 판정이 흔들리지 않는다.
+ * 잠깐 쉬기도 서버에 남는다(pausedAt · pausedSec) — 쉬는 동안 시계는 멈춰 있고, 쉰 시간은 독서 시간에서 빠진다.
  * 포그라운드 유지 비율과 상호작용 횟수를 함께 보내 어뷰징 판정에 쓴다(§8.3).
  */
 export default function TimerScreen() {
@@ -57,6 +58,9 @@ export default function TimerScreen() {
 
   const session = current.data?.readingRecordId === id ? current.data : null;
   const startedAt = session ? new Date(session.startedAt).getTime() : null;
+  const pausedAt = session?.pausedAt ? new Date(session.pausedAt).getTime() : null;
+  const pausedSec = session?.pausedSec ?? 0;
+  const [pauseError, setPauseError] = useState<string | null>(null);
 
   // 한 사용자에게 열린 타이머는 하나뿐이다. 다른 책의 타이머가 살아 있다면
   // 새 시작 버튼을 보여 충돌시키지 말고, 종료할 수 있도록 그 타이머로 복원한다.
@@ -79,6 +83,13 @@ export default function TimerScreen() {
       setElapsed(0);
       return;
     }
+    // 쉬는 중에는 쉬기 시작한 때의 값에 시계를 세워 둔다.
+    if (pausedAt) {
+      setElapsed(Math.max(0, Math.floor((pausedAt - startedAt) / 1000) - pausedSec));
+      return;
+    }
+    // 쉰 동안은 포그라운드 비율에 넣지 않도록 다시 잴 때마다 기준을 지금으로 맞춘다.
+    lastTick.current = Date.now();
     const tick = () => {
       const now = Date.now();
       const delta = now - lastTick.current;
@@ -87,12 +98,12 @@ export default function TimerScreen() {
       if (appActive.current) {
         foregroundMs.current += delta;
       }
-      setElapsed(Math.floor((now - startedAt) / 1000));
+      setElapsed(Math.max(0, Math.floor((now - startedAt) / 1000) - pausedSec));
     };
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [startedAt]);
+  }, [startedAt, pausedAt, pausedSec]);
 
   useEffect(() => {
     if (record.data && !endPage) {
@@ -103,6 +114,7 @@ export default function TimerScreen() {
   const start = useMutation({
     mutationFn: () => sessionApi.start(id, record.data?.progress.currentPage),
     onSuccess: () => {
+      setPauseError(null);
       lastTick.current = Date.now();
       foregroundMs.current = 0;
       totalMs.current = 0;
@@ -121,17 +133,46 @@ export default function TimerScreen() {
     },
   });
 
-  // 도서 상세의 '읽기 시작'·'독서 시작'에서 왔으면 시작 버튼을 한 번 더 누르게 하지 않고 바로 잰다.
-  // 열린 세션이 있으면(같은 책이든 다른 책이든) 건드리지 않는다 — 다른 책이면 위 효과가 그 타이머로 옮긴다.
+  const pauseToggle = useMutation({
+    mutationFn: ({ sessionId, action }: { sessionId: number; action: 'pause' | 'resume' }) =>
+      action === 'pause' ? sessionApi.pause(sessionId) : sessionApi.resume(sessionId),
+    onSuccess: (view) => {
+      setPauseError(null);
+      queryClient.setQueryData(['session', 'current'], view);
+    },
+    onError: (error, { action }) => {
+      if (error instanceof ApiError && error.status === 409) {
+        queryClient.setQueryData(['session', 'current'], null);
+        queryClient.invalidateQueries({ queryKey: ['library'] });
+        setPauseError('이미 끝난 독서예요. 화면을 새로 불러왔어요.');
+        return;
+      }
+      setPauseError(error instanceof ApiError
+        ? error.message
+        : action === 'pause'
+          ? '잠깐 쉬기를 하지 못했어요. 다시 시도해 주세요.'
+          : '이어서 읽기를 하지 못했어요. 다시 시도해 주세요.');
+    },
+  });
+
+  // 도서 상세의 '읽기 시작'·'독서 시작', 홈의 '이어서'에서 왔으면 버튼을 한 번 더 누르게 하지 않고 바로 잰다.
+  // 같은 책 타이머가 쉬는 중이면 이어서 재고, 이미 재고 있으면 그대로 둔다.
+  // 다른 책의 타이머가 열려 있으면 건드리지 않는다 — 위 효과가 그 타이머로 옮긴다.
   const autoStarted = useRef(false);
   useEffect(() => {
     if (autoStart !== '1' || autoStarted.current) return;
-    if (!record.data || !current.isSuccess || current.data?.readingRecordId != null) return;
+    if (!record.data || !current.isSuccess) return;
+    const open = current.data;
+    if (open && open.readingRecordId !== id) return;
     autoStarted.current = true;
-    start.mutate();
-    // 뒤로 왔다가 다시 이 화면에 올 때 또 시작하지 않도록 파라미터를 지운다.
+    if (!open) {
+      start.mutate();
+    } else if (open.pausedAt) {
+      pauseToggle.mutate({ sessionId: open.id, action: 'resume' });
+    }
+    // 뒤로 왔다가 다시 이 화면에 올 때(또는 쉬기를 누른 뒤) 또 시작하지 않도록 파라미터를 지운다.
     router.setParams({ autoStart: undefined });
-  }, [autoStart, record.data, current.isSuccess, current.data?.readingRecordId, start, router]);
+  }, [autoStart, record.data, current.isSuccess, current.data, id, start, pauseToggle, router]);
 
   const saveTotalPages = useMutation({
     mutationFn: async () => {
@@ -213,6 +254,7 @@ export default function TimerScreen() {
 
   const progress = record.data?.progress;
   const running = Boolean(session);
+  const paused = pausedAt != null;
   const totalPages = progress?.totalPages ?? 0;
   const typedPage = Number(endPage);
   const displayPage = running && Number.isFinite(typedPage) && endPage.length > 0
@@ -266,10 +308,26 @@ export default function TimerScreen() {
         </View>
 
         <View style={styles.clockBox}>
-          <Text style={[styles.clock, { color: colors.text }]}>{formatClock(elapsed)}</Text>
-          <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
-            {running ? '기록 중' : '시작을 누르면 기록됩니다'}
+          <Text style={[styles.clock, { color: paused ? colors.textMuted : colors.text }]}>
+            {formatClock(elapsed)}
           </Text>
+          <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
+            {paused ? '잠깐 쉬는 중' : running ? '기록 중' : '시작을 누르면 기록됩니다'}
+          </Text>
+          {/* 쉬기·이어서는 이 버튼이 다루는 시계 바로 밑에 둔다 — 주요 버튼 '독서 마치기'는 아래 그대로. */}
+          {session ? (
+            <Button
+              label={paused ? playLabel('이어서 읽기') : playLabel('잠깐 쉬기', '⏸')}
+              variant="outline"
+              onPress={() => pauseToggle.mutate({ sessionId: session.id, action: paused ? 'resume' : 'pause' })}
+              loading={pauseToggle.isPending}
+              disabled={end.isPending}
+              style={styles.pauseButton}
+            />
+          ) : null}
+          {pauseError ? (
+            <Text style={[styles.error, styles.pauseError, { color: colors.danger }]}>{pauseError}</Text>
+          ) : null}
         </View>
 
         <View style={styles.progressBlock}>
@@ -364,7 +422,7 @@ export default function TimerScreen() {
                 end.mutate();
               }}
               loading={end.isPending}
-              disabled={!session || end.isPending || Boolean(pageError)}
+              disabled={!session || end.isPending || pauseToggle.isPending || Boolean(pageError)}
             />
             {endError ? (
               <Text style={[styles.error, { color: colors.danger }]}>{endError}</Text>
@@ -430,6 +488,9 @@ const styles = StyleSheet.create({
   clockBox: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
   // 경과 시간 — 화면의 주인공. 모노 숫자를 크게 앉힌다.
   clock: { fontFamily: mono.semiBold, fontSize: 58, letterSpacing: 2 },
+  // 라벨이 '잠깐 쉬기'↔'이어서 읽기'로 바뀌어도 폭이 흔들리지 않게 긴 쪽에 맞춘 최소 폭.
+  pauseButton: { alignSelf: 'center', minWidth: 168, marginTop: spacing.xs },
+  pauseError: { textAlign: 'center' },
   startArea: { gap: spacing.md },
   hint: { ...typeScale.caption, textAlign: 'center' },
   error: { ...typeScale.caption, lineHeight: 17 },

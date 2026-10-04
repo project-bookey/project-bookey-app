@@ -284,6 +284,12 @@ export const sessionApi = {
       method: "POST",
       body: { readingRecordId, startPage },
     }),
+  /** 잠깐 쉬기 — 쉰 시간은 독서 시간에서 빠진다. 이미 쉬는 중이면 그대로 돌려준다. */
+  pause: (sessionId: number) =>
+    api<Session>(`/api/v1/sessions/${sessionId}/pause`, { method: "POST" }),
+  /** 이어서 읽기. 쉬는 중이 아니면 그대로 돌려준다. */
+  resume: (sessionId: number) =>
+    api<Session>(`/api/v1/sessions/${sessionId}/resume`, { method: "POST" }),
   end: (
     sessionId: number,
     body: {
