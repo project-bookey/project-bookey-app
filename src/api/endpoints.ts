@@ -49,6 +49,7 @@ import type {
   ReadingNow,
   ReadingRecord,
   ReadingStatus,
+  Remark,
   Review,
   ReviewComment,
   Session,
@@ -201,6 +202,9 @@ export const bookApi = {
     }),
   recommended: (size = 20) =>
     api<BookSummary[]>("/api/v1/books/recommended", { query: { size } }),
+  /** 이 책에 남긴 한 마디 — 최근에 쓴 순. */
+  remarks: (bookId: number, size = 20) =>
+    api<Remark[]>(`/api/v1/books/${bookId}/remarks`, { query: { size } }),
 };
 
 export const libraryApi = {
@@ -247,6 +251,17 @@ export const libraryApi = {
       method: "POST",
       body: { reason },
     }),
+  /** 이 기록에 남긴 내 한 마디 — 없으면 서버가 빈 응답을 준다. */
+  remark: async (recordId: number) =>
+    (await api<Remark | undefined>(`/api/v1/library/${recordId}/remark`)) ?? null,
+  /** 한 마디 남기기 — 완독·하차한 기록에만, 이미 있으면 고친다. */
+  saveRemark: (recordId: number, body: string) =>
+    api<Remark>(`/api/v1/library/${recordId}/remark`, {
+      method: "PUT",
+      body: { body },
+    }),
+  deleteRemark: (recordId: number) =>
+    api<void>(`/api/v1/library/${recordId}/remark`, { method: "DELETE" }),
 };
 
 export const sessionApi = {
