@@ -6,6 +6,7 @@ import { spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 import { FinishedTag } from './FinishedTag';
+import { ReviewActions } from './ReviewActions';
 
 export type ReviewCardProps = {
   authorNickname: string;
@@ -19,7 +20,7 @@ export type ReviewCardProps = {
   /** 작성자가 이 책을 완독했으면 이름 옆에 '완독'. */
   authorFinished: boolean;
   onOpenBook: () => void;
-  /** 내 리뷰일 때만 — 고치기·삭제가 발치 오른쪽에 선다. */
+  /** 내 리뷰일 때만 — 고치기·삭제가 머리 줄 오른쪽 위에 선다. */
   onEdit?: () => void;
   onDelete?: () => void;
   /** 삭제를 한 번 눌러 '한 번 더'를 기다리는 중. */
@@ -31,7 +32,7 @@ export type ReviewCardProps = {
  *
  * 리뷰는 조각이 아니라 글이라 본문을 자르지 않고 전문을 그대로 편다. 독후감의 문장 조각과 달리
  * 왼쪽 악센트 선은 두지 않는다 — 인용이 아니라 자기 글이기 때문이다.
- * 발치는 독후감 상세와 같은 배치 — 왼쪽은 이 글로 갈 곳('책 보기'), 오른쪽은 내 글을 다루는 '고치기'·'삭제'.
+ * 내 글을 다루는 '고치기'·'삭제'는 목록의 리뷰 조각과 같은 자리 — 머리 줄 오른쪽 위. 별점은 발치 오른쪽, 왼쪽엔 '책 보기'(사용자 결정, 2026-10-05).
  */
 export function ReviewCard({
   authorNickname, rating, body, tags, createdAt,
@@ -56,9 +57,7 @@ export function ReviewCard({
             {where} · {formatRelative(createdAt)}
           </Text>
         </View>
-        {rating ? (
-          <Text style={[typeScale.monoNumeral, styles.rating, { color: colors.accent }]}>★ {rating}</Text>
-        ) : null}
+        <ReviewActions onEdit={onEdit} onDelete={onDelete} deleteConfirming={deleteConfirming} />
       </View>
 
       <Text style={[styles.body, { color: colors.text }]}>{body}</Text>
@@ -71,19 +70,8 @@ export function ReviewCard({
 
       <View style={styles.footRow}>
         <FootAction label="책 보기" tone="accent" onPress={onOpenBook} accessibilityLabel={`${where} 상세`} />
-        {onEdit || onDelete ? (
-          <View style={styles.footRight}>
-            {onEdit ? <FootAction label="고치기" onPress={onEdit} accessibilityLabel="리뷰 고치기" /> : null}
-            {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'. */}
-            {onDelete ? (
-              <FootAction
-                label={deleteConfirming ? '한 번 더' : '삭제'}
-                onPress={onDelete}
-                tone={deleteConfirming ? 'danger' : 'faint'}
-                accessibilityLabel={deleteConfirming ? '리뷰 삭제 확인' : '리뷰 삭제'}
-              />
-            ) : null}
-          </View>
+        {rating ? (
+          <Text style={[typeScale.monoNumeral, styles.rating, { color: colors.accent }]}>★ {rating}</Text>
         ) : null}
       </View>
     </Card>
@@ -103,5 +91,4 @@ const styles = StyleSheet.create({
   body: { fontFamily: serif.regular, fontSize: 15, lineHeight: 26 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
 });
