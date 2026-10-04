@@ -38,7 +38,6 @@ export default function ReviewDetailScreen() {
     <ReviewCard
       authorNickname={review.data.authorNickname}
       rating={review.data.rating}
-      verificationLevel={review.data.verificationLevel}
       body={review.data.body}
       tags={review.data.tags}
       commentCount={review.data.commentCount}
