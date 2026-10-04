@@ -577,9 +577,9 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
       );
     },
   });
-  // 좋아요는 앱 어디서나 같은 하트다 — 독후감 LikeAction 처럼 켜지면 하트를 초록으로 채우고 숫자도 초록.
-  // 상자는 누를 수 있다는 표시라 control 테두리 그대로 둔다(하트 켜짐은 사용자 결정으로 둔 악센트 예외).
-  const color = liked ? colors.accent : colors.textMuted;
+  // 좋아요는 앱 어디서나 같은 하트다. 이 버튼만 켜지면 상자째 초록으로 채우고 하트·숫자를 onAccent 로
+  // 뒤집는다(사용자 결정 2026-10-04, CLAUDE.md '사용자 결정으로 둔 예외'). 꺼지면 control 테두리 상자.
+  const color = liked ? colors.onAccent : colors.textMuted;
   return (
     <Pressable
       disabled={like.isPending}
@@ -589,7 +589,10 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
       accessibilityLabel={`좋아요 ${likeCount}`}
       style={({ pressed }) => [
         styles.likeButton,
-        { borderColor: colors.control, opacity: like.isPending ? 0.6 : 1 },
+        liked
+          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+          : { borderColor: colors.control },
+        { opacity: like.isPending ? 0.6 : 1 },
         pressed ? pressedStyle : null,
       ]}
     >
