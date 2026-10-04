@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey } from '@/api/postCache';
 import type { Post } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardScroll } from '@/components/keyboard';
 import { LikeAction } from '@/components/post/LikeAction';
 import { PostBody } from '@/components/post/PostBody';
 import { PostByline } from '@/components/post/PostByline';
@@ -121,9 +122,10 @@ export default function PostDetailScreen() {
   return (
     <PaperScreen>
       <SubHeader category="독후감" />
-      <ScrollView contentContainerStyle={styles.screenBody}>
+      {/* 맨 끝 엽서 쓰기가 키보드에 묻히지 않게 — 칸을 누르면 '엽서 보내기'까지 키보드 위로 올라온다. */}
+      <KeyboardScroll contentContainerStyle={styles.screenBody}>
         {placeholder ?? header}
-      </ScrollView>
+      </KeyboardScroll>
     </PaperScreen>
   );
 }

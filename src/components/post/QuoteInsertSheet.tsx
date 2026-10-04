@@ -21,7 +21,7 @@ export function QuoteInsertSheet({ draft, onInsert, onClose }: {
   const { colors } = useTheme();
 
   return (
-    <NoteSheet visible title="문장 넣기" onClose={onClose}>
+    <NoteSheet visible title="문장 넣기" onClose={onClose} scroll>
       <QuoteDraftFields
         draft={draft}
         autoFocus

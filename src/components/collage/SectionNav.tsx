@@ -8,6 +8,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { useKeyboardOpen } from '@/components/keyboard';
 import { useTheme } from '@/theme';
 import { hairline, iconStroke, pressedStyle, spacing } from '@/theme/tokens';
 
@@ -53,6 +54,9 @@ export function SectionNav({
   const router = useRouter();
   const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
+  // 키보드가 떠 있는 동안은 숨는다(표준 탭 바와 같은 동작) — 답장·엽서 칸 바로 위에 떠서 입력과 보내기 버튼을 덮지 않게.
+  // 부품은 그대로 두고 그리기만 거둬, 유리 효과·선택 위치가 다시 잡히지 않는다.
+  const keyboardOpen = useKeyboardOpen();
   const [trackWidth, setTrackWidth] = useState(0);
   const activeIndex = useMemo(() => {
     const index = SECTIONS.findIndex((section) => section.key === active);
@@ -271,6 +275,7 @@ export function SectionNav({
         styles.bar,
         {
           bottom: Math.max(insets.bottom, spacing.md),
+          display: keyboardOpen ? 'none' : 'flex',
         },
       ]}
     >

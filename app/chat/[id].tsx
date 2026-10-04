@@ -2,7 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable,
+  ActivityIndicator, AppState, FlatList, Pressable,
   Image, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -11,6 +11,7 @@ import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatMessage } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea } from '@/components/keyboard';
 import { BOOKEY_STICKER_PACKS, findBookeyChatSticker } from '@/components/chat/bookeyStickers';
 import {
   ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, ChatTime, chatListContent,
@@ -126,11 +127,7 @@ export default function ChatRoomScreen() {
           </View>
         }
       />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.fill}
-        keyboardVerticalOffset={0}
-      >
+      <KeyboardArea>
         <FlatList
           data={items}
           inverted
@@ -249,7 +246,7 @@ export default function ChatRoomScreen() {
           <ChatInput value={draft} onChangeText={(next) => { setDraft(next); setError(null); }} />
           <ChatSendButton onPress={submit} disabled={draft.trim().length === 0} loading={send.isPending} />
         </ChatInputBar>
-      </KeyboardAvoidingView>
+      </KeyboardArea>
     </PaperScreen>
   );
 }
@@ -278,7 +275,6 @@ function Message({ message }: { message: ChatMessage }) {
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
   headerAction: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
   loading: { padding: spacing.md, alignItems: 'center' },
   stickerRow: { flexDirection: 'row', justifyContent: 'flex-start' },

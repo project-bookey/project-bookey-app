@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  AppState, InputAccessoryView, Keyboard, KeyboardAvoidingView, Platform,
+  AppState, InputAccessoryView, Keyboard, Platform,
   Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
 import {
   Button, Loading, ProgressBar, Rule, formatClock, formatDuration, percent, playLabel,
 } from '@/components/ui';
@@ -42,6 +43,11 @@ export default function TimerScreen() {
   const [endPage, setEndPage] = useState('');
   const [totalPagesInput, setTotalPagesInput] = useState('');
   const [memo, setMemo] = useState('');
+  // 쪽수·메모를 누르면 그 칸이(메모는 '세션 종료'까지) 키보드 위로 올라오게.
+  const scrollRef = useRef<ScrollView>(null);
+  const pageGroupRef = useRef<View>(null);
+  const endFormRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
   const [endError, setEndError] = useState<string | null>(null);
 
   const interactions = useRef(0);
@@ -231,11 +237,10 @@ export default function TimerScreen() {
     <PaperScreen>
       <SubHeader category="타이머" />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      {/* 시트로 뜨는 화면(iOS)이라 화면 맨 위에서 시작하지 않는다 — KeyboardArea 가 창 기준으로 재서 맞춘다. */}
+      <KeyboardArea>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.container}
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled"
@@ -310,10 +315,10 @@ export default function TimerScreen() {
         ) : null}
 
         {running ? (
-          <View style={styles.endForm}>
+          <View ref={endFormRef} style={styles.endForm}>
             <Rule />
             {/* 질문·쪽수·오류는 한 묶음(sm) — 메모와 종료 버튼은 묶음 밖으로 띄운다(UX 철칙 Proximity). */}
-            <View style={styles.pageGroup}>
+            <View ref={pageGroupRef} style={styles.pageGroup}>
               <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
                 몇 쪽까지 읽었나요?
               </Text>
@@ -328,6 +333,7 @@ export default function TimerScreen() {
                   maxLength={5}
                   inputAccessoryViewID={Platform.OS === 'ios' ? PAGE_INPUT_ACCESSORY_ID : undefined}
                   onSubmitEditing={Keyboard.dismiss}
+                  onFocus={() => revealAbove(pageGroupRef)}
                   style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
                   placeholder="0"
                   placeholderTextColor={colors.textFaint}
@@ -343,6 +349,7 @@ export default function TimerScreen() {
               onChangeText={setMemo}
               placeholder="이번 세션 메모 (선택)"
               placeholderTextColor={colors.textFaint}
+              onFocus={() => revealAbove(endFormRef)}
               style={[
                 styles.memoInput,
                 { borderColor: colors.line, backgroundColor: colors.surface, color: colors.text },
@@ -395,13 +402,12 @@ export default function TimerScreen() {
             </View>
           </InputAccessoryView>
         ) : null}
-      </KeyboardAvoidingView>
+      </KeyboardArea>
     </PaperScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardArea: { flex: 1 },
   container: { ...layout.content, flexGrow: 1, padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl },
   bookRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   bookTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
@@ -447,6 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     minHeight: 64,
+    maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '세션 종료'가 키보드 밑으로 밀려나지 않게
     fontFamily: serif.regular,
     fontSize: 15,
     textAlignVertical: 'top',

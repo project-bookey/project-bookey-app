@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
 import { CLUB_DESCRIPTION_MAX } from '@/components/club';
 import { Button, Eyebrow, Field, Segmented, Toggle } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
@@ -27,7 +27,6 @@ export default function ClubCreateScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -57,7 +56,7 @@ export default function ClubCreateScreen() {
       <SubHeader category="클럽 만들기" />
 
       {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다(독후감 쓰기와 같은 이유). */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardArea>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
           {/* 이름·소개 — 한 묶음이라 md 로 붙이고, 아래 정원·공개와는 섹션 간격(xl)으로 띄운다. */}
           <View style={styles.fields}>
@@ -115,16 +114,7 @@ export default function ClubCreateScreen() {
           하단 띠 — 독후감 쓰기와 같은 자리(ScrollView 의 형제)라 키보드가 뜨면 그 위에 붙는다.
           주요 버튼 하나를 엄지가 닿는 아래에 넓게(UX 철칙 Fitts). 실패 안내도 버튼 바로 위에 붙인다(Proximity).
         */}
-        <View
-          style={[
-            styles.bottomBar,
-            {
-              backgroundColor: colors.bg,
-              borderTopColor: colors.line,
-              paddingBottom: Math.max(insets.bottom, spacing.lg),
-            },
-          ]}
-        >
+        <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
           {error ? <Text style={[typeScale.caption, { color: colors.danger }]}>{error}</Text> : null}
           <Button
             label="클럽 만들기"
@@ -132,8 +122,8 @@ export default function ClubCreateScreen() {
             loading={create.isPending}
             onPress={() => create.mutate()}
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardDock>
+      </KeyboardArea>
     </PaperScreen>
   );
 }

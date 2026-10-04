@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboard';
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
 import { Button, FootAction, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
@@ -41,6 +42,10 @@ export default function ClubLogScrapScreen() {
   const [anchor, setAnchor] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const { confirm, arm, disarm } = useDeleteConfirm<'scrap' | number>();
+  // 고치는 동안 한 줄·쪽 칸을 누르면 '저장'까지 키보드 위로 올린다.
+  const scrollRef = useRef<ScrollView>(null);
+  const editRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
 
   const scrap = useQuery({
     queryKey: clubLogKeys.scrap(clubId, scrapId),
@@ -132,8 +137,8 @@ export default function ClubLogScrapScreen() {
   return (
     <PaperScreen>
       <SubHeader category="조각" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <KeyboardArea>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           {data.masked ? (
             <Pressable
               onPress={() => reveal.mutate()}
@@ -172,6 +177,7 @@ export default function ClubLogScrapScreen() {
                   placeholderTextColor={colors.mid}
                   style={[styles.captionInput, { color: colors.onMemoPad, borderColor: colors.mid }]}
                   accessibilityLabel="한 줄 고치기"
+                  onFocus={() => revealAbove(editRef)}
                 />
               ) : data.body ? (
                 <Text style={[styles.caption, { color: colors.onMemoPad }]}>{data.body}</Text>
@@ -185,7 +191,7 @@ export default function ClubLogScrapScreen() {
           )}
 
           {editing ? (
-            <View style={styles.editBlock}>
+            <View ref={editRef} style={styles.editBlock}>
               <View style={styles.pageField}>
                 <Text style={[typeScale.caption, { color: colors.textMuted }]}>몇 쪽까지 읽었나요</Text>
                 <TextInput
@@ -196,6 +202,7 @@ export default function ClubLogScrapScreen() {
                   placeholderTextColor={colors.textFaint}
                   style={[styles.pageInput, { borderBottomColor: colors.line, color: colors.text }]}
                   accessibilityLabel="쪽"
+                  onFocus={() => revealAbove(editRef)}
                 />
               </View>
               {page.trim() ? (
@@ -285,7 +292,7 @@ export default function ClubLogScrapScreen() {
 
         {/* 고치는 동안엔 '저장'이 이 화면의 주요 행동 — 한 마디 입력줄(또 하나의 악센트 버튼)은 접어 둔다 */}
         {!data.masked && !ended && !editing ? (
-          <View style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.line }]}>
+          <KeyboardDock min={spacing.md} style={[styles.composer, { backgroundColor: colors.surface, borderTopColor: colors.line }]}>
             <TextInput
               value={talk}
               onChangeText={setTalk}
@@ -302,9 +309,9 @@ export default function ClubLogScrapScreen() {
               loading={speak.isPending}
               onPress={() => speak.mutate()}
             />
-          </View>
+          </KeyboardDock>
         ) : null}
-      </KeyboardAvoidingView>
+      </KeyboardArea>
     </PaperScreen>
   );
 }

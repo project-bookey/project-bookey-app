@@ -59,7 +59,7 @@ export function TextEditorSheet({ element, members, onPatch, onClose }: {
     ? element.font === 'serif' ? serif.regular : element.font === 'mono' ? mono.regular : sans.regular
     : serif.regular;
   return (
-    <NoteSheet visible={element !== null} title={isSpeech ? '말풍선' : isQuote ? '문장' : '텍스트'} onClose={onClose}>
+    <NoteSheet visible={element !== null} title={isSpeech ? '말풍선' : isQuote ? '문장' : '텍스트'} onClose={onClose} scroll>
       {element?.type === 'quote' ? (
         <QuoteFields element={element} onPatch={onPatch} onClose={onClose} />
       ) : element ? (

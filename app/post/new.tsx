@@ -3,9 +3,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import {
-  KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { bookApi, postApi } from '@/api/endpoints';
@@ -14,6 +13,7 @@ import type { Post, PostVisibility } from '@/api/types';
 import { BookPicker, useBookPicker } from '@/components/book/BookPicker';
 import type { PickedBook } from '@/components/book/BookPicker';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { PostBody } from '@/components/post/PostBody';
 import type { PhotoSource } from '@/components/post/PostPhoto';
@@ -151,7 +151,6 @@ function Shell({ category, children }: { category: string; children: ReactNode }
 function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: PickedBook | null; clubId?: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const editing = post != null;
 
@@ -276,8 +275,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
     <PaperScreen>
       <SubHeader category={editing ? '독후감 고치기' : '독후감 쓰기'} />
 
-      {/* 오프셋 없음 — 헤더가 없어 KAV 의 frame.y 가 이미 SubHeader 를 포함한다. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardArea>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
           {/* ① 책 — 없어도 된다. */}
           <View style={styles.section}>
@@ -400,16 +398,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
           '+ 문장'·'+ 사진'은 커서 자리에 문장 조각·사진을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
           실패 안내도 제출 버튼 바로 위에 붙인다(UX 철칙 Proximity).
         */}
-        <View
-          style={[
-            styles.bottomBar,
-            {
-              backgroundColor: colors.bg,
-              borderTopColor: colors.line,
-              paddingBottom: Math.max(insets.bottom, spacing.lg),
-            },
-          ]}
-        >
+        <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
           {errorMessage ? (
             <Text style={[typeScale.caption, { color: colors.danger }]}>{errorMessage}</Text>
           ) : null}
@@ -444,8 +433,8 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
               style={styles.submit}
             />
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardDock>
+      </KeyboardArea>
 
       {quoting ? <QuoteInsertSheet draft={quoteDraft} onInsert={insertQuote} onClose={() => setQuoting(false)} /> : null}
     </PaperScreen>

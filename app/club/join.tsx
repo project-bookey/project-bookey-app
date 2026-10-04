@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import { StatStrip } from '@/components/club';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
 import { Button, Eyebrow, Rule, Toggle } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, sans } from '@/theme/tokens';
@@ -21,7 +21,6 @@ export default function ClubJoinScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [code, setCode] = useState('');
   const [shareProgress, setShareProgress] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +51,7 @@ export default function ClubJoinScreen() {
   return (
     <PaperScreen>
       <SubHeader category="코드로 참가" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardArea>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View>
             <Eyebrow>초대 코드</Eyebrow>
@@ -138,16 +137,7 @@ export default function ClubJoinScreen() {
           하단 띠 — 클럽 만들기와 같은 자리. 미리보기가 길어져도 '참가하기'는 엄지가 닿는 아래에 머물고,
           키보드가 뜨면 그 위에 붙는다(UX 철칙 Fitts). 실패 안내도 버튼 바로 위에(Proximity).
         */}
-        <View
-          style={[
-            styles.bottomBar,
-            {
-              backgroundColor: colors.bg,
-              borderTopColor: colors.line,
-              paddingBottom: Math.max(insets.bottom, spacing.lg),
-            },
-          ]}
-        >
+        <KeyboardDock style={[styles.bottomBar, { backgroundColor: colors.bg, borderTopColor: colors.line }]}>
           {error ? <Text style={errorStyle}>{error}</Text> : null}
           <Button
             label="참가하기"
@@ -155,8 +145,8 @@ export default function ClubJoinScreen() {
             loading={join.isPending}
             onPress={() => join.mutate()}
           />
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardDock>
+      </KeyboardArea>
     </PaperScreen>
   );
 }

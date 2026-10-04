@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import {
   ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { kstTime } from '@/components/clubLog';
+import { useBottomBarPadding } from '@/components/keyboard';
 import { EmptyState } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
@@ -76,10 +76,13 @@ export function ChatError({ message }: { message: string }) {
   );
 }
 
-/** 입력 줄 — 화면 하단에 붙고 홈 인디케이터만큼 띄운다. 안에 입력창·보내기 등을 나란히 놓는다. */
+/**
+ * 입력 줄 — 화면 하단에 붙고 홈 인디케이터만큼 띄운다(키보드 위에 붙어 있을 땐 그 몫을 거둔다).
+ * 화면의 KeyboardArea 안에 둔다. 안에 입력창·보내기 등을 나란히 놓는다.
+ */
 export function ChatInputBar({ children }: { children: ReactNode }) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const paddingBottom = useBottomBarPadding(spacing.md);
   return (
     <View
       style={[
@@ -87,7 +90,7 @@ export function ChatInputBar({ children }: { children: ReactNode }) {
         {
           borderTopColor: colors.line,
           backgroundColor: colors.bg,
-          paddingBottom: Math.max(insets.bottom, spacing.md),
+          paddingBottom,
         },
       ]}
     >
