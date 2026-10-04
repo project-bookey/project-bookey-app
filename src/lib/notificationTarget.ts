@@ -1,8 +1,12 @@
-import type { Href } from 'expo-router';
+import { router, type Href } from 'expo-router';
 
 import type { Notification } from '@/api/types';
+import { openSection, type SectionRoute } from '@/components/pager/sectionPager';
 
-export type NotificationTarget = { href: Href; section?: boolean };
+/** 알림이 가리키는 곳 — 하위 화면(href)이거나, 메인 탭의 한 구역(section, 그 화면이 읽는 주소 값 params). */
+export type NotificationTarget =
+  | { href: Href; section?: undefined }
+  | { section: SectionRoute; params?: Record<string, string> };
 
 function numberOf(payload: Notification['payload'], key: string): number | null {
   const raw = payload?.[key];
@@ -37,8 +41,8 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CLUB_NUDGE': return club('/club/[id]');
     case 'POST_LIKED':
     case 'POST_COMMENTED': return one('/post/[id]', 'postId');
-    case 'POSTCARD_RECEIVED': return { href: { pathname: '/messenger', params: { pane: 'inbox' } }, section: true };
-    case 'POSTCARD_REPLIED': return { href: { pathname: '/messenger', params: { pane: 'sent' } }, section: true };
+    case 'POSTCARD_RECEIVED': return { section: 'messenger', params: { pane: 'inbox' } };
+    case 'POSTCARD_REPLIED': return { section: 'messenger', params: { pane: 'sent' } };
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
     // 고객문의 답변 — 그 문의 화면에서 답을 읽는다.
     case 'INQUIRY_ANSWERED': return one('/inquiry/[id]', 'inquiryId');
@@ -55,4 +59,13 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CLEANUP': return { href: '/library' };
     default: return null;
   }
+}
+
+/**
+ * 알림이 가리키는 곳을 연다 — 알림 화면과 푸시 탭이 같이 쓴다.
+ * 메인 탭 구역은 openSection 으로 연다: 경로로 navigate 하면 알림 화면 위에 메인 탭이 한 벌 더 쌓인다.
+ */
+export function openNotificationTarget(target: NotificationTarget) {
+  if (target.section) openSection(target.section, target.params);
+  else router.push(target.href);
 }

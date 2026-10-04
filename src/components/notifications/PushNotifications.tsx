@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 
 import { authApi, notificationApi } from '@/api/endpoints';
 import type { Notification } from '@/api/types';
-import { notificationTarget } from '@/lib/notificationTarget';
+import { notificationTarget, openNotificationTarget } from '@/lib/notificationTarget';
 import { useAuth } from '@/store/auth';
 
 Notifications.setNotificationHandler({
@@ -77,13 +77,8 @@ export function PushNotifications() {
       if (!item) return;
       void notificationApi.open(item.id).catch(() => undefined);
       const target = notificationTarget(item);
-      if (!target) {
-        router.push('/notifications');
-      } else if (target.section) {
-        router.navigate(target.href);
-      } else {
-        router.push(target.href);
-      }
+      if (target) openNotificationTarget(target);
+      else router.push('/notifications');
     };
 
     // 웹은 알림 응답 API 를 지원하지 않아 호출하면 UnavailabilityError 가 난다.

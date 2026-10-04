@@ -6,6 +6,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { flattenPosts } from '@/api/postCache';
 import type { Page, Post } from '@/api/types';
 import { NAV_CLEARANCE } from '@/components/collage';
+import { openSection } from '@/components/pager/sectionPager';
 import { PostCard } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
 import { EmptyState, FootAction, linkLabel } from '@/components/ui';
@@ -83,7 +84,8 @@ export function PostList({
             post={item}
             showVisibility={showVisibility}
             onOpen={() => router.push(`/post/${item.id}`)}
-            onOpenAuthor={() => router.push(`/user/${item.authorId}`)}
+            // 내 글의 작성자는 나 — 내 프로필 화면을 쌓지 않고 '나' 탭을 연다.
+            onOpenAuthor={() => (item.mine ? openSection('profile') : router.push(`/user/${item.authorId}`))}
             onLike={() => pressLike(item.id)}
           />
         </View>

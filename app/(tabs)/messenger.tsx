@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -30,9 +30,12 @@ export default function MessengerScreen() {
   const params = useLocalSearchParams<{ pane?: string }>();
   const [pane, setPane] = useState<Pane>(isPane(params.pane) ? params.pane : 'inbox');
 
-  // 이미 이 구역에 서 있을 때 리다이렉트로 다른 칸이 지정돼 들어오면 그 칸을 편다.
+  // 알림(openSection)·옛 경로로 칸이 지정돼 들어오면 그 칸을 편다. 편 뒤에는 주소에서 지운다 —
+  // 직접 다른 칸으로 옮긴 뒤 같은 칸을 가리키는 알림이 또 와도 값이 바뀌어 다시 펴지게.
   useEffect(() => {
-    if (isPane(params.pane)) setPane(params.pane);
+    if (!isPane(params.pane)) return;
+    setPane(params.pane);
+    router.setParams({ pane: undefined });
   }, [params.pane]);
 
   return (
