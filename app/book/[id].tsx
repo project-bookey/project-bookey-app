@@ -19,9 +19,12 @@ import { BookPostsTab } from '@/components/book/BookPostsTab';
 import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
+import { FinishReviewSheet, type FinishedBook } from '@/components/review/FinishReviewSheet';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
+import { RATING_WORDS, StarRating, ratingPrompt } from '@/components/review/StarRating';
 import { VERIFICATION_LABEL } from '@/components/review/verification';
 import { Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
+import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import { getLagStyle, hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
@@ -85,16 +88,39 @@ function headerCategory(info?: BookSummary): string {
   return [genre || '도서', year].filter(Boolean).join(' · ');
 }
 
+/** '9.12' — 해가 다르면 '2025.12.30'. 읽은 기간 줄에 쓴다. */
+function shortDate(date: Date, withYear: boolean): string {
+  const md = `${date.getMonth() + 1}.${date.getDate()}`;
+  return withYear ? `${date.getFullYear()}.${md}` : md;
+}
+
+/** 완독 시트의 한 줄 — '9.12 → 10.4 · 6시간 20분'. 모르는 쪽은 뺀다. */
+function finishMeta(record: ReadingRecord): string | undefined {
+  const parts: string[] = [];
+  if (record.startedAt) {
+    const start = new Date(record.startedAt);
+    const end = record.finishedAt ? new Date(record.finishedAt) : new Date();
+    const withYear = start.getFullYear() !== end.getFullYear();
+    parts.push(`${shortDate(start, withYear)} → ${shortDate(end, withYear)}`);
+  }
+  if (record.progress.totalDurationSec > 0) parts.push(formatDuration(record.progress.totalDurationSec));
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+}
+
 /** 도서 상세 — 헤더리스 종이 셸 + 히어로 콜라주 + 진척·소개·검증·세션·리뷰. */
 export default function BookDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { id, recordId } = useLocalSearchParams<{ id: string; recordId?: string }>();
+  // finished=1 — 타이머에서 방금 완독하고 넘어왔다. 완독 리뷰 시트를 띄운다.
+  const { id, recordId, finished } = useLocalSearchParams<{ id: string; recordId?: string; finished?: string }>();
   const bookId = Number(id);
   const paramRid = recordId ? Number(recordId) : null;
   const [addedRid, setAddedRid] = useState<number | null>(null);
+  // 이 화면에서 '완독 처리'를 눌렀는지 — 타이머에서 넘어온 완독과 같은 시트를 띄운다. 한 번 닫으면 다시 띄우지 않는다.
+  const [justFinished, setJustFinished] = useState(false);
+  const [finishPromptClosed, setFinishPromptClosed] = useState(false);
 
   const book = useQuery({
     queryKey: ['book', bookId],
@@ -127,7 +153,15 @@ export default function BookDetailScreen() {
     queryClient.invalidateQueries({ queryKey: ['library', 'record', rid] });
     queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
   };
-  const finish = useMutation({ mutationFn: () => libraryApi.finish(rid!), onSuccess: invalidateRecord });
+  const finish = useMutation({
+    mutationFn: () => libraryApi.finish(rid!),
+    onSuccess: (updated) => {
+      // 받은 기록을 바로 앉혀 시트가 다시 받기를 기다리지 않고 올라오게 한다.
+      queryClient.setQueryData(['library', 'record', rid], updated);
+      invalidateRecord();
+      setJustFinished(true);
+    },
+  });
   const abandon = useMutation({
     mutationFn: () => libraryApi.abandon(rid!, 'NOT_MY_TASTE'),
     onSuccess: invalidateRecord,
@@ -151,6 +185,11 @@ export default function BookDetailScreen() {
   const lag = progress ? getLagStyle(colors)[progress.lagLevel] : null;
   const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
   const rating = pickRating(book.data);
+  // 방금 다 읽은 책 — 완독 리뷰 시트에 띄울 표지·제목·기간. 기록이 완독으로 바뀐 걸 확인한 뒤에만 만든다.
+  const finishedBook: FinishedBook | null =
+    (finished === '1' || justFinished) && !finishPromptClosed && info && record.data?.status === 'FINISHED'
+      ? { title: info.title, coverUrl: info.coverUrl, meta: finishMeta(record.data) }
+      : null;
   // 내 기록이 있으면 '독서 시작'을 화면 하단에 붙여 둔다 — 진척 카드 안에 두면 소개·목차를 한참
   // 내려야 닿는다(UX 철칙 Fitts). 누르면 타이머가 바로 측정을 시작한다.
   // 키보드가 떠 있는 동안(리뷰 쓰기)은 숨긴다 — 리뷰 폼이 키보드 위로 올라오면 그 자리를 CTA 가 덮는다.
@@ -339,7 +378,14 @@ export default function BookDetailScreen() {
             </View>
           ) : null}
 
-          <ReviewSection bookId={bookId} rid={rid} colors={colors} />
+          <ReviewSection
+            bookId={bookId}
+            rid={rid}
+            colors={colors}
+            finishedBook={finishedBook}
+            roundStartedAt={record.data?.startedAt}
+            onFinishPromptClose={() => setFinishPromptClosed(true)}
+          />
         </View>
       </KeyboardScroll>
 
@@ -911,10 +957,23 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
   );
 }
 
-/** 리뷰 | 독후감 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 독후감 탭을 한 제목줄 아래에 둔다. */
-function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | null; colors: ColorTokens }) {
+/**
+ * 리뷰 | 독후감 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 독후감 탭을 한 제목줄 아래에 둔다.
+ * 방금 완독한 책(finishedBook)이면 완독 리뷰 시트도 여기서 띄운다 — 리뷰 목록·작성 상태를 이 섹션이 쥐고 있어서
+ * 시트와 인라인 폼이 같은 별점·글을 나눠 쓴다.
+ */
+function ReviewSection({ bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose }: {
+  bookId: number;
+  rid: number | null;
+  colors: ColorTokens;
+  finishedBook: FinishedBook | null;
+  /** 이번 회차를 시작한 때 — 그 뒤에 쓴 내 리뷰가 있으면 이 기록엔 이미 리뷰가 있다(기록당 하나). */
+  roundStartedAt?: string;
+  onFinishPromptClose: () => void;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const myId = useAuth((state) => state.user?.id);
   const reviews = useQuery({
     queryKey: bookReviewsKey(bookId),
     queryFn: () => bookApi.reviews(bookId),
@@ -946,6 +1005,7 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
       queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
       setOpen(false);
       setDone(true);
+      if (finishedBook) onFinishPromptClose();
     },
   });
 
@@ -957,6 +1017,24 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
       : null;
 
   const items = reviews.data?.content ?? [];
+
+  // 이번 회차에 이미 남긴 리뷰가 보이면 완독 시트를 띄우지 않는다. 첫 쪽에 없어 놓치더라도 서버가 중복을 막아 시트에 안내가 뜬다.
+  const roundStart = roundStartedAt ? new Date(roundStartedAt).getTime() : 0;
+  const reviewedThisRound = items.some(
+    (review) => review.authorId === myId && new Date(review.createdAt).getTime() >= roundStart,
+  );
+  // 목록을 받은 뒤에만 띄운다 — 이미 쓴 리뷰가 늦게 도착해 시트가 떴다 사라지지 않게.
+  const showFinishSheet = finishedBook != null && rid != null && reviews.isSuccess && !reviewedThisRound && !done;
+
+  // 시트를 닫아도 쓰던 글은 버리지 않는다 — 리뷰 탭의 인라인 폼으로 펼쳐 이어 쓰게 한다.
+  const closeFinishSheet = () => {
+    if (body.trim().length > 0) {
+      setTab('REVIEW');
+      setOpen(true);
+    }
+    create.reset();
+    onFinishPromptClose();
+  };
 
   // 우측 액션은 탭별 — 리뷰는 '쓰기', 독후감은 작성 화면으로 나가는 '쓰기'.
   // 리뷰는 이 책의 읽기 기록이 있어야 쓸 수 있지만, 독후감은 서재에 담지 않은 책에도 쓸 수 있다.
@@ -985,20 +1063,15 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
           {open ? (
             <Card style={styles.formCard}>
               <View style={styles.stars}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Pressable key={n} onPress={() => setRating(n === rating ? 0 : n)} style={styles.star}
-                    accessibilityRole="button" accessibilityLabel={`별점 ${n}`}>
-                    <Text style={{ fontSize: 24, color: n <= rating ? colors.accent : colors.lineStrong }}>★</Text>
-                  </Pressable>
-                ))}
-                <Text style={[typeScale.caption, { flex: 1, color: colors.textFaint, marginLeft: spacing.xs }]}>
-                  {rating > 0 ? `${rating}점` : '별점 선택 (선택 사항)'}
+                <StarRating value={rating} onChange={setRating} />
+                <Text style={[typeScale.caption, { flex: 1, color: rating > 0 ? colors.text : colors.textFaint, marginLeft: spacing.xs }]}>
+                  {rating > 0 ? RATING_WORDS[rating] : '별점 선택 (선택 사항)'}
                 </Text>
               </View>
               <TextInput
                 value={body}
                 onChangeText={setBody}
-                placeholder="이 책은 어땠나요?"
+                placeholder={ratingPrompt(rating)}
                 placeholderTextColor={colors.textFaint}
                 multiline
                 onFocus={() => reveal(formActionsRef)}
@@ -1051,6 +1124,20 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
           )}
         </>
       )}
+
+      {showFinishSheet ? (
+        <FinishReviewSheet
+          book={finishedBook}
+          rating={rating}
+          onRating={setRating}
+          body={body}
+          onBody={setBody}
+          onSubmit={() => create.mutate()}
+          onClose={closeFinishSheet}
+          pending={create.isPending}
+          error={errorMessage}
+        />
+      ) : null}
     </View>
   );
 }
@@ -1162,9 +1249,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
 
-  // 별마다 44pt 상자 — 이웃 별끼리 터치 영역이 겹치지 않게 간격 대신 상자로 띄운다.
+  // 별(44pt 상자 다섯) 옆에 고른 별의 한마디.
   stars: { flexDirection: 'row', alignItems: 'center' },
-  star: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   formCard: { gap: spacing.md },
   reviewInput: {
     minHeight: 96,

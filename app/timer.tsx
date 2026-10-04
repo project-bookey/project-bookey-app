@@ -172,10 +172,10 @@ export default function TimerScreen() {
       // 완독이어도 책 id 를 모르면 /book/undefined 로 튄다 — 그때는 그냥 되돌아간다.
       const bookId = record.data?.book?.id;
       // 클럽 책이면 끝나자마자 읽기로그 조각을 남기러 간다. 같은 책으로 여러 클럽에 있으면 첫 클럽으로.
-      // 완독은 책 상세의 축하 흐름을 우선한다.
+      // 완독은 책 상세의 축하 흐름을 우선한다 — finished=1 이면 책 상세가 완독 리뷰 시트를 띄운다.
       const club = result.clubs[0];
       if (result.bookFinished && bookId != null) {
-        router.replace(`/book/${bookId}?recordId=${id}`);
+        router.replace(`/book/${bookId}?recordId=${id}&finished=1`);
       } else if (club?.clubId != null) {
         router.replace({
           pathname: '/club/[id]/log/new',
