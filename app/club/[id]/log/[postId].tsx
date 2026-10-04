@@ -227,6 +227,9 @@ export default function ClubLogScrapScreen() {
               {LOG_REACTIONS.map(({ kind, label }) => {
                 const on = data.myReactions.includes(kind);
                 const fg = on ? colors.onInk : colors.textMuted;
+                // 좋아요는 앱 어디서나 하트이고, 켜지면 하트를 초록으로 채운다(LikeAction 과 같다).
+                // 그래서 이 칩만 잉크로 뒤집지 않는다 — 초록 하트는 잉크 위에서 대비가 모자란다.
+                const heart = kind === 'LIKE';
                 return (
                   <Pressable
                     key={kind}
@@ -237,14 +240,17 @@ export default function ClubLogScrapScreen() {
                     style={({ pressed }) => [
                       styles.reaction,
                       { borderColor: colors.control, backgroundColor: colors.bg },
-                      on && { backgroundColor: colors.ink, borderColor: colors.ink },
+                      on && !heart && { backgroundColor: colors.ink, borderColor: colors.ink },
                       pressed && pressedStyle,
                     ]}
                   >
-                    {/* 좋아요는 앱 어디서나 하트로 그린다 — 반응 칩도 글자 대신 하트, 켜지면 채운다.
-                        칩이 잉크로 뒤집히는 건 다른 반응과 같다(초록 하트는 잉크 위에서 대비가 모자란다). */}
-                    {kind === 'LIKE' ? (
-                      <Heart size={16} color={fg} fill={on ? fg : 'transparent'} {...iconStroke} />
+                    {heart ? (
+                      <Heart
+                        size={16}
+                        color={on ? colors.accent : colors.textMuted}
+                        fill={on ? colors.accent : 'transparent'}
+                        {...iconStroke}
+                      />
                     ) : (
                       <Text style={[typeScale.monoLabel, { color: fg }]}>{label}</Text>
                     )}
