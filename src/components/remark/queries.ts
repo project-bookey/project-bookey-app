@@ -10,6 +10,8 @@ export const REMARK_MAX = 60;
 export const bookRemarksKey = (bookId: number) => ['book', bookId, 'remarks'] as const;
 /** 이 읽기 기록에 남긴 내 한 마디 — ['library'] 아래라 서재가 바뀌면 함께 새로 받는다. */
 export const myRemarkKey = (rid: number | null) => ['library', 'record', rid, 'remark'] as const;
+/** 광장 피드 — 완독 자랑 카드가 그 회차의 완독 한 마디를 보여 준다. */
+const PLAZA_KEY = ['plaza'] as const;
 
 export function useBookRemarks(bookId: number) {
   return useQuery({
@@ -27,7 +29,7 @@ export function useMyRemark(rid: number | null) {
   });
 }
 
-/** 남기기·고치기 — 받은 한 마디를 내 것 캐시에 바로 앉히고, 도서 상세의 돌아가는 목록을 새로 받는다. */
+/** 남기기·고치기 — 받은 한 마디를 내 것 캐시에 바로 앉히고, 도서 상세의 돌아가는 목록과 광장 완독 자랑을 새로 받는다. */
 export function useSaveRemark(rid: number | null, bookId: number) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -35,6 +37,7 @@ export function useSaveRemark(rid: number | null, bookId: number) {
     onSuccess: (saved: Remark) => {
       queryClient.setQueryData(myRemarkKey(rid), saved);
       queryClient.invalidateQueries({ queryKey: bookRemarksKey(bookId) });
+      queryClient.invalidateQueries({ queryKey: PLAZA_KEY });
     },
   });
 }
@@ -46,6 +49,7 @@ export function useDeleteRemark(rid: number | null, bookId: number) {
     onSuccess: () => {
       queryClient.setQueryData(myRemarkKey(rid), null);
       queryClient.invalidateQueries({ queryKey: bookRemarksKey(bookId) });
+      queryClient.invalidateQueries({ queryKey: PLAZA_KEY });
     },
   });
 }

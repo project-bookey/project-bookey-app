@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { plazaApi } from '@/api/endpoints';
-import type { PlazaItem } from '@/api/types';
+import type { PlazaItem, PlazaReview } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
-import { NAV_CLEARANCE, PaperScreen, TiltCover } from '@/components/collage';
+import { MemoScrap, NAV_CLEARANCE, PaperScreen, TiltCover } from '@/components/collage';
 import { PostFeed } from '@/components/post/PostFeed';
 import { Card, EmptyState, formatRelative, linkLabel } from '@/components/ui';
 import { TourTarget } from '@/components/tour/TourTarget';
@@ -14,12 +14,13 @@ import { SwipeableTabs } from '@/components/SwipeableTabs';
 import { CapsuleTabs } from '@/components/CapsuleTabs';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { serif } from '@/theme/tokens';
 
 /** 한 번에 받아오는 피드 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
 /** 카드 교차 회전(도) — 붙여 둔 티를 내되 읽기를 방해하지 않을 만큼만. */
 const CARD_TILT = [-1.1, 0.8];
-/** 완독 자랑 피드 캐시 키 — 광장 피드(type FINISH) 몫. */
+/** 완독 자랑 피드 캐시 키 — 광장 피드(type FINISH) 몫. 한 마디·리뷰를 남기면 ['plaza'] 로 무효화된다. */
 const FINISH_FEED_KEY = ['plaza', 'FINISH'] as const;
 
 /**
@@ -156,7 +157,10 @@ function itemKey(item: PlazaItem): string {
   return `f${item.authorId}-${item.bookId}-${item.occurredAt}`;
 }
 
-/** 완독 자랑 카드 한 장 — 작성자 줄 + 표지 행. 교차 회전을 쓴다. */
+/**
+ * 완독 자랑 카드 한 장 — 작성자 줄 + 표지 행, 그리고 그 회차를 덮으며 남긴 한 마디·리뷰(있을 때만).
+ * 교차 회전을 쓴다.
+ */
 function FinishCard({ item, index, mine, onOpenBook }: {
   item: PlazaItem;
   index: number;
@@ -198,7 +202,53 @@ function FinishCard({ item, index, mine, onOpenBook }: {
           </Text>
         </View>
       </Pressable>
+      {item.remark || item.review ? (
+        <View style={styles.notes}>
+          {/* 한 마디 — 도서 상세 '독자들의 한 마디'와 같은 따옴표 친 부리 한 줄. */}
+          {item.remark ? (
+            <Text style={[styles.remark, { color: colors.text }]}>“{item.remark}”</Text>
+          ) : null}
+          {item.review ? (
+            <FinishReview review={item.review} authorNickname={item.authorNickname} />
+          ) : null}
+        </View>
+      ) : null}
     </Card>
+  );
+}
+
+/**
+ * 완독 자랑에 붙는 리뷰 — 도서 상세의 리뷰 조각(ReviewScrap)과 같은 반듯한 점선 메모. 통째로 눌러 리뷰 상세로 간다.
+ * 남긴 사람은 카드 머리에 이미 있어 머리 줄엔 '리뷰'와 별점만 둔다. 스포일러가 있는 리뷰는 글을 가린다.
+ */
+function FinishReview({ review, authorNickname }: { review: PlazaReview; authorNickname: string }) {
+  const { colors } = useTheme();
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.push(`/review/${review.id}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`${authorNickname}의 리뷰 상세`}
+      style={({ pressed }) => pressed && pressedStyle}
+    >
+      <MemoScrap rotate={0}>
+        <View style={styles.reviewHead}>
+          <Text style={[typeScale.label, { color: colors.textMuted }]}>리뷰</Text>
+          {review.rating ? (
+            <Text style={[typeScale.monoNumeral, { color: colors.accent }]}>★ {review.rating}</Text>
+          ) : null}
+        </View>
+        {review.hasSpoiler ? (
+          <Text style={[typeScale.caption, styles.reviewBody, { color: colors.textFaint }]}>
+            스포일러가 있어 가렸어요
+          </Text>
+        ) : (
+          <Text numberOfLines={2} style={[styles.reviewText, styles.reviewBody, { color: colors.textMuted }]}>
+            {review.body}
+          </Text>
+        )}
+      </MemoScrap>
+    </Pressable>
   );
 }
 
@@ -230,6 +280,11 @@ const styles = StyleSheet.create({
   where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
   finishRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   finishText: { flex: 1, gap: spacing.xs },
+  notes: { gap: spacing.sm },
+  remark: { fontFamily: serif.regular, fontSize: 16, lineHeight: 26 },
+  reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  reviewBody: { marginTop: spacing.sm },
+  reviewText: { fontFamily: serif.regular, fontSize: 14, lineHeight: 23 },
 
   skeletonList: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   skeleton: { height: 128, borderRadius: radius.md },
