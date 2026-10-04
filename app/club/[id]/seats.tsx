@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi, walletApi } from '@/api/endpoints';
 import type { ClubHome, ClubSeatPolicy, WalletView } from '@/api/types';
+import { ReturnToClubHome } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { Button, EmptyState, Eyebrow, KeyValue, Loading, Rule, Segmented, linkLabel } from '@/components/ui';
 import type { ColorTokens } from '@/theme';
@@ -55,7 +56,7 @@ export default function ClubSeatsScreen() {
   }
   // 딥링크로 멤버가 들어오면 클럽 홈으로 돌려보낸다 — 서버도 CLUB_NOT_HOST 로 막는다.
   if (data.myRole !== 'HOST') {
-    return <Redirect href={`/club/${clubId}`} />;
+    return <ReturnToClubHome clubId={clubId} />;
   }
 
   return (

@@ -101,7 +101,10 @@ export default function ClubHomeScreen() {
       return;
     }
     const next = clubTabOf(tabParam);
-    if (next) setTab(next);
+    if (!next) return;
+    setTab(next);
+    // 적용한 탭은 주소에서 지운다 — 직접 다른 탭으로 옮긴 뒤 같은 탭이 다시 지정돼도(옛 링크 등) 값이 바뀌어 다시 열리게.
+    router.setParams({ tab: undefined });
   }, [tabParam, id, router]);
   const changeTab = (next: ClubTabKey) => {
     if (next !== "meetings") setFormOpen(false);
