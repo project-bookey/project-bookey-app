@@ -15,8 +15,8 @@ const BAND_H = 96;
 
 /**
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
- * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 다음 모임 스티키,
- * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람 · 다음 모임.
+ * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 내가 참여한 가장 가까운 모임의 스티키,
+ * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람 · 참여할(없으면 다음) 모임.
  * 카드 본문은 누르면 클럽 홈으로, 호스트에게만 붙는 '관리' 칩은 본문 Pressable 의 형제로 둬
  * 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
@@ -27,7 +27,16 @@ export function ClubCard({ club, onPress, onManage }: {
 }) {
   const { colors, cardShadow } = useTheme();
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
-  const note = ended ? '종료' : club.nextMeetingAt ? `모임 ${meetingDay(club.nextMeetingAt)}` : null;
+  // 스티키 날짜는 내가 참여한 모임 중 가장 가까운 것 — 참여한 모임이 없으면 붙이지 않는다.
+  const note = ended ? '종료' : club.myNextMeetingAt ? `모임 ${meetingDay(club.myNextMeetingAt)}` : null;
+  // 아래 한 줄은 스티키와 같은 모임을 가리키고, 참여한 모임이 없을 때만 클럽의 다음 모임을 알린다.
+  const nextLine = ended
+    ? null
+    : club.myNextMeetingTitle
+      ? `참여할 모임 · ${club.myNextMeetingTitle}`
+      : club.nextMeetingTitle
+        ? `다음 모임 · ${club.nextMeetingTitle}`
+        : null;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
@@ -57,9 +66,9 @@ export function ClubCard({ club, onPress, onManage }: {
             <Text numberOfLines={2} style={[styles.intro, { color: colors.textMuted }]}>{club.description}</Text>
           ) : null}
           <MembersLine members={club.members ?? []} />
-          {!ended && club.nextMeetingTitle ? (
+          {nextLine ? (
             <Text numberOfLines={1} style={[styles.next, { color: colors.textMuted }]}>
-              다음 모임 · {club.nextMeetingTitle}
+              {nextLine}
             </Text>
           ) : null}
         </View>

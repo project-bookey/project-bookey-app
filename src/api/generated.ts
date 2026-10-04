@@ -4834,6 +4834,9 @@ export interface components {
             /** Format: date-time */
             nextMeetingAt?: string;
             nextMeetingTitle?: string;
+            /** Format: date-time */
+            myNextMeetingAt?: string;
+            myNextMeetingTitle?: string;
             description?: string;
             backgroundUrl?: string;
         };

@@ -514,6 +514,7 @@ function ClubHomeTab({ club, onOpenMeetings, onOpenNotes }: {
  * 다가오는 모임 한 장 — 본문(날짜 · 제목 · 읽을 책 · 장소 · 참여 인원)은 모임 상세로, 오른쪽은 참여 상태.
  * 참여 버튼은 본문의 형제라 웹에서 button 안에 button 이 들어가지 않는다. 여러 장이 함께 보이므로
  * 참여하기는 테두리 버튼으로 낮춘다(UX 철칙 Von Restorff — 강조색 버튼은 화면에 하나).
+ * 내가 참여한 모임은 초록 테두리 — 색만으로 가르지 않게 오른쪽 '참여해요'와 함께 둔다.
  */
 function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
   meeting: ClubMeeting;
@@ -537,7 +538,13 @@ function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
           : null;
 
   return (
-    <View style={[styles.card, styles.meetingCard, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+    <View
+      style={[
+        styles.card,
+        styles.meetingCard,
+        { backgroundColor: colors.surface, borderColor: m.attending ? colors.accent : colors.line },
+      ]}
+    >
       <Pressable
         onPress={onOpen}
         accessibilityRole="button"
