@@ -6,8 +6,9 @@ import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View }
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { SubHeader } from '@/components/collage';
-import { Button, Segmented } from '@/components/ui';
+import { Button, Segmented, linkLabel } from '@/components/ui';
 import { BirthDatePicker } from '@/components/BirthDatePicker';
+import { LegalDocumentSheet } from '@/components/legal/LegalDocumentSheet';
 import { useAuth } from '@/store/auth';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -42,7 +43,11 @@ function normalizeBirthDate(value: string): string | null {
   return dashed;
 }
 
-/** 프로필 사진 등록·변경. 가입 직후에는 건너뛰고 나중에 프로필에서 바꿀 수 있다. */
+/**
+ * 프로필 사진 등록·변경. 가입 직후에는 건너뛰고 나중에 프로필에서 바꿀 수 있다.
+ * 가입 직후 단계의 성별·생년월일은 [선택] 정보 — 넣고 '동의하고 시작'을 누르면 먼저 선택 동의(PROFILE_OPTIONAL)를
+ * 기록한 뒤 저장한다(서버가 동의 없이는 받지 않는다). 사진만 올리거나 '나중에 하기'로 넘어가도 된다.
+ */
 export default function ProfilePhotoScreen() {
   const router = useRouter();
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
@@ -54,6 +59,7 @@ export default function ProfilePhotoScreen() {
   const [birthDate, setBirthDate] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [optionalDocOpen, setOptionalDocOpen] = useState(false);
 
   const pick = async () => {
     setError(null);
@@ -68,29 +74,32 @@ export default function ProfilePhotoScreen() {
     }
   };
 
-  // 가입 직후엔 사진이 없어도 기본 정보만으로 시작할 수 있다 — 사진 때문에 입력한 성별·생년월일까지
+  // 가입 직후엔 사진·선택 정보 중 하나만 있어도 시작할 수 있다 — 사진 때문에 입력한 성별·생년월일까지
   // 막히거나 '나중에 하기'로 버려지지 않게(UX 철칙 Hick). 변경 화면은 사진이 있어야 저장한다.
-  const canSubmit = editing ? pickedUri != null : birthDate.trim().length > 0;
-  const submitLabel = editing ? '저장' : pickedUri ? '등록하고 시작하기' : '시작하기';
+  const demographicsEntered = !editing && (birthDate.trim().length > 0 || gender !== 'PREFER_NOT_TO_SAY');
+  const canSubmit = editing ? pickedUri != null : demographicsEntered || pickedUri != null;
+  const submitLabel = editing ? '저장' : demographicsEntered ? '동의하고 시작' : '등록하고 시작하기';
 
   const upload = async () => {
     if (!canSubmit || uploading) return;
     const birthDateText = birthDate.trim();
     const normalizedBirthDate = birthDateText ? normalizeBirthDate(birthDateText) : null;
-    if (!editing && !normalizedBirthDate) {
+    if (birthDateText && !normalizedBirthDate) {
       setError('생년월일을 YYYYMMDD 또는 YYYY-MM-DD 형식으로 입력해 주세요.');
       return;
     }
     setUploading(true);
     setError(null);
     try {
-      if (!editing) {
+      if (demographicsEntered) {
+        // 선택 동의가 먼저 — 서버는 동의 없이 성별·생년월일을 받지 않는다(CONSENT_REQUIRED).
+        await authApi.setConsent('PROFILE_OPTIONAL', true);
         const me = await authApi.updateProfile({ gender, birthDate: normalizedBirthDate ?? undefined });
         setUser(me);
-        if (!pickedUri) {
-          router.replace('/home');
-          return;
-        }
+      }
+      if (!editing && !pickedUri) {
+        router.replace('/home');
+        return;
       }
       if (!pickedUri) return;
       const form = new FormData();
@@ -145,6 +154,20 @@ export default function ProfilePhotoScreen() {
                     setError(null);
                   }}
                 />
+              </View>
+              {/* 선택 정보 고지 — 넣는 자리 바로 아래(Proximity). 원문은 '자세히'. */}
+              <View style={styles.optionalNote}>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>
+                  [선택] 성별·생년월일은 맞춤 추천과 또래 독서 통계에만 써요. 넣고 '동의하고 시작'을 누르면 수집·이용에 동의하게 되고, 프로필 편집에서 언제든 지울 수 있어요.
+                </Text>
+                <Pressable
+                  onPress={() => setOptionalDocOpen(true)}
+                  accessibilityRole="button"
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  style={({ pressed }) => [styles.optionalLink, pressed && styles.pressed]}
+                >
+                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>{linkLabel('자세히')}</Text>
+                </Pressable>
               </View>
             </View>
           ) : null}
@@ -205,6 +228,11 @@ export default function ProfilePhotoScreen() {
           )}
         </Pressable>
       </View>
+      <LegalDocumentSheet
+        docKey={optionalDocOpen ? 'profile-optional' : null}
+        colors={colors}
+        onClose={() => setOptionalDocOpen(false)}
+      />
     </View>
   );
 }
@@ -233,6 +261,8 @@ const styles = StyleSheet.create({
   copy: { ...typeScale.body, lineHeight: 24 },
   profileFields: { gap: spacing.md },
   field: { gap: spacing.sm },
+  optionalNote: { gap: spacing.xs },
+  optionalLink: { alignSelf: 'flex-start' },
   input: {
     minHeight: 48,
     borderRadius: radius.md,

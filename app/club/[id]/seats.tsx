@@ -184,7 +184,7 @@ function SeatsForm({ club, policy, wallet, colors, onExpanded, onInsufficient }:
               </Text>
             ) : null}
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
-              늘린 자리는 이 클럽에만 적용되고, 클럽이 끝나면 사라져요.
+              늘린 자리는 이 클럽에만 적용되고, 클럽이 끝나면 사라져요. 쓴 책갈피는 환불되지 않아요.
             </Text>
           </View>
 

@@ -94,7 +94,7 @@ export default function WalletScreen() {
               />
             </View>
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
-              책갈피 1개 → 엽서 1장 · 책갈피 2개 → 우표 1개
+              책갈피 1개 → 엽서 1장 · 책갈피 2개 → 우표 1개 · 바꾼 책갈피는 환불되지 않아요
             </Text>
             {exchangeError ? (
               <Text style={[typeScale.caption, styles.hint, { color: colors.danger }]} accessibilityRole="alert">

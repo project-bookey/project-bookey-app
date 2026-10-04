@@ -42,6 +42,8 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
     // 고객문의 답변 — 그 문의 화면에서 답을 읽는다.
     case 'INQUIRY_ANSWERED': return one('/inquiry/[id]', 'inquiryId');
+    // 광고성 정보 수신 동의·철회 처리 결과 — 그 토글이 있는 설정으로.
+    case 'CONSENT_RESULT': return { href: '/settings' };
     case 'FOLLOWED':
     case 'FOLLOW_CONNECTED': return one('/user/[id]', 'userId');
     case 'HABIT':

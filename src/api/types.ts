@@ -20,6 +20,17 @@ export type TokenResponse = Schemas['TokenResponse'];
 export type EmailCodeResponse = Schemas['EmailCodeResponse'];
 export type SignupConfig = Schemas['SignupConfigResponse'];
 
+// ── 약관·동의 ────────────────────────────────────────────
+/** 약관·정책 원문 — 서버가 단일 원천이다(앱 가입 화면과 웹 정책 페이지가 같은 글을 쓴다). */
+export type LegalDocument = Schemas['LegalDocumentView'];
+/** GET /api/v1/public/legal/{key} 의 key — 공개된 문서만. */
+export type LegalDocumentKey = 'terms' | 'privacy-consent' | 'profile-optional' | 'marketing' | 'privacy-policy' | 'refund';
+/** 가입 동의 — 필수(약관·개인정보·만 14세)와 선택(광고성 정보 수신). version 은 화면에 보여 준 문서의 것. */
+export type SignupConsent = Schemas['SignupConsent'];
+/** 종류별 지금 동의 상태 — Me.consents. */
+export type ConsentState = Schemas['ConsentStateView'];
+export type ConsentKind = ConsentState['kind'];
+
 // ── 소셜 (§14) — 피드 · 엽서 · 지갑 · 팔로우 · 프로필 ────
 export type PostView = Schemas['PostView'];
 export type PostLikeResult = Schemas['PostLikeView'];
