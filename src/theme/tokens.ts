@@ -2,8 +2,8 @@
  * bookey 디자인 토큰 — 모드(다크/라이트) 무관 값.
  *
  * 방향: "콜라주 책상" — 어두운 책상 위에 책·메모·스티키 노트가 흩어진 감각.
- * 세리프(나눔명조)로 표제·인용에 위계를 주고, 모노(IBM Plex Mono)로
- * 아이브로우·라벨·숫자를 짚는다. 형태는 오려 낸 종이처럼 네모.
+ * 본문·라벨·숫자는 IBM Plex Sans KR, 표제·인용은 세리프(마루 부리)로 위계를 준다.
+ * 형태는 오려 낸 종이처럼 네모.
  * 설계 문서: docs/superpowers/specs/2026-09-01-collage-redesign-design.md
  */
 
@@ -29,39 +29,46 @@ export const radius = {
 } as const;
 
 /**
- * 브랜드 서체 — Pretendard (앱 시작 시 expo-font 로 로드).
+ * 브랜드 서체 — IBM Plex Sans KR (assets/fonts, 앱 시작 시 expo-font 로 로드).
+ * 2026-10-04 Pretendard 에서 교체 — 요즘 앱·AI 생성 화면에서 너무 흔해서. 숫자 폭이 모두 같아(tabular)
+ * 타이머처럼 매초 바뀌는 숫자도 흔들리지 않는다.
  * 웨이트별 파일을 별도 패밀리로 등록하므로, 스타일에는 fontFamily 만 쓰고
  * fontWeight 를 함께 지정하지 않는다 (iOS 가 다른 웨이트를 찾다 시스템 폰트로
  * 떨어지는 것을 막기 위함).
  */
 export const sans = {
-  regular: 'Pretendard-Regular', // 400
-  semiBold: 'Pretendard-SemiBold', // 600
-  bold: 'Pretendard-Bold', // 700
-  extraBold: 'Pretendard-ExtraBold', // 800
+  regular: 'IBMPlexSansKR-Regular', // 400
+  semiBold: 'IBMPlexSansKR-SemiBold', // 600
+  bold: 'IBMPlexSansKR-Bold', // 700
+  extraBold: 'IBMPlexSansKR-Bold', // 이 서체는 700 이 가장 굵다 — 위계는 크기로 준다
 } as const;
 
 /**
- * 세리프(나눔명조) — 표제·섹션 헤딩·인용문 전용.
- * expo-font 로 앱 시작 시 로드(app/_layout.tsx).
+ * 세리프(마루 부리) — 표제·섹션 헤딩·인용문 전용. 2026-10-04 나눔명조에서 교체.
+ * Google Fonts 에 없어 파일(assets/fonts)로 넣는다. 키 이름은 쓰임새(본문/표제/히어로)를 따르고
+ * 실제 굵기는 한 단계씩 가볍다 — 서체 시안(2026-10-04)에서 고른 짝 그대로.
  */
 export const serif = {
-  regular: 'NanumMyeongjo_400Regular',
-  bold: 'NanumMyeongjo_700Bold',
-  extraBold: 'NanumMyeongjo_800ExtraBold',
+  regular: 'MaruBuri-Regular', // 400
+  bold: 'MaruBuri-SemiBold', // 600
+  extraBold: 'MaruBuri-Bold', // 700
 } as const;
 
 /**
- * 모노(IBM Plex Mono) — 아이브로우·라벨·숫자 전용.
- * 한글 글리프는 시스템 폴백(의도된 동작 — 시안 웹과 동일).
+ * 라벨·숫자 서체 — 아이브로우·라벨·숫자. 이름은 예전 모노(IBM Plex Mono)에서 왔지만
+ * 2026-10-04 부터 본문 서체(IBM Plex Sans KR)를 한 단계 굵게 쓴다. 영문 대문자 모노 아이브로우가
+ * 'AI 에디토리얼' 인상을 가장 많이 만들어서 뺐다. 쓰는 곳이 많아 이름은 그대로 둔다.
  */
 export const mono = {
-  regular: 'IBMPlexMono_400Regular',
-  medium: 'IBMPlexMono_500Medium',
-  semiBold: 'IBMPlexMono_600SemiBold',
+  regular: sans.regular,
+  medium: sans.semiBold,
+  semiBold: sans.bold,
 } as const;
 
-/** 타입 스케일. 위계는 크기 + Pretendard 웨이트로 만든다. */
+/** 노트 텍스트에서 사용자가 고르는 '모노' 글꼴 — 앱 화면(라벨·숫자)에는 쓰지 않는다. */
+export const noteMono = 'IBMPlexMono_400Regular';
+
+/** 타입 스케일. 위계는 크기 + 웨이트로 만든다. */
 export const typeScale = {
   /** 히어로 책 제목 */
   display: { fontFamily: sans.extraBold, fontSize: 28, letterSpacing: -0.5 },
@@ -83,11 +90,11 @@ export const typeScale = {
   titleSerif: { fontFamily: serif.bold, fontSize: 22, lineHeight: 30 },
   /** 인용문 */
   quote: { fontFamily: serif.regular, fontSize: 17, lineHeight: 28 },
-  /** 라벨 — 모노. 한글은 자간을 벌리면 글자가 흩어져 보여 좁게 둔다. */
-  monoLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.5 },
-  /** 아이브로우 — 모노 */
-  monoEyebrow: { fontFamily: mono.semiBold, fontSize: 10, letterSpacing: 1 },
-  /** 숫자 — 모노 */
+  /** 라벨. 한글은 자간을 벌리면 글자가 흩어져 보여 좁게 둔다. */
+  monoLabel: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.2 },
+  /** 아이브로우 */
+  monoEyebrow: { fontFamily: mono.semiBold, fontSize: 10, letterSpacing: 0.4 },
+  /** 숫자 */
   monoNumeral: { fontFamily: mono.semiBold, fontSize: 13 },
 } as const;
 

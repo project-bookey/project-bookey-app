@@ -24,7 +24,7 @@ import { pressedStyle, sans } from '@/theme/tokens';
 
 /**
  * 모임 상세 — 예전 골격(굵은 제목 · 큰 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
- * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(Pretendard ExtraBold)으로,
+ * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(sans.extraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
  * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
  * 함께 독서를 끝내면 그 모임의 공유 노트로 간다 — 멤버 모두가 같은 대형노트에 그날을 함께 남긴다.
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   // 읽을 책 — 표지와 제목 묶음이 한 줄, 줄 전체가 책 상세로 가는 링크.
   bookRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44 },
   container: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl * 2 },
-  // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 Pretendard ExtraBold 토큰으로.
+  // 예전의 굵은 산세리프 제목 — fontWeight 만 있던 것을 sans.extraBold 토큰으로.
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
   time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
   link: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },

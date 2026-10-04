@@ -1,12 +1,12 @@
 import { Text } from 'react-native';
 
 import { sans, serif, useTheme } from '@/theme';
-import { mono } from '@/theme/tokens';
+import { noteMono } from '@/theme/tokens';
 import { TEXT_SIZE, penColorOf, type NoteFont, type TextElement as TextEl } from '../noteDoc';
 
 export function fontFamilyOf(font: NoteFont): string {
   if (font === 'serif') return serif.regular;
-  if (font === 'mono') return mono.regular;
+  if (font === 'mono') return noteMono;
   return sans.regular;
 }
 

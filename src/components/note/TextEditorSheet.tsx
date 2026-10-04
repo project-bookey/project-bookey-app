@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import type { MemberProgress } from '@/api/types';
 import { Button, Segmented } from '@/components/ui';
 import { radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, mono } from '@/theme/tokens';
+import { hairline, noteMono } from '@/theme/tokens';
 import { MemberPickerRow } from './MemberPickerRow';
 import { NoteSheet } from './NoteSheet';
 import { PenSwatches } from './PenSwatches';
@@ -56,7 +56,7 @@ export function TextEditorSheet({ element, members, onPatch, onClose }: {
   const isSpeech = element?.type === 'speech';
   const isQuote = element?.type === 'quote';
   const family = element && element.type !== 'quote'
-    ? element.font === 'serif' ? serif.regular : element.font === 'mono' ? mono.regular : sans.regular
+    ? element.font === 'serif' ? serif.regular : element.font === 'mono' ? noteMono : sans.regular
     : serif.regular;
   return (
     <NoteSheet visible={element !== null} title={isSpeech ? '말풍선' : isQuote ? '문장' : '텍스트'} onClose={onClose} scroll>
