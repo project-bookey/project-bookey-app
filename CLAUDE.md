@@ -126,7 +126,7 @@ bookey는 **휴대폰에서 한 손으로 쓰는 앱**이 1순위다. 웹(`npm r
 - 입력이 있는 화면은 `src/components/keyboard.tsx` 부품으로 키보드가 입력창·다음 단계 버튼을 가리지 않게 한다. `KeyboardAvoidingView`를 `Platform` 분기로 직접 쓰지 않는다 — Android는 엣지투엣지(`app.json` `edgeToEdgeEnabled`)라 키보드가 떠도 창이 줄지 않아, 예전의 `behavior={ios ? 'padding' : undefined}`로는 Android에서 하단 바·입력줄·시트가 키보드 밑에 깔렸다(2026-10-04 정리).
   - `KeyboardArea`: 키보드와 겹친 만큼 아래를 비우는 상자. 두 플랫폼 모두 같은 방식이고, 겹침을 창 기준으로 재므로 시트·모달(`NoteSheet`, iOS 시트로 뜨는 타이머)에서도 맞는다.
   - 하단 고정 바·입력줄은 `KeyboardArea` 안에서 스크롤의 형제로 둔 `KeyboardDock`(또는 `useBottomBarPadding`)으로 그린다 — 키보드 위에 붙을 땐 홈 인디케이터 몫을 거둔다. 주요 버튼이 하나뿐인 쓰기 화면은 이 하단 바에 둔다(독후감 쓰기·클럽 만들기·조각 남기기·프로필 편집).
-  - 긴 스크롤 안의 입력 카드(엽서·리뷰·모임 만들기·클럽 설정·답장)는 `KeyboardScroll`로 감싸고, 입력창 `onFocus`에서 `useKeyboardReveal()`(안쪽 부품) 또는 `useScrollReveal(scrollRef)`(스크롤을 가진 화면)로 입력과 버튼을 함께 감싼 상자를 넘긴다 — 버튼까지 키보드 위로 올라온다. 그 입력창은 `maxHeight`로 높이를 묶어 길어져도 버튼을 밀어내지 않게 한다.
+  - 긴 스크롤 안의 입력 카드(엽서·리뷰·모임 만들기·클럽 설정·답장)는 `KeyboardScroll`로 감싸고, 입력창 `onFocus`에서 `useKeyboardReveal()`(안쪽 부품) 또는 `useScrollReveal(scrollRef)`(스크롤을 가진 화면)로 그 밑 버튼(줄)을 넘긴다 — 버튼이 키보드와 여유(`spacing.xl`)를 두고 올라오되, 누르고 있는 입력칸은 화면 위로 밀려나지 않는다. 여러 줄 입력은 `onContentSizeChange`에서 `{ onlyIfOpen: true }`로 다시 맞추고 `maxHeight`로 높이를 묶어, 길어져도 버튼이 키보드 밑으로 숨지 않게 한다.
   - 키보드가 떠 있는 동안 하단 `SectionNav`는 숨는다(`useKeyboardOpen`).
 - 입력창이 있는 스크롤 뷰에는 `keyboardShouldPersistTaps="handled"`를 준다(`KeyboardScroll`은 기본) — 안 주면 키보드가 떠 있을 때 버튼 첫 탭이 먹히지 않는다.
 - 용도에 맞는 `keyboardType`·`returnKeyType`·`autoCapitalize`·`autoCorrect`를 지정한다(쪽수=숫자 키패드, 닉네임=자동 대문자 끔 등).

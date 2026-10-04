@@ -15,6 +15,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
   type KeyboardEvent,
   type ScrollViewProps,
@@ -158,8 +159,15 @@ export function KeyboardDock({ style, min = spacing.lg, stacked = false, childre
   return <View style={[style, { paddingBottom }]}>{children}</View>;
 }
 
-type Reveal = (target: RefObject<View | null>) => void;
+type Reveal = (target: RefObject<View | null>, options?: { onlyIfOpen?: boolean }) => void;
 type ScrollGetter = () => ScrollView | null | undefined;
+
+/** 끌어올린 버튼과 키보드 사이(그리고 입력칸과 화면 위 끝 사이)에 남기는 여유 — 딱 붙지 않고 또렷하게 보이게. */
+const REVEAL_ROOM = spacing.xl;
+
+type Measurable = { measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => void };
+const measureInWindow = (node: Measurable) =>
+  new Promise<{ y: number; height: number }>((resolve) => node.measureInWindow((_x, y, _w, height) => resolve({ y, height })));
 
 /** reveal 의 본체 — getScroll 이 돌려주는 스크롤을 움직인다. */
 function useRevealWith(getScroll: ScrollGetter): Reveal {
@@ -169,22 +177,35 @@ function useRevealWith(getScroll: ScrollGetter): Reveal {
 
   useEffect(() => () => pending.current?.remove(), []);
 
-  return useCallback<Reveal>((target) => {
+  return useCallback<Reveal>((target, options) => {
     if (Platform.OS === 'web') return; // 웹에는 소프트 키보드 이벤트가 없다
-    const run = () => {
+    const run = async () => {
       const box = target.current;
       const scroll = getScrollRef.current();
       const keyboard = Keyboard.metrics?.();
       const native = scroll?.getNativeScrollRef();
       if (!box || !scroll || !keyboard || !native) return;
-      box.measureInWindow((_x, y, _width, height) => {
-        if (y + height + spacing.md <= keyboard.screenY) return; // 이미 보인다 — 움직이지 않는다
-        // RN 계산은 스크롤이 창 맨 위에서 시작한다고 보므로, 스크롤의 창 y 만큼 더 올려 상자 아랫단을 키보드 바로 위에 맞춘다.
-        native.measureInWindow((_sx, scrollY) => {
-          scroll.scrollResponderScrollNativeHandleToKeyboard(box, scrollY + spacing.md, true);
-        });
-      });
+      const focused = TextInput.State.currentlyFocusedInput() as Measurable | null;
+      const [view, boxRect, input] = await Promise.all([
+        measureInWindow(native),
+        measureInWindow(box),
+        focused ? measureInWindow(focused) : Promise.resolve(null),
+      ]);
+      const keyboardTop = keyboard.screenY;
+      const boxBottom = boxRect.y + boxRect.height;
+      // 상자 아랫단이 '키보드 윗단 - 여유'보다 아래면 그만큼 올린다. 이미 보이면 움직이지 않는다.
+      const hidden = boxBottom - (keyboardTop - REVEAL_ROOM);
+      if (hidden <= 0) return;
+      // 다만 누르고 있는 입력칸(없으면 상자 윗단)이 화면 위 끝 너머로 밀려나지는 않게 — 자리가 모자라면 입력칸이 먼저다.
+      const top = input ? input.y : boxRect.y;
+      const lift = Math.min(hidden, top - (view.y + REVEAL_ROOM));
+      if (lift <= 0) return;
+      // RN 의 키보드 맞춤 스크롤은 상자 아랫단을 '스크롤 창 y + 키보드 윗단 - additionalOffset' 에 놓는다 —
+      // 원하는 아랫단(boxBottom - lift)이 되도록 offset 을 거꾸로 구해 넘긴다.
+      scroll.scrollResponderScrollNativeHandleToKeyboard(box, view.y + keyboardTop - (boxBottom - lift), true);
     };
+    // 키보드가 닫혀 있을 때 온 '길어짐' 신호는 버린다 — 막 누른 칸이 키보드를 기다리는 중이면 그 예약을 지우지 않게.
+    if (options?.onlyIfOpen && !Keyboard.isVisible()) return;
     pending.current?.remove();
     pending.current = null;
     // KeyboardArea 가 아래를 비워 스크롤 창이 줄어든 뒤에 재야 끝까지 올릴 수 있다. 안드로이드는 키보드가 다 뜬 뒤에야
@@ -204,8 +225,10 @@ function useRevealWith(getScroll: ScrollGetter): Reveal {
 
 /**
  * 스크롤 안 입력 묶음을 키보드 위로 끌어올린다 — 입력창만 보이고 그 밑 '보내기'·'남기기'가 키보드에 묻히지 않게.
- * 입력창 onFocus 에서 입력창과 버튼을 함께 감싼 상자를 넘긴다(`onFocus={() => reveal(boxRef)}`). 상자가 이미 보이면
- * 움직이지 않는다. 스크롤은 KeyboardScroll(또는 KeyboardArea 안의 스크롤)이어야 끝까지 올라간다.
+ * 입력창 onFocus 에서 버튼(줄)을 넘긴다(`onFocus={() => reveal(actionsRef)}`). 버튼이 키보드 위 여유(REVEAL_ROOM)를 두고
+ * 보일 만큼 올리되, 누르고 있는 입력칸은 화면 위로 밀어내지 않는다. 이미 보이면 움직이지 않는다.
+ * 여러 줄 입력은 길어질 때도 다시 맞춘다(`onContentSizeChange={() => reveal(actionsRef, { onlyIfOpen: true })}`).
+ * 스크롤은 KeyboardScroll(또는 KeyboardArea 안의 스크롤)이어야 끝까지 올라간다.
  *
  * 스크롤을 가진 화면에서 직접 쓸 때 — 스크롤 ref 를 넘긴다.
  */

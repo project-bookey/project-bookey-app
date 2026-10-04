@@ -1002,6 +1002,7 @@ function ReviewSection({ bookId, rid, colors }: { bookId: number; rid: number | 
                 placeholderTextColor={colors.textFaint}
                 multiline
                 onFocus={() => reveal(formActionsRef)}
+                onContentSizeChange={() => reveal(formActionsRef, { onlyIfOpen: true })}
                 style={[styles.reviewInput, {
                   backgroundColor: colors.surfaceDeep, borderColor: colors.line, color: colors.text,
                 }]}

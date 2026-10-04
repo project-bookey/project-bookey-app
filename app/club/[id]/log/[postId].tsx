@@ -178,6 +178,7 @@ export default function ClubLogScrapScreen() {
                   style={[styles.captionInput, { color: colors.onMemoPad, borderColor: colors.mid }]}
                   accessibilityLabel="한 줄 고치기"
                   onFocus={() => revealAbove(editRef)}
+                  onContentSizeChange={() => revealAbove(editRef, { onlyIfOpen: true })}
                 />
               ) : data.body ? (
                 <Text style={[styles.caption, { color: colors.onMemoPad }]}>{data.body}</Text>

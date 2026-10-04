@@ -43,9 +43,8 @@ export default function TimerScreen() {
   const [endPage, setEndPage] = useState('');
   const [totalPagesInput, setTotalPagesInput] = useState('');
   const [memo, setMemo] = useState('');
-  // 쪽수·메모를 누르면 그 칸이(메모는 '세션 종료'까지) 키보드 위로 올라오게.
+  // 쪽수·메모를 누르면 그 칸과 '세션 종료'가 함께 키보드 위로 올라오게.
   const scrollRef = useRef<ScrollView>(null);
-  const pageGroupRef = useRef<View>(null);
   const endFormRef = useRef<View>(null);
   const revealAbove = useScrollReveal(scrollRef);
   const [endError, setEndError] = useState<string | null>(null);
@@ -318,7 +317,7 @@ export default function TimerScreen() {
           <View ref={endFormRef} style={styles.endForm}>
             <Rule />
             {/* 질문·쪽수·오류는 한 묶음(sm) — 메모와 종료 버튼은 묶음 밖으로 띄운다(UX 철칙 Proximity). */}
-            <View ref={pageGroupRef} style={styles.pageGroup}>
+            <View style={styles.pageGroup}>
               <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>
                 몇 쪽까지 읽었나요?
               </Text>
@@ -333,7 +332,8 @@ export default function TimerScreen() {
                   maxLength={5}
                   inputAccessoryViewID={Platform.OS === 'ios' ? PAGE_INPUT_ACCESSORY_ID : undefined}
                   onSubmitEditing={Keyboard.dismiss}
-                  onFocus={() => revealAbove(pageGroupRef)}
+                  onFocus={() => revealAbove(endFormRef)}
+              onContentSizeChange={() => revealAbove(endFormRef, { onlyIfOpen: true })}
                   style={[styles.pageInput, { borderBottomColor: colors.accent, color: colors.text }]}
                   placeholder="0"
                   placeholderTextColor={colors.textFaint}
