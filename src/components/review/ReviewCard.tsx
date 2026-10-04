@@ -1,17 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { VerificationLevel } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
 import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
-
-import { VERIFICATION_LABEL } from './verification';
 
 export type ReviewCardProps = {
   authorNickname: string;
   rating?: number | null;
-  verificationLevel: VerificationLevel;
   body: string;
   tags: string[];
   commentCount?: number;
@@ -29,12 +25,11 @@ export type ReviewCardProps = {
  * 삭제·수정은 아직 없다(서버에도 없음).
  */
 export function ReviewCard({
-  authorNickname, rating, verificationLevel, body, tags, createdAt,
+  authorNickname, rating, body, tags, createdAt,
   bookTitle, onOpenBook,
 }: ReviewCardProps) {
   const { colors } = useTheme();
   const where = bookTitle ?? '책';
-  const verified = verificationLevel === 'VERIFIED_FULL';
 
   return (
     <Card style={styles.card}>
@@ -45,20 +40,9 @@ export function ReviewCard({
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
             {authorNickname}
           </Text>
-          <View style={styles.whereRow}>
-            <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
-              {where} · {formatRelative(createdAt)}
-            </Text>
-            {/* 검증 등급 — 작은 네모 태그. 완독 검증만 민트. */}
-            <Text
-              style={[typeScale.monoLabel, styles.verification, {
-                color: verified ? colors.accent : colors.textFaint,
-                borderColor: verified ? colors.accent : colors.lineStrong,
-              }]}
-            >
-              {VERIFICATION_LABEL[verificationLevel]}
-            </Text>
-          </View>
+          <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
+            {where} · {formatRelative(createdAt)}
+          </Text>
         </View>
         {rating ? (
           <Text style={[typeScale.monoNumeral, styles.rating, { color: colors.accent }]}>★ {rating}</Text>
@@ -88,17 +72,7 @@ const styles = StyleSheet.create({
   authorText: { flex: 1 },
   // 작성자 행 조판은 홈 '오늘의 글'(ScrapAuthor)과 같다 — 아바타 AVATAR_SIZE, 닉네임 15/20, 메타 10/14.
   nickname: { lineHeight: 20 },
-  whereRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
-  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, flexShrink: 1 },
-  // 검증 마크 — 민트 테두리의 작은 네모 태그.
-  verification: {
-    fontSize: 8,
-    letterSpacing: 0.6,
-    borderWidth: hairline,
-    borderRadius: radius.sm,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
+  where: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
   rating: { marginLeft: 'auto' },
   // 리뷰 본문 — 도서 상세 조각(14/23)보다 한 단 키운 읽기용 세리프. 인용이 아니라 좌측선은 없다.
   body: { fontFamily: serif.regular, fontSize: 15, lineHeight: 26 },

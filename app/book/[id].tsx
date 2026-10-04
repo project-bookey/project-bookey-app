@@ -14,7 +14,7 @@ import { Heart } from 'lucide-react-native';
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
 import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
-import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus, VerificationLevel } from '@/api/types';
+import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
 import { MemoScrap, PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
@@ -26,7 +26,6 @@ import { useMyRemark, useSaveRemark } from '@/components/remark/queries';
 import { FinishReviewSheet, type FinishedBook } from '@/components/review/FinishReviewSheet';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { RATING_WORDS, StarRating, ratingPrompt } from '@/components/review/StarRating';
-import { VERIFICATION_LABEL } from '@/components/review/verification';
 import { Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
@@ -62,27 +61,12 @@ function groupNumber(value: number): string {
   return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-const VERIFICATION_FLAG_LABEL: Record<string, string> = {
-  instant_finish: '읽은 시간이 너무 짧아서 완독을 확인하기 어려워요',
-  abnormal_speed: '짧은 시간에 읽은 쪽이 너무 많게 기록됐어요',
-  bulk_finish: '하루 동안 완독 처리된 책이 너무 많아요',
-  idle_timer: '타이머 실행 중 앱 사용 기록이 부족해요',
-  suspect_idle: '장시간 활동 없이 타이머가 실행됐어요',
-};
+type RatingPick = { average: number; count: number };
 
-type RatingPick = { average: number; count: number; verified: boolean };
-
-/** 평점은 검증 완독 평점 우선, 없으면 전체 평점. 둘 다 없으면 null(칩·스탯 미렌더). */
+/** 별점을 남긴 모든 리뷰의 평균. 아직 없으면 null(칩·스탯 미렌더). */
 function pickRating(detail?: BookDetail): RatingPick | null {
-  const verified = detail?.verifiedRating;
-  if (verified?.average != null) {
-    return { average: verified.average, count: verified.count, verified: true };
-  }
   const overall = detail?.overallRating;
-  if (overall?.average != null) {
-    return { average: overall.average, count: overall.count, verified: false };
-  }
-  return null;
+  return overall?.average != null ? { average: overall.average, count: overall.count } : null;
 }
 
 /** SubHeader 카테고리 — BookSummary.category(장르) + publishedAt(출간연도). 둘 다 선택 필드다. */
@@ -111,7 +95,7 @@ function finishMeta(record: ReadingRecord): string | undefined {
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
-/** 도서 상세 — 헤더리스 종이 셸 + 히어로 콜라주 + 진척·소개·검증·세션·리뷰. */
+/** 도서 상세 — 헤더리스 종이 셸 + 히어로 콜라주 + 진척·소개·세션·리뷰. */
 export default function BookDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -153,17 +137,12 @@ export default function BookDetailScreen() {
     queryFn: () => sessionApi.listByRecord(rid!),
     enabled: rid != null,
   });
-  const verification = useQuery({
-    queryKey: ['review', 'preview', rid],
-    queryFn: () => reviewApi.preview(rid!),
-    enabled: rid != null,
-  });
-  // 리뷰 목록 쿼리는 ReviewSection이 소유한다 (화면 컴포넌트에 중복 선언 금지)
+  // 리뷰 목록은 useBookReviews 하나로 받는다 — 스탯 스트립의 리뷰 수와 ReviewSection 이 같은 캐시를 나눠 쓴다.
+  const reviewTotal = useBookReviews(bookId).data?.totalElements;
 
   const invalidateRecord = () => {
     queryClient.invalidateQueries({ queryKey: ['library'] });
     queryClient.invalidateQueries({ queryKey: ['library', 'record', rid] });
-    queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
   };
   const finish = useMutation({
     mutationFn: () => libraryApi.finish(rid!),
@@ -261,7 +240,7 @@ export default function BookDetailScreen() {
                 colors={colors}
                 onAdded={setAddedRid}
               />
-              <StatStrip detail={book.data} rating={rating} colors={colors} />
+              <StatStrip detail={book.data} rating={rating} reviewTotal={reviewTotal} colors={colors} />
             </View>
           ) : null}
 
@@ -368,50 +347,6 @@ export default function BookDetailScreen() {
             </View>
           ) : null}
 
-          {verification.data ? (
-            <Card style={styles.cardGap}>
-              <Eyebrow>완독 확인 상태</Eyebrow>
-              <View style={styles.verifyHead}>
-                <Text style={[typeScale.titleSerif, { color: colors.text }]}>
-                  {VERIFICATION_LABEL[verification.data.expectedLevel]}
-                </Text>
-                <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-                  지금 리뷰를 쓰면 받게 될 배지
-                </Text>
-              </View>
-              <View style={styles.kvBlock}>
-                <KeyValue label="읽은 범위" value={percent(verification.data.coverage)} />
-                <KeyValue label="타이머로 읽은 횟수" value={`${verification.data.timerSessionCount}번`} />
-                <KeyValue
-                  label="확인된 독서 시간"
-                  value={`${verification.data.verifiedMinutes}분 / 최소 ${verification.data.requiredMinutes}분`}
-                />
-              </View>
-              {verification.data.flags.length > 0 ? (
-                <Text style={[typeScale.caption, { color: colors.warn }]}>
-                  {verification.data.flags
-                    .map((flag) => VERIFICATION_FLAG_LABEL[flag] ?? '독서 기록을 추가로 확인해야 해요')
-                    .join(', ')}{' '}
-                  {/* 앱 안 고객문의로 — 책 제목을 미리 적어 둔 채 작성 화면을 연다. */}
-                  <Text
-                    accessibilityRole="link"
-                    onPress={() => router.push({
-                      pathname: '/inquiry/new',
-                      params: {
-                        category: 'USAGE',
-                        body: `${info?.title ? `《${info.title}》 ` : ''}완독 기록 증명 문의\n\n`,
-                      },
-                    })}
-                    style={{ color: colors.accent, textDecorationLine: 'underline' }}
-                  >
-                    관리자에게 문의하기
-                  </Text>
-                  를 통해 완독 기록을 증명해 주세요.
-                </Text>
-              ) : null}
-            </Card>
-          ) : null}
-
           {sessions.data && sessions.data.length > 0 ? (
             <View style={styles.section}>
               <SectionHeader title="읽은 기록" />
@@ -430,7 +365,6 @@ export default function BookDetailScreen() {
                       </Text>
                       <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                         {formatRelative(session.startedAt)} · {session.source === 'TIMER' ? '타이머' : '직접 입력'}
-                        {!session.countedForVerification ? ' · 확인에서 빠짐' : ''}
                       </Text>
                     </View>
                     <Text style={[typeScale.monoNumeral, { color: colors.textMuted }]}>
@@ -449,7 +383,6 @@ export default function BookDetailScreen() {
             finishedBook={finishedBook}
             roundStartedAt={record.data?.startedAt}
             onFinishPromptClose={() => setFinishPromptClosed(true)}
-            expectedLevel={verification.data?.expectedLevel}
             composing={reviewComposing}
             onComposingChange={setReviewComposing}
           />
@@ -742,9 +675,11 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
 }
 
 /** 스탯 스트립 — 헤어라인 세로 구분으로 나눈 실측 수치 3종(평점 없으면 2종). */
-function StatStrip({ detail, rating, colors }: {
+function StatStrip({ detail, rating, reviewTotal, colors }: {
   detail: BookDetail;
   rating: RatingPick | null;
+  /** 리뷰 목록이 오기 전엔 undefined — 칸은 그대로 두고 수만 비워 둔다. */
+  reviewTotal?: number;
   colors: ColorTokens;
 }) {
   const cells: { key: string; value: string; label: string; icon?: ReactNode }[] = [];
@@ -752,10 +687,10 @@ function StatStrip({ detail, rating, colors }: {
     cells.push({
       key: 'rating',
       value: `★ ${rating.average.toFixed(1)}`,
-      label: rating.verified ? '완독자 평점' : '전체 평점',
+      label: '평점',
     });
   }
-  cells.push({ key: 'reviews', value: groupNumber(detail.verifiedReviewCount), label: '완독자 리뷰' });
+  cells.push({ key: 'reviews', value: reviewTotal != null ? groupNumber(reviewTotal) : '–', label: '리뷰' });
   // 좋아요 수는 앱 어디서나 하트를 앞에 단다 — 평점 칸의 ★ 자리와 같다.
   cells.push({
     key: 'likes',
@@ -873,7 +808,6 @@ function ProgressEditor({ rid, progress, colors }: {
       // 응답이 갱신된 기록 전체 — 바로 캐시에 넣어 재조회 사이 깜빡임을 막는다
       queryClient.setQueryData(['library', 'record', rid], updated);
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
       setDraftBoth(null);
     },
     onError: () => setDraftBoth(null),
@@ -1035,13 +969,22 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
   );
 }
 
+/** 책별 리뷰 목록 — 리뷰 섹션과 스탯 스트립(리뷰 수)이 같은 캐시를 쓴다. */
+function useBookReviews(bookId: number) {
+  return useQuery({
+    queryKey: bookReviewsKey(bookId),
+    queryFn: () => bookApi.reviews(bookId),
+    enabled: Number.isFinite(bookId),
+  });
+}
+
 /**
  * 리뷰 | 독후감 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 독후감 탭을 한 제목줄 아래에 둔다.
  * 방금 완독한 책(finishedBook)이면 완독 리뷰 시트도 여기서 띄운다 — 리뷰 목록·작성 상태를 이 섹션이 쥐고 있어서
  * 시트와 인라인 폼이 같은 별점·글을 나눠 쓴다.
  */
 function ReviewSection({
-  bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose, expectedLevel, composing, onComposingChange,
+  bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose, composing, onComposingChange,
 }: {
   bookId: number;
   rid: number | null;
@@ -1050,8 +993,6 @@ function ReviewSection({
   /** 이번 회차를 시작한 때 — 그 뒤에 쓴 내 리뷰가 있으면 완독 시트로 또 묻지 않는다(리뷰는 몇 개든 더 쓸 수 있다). */
   roundStartedAt?: string;
   onFinishPromptClose: () => void;
-  /** 지금 쓰면 받게 될 검증 배지 — 작성 조각의 메타 줄에 목록 조각과 같은 자리로 미리 붙인다. */
-  expectedLevel?: VerificationLevel;
   /** 작성 폼이 펼쳐져 있는지 — 화면이 하단 CTA 를 숨기려고 쥔다. */
   composing: boolean;
   onComposingChange: (composing: boolean) => void;
@@ -1060,11 +1001,7 @@ function ReviewSection({
   const queryClient = useQueryClient();
   const me = useAuth((state) => state.user);
   const myId = me?.id;
-  const reviews = useQuery({
-    queryKey: bookReviewsKey(bookId),
-    queryFn: () => bookApi.reviews(bookId),
-    enabled: Number.isFinite(bookId),
-  });
+  const reviews = useBookReviews(bookId);
 
   const [tab, setTab] = useState<RecordTab>('REVIEW');
   const open = composing;
@@ -1096,7 +1033,6 @@ function ReviewSection({
     onSuccess: () => {
       // 리뷰 목록 캐시는 도서 상세·리뷰 상세 두 곳에 흩어져 있어 공용 무효화 함수로 한 번에 정리한다.
       invalidateReviewLists(queryClient);
-      queryClient.invalidateQueries({ queryKey: ['review', 'preview', rid] });
       setOpen(false);
       setDone(true);
       // 리뷰는 한 사람이 여러 개 쓸 수 있다 — 다음에 '쓰기'를 누르면 빈 칸에서 시작한다.
@@ -1197,18 +1133,9 @@ function ReviewSection({
                   onContentSizeChange={() => reveal(formActionsRef, { onlyIfOpen: true })}
                   style={[styles.scrapInput, { color: colors.text }]}
                 />
-                <View style={styles.scrapMeta}>
-                  {expectedLevel ? (
-                    <Text style={[typeScale.monoLabel, styles.scrapBadge, {
-                      color: expectedLevel === 'VERIFIED_FULL' ? colors.accent : colors.textFaint,
-                    }]}>
-                      {VERIFICATION_LABEL[expectedLevel]}
-                    </Text>
-                  ) : <View />}
-                  <Text style={[typeScale.caption, { color: rating > 0 ? colors.text : colors.textFaint }]}>
-                    {rating > 0 ? RATING_WORDS[rating] : '별점은 선택이에요'}
-                  </Text>
-                </View>
+                <Text style={[typeScale.caption, styles.scrapMeta, { color: rating > 0 ? colors.text : colors.textFaint }]}>
+                  {rating > 0 ? RATING_WORDS[rating] : '별점은 선택이에요'}
+                </Text>
               </MemoScrap>
               {errorMessage ? (
                 <Text style={[typeScale.caption, { color: colors.warn }]}>{errorMessage}</Text>
@@ -1382,7 +1309,6 @@ const styles = StyleSheet.create({
   fill: { height: '100%', borderRadius: radius.sm },
   thumb: { position: 'absolute', top: '50%', width: 8, height: 22, marginTop: -11, marginLeft: -spacing.xs, borderRadius: radius.sm },
 
-  verifyHead: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap' },
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1406,8 +1332,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlignVertical: 'top',
   },
-  scrapMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.sm },
-  scrapBadge: { fontSize: 9, letterSpacing: 0.4 },
+  scrapMeta: { alignSelf: 'flex-end', marginTop: spacing.sm },
   formActions: { flexDirection: 'row', gap: spacing.sm },
   formButton: { flex: 1 },
   // 리뷰|독후감 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.

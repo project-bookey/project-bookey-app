@@ -62,7 +62,6 @@ import type {
   TokenResponse,
   UpdatePost,
   UserProfileView,
-  VerificationPreview,
   VisitorView,
   WalletView,
 } from "./types";
@@ -197,10 +196,8 @@ export const bookApi = {
     author?: string;
     totalPages: number;
   }) => api<BookSummary>("/api/v1/books", { method: "POST", body }),
-  reviews: (bookId: number, verifiedOnly = false) =>
-    api<Page<Review>>(`/api/v1/books/${bookId}/reviews`, {
-      query: { verifiedOnly },
-    }),
+  reviews: (bookId: number) =>
+    api<Page<Review>>(`/api/v1/books/${bookId}/reviews`),
   popular: (size = 20) =>
     api<PopularBook[]>("/api/v1/books/popular", { query: { size } }),
   /** YES24 큐레이션 — 베스트셀러·스테디셀러·신상품 (서버 1시간 캐시, 키 없으면 빈 목록). */
@@ -866,10 +863,6 @@ export const bannerApi = {
 };
 
 export const reviewApi = {
-  preview: (readingRecordId: number) =>
-    api<VerificationPreview>("/api/v1/reviews/preview", {
-      query: { readingRecordId },
-    }),
   create: (body: {
     readingRecordId: number;
     rating?: number;
