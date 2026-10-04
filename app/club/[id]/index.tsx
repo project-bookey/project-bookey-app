@@ -53,10 +53,7 @@ import {
   Button,
   Card,
   Eyebrow,
-  KeyValue,
   Loading,
-  Rule,
-  Tag,
   Toggle,
   linkLabel,
 } from "@/components/ui";
@@ -585,11 +582,10 @@ function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
   );
 }
 
-/** '사피엔스 · 유발 하라리' — 저자가 없으면 제목만. */
-function bookLine(book?: { title?: string; author?: string } | null): string {
-  return [book?.title, book?.author].filter(Boolean).join(" · ");
-}
-
+/**
+ * 추천 클럽 미리보기(비멤버) — 머리는 클럽 홈과 같은 얼굴이다: 배경(호스트가 올린 사진, 없으면 기본 배경) 위에
+ * 이름 · 한 줄 정보(호스트 · 멤버 수) · 한 줄 소개. 클럽은 책 한 권에 묶이지 않으므로 책 표지 · 읽는 책은 보이지 않는다.
+ */
 function PublicClubPreview({
   club,
   shareProgress,
@@ -606,62 +602,42 @@ function PublicClubPreview({
   const router = useRouter();
   const { colors } = useTheme();
   const ended = club.status === "ENDED" || club.status === "ARCHIVED";
+  const metaLine = [
+    club.hostNickname ? `호스트 ${club.hostNickname}` : null,
+    `멤버 ${club.memberCount}/${club.memberLimit}`,
+    ended ? "종료" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const intro = club.description?.trim() ?? "";
 
   return (
     <PaperScreen>
-      <SubHeader category="추천 클럽" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <TiltCover
-            uri={club.book?.coverUrl}
-            title={club.book?.title}
-            width={58}
-            tilt={0}
-            entering={false}
-          />
-          <View style={{ flex: 1, gap: spacing.xs }}>
-            <Text style={[styles.title, { color: colors.text }]}>
+      <View>
+        <ClubBackdrop uri={club.backgroundUrl} seed={club.id} />
+        <LinearGradient
+          colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
+          locations={[0, 0.55, 1]}
+          style={StyleSheet.absoluteFill}
+        />
+        <SubHeader category="추천 클럽" onBack={() => router.back()} />
+        <View style={styles.top}>
+          <View style={{ gap: spacing.xs }}>
+            <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
               {club.name}
             </Text>
-            <Text style={[styles.bookLine, { color: colors.textMuted }]}>
-              {club.book ? `지금 읽는 책 · ${bookLine(club.book)}` : "읽을 책 미정"}
+            <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
+              {metaLine}
             </Text>
-            <View style={styles.headerTags}>
-              <Tag label={`${club.memberCount}/${club.memberLimit}명`} />
-              {ended ? (
-                <Tag label="종료" />
-              ) : (
-                <Tag
-                  label={club.status === "RECRUITING" ? "모집 중" : "진행 중"}
-                />
-              )}
-            </View>
           </View>
-        </View>
-
-        {club.description ? (
-          <Card>
-            <Text
-              style={[
-                typeScale.body,
-                { color: colors.textMuted, lineHeight: 22 },
-              ]}
-            >
-              {club.description}
+          {intro ? (
+            <Text numberOfLines={INTRO_LINES} style={[styles.intro, { color: colors.text }]}>
+              {intro}
             </Text>
-          </Card>
-        ) : null}
-
-        <Card style={{ gap: spacing.md }}>
-          <Eyebrow>클럽 정보</Eyebrow>
-          <KeyValue label="호스트" value={club.hostNickname ?? "-"} />
-          <Rule />
-          <KeyValue
-            label="인원"
-            value={`${club.memberCount} / ${club.memberLimit}`}
-          />
-        </Card>
-
+          ) : null}
+        </View>
+      </View>
+      <ScrollView contentContainerStyle={styles.container}>
         {club.joinable ? (
           <Card style={{ gap: spacing.md }}>
             <Eyebrow>참가 설정</Eyebrow>
@@ -691,8 +667,6 @@ function PublicClubPreview({
     </PaperScreen>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   headerActions: { flexDirection: "row", gap: spacing.sm },
@@ -762,15 +736,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.xl,
     paddingBottom: 120,
-  },
-  header: { flexDirection: "row", gap: spacing.md },
-  title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
-  bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
-  headerTags: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    flexWrap: "wrap",
   },
   error: { ...typeScale.body, padding: spacing.lg },
 });
