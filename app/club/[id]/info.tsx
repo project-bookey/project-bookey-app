@@ -96,6 +96,8 @@ export default function ClubInfoScreen() {
   const data: ClubHome = club.data;
   const ended = data.status === 'ENDED' || data.status === 'ARCHIVED';
   const isHost = data.myRole === 'HOST';
+  // 자리 늘리기 — 초대하다 자리가 모자란 호스트가 바로 늘리게 초대 코드 밑에 둔다(클럽 설정에도 같은 버튼이 있다).
+  const expandable = isHost && !ended && data.seatPolicy != null && data.memberLimit < data.seatPolicy.maxLimit;
   const selectedMember = data.members.find((m) => m.userId === selectedUserId) ?? null;
   const readingNowIds = new Set((readingNow.data ?? []).map((r) => r.userId));
   const logCounts = new Map<number, number>();
@@ -169,7 +171,7 @@ export default function ClubInfoScreen() {
           ) : null}
         </View>
 
-        {/* 이번 주 카드 · 초대 코드 — 괘선 아래 한 묶음 */}
+        {/* 이번 주 카드 · 초대 코드 · 자리(호스트) — 괘선 아래 한 묶음 */}
         <View style={{ gap: spacing.sm }}>
           <Rule />
           <Pressable
@@ -185,6 +187,24 @@ export default function ClubInfoScreen() {
             <Text style={[typeScale.caption, { color: colors.textMuted }]}>초대 코드</Text>
             <Text style={[styles.code, { color: colors.textMuted }]}>{data.joinCode}</Text>
           </View>
+          {isHost ? (
+            <View style={styles.codeRow}>
+              <View style={styles.seatLabel}>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>자리</Text>
+                <Text style={[typeScale.label, { color: colors.text }]}>
+                  {data.memberCount} / {data.memberLimit}명
+                </Text>
+              </View>
+              {expandable ? (
+                <Button
+                  label="자리 늘리기"
+                  size="sm"
+                  variant="outline"
+                  onPress={() => router.push(`/club/${clubId}/seats`)}
+                />
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         {/* 파괴적 동작 — 위 묶음과 섹션 간격(xl)으로 떼어 맨 아래에 둔다 */}
@@ -213,4 +233,5 @@ const styles = StyleSheet.create({
   linkRow: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   code: { fontFamily: mono.semiBold, fontSize: 14, letterSpacing: 3 },
+  seatLabel: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
 });
