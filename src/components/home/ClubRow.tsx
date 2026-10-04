@@ -7,7 +7,7 @@ import type { ClubPreview } from '@/api/types';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 import { ClubBackdrop } from '@/components/club';
-import { linkLabel } from '@/components/ui';
+import { TextLink } from '@/components/ui';
 
 /**
  * 홈 추천 클럽 행 — 공개 클럽 카드 + 맨 끝 '+ 클럽 만들기' 타일.
@@ -33,9 +33,7 @@ export function ClubRow() {
         <View style={styles.headTitle}>
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>추천 클럽</Text>
         </View>
-        <Pressable onPress={() => router.navigate('/clubs')} hitSlop={8} accessibilityRole="button" accessibilityLabel="전체보기">
-          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('전체보기')}</Text>
-        </Pressable>
+        <TextLink label="전체보기" onPress={() => router.navigate('/clubs')} />
       </View>
       <FlatList
         horizontal
@@ -57,10 +55,10 @@ export function ClubRow() {
             onPress={() => router.push('/club/create')}
             accessibilityRole="button"
             accessibilityLabel="클럽 만들기"
-            style={[styles.card, styles.createTile, { borderColor: colors.lineStrong }]}
+            style={[styles.card, styles.createTile, { borderColor: colors.control }]}
           >
-            <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-            <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>클럽 만들기</Text>
+            <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
+            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>클럽 만들기</Text>
           </Pressable>
         }
         renderItem={({ item }) => (

@@ -197,9 +197,9 @@ function GridTile({ record, colors, mode, onPress }: {
 function AddTile({ colors, onPress }: { colors: ColorTokens; onPress: () => void }) {
   return (
     <Pressable style={styles.cell} onPress={onPress} accessibilityRole="button" accessibilityLabel="책 추가">
-      <View style={[styles.cover, styles.addTile, { borderColor: colors.lineStrong }]}>
-        <Text style={[typeScale.titleSerif, { color: colors.textMuted }]}>+</Text>
-        <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>책 추가</Text>
+      <View style={[styles.cover, styles.addTile, { borderColor: colors.control }]}>
+        <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
+        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
       </View>
     </Pressable>
   );

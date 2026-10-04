@@ -23,7 +23,7 @@ import { FinishReviewSheet, type FinishedBook } from '@/components/review/Finish
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { RATING_WORDS, StarRating, ratingPrompt } from '@/components/review/StarRating';
 import { VERIFICATION_LABEL } from '@/components/review/verification';
-import { Button, Card, Eyebrow, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
+import { Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import { getLagStyle, hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -559,7 +559,7 @@ function BookLikeButton({ bookId, liked, likeCount, colors }: {
         // 좋아요 켜짐은 초록 — 하트는 앱 전체에서 초록으로 둔다(사용자 결정 2026-10-03, CLAUDE.md 예외 목록).
         liked
           ? { backgroundColor: colors.accent, borderColor: colors.accent }
-          : { borderColor: colors.lineStrong },
+          : { borderColor: colors.control },
         { opacity: like.isPending ? 0.6 : 1 },
       ]}
     >
@@ -613,7 +613,7 @@ function ActionBar({ bookId, hasRecord, colors, onAdded }: {
               accessibilityRole="button"
               accessibilityLabel="읽고 싶은 책으로 담기"
               style={[styles.actionButton, styles.actionOutline, {
-                borderColor: colors.lineStrong, opacity: add.isPending ? 0.6 : 1,
+                borderColor: colors.control, opacity: add.isPending ? 0.6 : 1,
               }]}
             >
               <Text style={[typeScale.label, { color: colors.text }]}>+ 읽고 싶은</Text>
@@ -887,7 +887,7 @@ function ProgressEditor({ rid, progress, colors }: {
             accessibilityRole="button"
             accessibilityLabel="현재 페이지 수정"
             hitSlop={8}
-            style={({ pressed }) => [styles.bigNumberEditable, { borderBottomColor: colors.lineStrong }, pressed && pressedStyle]}
+            style={({ pressed }) => [styles.bigNumberEditable, { borderBottomColor: colors.control }, pressed && pressedStyle]}
           >
             <Text style={[styles.bigNumber, { color: colors.text }]}>{page}</Text>
           </Pressable>
@@ -1053,18 +1053,18 @@ function ReviewSection({
 
   // 우측 액션은 탭별 — 리뷰는 '쓰기', 독후감은 작성 화면으로 나가는 '쓰기'.
   // 리뷰는 이 책의 읽기 기록이 있어야 쓸 수 있지만, 독후감은 서재에 담지 않은 책에도 쓸 수 있다.
+  // 작은 테두리 버튼(FootAction) — 10px 글자뿐이던 때는 이 책에 글을 쓰는 유일한 입구가 눈에 띄지 않았다.
   const action = tab === 'POST'
     ? (
-        <Pressable
+        <FootAction
+          label="쓰기"
+          tone="accent"
           onPress={() => router.push({ pathname: '/post/new', params: { bookId: String(bookId) } })}
-          accessibilityRole="button" accessibilityLabel="독후감 쓰기" hitSlop={8} style={styles.tabAction}>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('쓰기')}</Text>
-        </Pressable>
+          accessibilityLabel="독후감 쓰기"
+        />
       )
     : (rid != null && !done && !open ? (
-        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" hitSlop={8} style={styles.tabAction}>
-          <Text style={[typeScale.monoEyebrow, { color: colors.accent }]}>{linkLabel('쓰기', 'action')}</Text>
-        </Pressable>
+        <FootAction label="쓰기" tone="accent" onPress={() => setOpen(true)} accessibilityLabel="리뷰 쓰기" />
       ) : null);
 
   return (
@@ -1304,9 +1304,6 @@ const styles = StyleSheet.create({
   formButton: { flex: 1 },
   // 리뷰|독후감 탭 헤더 — SectionHeader 와 같은 높이·간격, 제목은 명조 18.
   tabHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  // 탭 헤더 우측 액션 — 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다(두 탭 모두 같은 자리).
-  // 늘린 좌우 여백만큼 음수 마진으로 되돌려 글자는 제목줄 끝에 그대로 맞춘다(FootAction 과 같은 규율).
-  tabAction: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
   tabRow: { flexDirection: 'row', gap: spacing.lg },
   tab: { gap: 6 },
   tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },

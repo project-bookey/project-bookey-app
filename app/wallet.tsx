@@ -112,7 +112,7 @@ export default function WalletScreen() {
             </Text>
             <View style={styles.actions}>
               {subscribed ? (
-                <Button label="구독 안내" variant="ghost" size="sm" onPress={() => router.push('/subscription')} />
+                <Button label="구독 안내" variant="outline" size="sm" onPress={() => router.push('/subscription')} />
               ) : (
                 <Button label="구독하기" size="sm" onPress={() => router.push('/subscription')} />
               )}

@@ -76,11 +76,11 @@ export function AttendanceCard() {
         accessibilityLabel={expanded ? '출석 달력 접기' : '출석 달력 펼치기'}
         style={({ pressed }) => [
           styles.expandButton,
-          { borderColor: colors.line },
+          { borderColor: colors.control },
           pressed && styles.pressed,
         ]}
       >
-        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+        <Text style={[typeScale.monoLabel, { color: colors.text }]}>
           {expanded ? '달력 접기 ︿' : '달력 보기 ﹀'}
         </Text>
       </Pressable>

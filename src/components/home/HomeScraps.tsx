@@ -18,7 +18,7 @@ import { TiltCover } from '@/components/collage';
 import { HomeSection } from '@/components/home/HomeSection';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
-import { linkLabel } from '@/components/ui';
+import { TextLink } from '@/components/ui';
 
 /** 스포트라이트에 세우는 독후감 수 — 6초마다 한 장씩 돌린다. */
 const FEED_SIZE = 5;
@@ -200,14 +200,7 @@ export function HomeScraps() {
       <View style={styles.section}>
         <View style={styles.header}>
           <Text style={[typeScale.titleSerif, styles.title, { color: colors.text }]}>오늘의 글</Text>
-          <Pressable
-            onPress={openPlaza}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="광장으로"
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{linkLabel('광장')}</Text>
-          </Pressable>
+          <TextLink label="광장" onPress={openPlaza} accessibilityLabel="광장으로" />
         </View>
 
         {/* 자동 회전은 스크린리더를 시끄럽게 하지 않는다 — liveRegion 을 걸지 않고

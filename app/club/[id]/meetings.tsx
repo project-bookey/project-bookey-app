@@ -206,7 +206,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
                   onChange={changeDate}
                 />
                 {Platform.OS === 'ios' ? (
-                  <Button label="날짜 선택 완료" size="sm" variant="ghost" onPress={() => setShowDate(false)} />
+                  <Button label="날짜 선택 완료" size="sm" variant="outline" onPress={() => setShowDate(false)} />
                 ) : null}
               </View>
             ) : null}
@@ -220,7 +220,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
                   onChange={changeTime}
                 />
                 {Platform.OS === 'ios' ? (
-                  <Button label="시간 선택 완료" size="sm" variant="ghost" onPress={() => setShowTime(false)} />
+                  <Button label="시간 선택 완료" size="sm" variant="outline" onPress={() => setShowTime(false)} />
                 ) : null}
               </View>
             ) : null}
@@ -233,7 +233,7 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
                 <Text numberOfLines={2} style={[typeScale.label, styles.bookTitle, { color: colors.text }]}>
                   {book.title}
                 </Text>
-                <Button label="바꾸기" variant="ghost" size="sm" onPress={() => setShowBooks(true)} />
+                <Button label="바꾸기" variant="outline" size="sm" onPress={() => setShowBooks(true)} />
               </View>
             ) : (
               <Button label="서재에서 고르기" variant="outline" onPress={() => setShowBooks(true)} />
@@ -269,8 +269,9 @@ export function ClubMeetingsBody({ isHost, initialOpen = false }: {
               accessibilityRole="button"
               style={({ pressed }) => [styles.addressLink, pressed ? pressedStyle : null]}
             >
+              {/* 물음은 회색, 누를 곳은 공용 글자 링크(TextLink)와 같은 12px 본문색 — 링크가 메타 글자에 묻히지 않게. */}
               <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
-                찾는 곳이 없나요? {linkLabel('주소로 찾기')}
+                찾는 곳이 없나요? <Text style={[styles.addressLinkLabel, { color: colors.text }]}>{linkLabel('주소로 찾기')}</Text>
               </Text>
             </Pressable>
             {form.address ? (
@@ -460,6 +461,7 @@ const styles = StyleSheet.create({
   placeRow: { paddingVertical: spacing.sm, gap: 2, borderBottomWidth: hairline },
   // 11px 모노 한 줄이라 여백으로 44pt 상자를 만든다(웹은 hitSlop 을 무시한다).
   addressLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
+  addressLinkLabel: { fontSize: 12 },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
   // 고른 책 — 표지 · 제목 · 바꾸기가 한 줄.
   bookRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

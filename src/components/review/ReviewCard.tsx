@@ -1,18 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { VerificationLevel } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
-import { Card, Tag, formatRelative, linkLabel } from '@/components/ui';
+import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 import { VERIFICATION_LABEL } from './verification';
-
-/**
- * 푸터 액션 확장 터치 영역(네이티브 전용).
- * 웹은 hitSlop 을 무시하므로 실제 여백(styles.footAction)으로 상자를 키운다.
- */
-const FOOT_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
 
 export type ReviewCardProps = {
   authorNickname: string;
@@ -81,10 +75,7 @@ export function ReviewCard({
 
       <View style={styles.footRow}>
         <View style={styles.footRight}>
-          <Pressable onPress={onOpenBook} hitSlop={FOOT_HIT_SLOP} style={styles.footAction}
-            accessibilityRole="button" accessibilityLabel={`${where} 상세`}>
-            <Text style={[typeScale.monoLabel, styles.footLabel, { color: colors.accent }]}>{linkLabel('책 보기')}</Text>
-          </Pressable>
+          <FootAction label="책 보기" tone="accent" onPress={onOpenBook} accessibilityLabel={`${where} 상세`} />
         </View>
       </View>
     </Card>
@@ -114,7 +105,4 @@ const styles = StyleSheet.create({
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  footLabel: { fontSize: 10, letterSpacing: 0.4 },
-  // 여백으로 손가락 상자를 키우되, 같은 크기의 음수 마진으로 카드 안 리듬은 그대로 둔다.
-  footAction: { paddingVertical: 10, paddingHorizontal: 6, marginVertical: -6, marginHorizontal: -6 },
 });
