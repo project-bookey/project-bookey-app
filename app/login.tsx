@@ -3,13 +3,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView,
-  StyleSheet, Text, TextInput, View,
+  ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { API_BASE_URL } from '@/api/client';
+import { API_BASE_URL, ApiError } from '@/api/client';
+import type { SignupConsent } from '@/api/types';
 import { authApi, libraryApi } from '@/api/endpoints';
 import { useOnboarding } from '@/store/onboarding';
 import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
@@ -17,7 +17,10 @@ import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/hooks/useSocialTokens';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
-import { LEGAL_DOCUMENTS, LEGAL_VERSION, LegalDocumentKey } from '@/legal/documents';
+import {
+  consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type ConsentDraft,
+} from '@/components/legal/SignupConsentBox';
+import { SocialConsentSheet } from '@/components/legal/SocialConsentSheet';
 import { KeyboardArea } from '@/components/keyboard';
 import { linkLabel } from '@/components/ui';
 
@@ -29,7 +32,9 @@ const BUTTON_HEIGHT = 48;
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
  * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 연동된 소셜 계정은 그 계정으로 로그인되고, 처음 보는
- * 소셜 계정은 서버가 바로 가입시킨다(newUser — 이메일 가입과 같은 가입 마무리를 거친다).
+ * 소셜 계정은 서버가 LEGAL_CONSENT_REQUIRED 로 돌려보낸다 — 가입 동의 시트(SocialConsentSheet)에서 동의를 받아
+ * 같은 토큰으로 다시 부르면 그때 가입된다(newUser — 이메일 가입과 같은 가입 마무리를 거친다).
+ * 가입 동의(약관·개인정보·만 14세 필수, 광고성 정보 선택)의 원문은 서버가 내려준다(SignupConsentBox).
  * 가입 인증은 서버 설정(signup-config)을 따른다 — IDENTITY, EMAIL_CODE 또는 NONE.
  * 가입 성공 시 온보딩에서 고른 카테고리·책을 반영하고 프로필 기본 정보 단계(/profile-photo)를 거쳐 홈으로 간다.
  * 비밀번호를 잊은 사람은 비밀번호 칸 아래 링크로 /password-reset 에 간다(입력해 둔 이메일을 넘긴다).
@@ -62,12 +67,11 @@ export default function LoginScreen() {
   const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [appleAvailable, setAppleAvailable] = useState(false);
-  const [legalOpen, setLegalOpen] = useState<LegalDocumentKey | null>(null);
-  const [legalReadToEnd, setLegalReadToEnd] = useState(false);
-  const [legalAgreed, setLegalAgreed] = useState<Record<LegalDocumentKey, boolean>>({
-    terms: false,
-    privacy: false,
-  });
+  const [consent, setConsent] = useState<ConsentDraft>(EMPTY_CONSENT);
+  /** 동의를 기다리는 처음 보는 소셜 계정 — 동의하면 이 토큰으로 다시 로그인을 부른다. */
+  const [pendingSocial, setPendingSocial] = useState<{ provider: SocialProvider; token: string } | null>(null);
+  const [socialConsentBusy, setSocialConsentBusy] = useState(false);
+  const [socialConsentError, setSocialConsentError] = useState<string | null>(null);
 
   const kakao = useKakaoLogin();
 
@@ -94,14 +98,7 @@ export default function LoginScreen() {
     }
     setSocialLoading('GOOGLE');
     setError(null);
-    socialLogin('GOOGLE', idToken)
-      .then(async (newUser) => {
-        if (newUser) {
-          await finishSignup();
-          return;
-        }
-        router.replace('/home');
-      })
+    runSocial('GOOGLE', idToken)
       .catch((e) => setError(e instanceof Error ? e.message : 'Google 로그인에 실패했습니다.'))
       .finally(() => setSocialLoading(null));
   }, [googleResponse, router, socialLogin]);
@@ -172,6 +169,51 @@ export default function LoginScreen() {
     router.replace('/profile-photo');
   };
 
+  /**
+   * 소셜 로그인 공통 — 연동된 계정은 홈으로, 새 계정은 가입 마무리로.
+   * 처음 보는 계정이라 서버가 동의를 요구하면 가입 동의 시트를 띄우고 토큰을 들고 기다린다.
+   */
+  const runSocial = async (provider: SocialProvider, token: string) => {
+    try {
+      const newUser = await socialLogin(provider, token);
+      if (newUser) {
+        await finishSignup();
+        return;
+      }
+      router.replace('/home');
+    } catch (e) {
+      if (e instanceof ApiError && e.code === 'LEGAL_CONSENT_REQUIRED') {
+        setSocialConsentError(null);
+        setPendingSocial({ provider, token });
+        return;
+      }
+      throw e;
+    }
+  };
+
+  /** 소셜 가입 동의 시트의 '동의하고 가입' — 기다리던 토큰으로 동의와 함께 다시 부른다. */
+  const completeSocialSignup = async (signupConsent: SignupConsent) => {
+    if (!pendingSocial) return;
+    setSocialConsentBusy(true);
+    setSocialConsentError(null);
+    try {
+      const newUser = await socialLogin(pendingSocial.provider, pendingSocial.token, signupConsent);
+      setPendingSocial(null);
+      if (newUser) {
+        await finishSignup();
+        return;
+      }
+      router.replace('/home');
+    } catch (e) {
+      // 소셜 토큰은 몇 분 뒤 만료된다(Apple 은 약 10분) — 그때는 처음부터 다시 로그인하게 안내한다.
+      setSocialConsentError(e instanceof ApiError && e.status === 401
+        ? '로그인 정보가 만료됐어요. 취소한 뒤 다시 로그인해 주세요.'
+        : e instanceof Error ? e.message : '가입하지 못했어요. 다시 시도해 주세요.');
+    } finally {
+      setSocialConsentBusy(false);
+    }
+  };
+
   /** 본인인증 시작 — 개발 스텁이면 즉시 통과, 실서비스는 포트원 SDK 연동 지점. */
   const startIdentityVerification = () => {
     const config = signupConfig.data;
@@ -217,8 +259,8 @@ export default function LoginScreen() {
       setError('휴대폰 본인인증을 먼저 완료해 주세요.');
       return;
     }
-    if (isSignup && (!legalAgreed.terms || !legalAgreed.privacy)) {
-      setError('이용약관과 개인정보 수집·이용 내용을 끝까지 읽고 동의해 주세요.');
+    if (isSignup && !consentComplete(consent)) {
+      setError('필수 동의(만 14세 이상·이용약관·개인정보 수집·이용)를 모두 확인해 주세요.');
       return;
     }
     setEmailLoading(true);
@@ -234,12 +276,7 @@ export default function LoginScreen() {
             : method === 'IDENTITY'
               ? { identityVerificationId: identityId ?? undefined }
               : {},
-          {
-            termsAgreed: true,
-            termsVersion: LEGAL_VERSION,
-            privacyAgreed: true,
-            privacyVersion: LEGAL_VERSION,
-          },
+          toSignupConsent(consent),
         );
         await finishSignup();
       } else {
@@ -268,12 +305,7 @@ export default function LoginScreen() {
       if (!credential.identityToken) {
         throw new Error('Apple 인증 토큰을 받지 못했습니다.');
       }
-      const newUser = await socialLogin('APPLE', credential.identityToken);
-      if (newUser) {
-        await finishSignup();
-        return;
-      }
-      router.replace('/home');
+      await runSocial('APPLE', credential.identityToken);
     } catch (e) {
       if ((e as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') {
         setError(e instanceof Error ? e.message : 'Apple 로그인에 실패했습니다.');
@@ -293,12 +325,7 @@ export default function LoginScreen() {
     try {
       const accessToken = await kakao.login();
       if (!accessToken) return; // 사용자가 취소
-      const newUser = await socialLogin('KAKAO', accessToken);
-      if (newUser) {
-        await finishSignup();
-        return;
-      }
-      router.replace('/home');
+      await runSocial('KAKAO', accessToken);
     } catch (e) {
       setError(e instanceof Error ? e.message : '카카오 로그인에 실패했습니다.');
     } finally {
@@ -323,26 +350,8 @@ export default function LoginScreen() {
 
   const showApple = Boolean(Apple) && appleAvailable;
   const busy = emailLoading || codeLoading || codeVerifyLoading || socialLoading != null;
-  const signupConsentComplete = legalAgreed.terms && legalAgreed.privacy;
+  const signupConsentComplete = consentComplete(consent);
   const signupVerificationComplete = signupConfig.data?.verification !== 'EMAIL_CODE' || codeVerified;
-
-  const openLegal = (key: LegalDocumentKey) => {
-    setLegalOpen(key);
-    setLegalReadToEnd(legalAgreed[key]);
-  };
-
-  const onLegalScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 24) {
-      setLegalReadToEnd(true);
-    }
-  };
-
-  const agreeCurrentLegal = () => {
-    if (!legalOpen || !legalReadToEnd) return;
-    setLegalAgreed((current) => ({ ...current, [legalOpen]: true }));
-    setLegalOpen(null);
-  };
 
   return (
     <View style={styles.screen}>
@@ -496,25 +505,7 @@ export default function LoginScreen() {
               </View>
             ) : null}
             {isSignup ? (
-              <View style={styles.legalBox}>
-                <Text style={styles.legalHeading}>필수 동의</Text>
-                {(['terms', 'privacy'] as const).map((key) => (
-                  <Pressable
-                    key={key}
-                    onPress={() => openLegal(key)}
-                    style={({ pressed }) => [styles.legalRow, pressed && styles.pressed]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${LEGAL_DOCUMENTS[key].title} 전문 보기`}
-                  >
-                    <View style={[styles.check, legalAgreed[key] && styles.checkDone]}>
-                      <Text style={styles.checkLabel}>{legalAgreed[key] ? '✓' : ''}</Text>
-                    </View>
-                    <Text style={styles.legalRowLabel}>{LEGAL_DOCUMENTS[key].title}</Text>
-                    <Text style={styles.legalView}>{linkLabel('전문 보기')}</Text>
-                  </Pressable>
-                ))}
-                <Text style={styles.legalHint}>각 문서를 끝까지 읽어야 동의할 수 있습니다.</Text>
-              </View>
+              <SignupConsentBox colors={darkColors} value={consent} onChange={setConsent} disabled={busy} />
             ) : null}
             {/* 실패 안내는 누른 버튼 바로 위에 — 아래 '처음 가입하기' 밑에 두면 눈이 닿지 않는다(Proximity). */}
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
@@ -602,47 +593,14 @@ export default function LoginScreen() {
           ) : null}
         </ScrollView>
       </KeyboardArea>
-      <Modal
-        visible={legalOpen != null}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setLegalOpen(null)}
-      >
-        <View style={styles.legalModal}>
-          <View style={styles.legalModalHeader}>
-            <Text style={styles.legalModalTitle}>
-              {legalOpen ? LEGAL_DOCUMENTS[legalOpen].title : ''}
-            </Text>
-            <Pressable onPress={() => setLegalOpen(null)} accessibilityRole="button" hitSlop={12}>
-              <Text style={styles.legalClose}>닫기</Text>
-            </Pressable>
-          </View>
-          <ScrollView
-            style={styles.legalScroll}
-            contentContainerStyle={styles.legalContent}
-            onScroll={onLegalScroll}
-            scrollEventThrottle={16}
-          >
-            <Text style={styles.legalBody}>{legalOpen ? LEGAL_DOCUMENTS[legalOpen].body : ''}</Text>
-            <Text style={styles.legalEnd}>— 문서의 끝 —</Text>
-          </ScrollView>
-          <View style={styles.legalFooter}>
-            {!legalReadToEnd ? (
-              <Text style={styles.legalScrollHint}>내용을 끝까지 내려 읽어 주세요.</Text>
-            ) : null}
-            <Pressable
-              onPress={agreeCurrentLegal}
-              disabled={!legalReadToEnd}
-              style={[styles.legalAgree, !legalReadToEnd && styles.legalAgreeDisabled]}
-              accessibilityRole="button"
-            >
-              <Text style={styles.legalAgreeLabel}>
-                {legalOpen && legalAgreed[legalOpen] ? '동의 완료' : '읽었으며 동의합니다'}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <SocialConsentSheet
+        visible={pendingSocial != null}
+        colors={darkColors}
+        busy={socialConsentBusy}
+        error={socialConsentError}
+        onCancel={() => setPendingSocial(null)}
+        onSubmit={completeSocialSignup}
+      />
     </View>
   );
 }
@@ -732,61 +690,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  legalBox: {
-    borderWidth: hairline,
-    borderColor: darkColors.lineStrong,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  legalHeading: { ...typeScale.label, color: darkColors.text },
-  legalRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  check: {
-    width: 20,
-    height: 20,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkDone: { backgroundColor: darkColors.accent, borderColor: darkColors.accent },
-  checkLabel: { color: darkColors.onAccent, fontSize: 13, fontWeight: '700' },
-  legalRowLabel: { ...typeScale.caption, color: darkColors.text, flex: 1 },
-  legalView: { ...typeScale.caption, color: darkColors.textMuted },
-  legalHint: { ...typeScale.caption, color: darkColors.textFaint },
-  legalModal: { flex: 1, backgroundColor: darkColors.bg },
-  legalModalHeader: {
-    minHeight: 64,
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    borderBottomWidth: hairline,
-    borderBottomColor: darkColors.lineStrong,
-  },
-  legalModalTitle: { ...typeScale.bodyStrong, color: darkColors.text, flex: 1 },
-  legalClose: { ...typeScale.label, color: darkColors.textMuted },
-  legalScroll: { flex: 1 },
-  legalContent: { padding: spacing.lg, paddingBottom: spacing.xl },
-  legalBody: { ...typeScale.body, color: darkColors.textMuted, lineHeight: 25 },
-  legalEnd: { ...typeScale.caption, color: darkColors.textFaint, textAlign: 'center', marginTop: spacing.xl },
-  legalFooter: {
-    padding: spacing.lg,
-    gap: spacing.sm,
-    borderTopWidth: hairline,
-    borderTopColor: darkColors.lineStrong,
-  },
-  legalScrollHint: { ...typeScale.caption, color: darkColors.textFaint, textAlign: 'center' },
-  legalAgree: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
-    backgroundColor: darkColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  legalAgreeDisabled: { opacity: 0.35 },
-  legalAgreeLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dividerRule: { flex: 1, height: hairline, backgroundColor: darkColors.lineStrong },
   dividerLabel: { ...typeScale.caption, color: darkColors.textFaint },

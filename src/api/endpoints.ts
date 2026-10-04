@@ -28,6 +28,8 @@ import type {
   FollowUserView,
   Inquiry,
   InquiryCategoryOption,
+  LegalDocument,
+  LegalDocumentKey,
   InquiryImage,
   InquirySummary,
   LibrarySummary,
@@ -55,6 +57,7 @@ import type {
   Session,
   SessionEndResult,
   SignupConfig,
+  SignupConsent,
   StatsSummary,
   TokenResponse,
   UpdatePost,
@@ -66,14 +69,15 @@ import type {
 
 export const authApi = {
   /**
-   * 소셜 로그인 — 연동된 계정은 로그인하고, 처음 보는 소셜 계정은 바로 가입시킨다(newUser=true).
+   * 소셜 로그인 — 연동된 계정은 로그인하고, 처음 보는 소셜 계정은 가입 동의(consent)와 함께 오면 가입시킨다(newUser=true).
+   * 동의 없이 처음 보는 계정이면 계정을 만들지 않고 LEGAL_CONSENT_REQUIRED — 동의를 받아 같은 token 으로 다시 부른다.
    * 이메일이 기존 계정과 같으면 합치지 않고 EMAIL_ALREADY_EXISTS — 이메일 가입자는 설정에서 연동해 둔다.
    */
-  socialLogin: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string) =>
+  socialLogin: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string, consent?: SignupConsent) =>
     api<TokenResponse>("/api/v1/auth/social", {
       method: "POST",
       auth: false,
-      body: { provider, token },
+      body: { provider, token, consent },
     }),
   linkSocial: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string) =>
     api<Me>("/api/v1/auth/social/link", {
@@ -126,19 +130,14 @@ export const authApi = {
     password: string,
     nickname: string,
     verification: { code?: string; identityVerificationId?: string },
-    consent: {
-      termsAgreed: true;
-      termsVersion: string;
-      privacyAgreed: true;
-      privacyVersion: string;
-    },
+    consent: SignupConsent,
   ) =>
     api<TokenResponse>("/api/v1/auth/signup", {
       method: "POST",
       auth: false,
-      body: { email, password, nickname, ...verification, ...consent },
+      body: { email, password, nickname, ...verification, consent },
     }),
-  /** 프로필 사진 업로드 — 온보딩 필수 단계. */
+  /** 프로필 사진 업로드. */
   uploadAvatar: (form: FormData) =>
     api<Me>("/api/v1/me/avatar", { method: "POST", body: form }),
   logout: () => api<void>("/api/v1/auth/logout", { method: "POST" }),
@@ -160,6 +159,18 @@ export const authApi = {
     birthDate?: string;
     preferredCategories?: string[];
   }) => api<Me>("/api/v1/me", { method: "PATCH", body }),
+  /**
+   * 선택 동의 켜고 끄기 — 광고성 정보 수신(MARKETING)·성별·생년월일(PROFILE_OPTIONAL).
+   * 성별·생년월일을 새로 넣으려면 먼저 PROFILE_OPTIONAL 에 동의해야 한다(아니면 CONSENT_REQUIRED). 철회하면 서버가 두 값을 지운다.
+   */
+  setConsent: (kind: "MARKETING" | "PROFILE_OPTIONAL", agreed: boolean) =>
+    api<Me>(`/api/v1/me/consents/${kind}`, { method: "PUT", body: { agreed } }),
+};
+
+/** 약관·정책 원문 — 로그인 전에도 읽는다. 서버가 버전을 쥐고 있어 문구를 고쳐도 앱 출시가 필요 없다. */
+export const legalApi = {
+  get: (key: LegalDocumentKey) =>
+    api<LegalDocument>(`/api/v1/public/legal/${key}`, { auth: false }),
 };
 
 export const onboardingApi = {

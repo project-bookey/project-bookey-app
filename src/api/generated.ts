@@ -5,6 +5,23 @@
  */
 
 export interface paths {
+    "/api/v1/me/consents/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 선택 동의 켜고 끄기 — MARKETING(광고성 정보 수신)·PROFILE_OPTIONAL(성별·생년월일, 철회하면 지운다) */
+        put: operations["setConsent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/library/{recordId}/remark": {
         parameters: {
             query?: never;
@@ -429,7 +446,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 프로필 사진 업로드 — 온보딩 필수 단계 */
+        /** 프로필 사진 업로드 */
         post: operations["uploadAvatar"];
         delete?: never;
         options?: never;
@@ -2053,6 +2070,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/legal/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 약관·정책 원문 — key: terms, privacy-consent, profile-optional, marketing, privacy-policy, refund */
+        get: operations["document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/books/{bookId}": {
         parameters: {
             query?: never;
@@ -3226,6 +3260,44 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ConsentUpdateRequest: {
+            agreed: boolean;
+        };
+        ConsentStateView: {
+            /** @enum {string} */
+            kind: "TERMS" | "PRIVACY" | "AGE_14" | "PROFILE_OPTIONAL" | "MARKETING" | "THIRD_PARTY_YES24";
+            agreed: boolean;
+            version?: string;
+            /** Format: date-time */
+            at: string;
+        };
+        MeResponse: {
+            /** Format: int64 */
+            id: number;
+            handle: string;
+            nickname: string;
+            email?: string;
+            avatarUrl?: string;
+            gender?: string;
+            /** Format: date */
+            birthDate?: string;
+            timezone: string;
+            notifyTone: string;
+            /** Format: int32 */
+            quietHoursStart: number;
+            /** Format: int32 */
+            quietHoursEnd: number;
+            /** Format: int32 */
+            dailyNotifyCap: number;
+            /** Format: int32 */
+            clubNotifyCap: number;
+            allowNudge: boolean;
+            status: string;
+            preferredCategories: string[];
+            linkedProviders: ("APPLE" | "GOOGLE" | "KAKAO")[];
+            hasPassword: boolean;
+            consents: components["schemas"]["ConsentStateView"][];
+        };
         RemarkRequest: {
             body: string;
         };
@@ -3766,32 +3838,6 @@ export interface components {
             pushToken: string;
             pushEnabled?: boolean;
         };
-        MeResponse: {
-            /** Format: int64 */
-            id: number;
-            handle: string;
-            nickname: string;
-            email?: string;
-            avatarUrl?: string;
-            gender?: string;
-            /** Format: date */
-            birthDate?: string;
-            timezone: string;
-            notifyTone: string;
-            /** Format: int32 */
-            quietHoursStart: number;
-            /** Format: int32 */
-            quietHoursEnd: number;
-            /** Format: int32 */
-            dailyNotifyCap: number;
-            /** Format: int32 */
-            clubNotifyCap: number;
-            allowNudge: boolean;
-            status: string;
-            preferredCategories: string[];
-            linkedProviders: ("APPLE" | "GOOGLE" | "KAKAO")[];
-            hasPassword: boolean;
-        };
         AddBookRequest: {
             /** Format: int64 */
             bookId: number;
@@ -4301,10 +4347,20 @@ export interface components {
             successUrl?: string;
             failUrl?: string;
         };
+        SignupConsent: {
+            termsAgreed?: boolean;
+            termsVersion?: string;
+            privacyAgreed?: boolean;
+            privacyVersion?: string;
+            ageConfirmed?: boolean;
+            marketingAgreed?: boolean;
+            marketingVersion?: string;
+        };
         SocialLoginRequest: {
             /** @enum {string} */
             provider: "APPLE" | "GOOGLE" | "KAKAO";
             token: string;
+            consent?: components["schemas"]["SignupConsent"];
         };
         TokenResponse: {
             accessToken: string;
@@ -4321,10 +4377,7 @@ export interface components {
             nickname: string;
             code?: string;
             identityVerificationId?: string;
-            termsAgreed: boolean;
-            termsVersion: string;
-            privacyAgreed: boolean;
-            privacyVersion: string;
+            consent?: components["schemas"]["SignupConsent"];
         };
         RefreshRequest: {
             refreshToken: string;
@@ -4668,6 +4721,14 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        LegalDocumentView: {
+            key: string;
+            title: string;
+            version: string;
+            /** Format: date */
+            effectiveDate: string;
+            body: string;
+        };
         BookDetail: {
             book: components["schemas"]["BookSummary"];
             description?: string;
@@ -4774,7 +4835,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "INQUIRY_ANSWERED" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "INQUIRY_ANSWERED" | "CONSENT_RESULT" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -5437,6 +5498,9 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaConsentUpdateRequest = components['schemas']['ConsentUpdateRequest'];
+export type SchemaConsentStateView = components['schemas']['ConsentStateView'];
+export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaRemarkRequest = components['schemas']['RemarkRequest'];
 export type SchemaRemarkView = components['schemas']['RemarkView'];
 export type SchemaUpsertMeetingRequest = components['schemas']['UpsertMeetingRequest'];
@@ -5478,7 +5542,6 @@ export type SchemaSendPostcardRequest = components['schemas']['SendPostcardReque
 export type SchemaPostcardView = components['schemas']['PostcardView'];
 export type SchemaReplyPostcardRequest = components['schemas']['ReplyPostcardRequest'];
 export type SchemaDeviceRegisterRequest = components['schemas']['DeviceRegisterRequest'];
-export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaAddBookRequest = components['schemas']['AddBookRequest'];
 export type SchemaProgressView = components['schemas']['ProgressView'];
 export type SchemaReadingRecordView = components['schemas']['ReadingRecordView'];
@@ -5523,6 +5586,7 @@ export type SchemaBookLikeView = components['schemas']['BookLikeView'];
 export type SchemaBookmarkPurchaseVerifyRequest = components['schemas']['BookmarkPurchaseVerifyRequest'];
 export type SchemaBookmarkPurchaseCheckoutRequest = components['schemas']['BookmarkPurchaseCheckoutRequest'];
 export type SchemaBookmarkPurchaseCheckoutView = components['schemas']['BookmarkPurchaseCheckoutView'];
+export type SchemaSignupConsent = components['schemas']['SignupConsent'];
 export type SchemaSocialLoginRequest = components['schemas']['SocialLoginRequest'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaEmailSignupRequest = components['schemas']['EmailSignupRequest'];
@@ -5566,6 +5630,7 @@ export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
 export type SchemaPageResponseReviewCommentView = components['schemas']['PageResponseReviewCommentView'];
 export type SchemaVerificationPreview = components['schemas']['VerificationPreview'];
 export type SchemaPageResponseReviewView = components['schemas']['PageResponseReviewView'];
+export type SchemaLegalDocumentView = components['schemas']['LegalDocumentView'];
 export type SchemaBookDetail = components['schemas']['BookDetail'];
 export type SchemaRatingSummary = components['schemas']['RatingSummary'];
 export type SchemaLikerView = components['schemas']['LikerView'];
@@ -5629,6 +5694,32 @@ export type SchemaAuditRow = components['schemas']['AuditRow'];
 export type SchemaPageResponseAuditRow = components['schemas']['PageResponseAuditRow'];
 export type $defs = Record<string, never>;
 export interface operations {
+    setConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "TERMS" | "PRIVACY" | "AGE_14" | "PROFILE_OPTIONAL" | "MARKETING" | "THIRD_PARTY_YES24";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
     mine: {
         parameters: {
             query?: never;
@@ -9347,6 +9438,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BookSummary"][];
+                };
+            };
+        };
+    };
+    document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LegalDocumentView"];
                 };
             };
         };
