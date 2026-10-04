@@ -98,6 +98,9 @@ export type VerificationPreview = Schemas['VerificationPreview'];
 export type VerificationLevel = NonNullable<Review['verificationLevel']>;
 export type ReviewComment = Schemas['ReviewCommentView'];
 export type CreateReviewComment = Schemas['CreateReviewCommentRequest'];
+/** 한 마디 — 완독·하차 때 남기는 한 줄. 읽기 기록마다 하나, 도서 상세에 최신순으로 돈다. */
+export type Remark = Schemas['RemarkView'];
+export type RemarkKind = Remark['kind'];
 
 // ── 광장 ─────────────────────────────────────────────────
 export type PlazaItem = Schemas['PlazaItemView'];

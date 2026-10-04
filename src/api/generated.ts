@@ -5,6 +5,25 @@
  */
 
 export interface paths {
+    "/api/v1/library/{recordId}/remark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 한 마디 — 이 읽기 기록에 남긴 것, 없으면 빈 응답 */
+        get: operations["mine"];
+        /** 한 마디 남기기 — 완독·하차한 기록에만, 다시 쓰면 고쳐진다 */
+        put: operations["write"];
+        post?: never;
+        /** 한 마디 지우기 */
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{clubId}/meetings/{meetingId}": {
         parameters: {
             query?: never;
@@ -51,7 +70,7 @@ export interface paths {
         put: operations["update"];
         post?: never;
         /** FAQ 삭제 */
-        delete: operations["delete"];
+        delete: operations["delete_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -86,7 +105,7 @@ export interface paths {
         put: operations["update_1"];
         post?: never;
         /** 배너 삭제 */
-        delete: operations["delete_1"];
+        delete: operations["delete_2"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1271,6 +1290,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/email/code/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 가입 이메일 인증 코드 사전 확인 — 성공해도 실제 가입 전까지 소진하지 않는다 */
+        post: operations["verifyEmailCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance": {
         parameters: {
             query?: never;
@@ -1560,7 +1596,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 리뷰 삭제 */
-        delete: operations["delete_2"];
+        delete: operations["delete_3"];
         options?: never;
         head?: never;
         /** 리뷰 수정 — 등급은 재산정하지 않는다 */
@@ -1579,7 +1615,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 독후감 삭제 */
-        delete: operations["delete_3"];
+        delete: operations["delete_4"];
         options?: never;
         head?: never;
         /** 독후감 수정 · 공개 범위 변경 */
@@ -1703,7 +1739,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 삭제 (작성자 또는 운영자) */
-        delete: operations["delete_4"];
+        delete: operations["delete_5"];
         options?: never;
         head?: never;
         /** 글 · 조각 수정 — 작성자만, 한 줄과 쪽을 보낸 값으로 바꾼다 */
@@ -1738,7 +1774,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 에디터 픽 삭제 */
-        delete: operations["delete_5"];
+        delete: operations["delete_6"];
         options?: never;
         head?: never;
         /** 에디터 픽 수정 — 정렬·메모 */
@@ -2250,7 +2286,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
-        delete: operations["delete_6"];
+        delete: operations["delete_7"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2285,7 +2321,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 문의 삭제 — 답변 전후 상관없이 지운다 */
-        delete: operations["delete_7"];
+        delete: operations["delete_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2676,6 +2712,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/books/{bookId}/remarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 도서별 한 마디 — 최근에 쓴 순 */
+        get: operations["listByBook_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/books/{bookId}/posts": {
         parameters: {
             query?: never;
@@ -3027,7 +3080,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 세션 삭제 */
-        delete: operations["delete_8"];
+        delete: operations["delete_9"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3044,7 +3097,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 댓글 삭제 — 본인만 */
-        delete: operations["delete_9"];
+        delete: operations["delete_10"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3061,7 +3114,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 댓글 삭제 — 본인만, 답글도 함께 지워진다 */
-        delete: operations["delete_10"];
+        delete: operations["delete_11"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3078,7 +3131,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 엽서 삭제 — 보낸 사람 또는 받은 사람만 */
-        delete: operations["delete_11"];
+        delete: operations["delete_12"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3095,7 +3148,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 내 알림 삭제 */
-        delete: operations["delete_12"];
+        delete: operations["delete_13"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3129,7 +3182,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 채팅방 삭제 — 참가자만, 메시지도 함께 삭제된다 */
-        delete: operations["delete_13"];
+        delete: operations["delete_14"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3173,6 +3226,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        RemarkRequest: {
+            body: string;
+        };
+        RemarkView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            bookId: number;
+            /** Format: int64 */
+            authorId: number;
+            authorNickname: string;
+            /** @enum {string} */
+            kind: "FINISHED" | "ABANDONED";
+            body: string;
+            /** Format: date-time */
+            writtenAt: string;
+        };
         UpsertMeetingRequest: {
             title: string;
             description?: string;
@@ -4279,6 +4349,11 @@ export interface components {
             email: string;
             password: string;
         };
+        EmailCodeVerifyRequest: {
+            /** Format: email */
+            email: string;
+            code: string;
+        };
         AttendanceView: {
             checkedInToday: boolean;
             /** Format: int32 */
@@ -5352,6 +5427,8 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaRemarkRequest = components['schemas']['RemarkRequest'];
+export type SchemaRemarkView = components['schemas']['RemarkView'];
 export type SchemaUpsertMeetingRequest = components['schemas']['UpsertMeetingRequest'];
 export type SchemaBookSummary = components['schemas']['BookSummary'];
 export type SchemaMeetingAttendeeView = components['schemas']['MeetingAttendeeView'];
@@ -5444,6 +5521,7 @@ export type SchemaPasswordResetRequest = components['schemas']['PasswordResetReq
 export type SchemaEmailCodeRequest = components['schemas']['EmailCodeRequest'];
 export type SchemaEmailCodeResponse = components['schemas']['EmailCodeResponse'];
 export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
+export type SchemaEmailCodeVerifyRequest = components['schemas']['EmailCodeVerifyRequest'];
 export type SchemaAttendanceView = components['schemas']['AttendanceView'];
 export type SchemaWalletAdjustRequest = components['schemas']['WalletAdjustRequest'];
 export type SchemaSubscriptionGrantRequest = components['schemas']['SubscriptionGrantRequest'];
@@ -5540,6 +5618,74 @@ export type SchemaAuditRow = components['schemas']['AuditRow'];
 export type SchemaPageResponseAuditRow = components['schemas']['PageResponseAuditRow'];
 export type $defs = Record<string, never>;
 export interface operations {
+    mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RemarkView"];
+                };
+            };
+        };
+    };
+    write: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemarkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RemarkView"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     meetingDetail: {
         parameters: {
             query?: never;
@@ -5689,7 +5835,7 @@ export interface operations {
             };
         };
     };
-    delete: {
+    delete_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5759,7 +5905,7 @@ export interface operations {
             };
         };
     };
-    delete_1: {
+    delete_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -7838,6 +7984,28 @@ export interface operations {
             };
         };
     };
+    verifyEmailCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailCodeVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     status: {
         parameters: {
             query?: never;
@@ -8344,7 +8512,7 @@ export interface operations {
             };
         };
     };
-    delete_2: {
+    delete_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -8412,7 +8580,7 @@ export interface operations {
             };
         };
     };
-    delete_3: {
+    delete_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -8689,7 +8857,7 @@ export interface operations {
             };
         };
     };
-    delete_4: {
+    delete_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -8761,7 +8929,7 @@ export interface operations {
             };
         };
     };
-    delete_5: {
+    delete_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -9505,7 +9673,7 @@ export interface operations {
             };
         };
     };
-    delete_6: {
+    delete_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -9567,7 +9735,7 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -10107,6 +10275,30 @@ export interface operations {
             };
         };
     };
+    listByBook_1: {
+        parameters: {
+            query?: {
+                size?: number;
+            };
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RemarkView"][];
+                };
+            };
+        };
+    };
     posts_1: {
         parameters: {
             query?: {
@@ -10562,7 +10754,7 @@ export interface operations {
             };
         };
     };
-    delete_8: {
+    delete_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10582,7 +10774,7 @@ export interface operations {
             };
         };
     };
-    delete_9: {
+    delete_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -10603,7 +10795,7 @@ export interface operations {
             };
         };
     };
-    delete_10: {
+    delete_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -10624,7 +10816,7 @@ export interface operations {
             };
         };
     };
-    delete_11: {
+    delete_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -10644,7 +10836,7 @@ export interface operations {
             };
         };
     };
-    delete_12: {
+    delete_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -10684,7 +10876,7 @@ export interface operations {
             };
         };
     };
-    delete_13: {
+    delete_14: {
         parameters: {
             query?: never;
             header?: never;
