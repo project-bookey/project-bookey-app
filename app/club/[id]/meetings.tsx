@@ -1,13 +1,12 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
-import { clubCommunityApi, type ClubMeeting, type ClubMeetingInput, type ClubPlace } from '@/api/endpoints';
+import { clubCommunityApi, type ClubMeeting, type ClubMeetingInput } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
-import { AddressSearchModal, type AddressSelection } from '@/components/club/AddressSearchModal';
 import { MeetingBookPicker } from '@/components/club/MeetingBookPicker';
 import {
   MEETING_STATE_LABEL,
@@ -22,12 +21,13 @@ import {
   meetingWeekday,
 } from '@/components/club/meetingTime';
 import { PlaceMap } from '@/components/club/PlaceMap';
+import { PlaceSearchModal, type PlacePick } from '@/components/club/PlaceSearchModal';
 import { ReturnToClubHome } from '@/components/club/ReturnToClubHome';
 import { todayKst } from '@/components/clubLog';
-import { TiltCover } from '@/components/collage';
+import { SearchGlyph, TiltCover } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
-import { Button, EmptyState, Eyebrow, Field, Loading, linkLabel } from '@/components/ui';
+import { Button, EmptyState, Eyebrow, Field, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, mono, pressedStyle } from '@/theme/tokens';
 
@@ -77,27 +77,16 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
   const revealAbove = useScrollReveal(scrollRef);
   const [showDate, setShowDate] = useState(false);
   const [showTime, setShowTime] = useState(false);
-  const [showAddress, setShowAddress] = useState(false);
+  const [showPlace, setShowPlace] = useState(false);
   const [date, setDate] = useState(freshDate);
   const [time, setTime] = useState(freshDate);
   const [form, setForm] = useState(emptyForm);
   const [book, setBook] = useState<BookSummary | null>(null);
   const [showBooks, setShowBooks] = useState(false);
-  const [placeQuery, setPlaceQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(placeQuery.trim()), 500);
-    return () => clearTimeout(timer);
-  }, [placeQuery]);
 
   const list = useQuery({
     queryKey: ['clubMeetings', clubId],
     queryFn: () => clubCommunityApi.meetings(clubId),
-  });
-  const places = useQuery({
-    queryKey: ['clubPlaces', clubId, debouncedQuery],
-    queryFn: () => clubCommunityApi.searchPlaces(clubId, debouncedQuery),
-    enabled: debouncedQuery.length >= 2,
   });
   const create = useMutation({
     mutationFn: (body: ClubMeetingInput) => clubCommunityApi.createMeeting(clubId, body),
@@ -105,7 +94,6 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
       setOpen(false);
       setForm(emptyForm());
       setBook(null);
-      setPlaceQuery('');
       setDate(freshDate());
       setTime(freshDate());
       qc.invalidateQueries({ queryKey: ['clubMeetings', clubId] });
@@ -115,29 +103,18 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
     },
   });
 
-  const selectPlace = (place: ClubPlace) => {
+  // 장소 찾기에서 고른 곳으로 장소명 · 주소 · 지도를 한 번에 바꾼다. 주소로 찾아 건물 이름이 없으면 기본 이름을 넣고,
+  // 아래 장소명 칸에서 고쳐 쓴다.
+  const pickPlace = (place: PlacePick) => {
+    setShowPlace(false);
     setForm((f) => ({
       ...f,
-      placeName: place.name,
-      address: place.roadAddress || place.address,
+      placeName: place.placeName || '모임 장소',
+      address: place.address,
       latitude: place.latitude,
       longitude: place.longitude,
       mapUrl: place.mapUrl ?? '',
     }));
-    setPlaceQuery('');
-    setDebouncedQuery('');
-  };
-  const selectAddress = (value: AddressSelection) => {
-    setShowAddress(false);
-    const address = value.roadAddress || value.address;
-    setForm((f) => ({
-      ...f,
-      address,
-      placeName: value.buildingName || f.placeName || '모임 장소',
-      latitude: value.latitude,
-      longitude: value.longitude,
-    }));
-    setPlaceQuery('');
   };
   const changeDate = (_: DateTimePickerEvent, value?: Date) => {
     if (Platform.OS !== 'ios') setShowDate(false);
@@ -169,11 +146,11 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
 
   return (
     <View style={styles.fill}>
-      <AddressSearchModal
+      <PlaceSearchModal
         clubId={clubId}
-        visible={showAddress}
-        onClose={() => setShowAddress(false)}
-        onSelect={selectAddress}
+        visible={showPlace}
+        onClose={() => setShowPlace(false)}
+        onSelect={pickPlace}
       />
       <MeetingBookPicker
         visible={showBooks}
@@ -245,39 +222,22 @@ export function ClubMeetingsBody({ isHost, ended, initialOpen = false }: {
               <Button label="서재에서 고르기" variant="outline" onPress={() => setShowBooks(true)} />
             )}
 
-            {/* 장소를 넣는 길은 하나 — 이름으로 찾으면 이름·주소·지도가 한 번에 채워진다.
-                주소 검색은 찾는 곳이 없을 때의 대안으로 아래 링크로 낮춘다(UX 철칙 Hick). */}
+            {/* 장소 칸을 누르면 바로 전체 화면 장소 찾기가 뜬다(홈 검색바 → 탐색과 같은 방식). 이름으로 찾으면
+                이름·주소·지도가 한 번에 채워지고, 찾는 곳이 없으면 그 화면에서 주소로 찾는다. */}
             <Eyebrow>장소</Eyebrow>
-            <Field
-              label="장소 검색"
-              value={placeQuery}
-              onChangeText={setPlaceQuery}
-              placeholder="카페·서점 등 장소 이름"
-            />
-            {places.isFetching ? (
-              <Loading />
-            ) : (
-              (places.data ?? []).map((p) => (
-                <Pressable
-                  key={p.id}
-                  onPress={() => selectPlace(p)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${p.name} 선택`}
-                  style={({ pressed }) => [styles.placeRow, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
-                >
-                  <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{p.name}</Text>
-                  <Text style={[typeScale.caption, { color: colors.textMuted }]}>{p.roadAddress || p.address}</Text>
-                </Pressable>
-              ))
-            )}
             <Pressable
-              onPress={() => setShowAddress(true)}
+              onPress={() => setShowPlace(true)}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.addressLink, pressed ? pressedStyle : null]}
+              accessibilityLabel={form.address ? '다른 장소 찾기' : '장소 찾기'}
+              style={({ pressed }) => [
+                styles.placeSearch,
+                { borderColor: colors.lineStrong, backgroundColor: colors.surface },
+                pressed ? pressedStyle : null,
+              ]}
             >
-              {/* 물음은 회색, 누를 곳은 공용 글자 링크(TextLink)와 같은 12px 본문색 — 링크가 메타 글자에 묻히지 않게. */}
-              <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
-                찾는 곳이 없나요? <Text style={[styles.addressLinkLabel, { color: colors.text }]}>{linkLabel('주소로 찾기')}</Text>
+              <SearchGlyph color={colors.textMuted} />
+              <Text style={[typeScale.body, { color: colors.textFaint }]}>
+                {form.address ? '다른 장소 찾기' : '카페·서점 이름이나 주소로 찾기'}
               </Text>
             </Pressable>
             {form.address ? (
@@ -474,10 +434,16 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   pickValue: { fontFamily: mono.semiBold, fontSize: 15 },
-  placeRow: { paddingVertical: spacing.sm, gap: 2, borderBottomWidth: hairline },
-  // 11px 모노 한 줄이라 여백으로 44pt 상자를 만든다(웹은 hitSlop 을 무시한다).
-  addressLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
-  addressLinkLabel: { fontSize: 12 },
+  // 홈 검색바와 같은 생김새 — 누르면 장소 찾기 화면이 뜨는 검색 칸.
+  placeSearch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 2,
+    borderWidth: hairline,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },
   // 내가 참여한 모임 — 줄을 테두리 상자로 감싸되, 음수 마진 짝으로 글자 줄은 다른 줄과 맞춘다.
   mineRow: {
