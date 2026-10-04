@@ -5,6 +5,7 @@ import { MemoScrap } from '@/components/collage';
 import { ScrapAuthor } from '@/components/home/ScrapAuthor';
 import { META_LH, META_SIZE, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
 import { VISIBILITY_LABEL } from '@/components/post/PostByline';
+import { ViewCount } from '@/components/post/ViewCount';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /**
@@ -57,6 +58,7 @@ export function PostScrap({ post, rotate, variant, onPress }: {
 
   const home = variant === 'home';
   const visibility = post.visibility === 'PUBLIC' ? '공개' : VISIBILITY_LABEL[post.visibility];
+  const metaText = [typeScale.monoLabel, styles.meta, { color: colors.textFaint }];
 
   const memo = (
     <MemoScrap rotate={rotate} style={home ? styles.homeCard : undefined}>
@@ -91,11 +93,16 @@ export function PostScrap({ post, rotate, variant, onPress }: {
       </View>
 
       {/* 홈은 작성자·책·좋아요를 머리 행이 이미 보여 줘 메타 줄이 없다 — 못 박힌 행 높이 안에 들어간다. */}
-      {home ? null : (
-        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-          {variant === 'profile'
-            ? `${post.bookTitle ?? '책 없음'} · ${visibility} · 조회 ${post.viewCount}`
-            : `${post.authorNickname} · 좋아요 ${post.likeCount}`}
+      {/* 프로필 메타는 조회를 눈 아이콘으로 끼우므로 행으로 잇는다 — 길어지면 책 제목만 줄어든다. */}
+      {home ? null : variant === 'profile' ? (
+        <View style={[styles.metaRow, styles.metaGap]}>
+          <Text numberOfLines={1} style={[metaText, styles.shrink]}>{post.bookTitle ?? '책 없음'}</Text>
+          <Text style={metaText}> · {visibility} · </Text>
+          <ViewCount count={post.viewCount} textStyle={metaText} />
+        </View>
+      ) : (
+        <Text numberOfLines={1} style={[metaText, styles.metaGap]}>
+          {`${post.authorNickname} · 좋아요 ${post.likeCount}`}
         </Text>
       )}
     </MemoScrap>
@@ -135,5 +142,8 @@ const styles = StyleSheet.create({
   // 풀리면 잘린 줄이 상자 높이만큼 그대로 그려져 아랫줄을 밀어낸다(scrapMetrics 의 QUOTE_MAX_H 참고).
   // 홈 제목은 글 상자(28) 한 줄을 통째로 쓴다 — 줄높이를 상자에 맞춰 글자가 상자 가운데에 앉는다.
   homeTitle: { lineHeight: HOME_TEXT_MAX_H, maxHeight: HOME_TEXT_MAX_H, overflow: 'hidden' },
-  meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH, marginTop: spacing.sm },
+  meta: { fontSize: META_SIZE, letterSpacing: 0.4, lineHeight: META_LH },
+  metaGap: { marginTop: spacing.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center' },
+  shrink: { flexShrink: 1 },
 });

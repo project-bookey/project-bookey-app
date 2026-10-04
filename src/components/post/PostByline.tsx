@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Post } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
+import { ViewCount } from '@/components/post/ViewCount';
 import { formatRelative } from '@/components/ui';
 import { pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 
@@ -27,11 +28,9 @@ export function PostByline({ post, showVisibility, showViews, onPress }: {
   onPress?: () => void;
 }) {
   const { colors } = useTheme();
-  const meta = [
-    formatRelative(post.publishedAt ?? post.createdAt),
-    showViews ? `조회 ${post.viewCount}` : null,
-    visibilityLabelOf(post, showVisibility),
-  ].filter(Boolean).join(' · ');
+  const when = formatRelative(post.publishedAt ?? post.createdAt);
+  const visibility = visibilityLabelOf(post, showVisibility);
+  const metaText = [typeScale.monoLabel, styles.meta, { color: colors.textFaint }];
 
   return (
     <Pressable
@@ -46,9 +45,17 @@ export function PostByline({ post, showVisibility, showViews, onPress }: {
         <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.nickname, { color: colors.text }]}>
           {post.authorNickname}
         </Text>
-        <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-          {meta}
-        </Text>
+        {/* 메타 — 올린 때 · 조회(눈 아이콘) · 공개 범위. 아이콘이 끼어 글자 한 줄이 아니라 행으로 잇는다. */}
+        <View style={styles.metaRow}>
+          <Text numberOfLines={1} style={[metaText, styles.shrink]}>{when}</Text>
+          {showViews ? (
+            <>
+              <Text style={metaText}> · </Text>
+              <ViewCount count={post.viewCount} textStyle={metaText} />
+            </>
+          ) : null}
+          {visibility ? <Text style={metaText}> · {visibility}</Text> : null}
+        </View>
       </View>
     </Pressable>
   );
@@ -59,5 +66,7 @@ const styles = StyleSheet.create({
   text: { flex: 1 },
   nickname: { lineHeight: 20 },
   // 닉네임과 메타는 한 덩어리 — 광학 보정 2px 만 띄운다.
-  meta: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14, marginTop: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  meta: { fontSize: 10, letterSpacing: 0.4, lineHeight: 14 },
+  shrink: { flexShrink: 1 },
 });
