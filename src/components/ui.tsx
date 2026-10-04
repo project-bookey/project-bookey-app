@@ -129,6 +129,8 @@ export function OrnamentDivider() {
  */
 const SM_HIT_SLOP = { top: 5, bottom: 5 };
 const GHOST_HIT_SLOP = { left: 10, right: 10 };
+/** FootAction xs(겉모습 28pt) — 위아래 8 로 44pt, 좌우 4 는 짧은 라벨의 폭을 거든다(이웃 버튼과 spacing.sm 띄우면 겹치지 않는다). */
+const XS_HIT_SLOP = { top: 8, bottom: 8, left: 4, right: 4 };
 
 export function Button({
   label, onPress, variant = 'primary', disabled, loading, style, size = 'md',
@@ -367,8 +369,9 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
  * 독후감 고치기·삭제, 알림·엽서·채팅 삭제, 호스트 넘기기, 채팅 선물 등이 같이 쓴다. 예전엔 10px 회색 글자뿐이라
  * 버튼인 줄 몰랐다(2026-10-04) — 상자가 곧 '누를 수 있음'의 신호다. `onPress` 가 없으면(카운터) 상자 없이 글자만 둔다.
  * '삭제' → '한 번 더'(tone danger)는 테두리까지 빨갛게 바뀌어 상태가 넘어간 것이 보인다.
+ * `size="xs"` 는 한 단 작은 겉모습(28pt, 11px) — 리뷰 머리 줄의 고치기·삭제처럼 글 옆에 붙는 자리용. 터치 상자는 hitSlop 으로 44pt.
  */
-export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, disabled }: {
+export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, disabled, size = 'sm' }: {
   /** 버튼 라벨이라 글리프(›)를 붙이지 않는다 — Button 과 같은 규칙. */
   label: string;
   onPress?: () => void;
@@ -378,8 +381,10 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
   tone?: 'accent' | 'muted' | 'faint' | 'danger';
   /** 라벨과 다르게 읽혀야 할 때(예: '책 보기' 는 '{제목} 상세'). 없으면 라벨 그대로. */
   accessibilityLabel?: string;
+  size?: 'sm' | 'xs';
 }) {
   const { styles, colors } = useStyles();
+  const xs = size === 'xs';
   // faint(삭제 대기)도 textMuted 까지는 올린다 — textFaint 는 작은 글자 대비 기준(4.5:1)에 못 미친다.
   const color = selected || tone === 'accent'
     ? colors.accent
@@ -388,16 +393,17 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
         : colors.text;
 
   if (!onPress) {
-    return <Text style={[styles.buttonLabel, styles.buttonLabelSm, { color }]}>{label}</Text>;
+    return <Text style={[styles.buttonLabel, styles.buttonLabelSm, xs && styles.buttonLabelXs, { color }]}>{label}</Text>;
   }
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      hitSlop={SM_HIT_SLOP}
+      hitSlop={xs ? XS_HIT_SLOP : SM_HIT_SLOP}
       style={({ pressed }) => [
         styles.button,
         styles.buttonSm,
+        xs && styles.buttonXs,
         styles.buttonOutline,
         tone === 'danger' && styles.buttonDanger,
         disabled && styles.buttonDisabled,
@@ -407,7 +413,7 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
       accessibilityState={selected === undefined && !disabled ? undefined : { selected, disabled }}
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Text style={[styles.buttonLabel, styles.buttonLabelSm, { color }]}>{label}</Text>
+      <Text style={[styles.buttonLabel, styles.buttonLabelSm, xs && styles.buttonLabelXs, { color }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -478,6 +484,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       paddingHorizontal: spacing.lg,
     },
     buttonSm: { minHeight: 34, paddingHorizontal: spacing.md },
+    buttonXs: { minHeight: 28, paddingHorizontal: spacing.sm },
     buttonPrimary: { backgroundColor: colors.accent },
     buttonOutline: {
       backgroundColor: 'transparent',
@@ -493,6 +500,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     buttonDisabled: { opacity: 0.35 },
     buttonLabel: { ...typeScale.label, color: colors.text },
     buttonLabelSm: { fontSize: 12 },
+    buttonLabelXs: { fontSize: 11 },
     buttonLabelPrimary: { color: colors.onAccent },
     buttonLabelDanger: { color: colors.danger },
     tag: {
