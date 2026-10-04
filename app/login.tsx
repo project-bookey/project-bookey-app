@@ -51,6 +51,31 @@ const SERVER_ERROR_SPOT: Record<string, FieldSpot> = {
 
 const isEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value) && value.length <= 255;
 
+/** 예전 서버는 다시 받기 대기 시간을 보내지 않는다 — 그때는 서버 기본값(1분)으로 센다. */
+const FALLBACK_RESEND_SEC = 60;
+
+/** 남은 초를 '2:59' 꼴로. */
+const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+/**
+ * 마감 시각(ms)마다 남은 초 — 1초마다 다시 센다. 남은 마감이 없으면 멈춘다.
+ * 그릴 때마다 실제 시각으로 다시 재므로, 메일 앱에서 코드를 보고 돌아와도(그동안 타이머가 멈춰 있었어도) 맞는다.
+ */
+function useSecondsLeft(...deadlines: (number | null)[]): number[] {
+  const [, setTick] = useState(0);
+  const last = Math.max(0, ...deadlines.map((deadline) => deadline ?? 0));
+  useEffect(() => {
+    if (last <= Date.now()) return;
+    const timer = setInterval(() => {
+      setTick((n) => n + 1);
+      if (Date.now() >= last) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [last]);
+  const now = Date.now();
+  return deadlines.map((deadline) => (deadline == null ? 0 : Math.max(0, Math.ceil((deadline - now) / 1000))));
+}
+
 /**
  * 로그인 — 다크 고정, 심플 플랫 레이아웃 (사용자 결정: 그라데이션 대신 이전 구성 유지).
  * 이메일 폼이 주인공, 소셜(애플·카카오·구글)은 보조. 연동된 소셜 계정은 그 계정으로 로그인되고, 처음 보는
@@ -74,6 +99,11 @@ export default function LoginScreen() {
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeVerifyLoading, setCodeVerifyLoading] = useState(false);
   const [codeVerified, setCodeVerified] = useState(false);
+  /** 보낸 코드를 입력할 수 있는 마지막 시각(ms)과 코드를 다시 받을 수 있는 시각(ms) — 서버가 알려 준 시간으로 센다. */
+  const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
+  const [resendAt, setResendAt] = useState<number | null>(null);
+  const [codeValidMinutes, setCodeValidMinutes] = useState(3);
+  const [codeLeft, resendLeft] = useSecondsLeft(codeExpiresAt, resendAt);
   /** 온보딩의 "가입하고 시작하기"는 signup=1 로 들어와 곧장 가입 폼을 연다. */
   const { signup: signupParam } = useLocalSearchParams<{ signup?: string }>();
   const [isSignup, setIsSignup] = useState(signupParam === '1');
@@ -193,9 +223,15 @@ export default function LoginScreen() {
     setCodeLoading(true);
     setCodeVerified(false);
     putError('email', null);
+    // 입력 마감은 요청을 보낸 때부터 센다 — 서버보다 늦게 끝나 '0:01'에 낸 코드가 거절되지 않게.
+    const requestedAt = Date.now();
     try {
       const result = await authApi.requestEmailCode(normalizedEmail);
       setCodeSent(true);
+      setCodeExpiresAt(requestedAt + result.expiresInSec * 1000);
+      setCodeValidMinutes(Math.max(1, Math.round(result.expiresInSec / 60)));
+      // 다시 받기는 응답을 받은 때부터 센다 — 서버보다 먼저 풀려 눌렀는데 거절되지 않게.
+      setResendAt(Date.now() + (result.resendAfterSec ?? FALLBACK_RESEND_SEC) * 1000);
       // 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
       if (result.devCode) {
         setCode(result.devCode);
@@ -372,6 +408,9 @@ export default function LoginScreen() {
         router.replace('/home');
       }
     } catch (e) {
+      if (e instanceof ApiError && (e.code === 'EMAIL_CODE_EXPIRED' || e.code === 'EMAIL_CODE_INVALID')) {
+        setCodeVerified(false);
+      }
       const fallback = isSignup ? '가입하지 못했어요. 다시 시도해 주세요.' : '로그인하지 못했어요. 다시 시도해 주세요.';
       flagError(errorSpotOf(e, 'form'), e instanceof Error ? e.message : fallback);
     } finally {
@@ -445,6 +484,9 @@ export default function LoginScreen() {
   const busy = emailLoading || codeLoading || codeVerifyLoading || socialLoading != null;
   const signupConsentComplete = consentComplete(consent);
   const signupVerificationComplete = signupConfig.data?.verification !== 'EMAIL_CODE' || codeVerified;
+  const codeTiming = codeSent && !codeVerified;
+  const codeExpired = codeTiming && codeLeft === 0;
+  const codeError = errors.code ?? (codeExpired ? '입력 시간이 지났어요. 코드를 다시 받아 주세요.' : undefined);
 
   return (
     <View style={styles.screen}>
@@ -472,6 +514,14 @@ export default function LoginScreen() {
                   setEmail(value);
                   setCodeVerified(false);
                   putError('email', null);
+                  // 보낸 코드는 앞 이메일 것이라 새 이메일로 다시 받게 한다(서버 대기 시간도 이메일마다 따로다).
+                  if (codeSent) {
+                    setCodeSent(false);
+                    setCode('');
+                    setCodeExpiresAt(null);
+                    setResendAt(null);
+                    putError('code', null);
+                  }
                 }}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -568,45 +618,69 @@ export default function LoginScreen() {
               <View style={styles.field} onLayout={trackField('code')}>
                 <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
                 <View style={styles.codeRow}>
-                  <TextInput
-                    style={[styles.input, styles.codeInput, errors.code ? styles.inputError : null]}
-                    value={code}
-                    onChangeText={(value) => {
-                      setCode(value);
-                      setCodeVerified(false);
-                      putError('code', null);
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    placeholder="6자리"
-                    placeholderTextColor={darkColors.textFaint}
-                    accessibilityLabel="이메일 인증 코드"
-                    textContentType="oneTimeCode"
-                    autoComplete="one-time-code"
-                  />
+                  <View style={styles.codeInputWrap}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        codeTiming ? styles.codeInputTimed : null,
+                        codeError ? styles.inputError : null,
+                      ]}
+                      value={code}
+                      onChangeText={(value) => {
+                        setCode(value);
+                        setCodeVerified(false);
+                        putError('code', null);
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      placeholder="6자리"
+                      placeholderTextColor={darkColors.textFaint}
+                      accessibilityLabel="이메일 인증 코드"
+                      textContentType="oneTimeCode"
+                      autoComplete="one-time-code"
+                    />
+                    {/* 입력 마감까지 남은 시간 — 칸 안 오른쪽, 흔한 자리(Jakob). 끝나면 붉게 바뀌고 칸 밑에 다시 받으라는 경고가 뜬다. */}
+                    {codeTiming ? (
+                      <View style={styles.codeTimer} pointerEvents="none">
+                        <Text
+                          style={[styles.codeTimerLabel, codeExpired ? styles.codeTimerExpired : null]}
+                          accessibilityLabel={`남은 시간 ${Math.floor(codeLeft / 60)}분 ${codeLeft % 60}초`}
+                        >
+                          {formatClock(codeLeft)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  {/* 다시 받기는 서버 대기 시간이 지나야 열린다 — 남은 초를 버튼에 보여 줘 언제 누를 수 있는지 알게 한다. */}
                   <Pressable
                     onPress={requestCode}
-                    disabled={busy || codeLoading}
+                    disabled={busy || codeLoading || resendLeft > 0}
                     style={({ pressed }) => [
                       styles.codeButton,
-                      (pressed || busy || codeLoading) && styles.pressed,
+                      (pressed || busy || codeLoading || resendLeft > 0) && styles.pressed,
                     ]}
                     accessibilityRole="button"
+                    accessibilityLabel={resendLeft > 0 ? `${resendLeft}초 뒤에 다시 받을 수 있어요` : undefined}
+                    accessibilityState={{ disabled: busy || codeLoading || resendLeft > 0 }}
                   >
                     {codeLoading
                       ? <ActivityIndicator color={darkColors.text} />
-                      : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
+                      : (
+                        <Text style={styles.codeButtonLabel}>
+                          {!codeSent ? '코드 받기' : resendLeft > 0 ? `다시 받기 ${resendLeft}초` : '다시 받기'}
+                        </Text>
+                      )}
                   </Pressable>
                 </View>
-                <FieldError message={errors.code} />
+                <FieldError message={codeError} />
                 {codeSent ? (
                   <>
                     <Pressable
                       onPress={verifyCode}
-                      disabled={busy || codeVerifyLoading || code.length !== 6 || codeVerified}
+                      disabled={busy || codeVerifyLoading || code.length !== 6 || codeVerified || codeExpired}
                       style={({ pressed }) => [
                         styles.identityButton,
-                        (pressed || busy || codeVerifyLoading || codeVerified) && styles.pressed,
+                        (pressed || busy || codeVerifyLoading || codeVerified || codeExpired) && styles.pressed,
                       ]}
                       accessibilityRole="button"
                     >
@@ -616,7 +690,9 @@ export default function LoginScreen() {
                             {codeVerified ? '✓ 이메일 인증 완료' : '인증 코드 확인'}
                           </Text>}
                     </Pressable>
-                    <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 10분 안에 입력해 주세요.</Text>
+                    {!codeVerified ? (
+                      <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 {codeValidMinutes}분 안에 입력해 주세요.</Text>
+                    ) : null}
                   </>
                 ) : null}
               </View>
@@ -645,6 +721,8 @@ export default function LoginScreen() {
                 setErrors({});
                 setCode('');
                 setCodeSent(false);
+                setCodeExpiresAt(null);
+                setResendAt(null);
                 setCodeVerified(false);
                 setIdentityId(null);
               }}
@@ -785,7 +863,12 @@ const styles = StyleSheet.create({
   forgotLabel: { ...typeScale.caption, color: darkColors.textMuted },
   error: { ...typeScale.caption, color: darkColors.danger },
   codeRow: { flexDirection: 'row', gap: spacing.sm },
-  codeInput: { flex: 1 },
+  codeInputWrap: { flex: 1, justifyContent: 'center' },
+  // 칸 안 오른쪽 타이머 자리('2:59' 너비 + 여백)만큼 글자를 비운다.
+  codeInputTimed: { paddingRight: 64 },
+  codeTimer: { position: 'absolute', right: spacing.md },
+  codeTimerLabel: { ...typeScale.label, color: darkColors.textMuted, fontVariant: ['tabular-nums'] },
+  codeTimerExpired: { color: darkColors.danger },
   codeButton: {
     minHeight: BUTTON_HEIGHT,
     borderRadius: radius.md,
