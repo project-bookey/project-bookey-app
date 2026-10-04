@@ -35,7 +35,7 @@ export default function ClubInfoScreen() {
     enabled: Number.isFinite(clubId),
     retry: false,
   });
-  // 멤버 칩의 '오늘 n조각'과 '지금 읽는 중' 점 — 클럽 홈과 같은 캐시 키라 대개 이미 있다.
+  // 멤버 칩의 '메모 n'과 '지금 읽는 중' 점 — 클럽 홈과 같은 캐시 키라 대개 이미 있다.
   const isMember = !!club.data;
   const day = useQuery({
     queryKey: clubLogKeys.day(clubId, today),
@@ -54,9 +54,9 @@ export default function ClubInfoScreen() {
       clubApi.nudge(clubId, userId, key),
     onSuccess: (result) => {
       setSelectedUserId(null);
-      notify(`찌르기를 보냈어요. 오늘 ${result.remainingToday}번 남았습니다.`);
+      notify(`찌르기를 보냈어요. 오늘 ${result.remainingToday}번 더 보낼 수 있어요.`);
     },
-    onError: (e) => notify(e instanceof ApiError ? e.message : '보내지 못했습니다.'),
+    onError: (e) => notify(e instanceof ApiError ? e.message : '보내지 못했어요.'),
   });
   const leave = useMutation({
     mutationFn: () => clubApi.leave(clubId),
@@ -65,7 +65,7 @@ export default function ClubInfoScreen() {
       // 클럽 홈 · 정보 둘 다 걷어 내고 목록으로 — 목록이 스택에 없으면 이 화면을 목록으로 바꾼다.
       router.dismissTo('/clubs');
     },
-    onError: (e) => notify(e instanceof ApiError ? e.message : '나가지 못했습니다.'),
+    onError: (e) => notify(e instanceof ApiError ? e.message : '나가지 못했어요.'),
   });
 
   if (club.isLoading) {
@@ -143,7 +143,7 @@ export default function ClubInfoScreen() {
         {/* 함께 읽는 사람 — 누르면 그 사람의 자세한 진척과 찌르기 */}
         <View style={{ gap: spacing.sm }}>
           <View style={styles.sectionHead}>
-            <Eyebrow>함께 읽는 사람</Eyebrow>
+            <Eyebrow>함께하는 사람</Eyebrow>
             <Text style={[styles.count, { color: colors.textMuted }]}>
               평균 {percent(data.averageCompletionRate)} · 내 순위 {data.myRank}/{data.memberCount}
             </Text>
@@ -189,7 +189,7 @@ export default function ClubInfoScreen() {
           variant="danger"
           loading={leave.isPending}
           onPress={async () => {
-            if (await confirmAsync('클럽에서 나갈까요? 남긴 조각과 글은 그대로 남아요.', '나가기')) leave.mutate();
+            if (await confirmAsync('클럽에서 나갈까요? 남긴 메모와 글은 그대로 남아요.', '나가기')) leave.mutate();
           }}
         />
       </ScrollView>

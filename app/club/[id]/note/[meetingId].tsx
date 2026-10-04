@@ -44,9 +44,9 @@ const PEER_AVATAR_MAX = 4;
 /** 읽기만 되는 까닭 — 마무리했거나, 클럽이 끝났거나 모임이 취소됐거나, 연결 중에 알게 돼 까닭을 모를 때. */
 type Lock = 'closed' | 'over' | 'unknown';
 const LOCK_TEXT: Record<Lock, string> = {
-  closed: '마무리한 노트예요. 읽기만 돼요.',
-  over: '끝난 클럽이나 취소된 모임의 노트는 읽기만 돼요.',
-  unknown: '이 노트는 이제 읽기만 돼요.',
+  closed: '마무리한 노트예요. 이제 볼 수만 있어요.',
+  over: '끝난 클럽이나 취소된 모임의 노트는 볼 수만 있어요.',
+  unknown: '이 노트는 이제 볼 수만 있어요.',
 };
 
 /**
@@ -158,7 +158,7 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
   const onReadOnly = useCallback((reason?: 'closed') => {
     setLock(reason ?? 'unknown');
     setTool('hand');
-    notify(reason === 'closed' ? '모임을 연 사람이 노트를 마무리했어요. 이제 읽기만 돼요.' : LOCK_TEXT.unknown);
+    notify(reason === 'closed' ? '모임을 연 사람이 노트를 마무리했어요. 이제 볼 수만 있어요.' : LOCK_TEXT.unknown);
   }, []);
   const toolRef = useRef(tool);
   toolRef.current = tool;
@@ -226,7 +226,7 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
 
   /** 마무리 — 확인을 받고, 남은 편집을 다 보낸 뒤 서버에 마무리를 알리고 나간다. */
   const closeNote = async () => {
-    const ok = await confirmAsync('노트를 마무리할까요? 마무리하면 모두 더는 고칠 수 없고, 노트 탭에 완성본으로 남아요.', '마무리');
+    const ok = await confirmAsync('노트를 마무리할까요? 마무리하면 아무도 더 고칠 수 없고, 노트 탭에 완성본으로 남아요.', '마무리');
     if (!ok) return;
     setBusy('closing');
     try {
@@ -385,12 +385,12 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
 function SyncLabel({ status, saving, readOnly }: { status: MeetingNoteSyncStatus; saving: boolean; readOnly: boolean }) {
   const { colors } = useTheme();
   const label = readOnly
-    ? '읽기 전용'
+    ? '보기 전용'
     : status === 'connecting'
       ? '연결 중'
       : status === 'live'
         ? saving ? '실시간 · 저장 중' : '실시간 · 저장됨'
-        : saving ? '오프라인 · 저장 대기' : '오프라인 · 자동으로 맞춰요';
+        : saving ? '연결 끊김 · 저장 대기' : '연결 끊김 · 다시 연결되면 저장돼요';
   return (
     <View style={styles.syncRow} accessibilityLiveRegion="polite">
       <View style={[styles.dot, { backgroundColor: status === 'live' ? colors.ink : colors.textFaint }]} />

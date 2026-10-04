@@ -88,7 +88,7 @@ export default function MeetingDetailScreen() {
     onSuccess: (card) => {
       qc.invalidateQueries({ queryKey: ['clubActivity', clubId] });
       qc.invalidateQueries({ queryKey: ['activityCards'] });
-      notify(`함께 독서 ${formatClock(card.durationSec)}를 기록했어요. 모임 노트에 함께 남겨 보세요 · 기록 카드는 스티커로 붙일 수 있어요.`);
+      notify(`같이 읽은 시간(${formatClock(card.durationSec)})을 기록했어요. 모임 노트에 기록 카드를 스티커로 붙일 수 있어요.`);
       openNote();
     },
     onError: fail('독서를 끝내지 못했어요.'),
@@ -118,7 +118,7 @@ export default function MeetingDetailScreen() {
 
   const state = meetingState(m);
   const statusLine =
-    state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 모임이에요' : '취소된 모임입니다';
+    state === 'open' ? '참여를 기다리고 있어요' : state === 'past' ? '지난 모임이에요' : '취소된 모임이에요';
   const attendees = m.attendees ?? [];
   const full = meetingFull(m);
   const running = current.data?.meetingId === mid;
@@ -218,7 +218,7 @@ export default function MeetingDetailScreen() {
           {state === 'open' ? (
             // 정원이 차면 새로 참여할 수 없다 — 이미 참여한 사람은 취소할 수 있다.
             <Button
-              label={m.attending ? '참여 취소' : full ? '정원이 찼어요' : '이 모임에 참여하기'}
+              label={m.attending ? '참여 취소' : full ? '정원이 찼어요' : '참여하기'}
               variant={m.attending ? 'outline' : 'primary'}
               disabled={!m.attending && full}
               onPress={() => attend.mutate()}
@@ -229,19 +229,19 @@ export default function MeetingDetailScreen() {
         </Card>
 
         <Card style={{ gap: spacing.sm }}>
-          {heading('함께 독서')}
+          {heading('같이 읽기')}
           <Text style={[styles.timer, { color: running ? colors.text : colors.textFaint }]}>
             {formatClock(elapsed)}
           </Text>
           <Text style={[typeScale.caption, { color: colors.textMuted, textAlign: 'center' }]}>
             {otherRunning
-              ? '다른 모임에서 독서를 실행 중이에요.'
+              ? '다른 모임에서 같이 읽는 중이에요.'
               : running
-                ? '이 모임의 독서 시간을 기록하고 있어요.'
-                : '모임 현장에서 독서 실행을 누르고, 끝나면 모임 노트에 다 같이 소감을 남겨 보세요.'}
+                ? '같이 읽는 시간을 재고 있어요.'
+                : "모임에서 '같이 읽기 시작'을 누르고, 다 읽은 뒤 모임 노트에 소감을 함께 남겨 보세요."}
           </Text>
           <Button
-            label={running ? '독서 종료' : '독서 실행'}
+            label={running ? '같이 읽기 끝내기' : '같이 읽기 시작'}
             variant={running ? 'danger' : joinFirst ? 'outline' : 'primary'}
             disabled={otherRunning || state !== 'open'}
             onPress={() => (running ? end.mutate() : start.mutate())}
@@ -253,8 +253,8 @@ export default function MeetingDetailScreen() {
           {heading('모임 노트')}
           <Text style={[typeScale.caption, { color: colors.textMuted }]}>
             {state === 'cancelled'
-              ? '취소된 모임의 노트는 읽기만 돼요.'
-              : '멤버 모두가 같은 대형노트에 그날의 생각·사진·스티커를 함께 붙여요. 다른 사람이 쓰는 모습이 바로 보여요.'}
+              ? '취소된 모임의 노트는 볼 수만 있어요.'
+              : '멤버 모두가 노트 한 장에 그날의 생각·사진·스티커를 붙여요. 다른 사람이 쓰는 모습도 바로 보여요.'}
           </Text>
           <TextLink
             label="모임 노트"

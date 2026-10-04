@@ -14,7 +14,7 @@ const CHIP_W = 72;
 /** 찌르기 프리셋 — 서버 NudgeMessageKey 와 1:1. */
 export const NUDGES: { key: NudgeMessageKey; label: string }[] = [
   { key: 'READ_TOGETHER', label: '같이 읽어요' },
-  { key: 'CHECKPOINT_SOON', label: '체크포인트 임박' },
+  { key: 'CHECKPOINT_SOON', label: '모임 전에 같이 읽어요' },
   { key: 'WAITING', label: '기다리고 있어요' },
 ];
 
@@ -48,7 +48,7 @@ export function MemberStrip({ members, readingNowIds, logCounts, selectedUserId,
             onPress={() => onSelect(member)}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            accessibilityLabel={`${member.nickname}${member.isMe ? ' (나)' : ''} ${status}${live ? ', 지금 읽는 중' : ''}${count > 0 ? `, 조각 ${count}개` : ''}`}
+            accessibilityLabel={`${member.nickname}${member.isMe ? ' (나)' : ''} ${status}${live ? ', 지금 읽는 중' : ''}${count > 0 ? `, 메모 ${count}개` : ''}`}
             style={[
               styles.chip,
               // 선택·나·읽는 중 표시는 상태라 잉크로 — 악센트는 진척 막대(진행) 몫이다.
@@ -72,7 +72,7 @@ export function MemberStrip({ members, readingNowIds, logCounts, selectedUserId,
             </View>
             <Text style={[styles.status, { color: statusColor }]}>{status}</Text>
             <Text style={[styles.count, { color: count > 0 ? colors.textMuted : colors.textFaint }]}>
-              {count > 0 ? `${count}조각` : '·'}
+              {count > 0 ? `메모 ${count}` : '·'}
             </Text>
           </Pressable>
         );
@@ -118,13 +118,13 @@ export function MemberDetail({ member, nudging, onNudge, onClose }: {
           </View>
         </>
       ) : (
-        <Text style={[typeScale.caption, { color: colors.textFaint }]}>진척을 공개하지 않은 멤버예요.</Text>
+        <Text style={[typeScale.caption, { color: colors.textFaint }]}>진도를 공개하지 않은 멤버예요.</Text>
       )}
 
       {member.nudgeable && onNudge ? (
         <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
           <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-            찌르기 — 프리셋 문구만, 같은 사람에게 24시간에 한 번.
+            찌르기는 정해진 문구로만 보낼 수 있어요. 같은 사람에게는 하루에 한 번이에요.
           </Text>
           <View style={styles.nudgeButtons}>
             {NUDGES.map((item) => (

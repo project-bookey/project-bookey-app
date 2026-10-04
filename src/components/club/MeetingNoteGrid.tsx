@@ -82,7 +82,7 @@ export function MeetingNoteGrid({ clubId, onOpenMeetings }: { clubId: number; on
       ListEmptyComponent={
         <EmptyState
           title="아직 모임 노트가 없어요"
-          description="모임에서 함께 독서를 마치면 멤버 모두가 같은 노트에 그날을 기록할 수 있어요."
+          description="모임을 마치면 멤버 모두가 노트 한 장에 그날을 기록할 수 있어요."
           action={onOpenMeetings ? <Button label="모임 보기" variant="outline" onPress={onOpenMeetings} /> : undefined}
         />
       }

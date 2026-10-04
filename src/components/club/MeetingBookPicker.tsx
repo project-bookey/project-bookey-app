@@ -38,7 +38,7 @@ export function MeetingBookPicker({ visible, selectedId, onSelect, onClose }: {
 
   return (
     <NoteSheet visible={visible} title="모임 책" onClose={onClose}>
-      <Text style={[typeScale.caption, { color: colors.textMuted }]}>내 서재의 책 중에서 고릅니다.</Text>
+      <Text style={[typeScale.caption, { color: colors.textMuted }]}>내 서재에 있는 책 중에서 골라요.</Text>
       <View style={[styles.list, { borderColor: colors.line }]}>
         <FlatList
           data={books}
@@ -65,7 +65,7 @@ export function MeetingBookPicker({ visible, selectedId, onSelect, onClose }: {
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={[typeScale.label, { color: colors.text }]}>{book.title}</Text>
                   <Text numberOfLines={1} style={[styles.meta, { color: colors.textMuted }]}>
-                    {book.totalPages ? `${book.totalPages}쪽` : '페이지 수 미상'}
+                    {book.totalPages ? `${book.totalPages}쪽` : '쪽수 정보 없음'}
                     {book.author ? ` · ${book.author}` : ''}
                   </Text>
                 </View>
@@ -93,7 +93,7 @@ export function MeetingBookPicker({ visible, selectedId, onSelect, onClose }: {
               </View>
             ) : (
               <Text style={[styles.empty, { color: colors.textMuted }]}>
-                서재가 비어 있어요. 먼저 책을 검색해 담아주세요.
+                서재가 비어 있어요. 먼저 책을 찾아 담아 주세요.
               </Text>
             )
           }

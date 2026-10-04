@@ -61,7 +61,7 @@ export default function ClubsScreen() {
             <EmptyState
               illustration
               title="참가 중인 클럽이 없어요"
-              description={'같은 책을 함께 읽으면 완독률이 올라갑니다.\n위에서 코드로 참가하거나 클럽을 만들어 보세요.'}
+              description={'함께 읽으면 끝까지 읽기 쉬워져요.\n위에서 초대 코드로 참가하거나 클럽을 만들어 보세요.'}
             />
           )
         }

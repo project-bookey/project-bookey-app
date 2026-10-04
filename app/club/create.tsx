@@ -46,7 +46,7 @@ export default function ClubCreateScreen() {
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
       router.replace(`/club/${club.id}`);
     },
-    onError: (e) => setError(e instanceof ApiError ? e.message : '클럽을 만들지 못했습니다.'),
+    onError: (e) => setError(e instanceof ApiError ? e.message : '클럽을 만들지 못했어요.'),
   });
 
   const canSubmit = name.trim().length > 0;
@@ -97,8 +97,8 @@ export default function ClubCreateScreen() {
               label="공개 클럽"
               description={
                 isPublic
-                  ? '발견 탭에 노출되고 누구나 참가할 수 있습니다.'
-                  : '초대 코드를 아는 사람만 참가할 수 있습니다.'
+                  ? '추천 클럽에 보이고 누구나 참가할 수 있어요.'
+                  : '초대 코드를 아는 사람만 참가할 수 있어요.'
               }
               value={isPublic}
               onChange={setIsPublic}
