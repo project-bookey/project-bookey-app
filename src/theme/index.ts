@@ -6,4 +6,4 @@
 export { spacing, radius, sans, serif, typeScale, motion, layout, hairline, iconStroke, pressedStyle, statusLabel } from './tokens';
 export { darkColors, lightColors, cardShadow, getLagStyle, getPaceStyle } from './palette';
 export type { ColorTokens, ThemeMode } from './palette';
-export { useTheme } from './useTheme';
+export { ForceThemeMode, useTheme } from './useTheme';
