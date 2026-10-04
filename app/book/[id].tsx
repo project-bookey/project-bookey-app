@@ -136,8 +136,12 @@ export default function BookDetailScreen() {
     enabled: Number.isFinite(bookId),
   });
 
+  // 이 화면에서 서재에서 뺀 기록 — 라우트 파라미터·책 상세가 아직 그 id 를 들고 있어도 없는 것으로 본다.
+  const [removedRid, setRemovedRid] = useState<number | null>(null);
+  const live = (id?: number | null) => (id != null && id !== removedRid ? id : null);
+
   // 라우트 파라미터 → 이 세션에서 담은 기록 → 서버가 알려준 내 기록 순으로 채택
-  const rid = paramRid ?? addedRid ?? book.data?.myRecordId ?? null;
+  const rid = live(paramRid) ?? live(addedRid) ?? live(book.data?.myRecordId);
 
   const record = useQuery({
     queryKey: ['library', 'record', rid],
@@ -179,6 +183,16 @@ export default function BookDetailScreen() {
       setRemarkSheetOpen(true);
     },
   });
+  // 읽고 싶은 책 빼기 — 빠지면 내 진도 카드가 사라지고 담기 버튼이 다시 선다.
+  const remove = useMutation({
+    mutationFn: (id: number) => libraryApi.remove(id),
+    onSuccess: (_, id) => {
+      setRemovedRid(id);
+      queryClient.removeQueries({ queryKey: ['library', 'record', id] });
+      queryClient.invalidateQueries({ queryKey: ['library'] });
+      queryClient.invalidateQueries({ queryKey: ['book', bookId] });
+    },
+  });
 
   const info = book.data?.book;
   const description = book.data?.description;
@@ -196,7 +210,8 @@ export default function BookDetailScreen() {
     backNote: description ? { title: '줄거리', body: description } : {},
   };
   const lag = progress ? getLagStyle(colors)[progress.lagLevel] : null;
-  const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
+  const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending)
+    || (remove.isError && !remove.isPending);
   const rating = pickRating(book.data);
   // 방금 다 읽은 책 — 완독 리뷰 시트에 띄울 표지·제목·기간. 기록이 완독으로 바뀐 걸 확인한 뒤에만 만든다.
   const finishedBook: FinishedBook | null =
@@ -314,10 +329,27 @@ export default function BookDetailScreen() {
                   />
                 </View>
               ) : null}
+              {record.data.status === 'WANT_TO_READ' ? (
+                // 하차하기와 같은 자리 — 완독 처리와 떨어뜨린 ghost 버튼, 한 번 더 물은 뒤 뺀다.
+                <View style={styles.dangerGap}>
+                  <ConfirmButton
+                    label="서재에서 빼기"
+                    question="읽고 싶은 책에서 뺄까요?"
+                    confirmLabel="빼기"
+                    tone="danger"
+                    variant="ghost"
+                    pending={remove.isPending}
+                    onConfirm={() => remove.mutate(rid!)}
+                  />
+                </View>
+              ) : null}
               {actionFailed ? (
                 <RetryLine
                   colors={colors}
-                  onRetry={() => (finish.isError ? finish.mutate() : abandon.mutate())}
+                  onRetry={() =>
+                    finish.isError ? finish.mutate()
+                      : abandon.isError ? abandon.mutate()
+                        : remove.mutate(rid!)}
                 />
               ) : null}
             </Card>
