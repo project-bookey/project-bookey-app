@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import type { ClubHome, NudgeMessageKey } from '@/api/types';
-import { MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
+import { CopyCodeButton, MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
 import { meetingDay } from '@/components/club/meetingTime';
 import { clubLogKeys, mondayOf, todayKst } from '@/components/clubLog';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
@@ -184,12 +184,15 @@ export default function ClubInfoScreen() {
             <Text style={[typeScale.label, { color: colors.text }]}>{linkLabel('이번 주 카드')}</Text>
           </Pressable>
           <View style={styles.codeRow}>
-            <Text style={[typeScale.caption, { color: colors.textMuted }]}>초대 코드</Text>
-            <Text style={[styles.code, { color: colors.textMuted }]}>{data.joinCode}</Text>
+            <View style={styles.inlineLabel}>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>초대 코드</Text>
+              <Text style={[styles.code, { color: colors.text }]} selectable>{data.joinCode}</Text>
+            </View>
+            <CopyCodeButton code={data.joinCode} />
           </View>
           {isHost ? (
             <View style={styles.codeRow}>
-              <View style={styles.seatLabel}>
+              <View style={styles.inlineLabel}>
                 <Text style={[typeScale.caption, { color: colors.textMuted }]}>자리</Text>
                 <Text style={[typeScale.label, { color: colors.text }]}>
                   {data.memberCount} / {data.memberLimit}명
@@ -233,5 +236,5 @@ const styles = StyleSheet.create({
   linkRow: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   code: { fontFamily: mono.semiBold, fontSize: 14, letterSpacing: 3 },
-  seatLabel: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
+  inlineLabel: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
 });
