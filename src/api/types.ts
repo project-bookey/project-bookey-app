@@ -105,8 +105,6 @@ export type RemarkKind = Remark['kind'];
 // ── 광장 ─────────────────────────────────────────────────
 export type PlazaItem = Schemas['PlazaItemView'];
 export type PlazaItemType = PlazaItem['type'];
-/** 완독 자랑에 붙는 리뷰 — 그 회차에 쓴 가장 최근 리뷰 하나(전문은 리뷰 상세). */
-export type PlazaReview = Schemas['PlazaReviewView'];
 /** 옛 독후감에 엮여 있던 밑줄(`Post.quotes`) — 앱은 밑줄 기능을 걷어냈고, 옛 글을 조각 글로 바꿀 때만 읽는다. */
 export type BookQuote = Schemas['BookQuoteView'];
 
