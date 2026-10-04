@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   LayoutChangeEvent, Linking, Modal, PanResponder, Pressable,
@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Check, Heart, Plus } from 'lucide-react-native';
+import { Check, Plus } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
@@ -17,7 +17,8 @@ import { bookReviewsKey, invalidateReviewLists } from '@/api/reviewCache';
 import type { BookDetail, BookSummary, ReadingRecord, ReadingStatus } from '@/api/types';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { BookPostsTab } from '@/components/book/BookPostsTab';
-import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { LikeAction } from '@/components/post/LikeAction';
+import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
 import { KeyboardArea, KeyboardScroll, useKeyboardOpen } from '@/components/keyboard';
 import { MyRemark } from '@/components/remark/MyRemark';
@@ -136,9 +137,6 @@ export default function BookDetailScreen() {
     queryFn: () => sessionApi.listByRecord(rid!),
     enabled: rid != null,
   });
-  // 리뷰 목록은 useBookReviews 하나로 받는다 — 스탯 스트립의 리뷰 수와 ReviewSection 이 같은 캐시를 나눠 쓴다.
-  const reviewTotal = useBookReviews(bookId).data?.totalElements;
-
   const invalidateRecord = () => {
     queryClient.invalidateQueries({ queryKey: ['library'] });
     queryClient.invalidateQueries({ queryKey: ['library', 'record', rid] });
@@ -217,21 +215,24 @@ export default function BookDetailScreen() {
           hasStartCta ? { paddingBottom: spacing.xxl + 46 + spacing.lg + ctaBottom } : null,
         ]}
       >
-        <Hero info={info} loading={book.isLoading} bound={bound} />
+        <Hero
+          info={info}
+          loading={book.isLoading}
+          bound={bound}
+          rating={rating}
+          like={book.data ? { bookId, liked: book.data.liked, count: book.data.likeCount } : undefined}
+        />
 
         <View style={styles.sections}>
           {book.data ? (
-            <View style={styles.headBlock}>
-              <ActionBar
-                bookId={bookId}
-                rid={rid}
-                status={record.data?.status}
-                colors={colors}
-                onAdded={setAddedRid}
-                onRemoved={onRemoved}
-              />
-              <StatStrip detail={book.data} rating={rating} reviewTotal={reviewTotal} colors={colors} />
-            </View>
+            <ActionBar
+              bookId={bookId}
+              rid={rid}
+              status={record.data?.status}
+              colors={colors}
+              onAdded={setAddedRid}
+              onRemoved={onRemoved}
+            />
           ) : null}
 
           {/* 다 읽거나 내려놓은 사람들이 남긴 한 줄 — 최신순으로 한 장씩 돈다. 머리 묶음보다 먼저 서지 않게 책이 온 뒤에 그린다. */}
@@ -382,15 +383,20 @@ export default function BookDetailScreen() {
 }
 
 /**
- * 히어로 콜라주 — 표지 스택·겹쳐 앉은 세리프 표제. 평점·좋아요는 아래 스탯 스트립 한 곳에만 둔다.
+ * 히어로 콜라주 — 표지 스택·겹쳐 앉은 세리프 표제, 그 아래 줄 오른쪽에 좋아요 하트와 평점 스티키 메모.
+ * 책의 평점·좋아요는 여기 한 곳에만 둔다(2026-10-05 사용자 결정 — 아래 현황 줄은 없앴다).
  * 서브 화면이라 패럴랙스는 없다(정적 콜라주). 입장 정착 애니는 표지에만 건다.
  */
-function Hero({ info, loading, bound }: {
+function Hero({ info, loading, bound, rating, like }: {
   info?: BookSummary;
   /** 로딩 중에는 같은 높이의 빈 판만 그린다 — 도착할 때 아래 섹션이 튀지 않는다. */
   loading?: boolean;
   /** 장정본 표지 — 띠지(내 기록)와 뒤장 메모장(줄거리). */
   bound?: { band?: BookBand; backNote?: BookNote };
+  /** 리뷰 평균 별점 — 없으면 메모를 붙이지 않는다. */
+  rating: RatingPick | null;
+  /** 책 상세가 오기 전엔 undefined — 하트를 그리지 않는다. */
+  like?: { bookId: number; liked: boolean; count: number };
 }) {
   const { colors } = useTheme();
   const window = useWindowDimensions();
@@ -446,12 +452,9 @@ function Hero({ info, loading, bound }: {
         />
       </View>
 
-      {/* ② 표제 — 표지 아래에서 가로 폭을 넉넉히 쓴다 */}
+      {/* ② 표제 — 표지 아래에서 가로 폭을 넉넉히 쓴다. 저자 줄 오른쪽 빈자리에 좋아요·평점을 앉힌다. */}
       <View
-        style={[
-          styles.layer,
-          { left: GUTTER, top: titleTop, width: Math.round(clamp(W * H.titleWRatio, 280, W - GUTTER * 2)), zIndex: 2 },
-        ]}
+        style={[styles.layer, { left: GUTTER, top: titleTop, width: W - GUTTER * 2, zIndex: 2 }]}
         onLayout={(e) => {
           const next = Math.round(e.nativeEvent.layout.height);
           if (next > 0 && next !== titleH) setTitleH(next);
@@ -461,17 +464,51 @@ function Hero({ info, loading, bound }: {
           numberOfLines={2}
           lineBreakStrategyIOS="hangul-word"
           textBreakStrategy="balanced"
-          style={[styles.heroTitle, halo, { color: colors.text }]}
+          style={[
+            styles.heroTitle,
+            halo,
+            { color: colors.text, maxWidth: Math.round(clamp(W * H.titleWRatio, 280, W - GUTTER * 2)) },
+          ]}
         >
           {info?.title ?? '제목 미상'}
         </Text>
-        <Text numberOfLines={1} style={[typeScale.caption, styles.heroCaption, halo, { color: colors.textMuted }]}>
-          {caption}
-        </Text>
+        <View style={styles.heroMetaRow}>
+          <Text
+            numberOfLines={1}
+            style={[typeScale.caption, styles.heroCaption, halo, { color: colors.textMuted }]}
+          >
+            {caption}
+          </Text>
+          {like ? <BookLike {...like} /> : null}
+          {rating ? (
+            <StickyNote rotate={2.5} style={styles.ratingNote}>
+              <Text
+                accessibilityLabel={`리뷰 평균 별점 ${rating.average.toFixed(1)}점, ${rating.count}명`}
+                style={[typeScale.monoNumeral, { color: colors.onNote }]}
+              >
+                ★ {rating.average.toFixed(1)} · {groupNumber(rating.count)}명
+              </Text>
+            </StickyNote>
+          ) : null}
+        </View>
       </View>
 
     </View>
   );
+}
+
+/** 책 좋아요 — 앱 어디서나 같은 하트(LikeAction). 누를 때마다 켜고 끄며, 켜지면 하트를 초록으로 채운다. */
+function BookLike({ bookId, liked, count }: { bookId: number; liked: boolean; count: number }) {
+  const queryClient = useQueryClient();
+  const like = useMutation({
+    mutationFn: () => bookApi.like(bookId),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['book', bookId], (old: BookDetail | undefined) =>
+        old ? { ...old, liked: res.liked, likeCount: res.likeCount } : old,
+      );
+    },
+  });
+  return <LikeAction count={count} liked={liked} onPress={() => { if (!like.isPending) like.mutate(); }} />;
 }
 
 /**
@@ -617,95 +654,6 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
     </>
   );
 }
-
-/**
- * 스탯 스트립 — 헤어라인 세로 구분으로 나눈 실측 수치 3종(평점 없으면 2종). 책의 평점·좋아요는 여기 한 곳에만 둔다.
- * 좋아요 칸은 눌러 켜고 끈다 — 앱 어디서나처럼 켜지면 하트를 초록으로 채운다(LikeAction 과 같은 모양).
- */
-function StatStrip({ detail, rating, reviewTotal, colors }: {
-  detail: BookDetail;
-  rating: RatingPick | null;
-  /** 리뷰 목록이 오기 전엔 undefined — 칸은 그대로 두고 수만 비워 둔다. */
-  reviewTotal?: number;
-  colors: ColorTokens;
-}) {
-  const queryClient = useQueryClient();
-  const bookId = detail.book.id;
-  const like = useMutation({
-    mutationFn: () => bookApi.like(bookId),
-    onSuccess: (res) => {
-      queryClient.setQueryData(['book', bookId], (old: BookDetail | undefined) =>
-        old ? { ...old, liked: res.liked, likeCount: res.likeCount } : old,
-      );
-    },
-  });
-
-  const cells: { key: string; value: string; label: string; icon?: ReactNode }[] = [];
-  if (rating) {
-    cells.push({
-      key: 'rating',
-      value: `★ ${rating.average.toFixed(1)}`,
-      label: `평점 · ${groupNumber(rating.count)}명`,
-    });
-  }
-  cells.push({ key: 'reviews', value: reviewTotal != null ? groupNumber(reviewTotal) : '–', label: '리뷰' });
-  // 좋아요 수는 앱 어디서나 하트를 앞에 단다 — 평점 칸의 ★ 자리와 같다.
-  const heart = detail.liked ? colors.accent : colors.text;
-  cells.push({
-    key: 'likes',
-    value: groupNumber(detail.likeCount),
-    label: '좋아요',
-    icon: <Heart size={16} color={heart} fill={detail.liked ? heart : 'transparent'} {...iconStroke} />,
-  });
-
-  return (
-    <View style={[styles.statStrip, { borderTopColor: colors.line }]}>
-      {cells.map((cell, index) => {
-        const body = (
-          <>
-            <View style={styles.statValueRow}>
-              {cell.icon}
-              <Text style={[styles.statValue, { color: colors.text }]}>
-                {cell.value}
-              </Text>
-            </View>
-            <Text style={[typeScale.caption, styles.statLabel, { color: colors.textFaint }]}>
-              {cell.label}
-            </Text>
-          </>
-        );
-        return (
-          <Fragment key={cell.key}>
-            {index > 0 ? <View style={[styles.statDivider, { backgroundColor: colors.line }]} /> : null}
-            {cell.key === 'likes' ? (
-              <Pressable
-                disabled={like.isPending}
-                onPress={() => like.mutate()}
-                accessibilityRole="button"
-                accessibilityState={{ selected: detail.liked }}
-                accessibilityLabel={`좋아요 ${detail.likeCount}`}
-                hitSlop={LIKE_HIT_SLOP}
-                style={({ pressed }) => [
-                  styles.statCell,
-                  styles.statPressable,
-                  { opacity: like.isPending ? 0.6 : 1 },
-                  pressed ? pressedStyle : null,
-                ]}
-              >
-                {body}
-              </Pressable>
-            ) : (
-              <View style={styles.statCell}>{body}</View>
-            )}
-          </Fragment>
-        );
-      })}
-    </View>
-  );
-}
-
-/** 좋아요 칸의 터치 상자 — 칸 높이(약 42pt)를 44pt 넘게, 옆 칸과 겹치지 않을 만큼만 넓힌다. */
-const LIKE_HIT_SLOP = { top: 6, bottom: 6, left: spacing.sm, right: spacing.sm };
 
 /** 책 소개 — 세리프 인용 활자 + 더보기/접기. */
 function Description({ text, colors }: { text: string; colors: ColorTokens }) {
@@ -928,9 +876,13 @@ const RECORD_TABS: { value: RecordTab; label: string }[] = [
   { value: 'POST', label: '독후감' },
 ];
 
-/** 섹션 제목 자리에 놓는 두 글자 탭 — 켜진 쪽만 밝고 아래 민트 밑줄 토막(A1). 개수는 적지 않는다. */
+/**
+ * 섹션 제목 자리에 놓는 두 글자 탭 — 켜진 쪽만 밝고 아래 민트 밑줄 토막(A1).
+ * 개수는 count 를 준 탭에만 작게 단다 — 리뷰 수는 현황 줄을 없애며 여기로 옮겼다(2026-10-05).
+ * 독후감 목록은 서버가 총수를 주지 않아 수를 달지 않는다.
+ */
 function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, colors }: {
-  tabs: { value: T; label: string }[];
+  tabs: { value: T; label: string; count?: number }[];
   value: T;
   onChange: (next: T) => void;
   action?: ReactNode;
@@ -944,7 +896,12 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
           return (
             <Pressable key={t.value} onPress={() => onChange(t.value)} hitSlop={8}
               accessibilityRole="tab" accessibilityState={{ selected: active }} style={styles.tab}>
-              <Text style={[styles.tabTitle, { color: active ? colors.text : colors.textFaint }]}>{t.label}</Text>
+              <Text style={[styles.tabTitle, { color: active ? colors.text : colors.textFaint }]}>
+                {t.label}
+                {t.count != null ? (
+                  <Text style={[styles.tabCount, { color: colors.textFaint }]}> {groupNumber(t.count)}</Text>
+                ) : null}
+              </Text>
               <View style={[styles.tabRule, { backgroundColor: active ? colors.accent : 'transparent' }]} />
             </Pressable>
           );
@@ -955,7 +912,7 @@ function TabbedSectionHeader<T extends string>({ tabs, value, onChange, action, 
   );
 }
 
-/** 책별 리뷰 목록 — 리뷰 섹션과 스탯 스트립(리뷰 수)이 같은 캐시를 쓴다. */
+/** 책별 리뷰 목록 — 리뷰 섹션의 목록과 탭의 리뷰 수가 같은 캐시를 쓴다. */
 function useBookReviews(bookId: number) {
   return useQuery({
     queryKey: bookReviewsKey(bookId),
@@ -1084,7 +1041,13 @@ function ReviewSection({
 
   return (
     <View style={styles.section}>
-      <TabbedSectionHeader tabs={RECORD_TABS} value={tab} onChange={switchTab} action={action} colors={colors} />
+      <TabbedSectionHeader
+        tabs={RECORD_TABS.map((t) => (t.value === 'REVIEW' ? { ...t, count: reviews.data?.totalElements } : t))}
+        value={tab}
+        onChange={switchTab}
+        action={action}
+        colors={colors}
+      />
 
       {tab === 'POST' ? (
         <BookPostsTab bookId={bookId} />
@@ -1166,10 +1129,12 @@ const styles = StyleSheet.create({
     letterSpacing: -1.1,
     transform: [{ rotate: '-1.5deg' }],
   },
-  heroCaption: { marginTop: spacing.sm },
+  // 저자 줄 — 왼쪽 저자·쪽수가 남는 폭을 쓰고, 오른쪽에 하트와 평점 메모가 붙는다.
+  heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
+  heroCaption: { flex: 1 },
+  ratingNote: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
 
   sections: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.xl },
-  headBlock: { gap: spacing.lg },
   section: { gap: spacing.sm },
   cardGap: { gap: spacing.md },
   listCard: { paddingVertical: 0 },
@@ -1223,14 +1188,6 @@ const styles = StyleSheet.create({
   },
   commitmentActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
 
-  statStrip: { flexDirection: 'row', gap: spacing.lg, borderTopWidth: hairline, paddingTop: spacing.lg },
-  statCell: { gap: 3 },
-  statPressable: { minWidth: 44 },
-  statDivider: { width: hairline },
-  // 아이콘(하트)과 숫자는 한 덩어리 — ★ 와 숫자 사이 띄어쓰기만큼(5px) 띄운다.
-  statValueRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  statValue: { fontFamily: mono.semiBold, fontSize: 19 },
-  statLabel: { fontSize: 10 },
 
   progressNumbers: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs },
   bigNumber: { fontFamily: mono.semiBold, fontSize: 34 },
@@ -1254,6 +1211,7 @@ const styles = StyleSheet.create({
   tabRow: { flexDirection: 'row', gap: spacing.lg },
   tab: { gap: 6 },
   tabTitle: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
+  tabCount: { fontFamily: mono.semiBold, fontSize: 13 },
   tabRule: { width: 22, height: 2 },
   reviewList: { gap: spacing.md },
 });
