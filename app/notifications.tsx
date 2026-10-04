@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Trash2 } from 'lucide-react-native';
@@ -9,7 +8,7 @@ import type { Notification, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { notificationTarget } from '@/lib/notificationTarget';
+import { notificationTarget, openNotificationTarget } from '@/lib/notificationTarget';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
@@ -18,7 +17,6 @@ import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } 
  */
 export default function NotificationsScreen() {
   const { colors } = useTheme();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const list = useQuery({ queryKey: ['notifications'], queryFn: notificationApi.list });
   const open = useMutation({
@@ -56,9 +54,7 @@ export default function NotificationsScreen() {
   const tap = (item: Notification) => {
     if (!item.openedAt) open.mutate(item.id);
     const target = notificationTarget(item);
-    if (!target) return;
-    if (target.section) router.navigate(target.href);
-    else router.push(target.href);
+    if (target) openNotificationTarget(target);
   };
 
   const items = list.data?.content ?? [];

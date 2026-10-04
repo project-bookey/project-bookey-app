@@ -117,6 +117,14 @@ export default function MainTabsLayout() {
       }
     };
   }, [isFocused, owner]);
+  // openSection 이 맡겨 둔 구역으로 넘긴다 — 하위 화면에서 돌아오는 길에는 URL 이 바뀌어도 pager 를 움직이지
+  // 않으므로(returningFromDetail) 여기서 넘긴다. 넘긴 요청은 비워 다음 로그인 등에 남지 않게 한다.
+  const pending = useSectionPager((s) => s.pending);
+  useEffect(() => {
+    if (!isFocused || !pagerReady || pending === null) return;
+    useSectionPager.setState({ pending: null });
+    forceSelect(pending);
+  }, [isFocused, pagerReady, pending, forceSelect]);
   const pagesRef = useTourTarget('section-pages');
 
   // 둘러보기가 이 화면 위에 떠 있는 동안 스크린 리더가 뒤 화면을 읽지 않게 숨긴다 — 둘러보기 카드만 읽힌다.
