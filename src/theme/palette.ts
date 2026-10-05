@@ -37,6 +37,11 @@ export type ColorTokens = {
   dangerSoft: string;
   /** 전면 딤 (모달 뒤) */
   scrimDim: string;
+  /**
+   * 하단 바 옆 메뉴(클럽 ＋)가 열릴 때의 덮개 — 어두운 화면에서도 검게가 아니라 회색빛으로 가라앉게 한다
+   * (사용자 결정 2026-10-05). 모달·시트 덮개(scrimDim)와는 따로 둔다.
+   */
+  scrimMenu: string;
   /** 앱 둘러보기 딤 — 비춘 구멍만 또렷하게 남도록 모달 딤보다 짙다. */
   scrimFocus: string;
   /** 반투명 유리 말풍선 면 — 앱 둘러보기 설명. 둘러보기는 다크로 고정해 그리므로 다크 값이 실제로 쓰인다. */
@@ -105,6 +110,7 @@ export const darkColors: ColorTokens = {
   danger: '#FF6B60',
   dangerSoft: '#3A1714',
   scrimDim: 'rgba(0,0,0,0.55)',
+  scrimMenu: 'rgba(96,98,92,0.55)',
   scrimFocus: 'rgba(0,0,0,0.72)',
   bubble: 'rgba(22,24,21,0.72)',
   bubbleEdge: 'rgba(255,255,255,0.22)',
@@ -147,6 +153,7 @@ export const lightColors: ColorTokens = {
   danger: '#B3362B',
   dangerSoft: '#FBE4E1',
   scrimDim: 'rgba(0,0,0,0.45)',
+  scrimMenu: 'rgba(0,0,0,0.45)',
   scrimFocus: 'rgba(0,0,0,0.72)',
   bubble: 'rgba(250,248,244,0.78)',
   bubbleEdge: 'rgba(255,255,255,0.7)',

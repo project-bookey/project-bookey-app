@@ -446,7 +446,7 @@ export function SectionNav({
       </View>
       {menuShown ? (
         // 메뉴가 열리면 화면 전체(하단 바 포함)를 덮개로 가라앉힌다 — 누르면 닫힌다.
-        <Animated.View style={[styles.scrim, { backgroundColor: colors.scrimDim, opacity: menuAnim }]}>
+        <Animated.View style={[styles.scrim, { backgroundColor: colors.scrimMenu, opacity: menuAnim }]}>
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => openMenu(false)}
