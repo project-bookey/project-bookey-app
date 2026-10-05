@@ -9,11 +9,11 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { NAV_BAR_HEIGHT } from '@/components/collage';
 import { showSection, useSectionPager } from '@/components/pager/sectionPager';
 import { Button } from '@/components/ui';
+import { useBackHandler } from '@/hooks/useBackHandler';
 import { useAuth } from '@/store/auth';
 import { APP_TOUR_STEPS, type TourStep, useAppTour } from '@/store/appTour';
 import { ForceThemeMode, hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { measureTourTarget, measureView, type TourRect } from './TourTarget';
-import { useTourBackHandler } from './useTourBackHandler';
 
 /** 내용 구멍이 대상 바깥으로 넓어지는 만큼. */
 const HOLE_PAD = 6;
@@ -168,7 +168,7 @@ export function AppTourOverlay() {
     if (step === APP_TOUR_STEPS.length - 1) close();
     else next();
   };
-  useTourBackHandler(visible, () => {
+  useBackHandler(visible, () => {
     if (step > 0) prev();
     else close();
   });
