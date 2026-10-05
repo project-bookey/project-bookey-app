@@ -431,7 +431,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
           </View>
         )}
 
-        {mine ? <MyScraps /> : userId != null ? <PublicPosts userId={userId} /> : null}
+        {mine ? <MyScraps finishedCount={counts?.finished} /> : userId != null ? <PublicPosts userId={userId} /> : null}
       </View>
     </KeyboardScroll>
   );
@@ -633,13 +633,15 @@ function EnvelopeLine({ color }: { color: string }) {
 }
 
 /**
- * '내 독후감' — 프로필에서는 목록을 펼치지 않고 제 화면으로 보내는 링크만 둔다.
+ * '내 독후감' · '완독 카드' — 프로필에서는 목록을 펼치지 않고 제 화면으로 보내는 링크만 둔다.
+ * 둘 다 내가 남긴 것을 모아 보는 입구라 한 카드에 괘선으로 나눠 묶는다(섹션을 늘리지 않는다 — Hick).
+ * 완독 카드 수는 서재 상태별 개수(finished)를 그대로 쓴다 — 다 읽은 회차마다 한 장이다.
  *
  * 개수는 size 1 응답의 totalElements 로 센다 — 목록은 /post/mine 의 몫이라 그 이상은 받지 않는다.
  * 서버가 totalElements 를 생략했거나 아직 못 받았으면 개수 없이 링크만 보인다. 0건이어도 링크는 남긴다 —
  * 들어간 화면의 빈 상태가 첫 독후감을 권한다.
  */
-function MyScraps() {
+function MyScraps({ finishedCount }: { finishedCount?: number }) {
   const router = useRouter();
   const posts = useQuery({ queryKey: MY_POSTS_LATEST_KEY, queryFn: () => postApi.mine(0, 1) });
 
@@ -651,6 +653,13 @@ function MyScraps() {
           count={posts.data?.totalElements}
           unit="편"
           onPress={() => router.push('/post/mine')}
+        />
+        <Rule />
+        <LinkRow
+          label="완독 카드"
+          count={finishedCount}
+          unit="장"
+          onPress={() => router.push('/finish-cards')}
         />
       </Card>
     </View>

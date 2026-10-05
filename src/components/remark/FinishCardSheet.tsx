@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { NoteSheet } from '@/components/note/NoteSheet';
 import { Button, TextLink } from '@/components/ui';
-import { radius, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, serif } from '@/theme/tokens';
+import { spacing, typeScale, useTheme } from '@/theme';
 
 import type { FinishedBook } from './ClosingBookHead';
-import { FinishCardFace } from './FinishCardFace';
-import { REMARK_MAX, useSaveRemark } from './queries';
+import { FinishCardFace, RemarkCardCount, RemarkCardInput } from './FinishCardFace';
+import { useSaveRemark } from './queries';
 
 /**
  * 완독 카드 시트 — 책을 다 읽은 그 순간(타이머 완독 · 도서 상세 '완독 처리')에 아래에서 올라온다.
@@ -92,28 +91,9 @@ export function FinishCardSheet({ rid, bookId, book, initial, onClose, onWritePo
         {/* ② 내 완독 카드 — 카드와 글자 수 줄이 한 묶음. */}
         <View style={styles.cardBlock}>
           <FinishCardFace title={book.title} coverUrl={book.coverUrl} when="방금">
-            <View style={styles.quoteRow}>
-              <Text style={[styles.quoteMark, { color: colors.textFaint }]} aria-hidden>“</Text>
-              <TextInput
-                value={draft}
-                // 한 문장이라 줄바꿈은 받지 않는다(엔터는 키보드를 내린다) — 한 줄평 칸(RemarkField)과 같다.
-                onChangeText={(text) => setDraft(text.replace(/\s*\n\s*/g, ' '))}
-                placeholder="예: 마지막 장을 덮고 한참 앉아 있었어요"
-                placeholderTextColor={colors.textFaint}
-                maxLength={REMARK_MAX}
-                multiline
-                submitBehavior="blurAndSubmit"
-                returnKeyType="done"
-                accessibilityLabel="한 줄평"
-                style={[styles.input, {
-                  backgroundColor: colors.surface, borderColor: colors.line, color: colors.text,
-                }]}
-              />
-            </View>
+            <RemarkCardInput value={draft} onChange={setDraft} />
           </FinishCardFace>
-          <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-            {`${draft.length}/${REMARK_MAX}자 · 책 정보 화면에 다른 독자의 것과 번갈아 보여요`}
-          </Text>
+          <RemarkCardCount length={draft.length} />
         </View>
 
         {/* 실패 안내는 버튼 바로 위에 붙인다(Proximity). */}
@@ -147,25 +127,6 @@ const styles = StyleSheet.create({
   head: { gap: spacing.xs },
   center: { textAlign: 'center' },
   cardBlock: { gap: spacing.sm },
-  quoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
-  // 여는 따옴표는 장식 — 입력칸 첫 줄 높이에 맞춘다(칸 위 여백 sm + 줄높이 22 의 가운데).
-  quoteMark: { fontFamily: serif.regular, fontSize: 22, lineHeight: 30, marginTop: 2 },
-  input: {
-    flex: 1,
-    // 60자면 카드 폭에서 서너 줄 — 처음부터 세 줄 자리(22×3 + 위아래 여백)를 둔다. 웹 칸은 저절로 늘지 않아
-    // 두 줄 자리면 쓰는 도중에 칸 안에서 스크롤된다. 네이티브는 넘치면 maxHeight 까지 늘어난다.
-    minHeight: 82,
-    maxHeight: 120,
-    borderWidth: hairline,
-    // 한 줄평 칸(RemarkField · Field)과 같은 입력 모서리.
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    fontFamily: serif.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlignVertical: 'top',
-  },
   footer: { gap: spacing.sm },
   more: {
     flexDirection: 'row',
