@@ -1,9 +1,11 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
-import { TiltCover, useCoverEntrance } from '@/components/collage';
-import { useTheme } from '@/theme';
-import { hairline, pressedStyle, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
+import { Plus } from 'lucide-react-native';
+
+import { ICON_SIZE, TiltCover, useCoverEntrance } from '@/components/collage';
+import { controlFace, useTheme } from '@/theme';
+import { hairline, iconStroke, pressedStyle, radius, rowOffsetY, sans, spacing, tiltFor, typeScale } from '@/theme/tokens';
 import { TextLink } from '@/components/ui';
 
 export type RowBook = {
@@ -41,7 +43,7 @@ const ALL_HIT_SLOP = { top: 20, bottom: 12, left: 12, right: spacing.lg };
  * 가로 표지 캐러셀 행. 데이터가 비어도 행 골격은 유지한다 — onPressAdd가 있으면 + 타일, 없으면 유령 표지.
  * onPressAdd가 있으면 책이 있을 때도 목록 끝에 + 타일을 붙인다.
  */
-export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressAdd }: {
+export function BookRow({ title, label, books, loading, staggered = false, onPressBook, onPressAll, onPressAdd, emptyCopy }: {
   title: string;
   /** 제목 옆 모노 라벨 (예: LIVE) */
   label?: string;
@@ -56,6 +58,8 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
   onPressAll?: () => void;
   /** + 타일 이동 대상 — 목록 끝(빈 행이면 단독)에 붙는다. 없으면 빈 행은 '준비 중' 유령 표지로 대체 */
   onPressAdd?: () => void;
+  /** 빈 행에서 + 타일 옆에 두는 안내 — 제목 한 줄과 할 일 한 줄 */
+  emptyCopy?: { title: string; body: string };
 }) {
   const { colors } = useTheme();
   const empty = !loading && books.length === 0;
@@ -92,6 +96,13 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
       ) : empty && onPressAdd ? (
         <View style={listStyle}>
           <AddTile onPress={onPressAdd} />
+          {/* 타일에 글자가 없으니 빈 행에서는 옆에 무엇을 하면 되는지 적어 둔다. */}
+          {emptyCopy ? (
+            <View style={styles.emptyCopy}>
+              <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{emptyCopy.title}</Text>
+              <Text style={[typeScale.caption, { color: colors.textMuted }]}>{emptyCopy.body}</Text>
+            </View>
+          ) : null}
         </View>
       ) : empty ? (
         <View style={styles.emptyWrap}>
@@ -127,7 +138,10 @@ export function BookRow({ title, label, books, loading, staggered = false, onPre
   );
 }
 
-/** 점선 + 타일 — 표지 한 칸 크기. */
+/**
+ * + 타일 — 표지 한 칸 크기의 회색 면에 + 아이콘만(2026-10-05 사용자 결정, 홈 책 추가 시안 F).
+ * 점선은 메모 조각(MemoScrap)의 테두리라 버튼으로 쓰지 않는다. 이름은 접근성 라벨로만 읽어 준다.
+ */
 function AddTile({ onPress }: { onPress: () => void }) {
   const { colors } = useTheme();
   return (
@@ -135,12 +149,9 @@ function AddTile({ onPress }: { onPress: () => void }) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel="책 추가"
-      style={({ pressed }) => (pressed ? pressedStyle : null)}
+      style={({ pressed }) => [styles.addTile, controlFace(colors.tonal), pressed && pressedStyle]}
     >
-      <View style={[styles.cover, styles.ghost, { borderColor: colors.control }]}>
-        <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
-      </View>
+      <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
     </Pressable>
   );
 }
@@ -263,6 +274,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
+  addTile: {
+    width: COVER_W,
+    height: COVER_H,
+    borderRadius: radius.control,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCopy: { flex: 1, minWidth: 0, alignSelf: 'center', gap: spacing.xs },
   emptyWrap: { gap: spacing.sm },
   emptyNote: { paddingHorizontal: spacing.lg },
 });

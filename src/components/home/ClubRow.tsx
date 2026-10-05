@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Plus } from 'lucide-react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubPreview } from '@/api/types';
-import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 import { ClubBackdrop } from '@/components/club';
+import { ICON_SIZE } from '@/components/collage';
 import { TextLink } from '@/components/ui';
 
 /**
@@ -55,10 +57,14 @@ export function ClubRow() {
             onPress={() => router.push('/club/create')}
             accessibilityRole="button"
             accessibilityLabel="클럽 만들기"
-            style={[styles.card, styles.createTile, { borderColor: colors.control }]}
+            style={({ pressed }) => [
+              styles.card,
+              styles.createTile,
+              controlFace(colors.tonal),
+              pressed && pressedStyle,
+            ]}
           >
-            <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>클럽 만들기</Text>
+            <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
           </Pressable>
         }
         renderItem={({ item }) => (
@@ -116,9 +122,9 @@ const styles = StyleSheet.create({
   card: { width: 150, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
   // 카드 폭에 맞춘 띠 — 배경 사진이 없으면 기본 배경(ClubBackdrop).
   band: { height: 64, borderRadius: radius.sm, overflow: 'hidden', marginBottom: spacing.xs },
+  // 책 추가 타일과 같은 모양 — 회색 면에 + 아이콘만(2026-10-05 사용자 결정, 홈 책 추가 시안 F).
   createTile: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 150,

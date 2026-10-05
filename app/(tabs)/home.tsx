@@ -139,6 +139,7 @@ export default function HomeScreen() {
             onPressBook={openBook}
             onPressAll={() => router.push('/library')}
             onPressAdd={() => router.navigate('/book-search')}
+            emptyCopy={{ title: '읽고 싶은 책이 아직 없어요', body: '마음에 드는 책을 찾아 담아 보세요' }}
           />
         </HomeSection>
 
