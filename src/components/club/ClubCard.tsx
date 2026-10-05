@@ -13,8 +13,8 @@ import { mono, serif } from '@/theme/tokens';
 
 /** 한 줄 정보의 방장 프로필 사진 크기 — 16에서 키웠다(2026-10-05 사용자 결정). */
 const HOST_AVATAR = 24;
-/** 방장 사진 머리에 얹는 왕관 크기. */
-const HOST_CROWN = 14;
+/** 방장 사진 동그라미 위에 올리는 왕관 크기 — 14에서 줄였다(2026-10-05 사용자 결정). */
+const HOST_CROWN = 12;
 /** 그림 띠 높이 — 96에서 144로 늘렸다(2026-10-05 사용자 결정). */
 const BAND_H = 144;
 /** 아이콘 버튼(44pt) 높이 — 톱니를 얹는 제목 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
@@ -112,7 +112,7 @@ function CardMetaLine({ members, memberCount }: { members: ClubMemberBrief[]; me
         <View accessible accessibilityLabel={`호스트 ${host.nickname}`} style={styles.metaHost}>
           <View>
             <Avatar uri={host.avatarUrl} nickname={host.nickname} size={HOST_AVATAR} />
-            {/* 금색 토큰이 없어 잉크 선에 카드 면색을 채운다 — 사진 테두리를 가리며 머리에 얹힌다. */}
+            {/* 사진 동그라미 바로 위에 올린다. 금색 토큰이 없어 잉크 선에 카드 면색을 채운다. */}
             <View style={styles.crown}>
               <Crown size={HOST_CROWN} color={colors.text} fill={colors.surface} {...iconStroke} />
             </View>
@@ -161,13 +161,13 @@ const styles = StyleSheet.create({
   name: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 32 },
   intro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
   // 왕관이 사진 위로 솟는 만큼 위를 비운다.
-  metaRow: { flexDirection: 'row', alignItems: 'center', columnGap: spacing.md, paddingTop: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', columnGap: spacing.md, paddingTop: spacing.sm },
   metaText: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   metaHost: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1, minWidth: 0 },
   metaHostName: { flexShrink: 1 },
   crown: {
     position: 'absolute',
-    top: -9,
+    top: 1 - HOST_CROWN,
     left: (HOST_AVATAR - HOST_CROWN) / 2,
     transform: [{ rotate: '-12deg' }],
   },
