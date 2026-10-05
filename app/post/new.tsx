@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDown, ImagePlus, TextQuote } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import {
@@ -254,7 +254,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
     if (!photo || !uri) return null;
     return { uri, width: photo.image?.width ?? photo.width, height: photo.image?.height ?? photo.height };
   };
-  // 고르기 창이 떠 있거나, 서버가 사진을 못 받거나, 장수가 찼으면 '+ 사진'을 잠근다.
+  // 고르기 창이 떠 있거나, 서버가 사진을 못 받거나, 장수가 찼으면 사진 버튼을 잠근다.
   const photoLocked = uploads.picking || !uploads.retryable || uploads.photos.length >= POST_IMAGE_MAX;
 
   // 올라가는 중인 사진만 붙잡는다 — 실패한 타일까지 막으면 저장소가 꺼진 동안 글을 아예 못 올린다.
@@ -395,7 +395,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
             </Text>
           ) : null}
 
-          {/* ③ 사진 — 넣기는 하단 띠의 '+ 사진'(커서 자리)이 맡는다. 여기는 붙은 사진의 올라가는 상태·다시·떼기를
+          {/* ③ 사진 — 넣기는 하단 바의 사진 버튼(커서 자리)이 맡는다. 여기는 붙은 사진의 올라가는 상태·다시·떼기를
               보는 자리라, 붙은 사진도 알릴 것도 없으면 숨긴다. 떼면 본문의 사진 줄도 함께 빠진다. */}
           {uploads.photos.length > 0 || uploads.notice ? (
             <View style={styles.section}>
@@ -415,7 +415,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
         {/*
           하단 띠 — 댓글 입력 바와 같은 자리(ScrollView 의 형제)라 키보드가 뜨면 그 위에 붙고,
           글이 길어져도 늘 손에 닿는다. 제출은 엄지가 닿는 여기 오른쪽에 둔다(UX 철칙 Fitts).
-          '+ 문장'·'+ 사진'은 커서 자리에 문장 조각·사진을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
+          문장·사진 버튼은 커서 자리에 문장 조각·사진을 끼워 넣는다 — 미리보기에는 넣을 커서가 없으니 쓰기일 때만 그린다.
           공개 범위는 올릴 때 정하는 것이라 '올리기' 바로 옆 칩으로 둔다(UX 철칙 Proximity).
           실패 안내도 제출 버튼 바로 위에 붙인다.
         */}
@@ -426,8 +426,9 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
           <View style={styles.bottomRow}>
             {mode === 'WRITE' ? (
               <View style={styles.tools}>
-                <FootAction label="+ 문장" onPress={() => setQuoting(true)} accessibilityLabel="문장 넣기" />
-                <FootAction label="+ 사진" onPress={insertPhotos} disabled={photoLocked} accessibilityLabel="사진 넣기" />
+                {/* 문장(따옴표)·사진은 아이콘만 — 이름은 접근성 라벨(2026-10-05 사용자 결정). */}
+                <FootAction icon={TextQuote} onPress={() => setQuoting(true)} accessibilityLabel="문장 넣기" />
+                <FootAction icon={ImagePlus} onPress={insertPhotos} disabled={photoLocked} accessibilityLabel="사진 넣기" />
               </View>
             ) : null}
             <View style={styles.submitGroup}>

@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { BringToFront, Pencil, Trash2 } from 'lucide-react-native';
 
 import { radius, spacing, useTheme } from '@/theme';
 import { hairline } from '@/theme/tokens';
@@ -83,10 +84,10 @@ export function SelectionFrame({ element, scale, height, onPreview, onCommit, on
         </GestureDetector>
       </View>
       <View pointerEvents="box-none" style={[styles.actions, { left: Math.max(0, left), top: actionsTop }]}>
-        <NoteAction label="맨 앞으로" onPress={onFront} />
-        {canEdit && onEdit ? <NoteAction label="편집" onPress={onEdit} /> : null}
+        <NoteAction icon={BringToFront} label="맨 앞으로" onPress={onFront} />
+        {canEdit && onEdit ? <NoteAction icon={Pencil} label="편집" onPress={onEdit} /> : null}
         <View style={styles.dangerGap}>
-          <NoteAction label="삭제" onPress={onDelete} tone="danger" />
+          <NoteAction icon={Trash2} label="삭제" onPress={onDelete} tone="danger" />
         </View>
       </View>
     </>

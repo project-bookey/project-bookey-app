@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Check, Plus } from 'lucide-react-native';
+import { Check, Play, Plus, Star } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, libraryApi, reviewApi, sessionApi } from '@/api/endpoints';
@@ -30,7 +30,7 @@ import { ReviewForm } from '@/components/review/ReviewForm';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { reviewMutationError, useRemoveReview, useUpdateReview } from '@/components/review/useReviewMutations';
 import {
-  Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, TextLink, formatDuration, formatRelative, linkLabel, percent, playLabel,
+  Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, TextLink, formatDuration, formatRelative, linkLabel, percent,
 } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
@@ -391,7 +391,9 @@ export default function BookDetailScreen() {
         >
           <View style={styles.ctaInner}>
             <Button
-              label={playLabel('독서 시작')}
+              label="독서 시작"
+              icon={Play}
+              iconFill
               onPress={() => router.push(`/timer?recordId=${rid}&autoStart=1`)}
             />
           </View>
@@ -517,12 +519,16 @@ function Hero({ info, loading, bound, rating, like }: {
           {/* 평점 메모는 기울이지 않는다(2026-10-05 사용자 결정) */}
           {rating ? (
             <StickyNote rotate={0} style={styles.ratingNote}>
-              <Text
+              <View
+                accessible
                 accessibilityLabel={`리뷰 평균 별점 ${rating.average.toFixed(1)}점, ${rating.count}명`}
-                style={[typeScale.monoNumeral, { color: colors.onNote }]}
+                style={styles.ratingRow}
               >
-                ★ {rating.average.toFixed(1)} · {groupNumber(rating.count)}명
-              </Text>
+                <Star size={12} color={colors.onNote} fill={colors.onNote} {...iconStroke} />
+                <Text style={[typeScale.monoNumeral, { color: colors.onNote }]}>
+                  {rating.average.toFixed(1)} · {groupNumber(rating.count)}명
+                </Text>
+              </View>
             </StickyNote>
           ) : null}
         </View>
@@ -638,7 +644,8 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
             pressed && !busy ? pressedStyle : null,
           ]}
         >
-          <Text style={[styles.actionLabel, { color: colors.onAccent }]}>{playLabel('독서 시작')}</Text>
+          <Play size={16} color={colors.onAccent} fill={colors.onAccent} {...iconStroke} />
+          <Text style={[styles.actionLabel, { color: colors.onAccent }]}>독서 시작</Text>
         </Pressable>
       </View>
       {addFailed && add.variables ? (
@@ -676,7 +683,9 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
             <View style={styles.commitmentActions}>
               <Button label="취소" variant="outline" onPress={() => setCommitmentOpen(false)} />
               <Button
-                label={playLabel('독서 시작')}
+                label="독서 시작"
+                icon={Play}
+                iconFill
                 loading={add.isPending}
                 disabled={add.isPending}
                 onPress={() => add.mutate({ status: 'READING', commitment: commitment.trim() || undefined })}
@@ -1152,6 +1161,8 @@ const styles = StyleSheet.create({
   heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
   heroCaption: { flex: 1 },
   ratingNote: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+  // 별과 숫자는 한 덩어리 — 광학 보정 3px.
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
 
   sections: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.xl },
   section: { gap: spacing.sm },
@@ -1179,8 +1190,10 @@ const styles = StyleSheet.create({
   actionButton: {
     minHeight: controlHeight.md,
     borderRadius: radius.button,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     paddingHorizontal: spacing.lg,
   },
   actionLabel: { ...typeScale.label, fontSize: 14 },

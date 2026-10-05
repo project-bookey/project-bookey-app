@@ -90,11 +90,16 @@ export function meetingFull(meeting: { attendeeCount: number; maxAttendees?: num
   return meeting.maxAttendees != null && meeting.attendeeCount >= meeting.maxAttendees;
 }
 
-/** '참여 4/8명' — 최대 인원이 없으면 '참여 4명'. */
+/** '참여 4/8명' — 최대 인원이 없으면 '참여 4명'. 화면에는 사람 아이콘 + attendeeFigure 로 쓰고, 이 말은 읽어 주는 데 쓴다. */
 export function attendeeLabel(meeting: { attendeeCount: number; maxAttendees?: number | null }): string {
   return meeting.maxAttendees != null
     ? `참여 ${meeting.attendeeCount}/${meeting.maxAttendees}명`
     : `참여 ${meeting.attendeeCount}명`;
+}
+
+/** 사람 아이콘 옆에 적는 참여 수 — '4/8', 최대 인원이 없으면 '4'(2026-10-05 사용자 결정 — '참여 …명' 글자 대신 아이콘). */
+export function attendeeFigure(meeting: { attendeeCount: number; maxAttendees?: number | null }): string {
+  return meeting.maxAttendees != null ? `${meeting.attendeeCount}/${meeting.maxAttendees}` : `${meeting.attendeeCount}`;
 }
 
 export type MeetingState = 'open' | 'past' | 'cancelled';

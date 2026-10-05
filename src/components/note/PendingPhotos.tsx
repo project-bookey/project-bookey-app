@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { RotateCw, Trash2 } from 'lucide-react-native';
 
 import { spacing, typeScale, useTheme } from '@/theme';
 import { NoteAction } from './NoteAction';
@@ -22,8 +23,8 @@ export function PendingPhotos({ items, scale, onRetry, onRemove }: {
             <View style={styles.failed}>
               <Text numberOfLines={1} style={[typeScale.caption, { color: colors.danger }]}>{p.message}</Text>
               <View style={styles.actions}>
-                <NoteAction label="다시" onPress={() => onRetry(p.key)} />
-                <NoteAction label="지우기" onPress={() => onRemove(p.key)} tone="danger" />
+                <NoteAction icon={RotateCw} label="다시 올리기" onPress={() => onRetry(p.key)} />
+                <NoteAction icon={Trash2} label="지우기" onPress={() => onRemove(p.key)} tone="danger" />
               </View>
             </View>
           ) : null}

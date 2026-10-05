@@ -10,6 +10,7 @@ import type { BookSummary } from '@/api/types';
 import { markOnboardingSeen } from '@/lib/onboarding';
 import { useOnboarding } from '@/store/onboarding';
 import Svg, { Path } from 'react-native-svg';
+import { Check } from 'lucide-react-native';
 
 import { Chip } from '@/components/collage';
 import { Button } from '@/components/ui';
@@ -206,7 +207,7 @@ function OnboardingFlow() {
                         )}
                         {selected ? (
                           <View style={[styles.bookCheck, { backgroundColor: darkColors.ink }]}>
-                            <Text style={{ color: darkColors.onInk, fontSize: 12 }}>✓</Text>
+                            <Check size={13} color={darkColors.onInk} {...iconStroke} />
                           </View>
                         ) : null}
                       </View>

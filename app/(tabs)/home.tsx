@@ -54,8 +54,8 @@ export default function HomeScreen() {
   });
   const heroSynopses = heroBooks.map((q) => q.data?.description);
   const recommendationBooks = usingFallback ? bestsellers.data ?? [] : recommended.data ?? [];
-  const streakLine = stats.data
-    ? `${stats.data.currentStreakDays ?? 0}일 연속 · 오늘 ${formatDuration(stats.data.todayDurationSec ?? 0)}`
+  const streak = stats.data
+    ? { days: stats.data.currentStreakDays ?? 0, today: formatDuration(stats.data.todayDurationSec ?? 0) }
     : undefined;
 
   // '오늘의 글' 쿼리(독후감·완독 자랑)는 HomeScraps 안에 있어 여기서 직접 못 본다 — 키로 조회해
@@ -113,7 +113,7 @@ export default function HomeScreen() {
           synopses={heroSynopses}
           page={heroPage}
           onPageChange={setHeroPage}
-          streakLine={streakLine}
+          streak={streak}
           loading={reading.isLoading}
           scrollY={scrollY}
           onContinue={(r) => router.push(`/timer?recordId=${r.id}&autoStart=1`)}

@@ -1,6 +1,7 @@
 import * as Google from 'expo-auth-session/providers/google';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { CircleCheck } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type LayoutChangeEvent,
@@ -18,7 +19,7 @@ import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
 import {
-  controlHeight, darkColors, ForceThemeMode, controlFace, hairline, pressedStyle, radius, sans, spacing, typeScale,
+  controlHeight, darkColors, ForceThemeMode, controlFace, hairline, iconStroke, pressedStyle, radius, sans, spacing, typeScale,
 } from '@/theme';
 import {
   consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type ConsentDraft,
@@ -569,7 +570,8 @@ function LoginForm() {
                   codeVerified ? (
                     // 인증을 마치면 버튼 자리에 상태를 둔다 — 흐린 비활성 버튼으로 두면 '완료'가 읽히지 않는다(본인인증 완료와 같은 모양).
                     <View style={[styles.identityDone, { borderColor: darkColors.accent }]}>
-                      <Text style={[styles.doneLabel, { color: darkColors.accent }]}>✓ 이메일 인증 완료</Text>
+                      <CircleCheck size={16} color={darkColors.accent} {...iconStroke} />
+                      <Text style={[styles.doneLabel, { color: darkColors.accent }]}>이메일 인증 완료</Text>
                     </View>
                   ) : (
                     <>
@@ -643,7 +645,8 @@ function LoginForm() {
                 <Text style={styles.fieldLabel}>휴대폰 본인인증</Text>
                 {identityId ? (
                   <View style={[styles.identityDone, { borderColor: darkColors.accent }]}>
-                    <Text style={[styles.doneLabel, { color: darkColors.accent }]}>✓ 본인인증 완료</Text>
+                    <CircleCheck size={16} color={darkColors.accent} {...iconStroke} />
+                    <Text style={[styles.doneLabel, { color: darkColors.accent }]}>본인인증 완료</Text>
                   </View>
                 ) : (
                   <Button
@@ -805,8 +808,10 @@ const styles = StyleSheet.create({
     minHeight: controlHeight.md,
     borderRadius: radius.button,
     borderWidth: hairline,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   doneLabel: { ...typeScale.label, fontSize: 14 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

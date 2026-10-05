@@ -17,7 +17,7 @@ const VIEWABILITY = { itemVisiblePercentThreshold: 50 } as const;
  * 페이저를 아예 만들지 않고 예전처럼 콜라주 한 장만 그린다 — 도트도 붙지 않는다.
  */
 export function HeroPager({
-  records, synopses, page, onPageChange, streakLine, loading, scrollY, onContinue, onDetail,
+  records, synopses, page, onPageChange, streak, loading, scrollY, onContinue, onDetail,
 }: {
   /** 히어로에 세울 읽는 중 기록 — 첫 원소가 첫 장이다(홈에서 정렬해 넘긴다). */
   records: ReadingRecord[];
@@ -26,7 +26,7 @@ export function HeroPager({
   /** 현재 장(홈이 들고 있다 — 그 장의 상세를 미리 받는 데 쓴다) */
   page: number;
   onPageChange: (page: number) => void;
-  streakLine?: string;
+  streak?: { days: number; today: string };
   loading?: boolean;
   scrollY: SharedValue<number>;
   onContinue: (record: ReadingRecord) => void;
@@ -53,7 +53,7 @@ export function HeroPager({
       <HeroCollage
         record={records[0] ?? null}
         synopsis={synopses[0]}
-        streakLine={streakLine}
+        streak={streak}
         loading={loading}
         scrollY={scrollY}
         onContinue={onContinue}
@@ -83,7 +83,7 @@ export function HeroPager({
               <HeroCollage
                 record={item}
                 synopsis={synopses[index]}
-                streakLine={streakLine}
+                streak={streak}
                 scrollY={scrollY}
                 onContinue={onContinue}
                 onDetail={onDetail}

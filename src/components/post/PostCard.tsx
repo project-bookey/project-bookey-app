@@ -6,7 +6,7 @@ import type { Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
 import { LikeAction } from '@/components/post/LikeAction';
-import { visibilityLabelOf } from '@/components/post/PostByline';
+import { VisibilityMark } from '@/components/post/PostByline';
 import { Card, formatRelative } from '@/components/ui';
 import { darkColors, hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -38,7 +38,7 @@ export function PostCard({ post, onOpen, onLike, onOpenAuthor, showVisibility = 
 }) {
   const { colors } = useTheme();
   const when = formatRelative(post.publishedAt ?? post.createdAt);
-  const visibility = visibilityLabelOf(post, showVisibility);
+  const showMark = showVisibility && post.visibility !== 'PUBLIC';
 
   return (
     <Card style={styles.card}>
@@ -65,8 +65,9 @@ export function PostCard({ post, onOpen, onLike, onOpenAuthor, showVisibility = 
             {post.authorNickname}
           </Text>
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.meta, { color: colors.textFaint }]}>
-            {visibility ? `${when} · ${visibility}` : when}
+            {when}
           </Text>
+          {showMark ? <VisibilityMark visibility={post.visibility} color={colors.textFaint} /> : null}
         </Pressable>
         {/* 조회수는 눈 아이콘 + 숫자 — 사용자 결정. 누를 수 없는 정보라 Pressable 이 아니라 View 다. */}
         <View accessible accessibilityLabel={`조회 ${post.viewCount}`} style={styles.views}>

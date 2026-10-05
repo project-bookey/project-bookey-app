@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Star } from 'lucide-react-native';
 
 import type { Review } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
+import { IconMeta } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
@@ -37,7 +39,17 @@ export function ReviewScrap({ review, onPress, onEdit, onDelete, deleteConfirmin
         </View>
         <Text numberOfLines={2} style={[styles.body, { color: colors.textMuted }]}>{review.body}</Text>
         {review.rating ? (
-          <Text style={[typeScale.monoNumeral, styles.rating, { color: colors.accent }]}>★ {review.rating}</Text>
+          <IconMeta
+            icon={Star}
+            filled
+            size={13}
+            color={colors.accent}
+            textStyle={typeScale.monoNumeral}
+            accessibilityLabel={`별점 ${review.rating}점`}
+            style={styles.rating}
+          >
+            {review.rating}
+          </IconMeta>
         ) : null}
       </MemoScrap>
     </Pressable>

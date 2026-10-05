@@ -4,7 +4,7 @@ import type { Post } from '@/api/types';
 import { MemoScrap } from '@/components/collage';
 import { ScrapAuthor } from '@/components/home/ScrapAuthor';
 import { META_LH, META_SIZE, QUOTE_MAX_H } from '@/components/home/scrapMetrics';
-import { VISIBILITY_LABEL } from '@/components/post/PostByline';
+import { VisibilityMark } from '@/components/post/PostByline';
 import { LikeCount } from '@/components/post/LikeCount';
 import { ViewCount } from '@/components/post/ViewCount';
 import { spacing, typeScale, useTheme } from '@/theme';
@@ -58,7 +58,6 @@ export function PostScrap({ post, rotate, variant, onPress }: {
   const { colors } = useTheme();
 
   const home = variant === 'home';
-  const visibility = post.visibility === 'PUBLIC' ? '공개' : VISIBILITY_LABEL[post.visibility];
   const metaText = [typeScale.monoLabel, styles.meta, { color: colors.textFaint }];
 
   const memo = (
@@ -98,7 +97,9 @@ export function PostScrap({ post, rotate, variant, onPress }: {
       {home ? null : variant === 'profile' ? (
         <View style={[styles.metaRow, styles.metaGap]}>
           <Text numberOfLines={1} style={[metaText, styles.shrink]}>{post.bookTitle ?? '책 없음'}</Text>
-          <Text style={metaText}> · {visibility} · </Text>
+          <Text style={metaText}> · </Text>
+          <VisibilityMark visibility={post.visibility} color={colors.textFaint} />
+          <Text style={metaText}> · </Text>
           <ViewCount count={post.viewCount} textStyle={metaText} />
         </View>
       ) : (

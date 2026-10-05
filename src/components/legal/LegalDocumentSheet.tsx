@@ -3,11 +3,13 @@ import {
   ActivityIndicator, Modal, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
 
 import type { LegalDocument, LegalDocumentKey } from '@/api/types';
-import { Button, TextLink } from '@/components/ui';
+import { ICON_SIZE, IconButton } from '@/components/collage';
+import { Button } from '@/components/ui';
 import { useLegalDocument } from '@/legal/useLegalDocument';
-import { darkColors, ForceThemeMode, hairline, spacing, typeScale, type ColorTokens } from '@/theme';
+import { darkColors, ForceThemeMode, hairline, iconStroke, spacing, typeScale, type ColorTokens } from '@/theme';
 
 /** 끝에서 이만큼 남으면 끝까지 읽은 것으로 본다. */
 const END_SLACK = 24;
@@ -74,7 +76,12 @@ function SheetBody({ docKey, colors, agree, onClose }: {
     <View style={[styles.sheet, { paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <Text style={styles.title} numberOfLines={2}>{doc.data?.title ?? ' '}</Text>
-        <TextLink label="닫기" kind="action" onPress={onClose} />
+        {/* 머리의 닫기는 × 아이콘(2026-10-05 사용자 결정). 아래 '닫기' 버튼은 동의 없는 문서의 주요 행동이라 글자로 둔다. */}
+        <View style={styles.close}>
+          <IconButton onPress={onClose} accessibilityLabel="닫기">
+            <X size={ICON_SIZE} color={colors.text} {...iconStroke} />
+          </IconButton>
+        </View>
       </View>
 
       {doc.data ? (
@@ -135,6 +142,8 @@ function makeStyles(colors: ColorTokens) {
       borderBottomColor: colors.lineStrong,
     },
     title: { ...typeScale.bodyStrong, color: colors.text, flex: 1 },
+    // × 상자(44pt) 여백만큼 오른쪽으로 내밀어 아이콘이 화면 여백 선에 맞는다.
+    close: { marginRight: -10 },
     scroll: { flex: 1 },
     content: { padding: spacing.lg, paddingBottom: spacing.xl },
     body: { ...typeScale.body, color: colors.textMuted, lineHeight: 25 },

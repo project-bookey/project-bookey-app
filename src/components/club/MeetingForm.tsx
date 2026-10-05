@@ -1,6 +1,7 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { CalendarDays, Clock, type LucideIcon } from 'lucide-react-native';
 
 import type { ClubMeeting, ClubMeetingInput } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
@@ -11,7 +12,7 @@ import { PlaceSearchModal, type PlacePick } from '@/components/club/PlaceSearchM
 import { SearchGlyph, TiltCover } from '@/components/collage';
 import { Button, Eyebrow, Field } from '@/components/ui';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, mono, pressedStyle } from '@/theme/tokens';
+import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
 
 /** 최대 인원 하한 — 혼자 하는 모임은 없다. 서버도 2명부터 받는다. */
 const MIN_ATTENDEES = 2;
@@ -153,8 +154,8 @@ export function MeetingFormFields({ clubId, form, onLowerFieldFocus, onLowerFiel
         placeholder="모임 제목"
       />
       <View style={styles.pickRow}>
-        <PickBox label="날짜" value={formatPickDate(date)} onPress={() => setShowDate(true)} />
-        <PickBox label="시간" value={formatPickTime(time)} onPress={() => setShowTime(true)} />
+        <PickBox icon={CalendarDays} label="날짜" value={formatPickDate(date)} onPress={() => setShowDate(true)} />
+        <PickBox icon={Clock} label="시간" value={formatPickTime(time)} onPress={() => setShowTime(true)} />
       </View>
       {/* iOS 선택기는 그대로 두면 기기 설정(밝게/어둡게)을 따라 그려져 앱 테마와 어긋난다 — themeVariant 로
           앱 테마에 맞춘다. 고른 날짜는 앱의 선택 상태처럼 잉크(accentColor), 시간 휠 글자는 본문색.
@@ -273,7 +274,13 @@ export function MeetingFormFields({ clubId, form, onLowerFieldFocus, onLowerFiel
 }
 
 /** 날짜·시간 고르기 칸 — Field 입력과 같은 종이 상자, 값은 모노. */
-function PickBox({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+/** 날짜·시간 고르는 칸 — 칸 이름 줄 대신 달력·시계 아이콘을 값 앞에 둔다(2026-10-05 사용자 결정). 이름은 읽어 줄 말로만. */
+function PickBox({ icon: Icon, label, value, onPress }: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -286,8 +293,8 @@ function PickBox({ label, value, onPress }: { label: string; value: string; onPr
         pressed ? pressedStyle : null,
       ]}
     >
-      <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{label}</Text>
-      <Text style={[styles.pickValue, { color: colors.text }]}>{value}</Text>
+      <Icon size={16} color={colors.textMuted} {...iconStroke} />
+      <Text numberOfLines={1} style={[styles.pickValue, { color: colors.text }]}>{value}</Text>
     </Pressable>
   );
 }
@@ -297,13 +304,15 @@ const styles = StyleSheet.create({
   pickRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   pick: {
     flex: 1,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: hairline,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-  pickValue: { fontFamily: mono.semiBold, fontSize: 15 },
+  pickValue: { fontFamily: mono.semiBold, fontSize: 15, flexShrink: 1 },
   // 홈 검색바와 같은 생김새 — 누르면 장소 찾기 화면이 뜨는 검색 칸.
   placeSearch: {
     flexDirection: 'row',

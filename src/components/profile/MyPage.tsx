@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { Plus, Settings } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { chatApi, libraryApi, postApi, profileApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { Post, ReadingRecord } from '@/api/types';
 import {
-  MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
+  ICON_SIZE, MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/Avatar';
 import { KeyboardScroll } from '@/components/keyboard';
@@ -275,21 +276,16 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
             )}
           </View>
           {mine ? (
-            // 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝, 팔로워 줄에 밑선을 맞춘다.
+            // 설정은 탭이 아니라 여기서 들어간다 — 프로필 행 오른쪽 끝의 톱니(2026-10-05 사용자 결정 — 글자를 빼고 아이콘만).
+            // 겉모습은 IconButton(상자 없이 44pt · 24)과 같다. 둘러보기가 이 자리를 비추므로 ref 를 받는 Pressable 로 직접 그린다.
             <Pressable
               ref={settingsTourRef}
               onPress={() => router.push('/settings')}
               accessibilityRole="button"
               accessibilityLabel="설정"
-              hitSlop={8}
-              style={({ pressed }) => [
-                styles.settingsButton,
-                controlFace(colors.tonal),
-                pressed && styles.pressed,
-              ]}
+              style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
             >
-              <GearLine size={14} color={colors.text} />
-              <Text style={[styles.settingsLabel, { color: colors.text }]}>설정</Text>
+              <Settings size={ICON_SIZE} color={colors.text} {...iconStroke} />
             </Pressable>
           ) : userId != null ? (
             // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
@@ -358,9 +354,9 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
                 accessibilityRole="button"
                 accessibilityLabel="책 추가"
               >
-                <View style={[styles.shelfGhost, { borderColor: colors.control }]}>
-                  <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-                  <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
+                {/* 홈 책 추가 칸과 같은 회색 면에 + 아이콘만 — 이름은 접근성 라벨. */}
+                <View style={[styles.shelfGhost, styles.shelfAdd, controlFace(colors.tonal)]}>
+                  <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
                 </View>
               </Pressable>
               {[0, 1].map((i) => (
@@ -584,24 +580,6 @@ function PublicPosts({ userId }: { userId: number }) {
 
 // 장식용 아이콘 — aria-hidden 은 RN 이 네이티브 접근성 숨김으로 옮기고 웹은 그대로 쓴다.
 // (accessibilityElementsHidden 은 react-native-svg 웹에서 DOM 에 새어 React 경고가 뜬다)
-/** 톱니 — 예전 하단 탭 '설정' 아이콘과 같은 꼴. */
-function GearLine({ size, color }: { size: number; color: string }) {
-  const stroke = { stroke: color, ...iconStroke };
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <Circle cx={12} cy={12} r={3} {...stroke} />
-      <Path d="M12 4.5v2" {...stroke} />
-      <Path d="M12 17.5v2" {...stroke} />
-      <Path d="M4.5 12h2" {...stroke} />
-      <Path d="M17.5 12h2" {...stroke} />
-      <Path d="m6.7 6.7 1.4 1.4" {...stroke} />
-      <Path d="m15.9 15.9 1.4 1.4" {...stroke} />
-      <Path d="m17.3 6.7-1.4 1.4" {...stroke} />
-      <Path d="m8.1 15.9-1.4 1.4" {...stroke} />
-    </Svg>
-  );
-}
-
 function PencilLine({ color }: { color: string }) {
   return (
     <Svg width={19} height={19} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -890,18 +868,17 @@ const styles = StyleSheet.create({
   nickname: { ...typeScale.displaySerif, flexShrink: 1, fontSize: 22, lineHeight: 30 },
   // 닉네임 옆 연필은 상자 없이 둔다(사용자 결정 2026-10-04 — 테두리 상자로 바꿨다가 되돌림).
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
-  // 겉모습은 Button sm(32pt · 회색 톤 · control 모서리)과 같고 터치 상자는 hitSlop 으로 넓힌다.
+  // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄 쪽(아래)에 붙는다. 44pt 상자가 아이콘 여백을 품으므로
+  // 오른쪽 끝은 상자 여백(10)만큼 바깥으로 민다 — 아이콘이 화면 여백 선에 맞는다.
   settingsButton: {
     alignSelf: 'flex-end',
-    height: controlHeight.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.control,
-    flexDirection: 'row',
+    width: 44,
+    height: 44,
+    marginRight: -10,
+    marginBottom: -6,
     alignItems: 'center',
-    gap: 5,
+    justifyContent: 'center',
   },
-  settingsLabel: { ...typeScale.label, fontSize: 12 },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 본문 크기(15)로 키웠다(2026-10-04).
   socialText: { fontFamily: sans.regular, fontSize: 16, lineHeight: 24 },
@@ -966,6 +943,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
+  // 책 추가 칸 — 점선 대신 회색 면(누르는 것만 살짝 둥글게).
+  shelfAdd: { borderWidth: 0, borderRadius: radius.control },
 
   statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
   statCell: { flex: 1, gap: 3 },

@@ -1,11 +1,13 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Lock, StickyNote as MemoIcon, X } from 'lucide-react-native';
 
 import type { MemberProgress, NudgeMessageKey } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
+import { ICON_SIZE, IconButton } from '@/components/collage';
 import {
   Button, Card, ProgressBar, Tag, formatDuration, formatRelative, percent,
 } from '@/components/ui';
-import { getPaceStyle, hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { getPaceStyle, hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 const AVATAR = 44;
@@ -71,10 +73,22 @@ export function MemberStrip({ members, readingNowIds, logCounts, selectedUserId,
             <View style={styles.bar}>
               <ProgressBar value={member.finished ? 1 : rate ?? 0} height={4} />
             </View>
-            <Text style={[styles.status, { color: statusColor }]}>{status}</Text>
-            <Text style={[styles.count, { color: count > 0 ? colors.textMuted : colors.textFaint }]}>
-              {count > 0 ? `메모 ${count}` : '·'}
-            </Text>
+            {/* 진도 비공개는 자물쇠, 메모 수는 메모 아이콘 + 숫자(2026-10-05 사용자 결정). 읽어 주는 말은 칩 라벨에 있다. */}
+            {member.finished || rate != null ? (
+              <Text style={[styles.status, { color: statusColor }]}>{status}</Text>
+            ) : (
+              <View style={styles.statusIcon}>
+                <Lock size={12} color={statusColor} {...iconStroke} />
+              </View>
+            )}
+            {count > 0 ? (
+              <View style={styles.countRow}>
+                <MemoIcon size={11} color={colors.textMuted} {...iconStroke} />
+                <Text style={[styles.count, { color: colors.textMuted }]}>{count}</Text>
+              </View>
+            ) : (
+              <Text style={[styles.count, { color: colors.textFaint }]}>·</Text>
+            )}
           </Pressable>
         );
       })}
@@ -104,6 +118,12 @@ export function MemberDetail({ member, nudging, onNudge, onClose }: {
         {member.role === 'HOST' ? <Tag label="호스트" /> : null}
         {member.finished ? <Tag label="완독" fg={colors.accent} bg={colors.accentSoft} /> : null}
         {pace && !member.finished ? <Tag label={pace.label} fg={pace.fg} bg={pace.bg} /> : null}
+        {/* 닫기는 카드 머리 오른쪽의 ×(2026-10-05 사용자 결정 — 아래 '닫기' 글자 버튼 대신). */}
+        <View style={styles.detailClose}>
+          <IconButton onPress={onClose} accessibilityLabel="닫기">
+            <X size={ICON_SIZE} color={colors.text} {...iconStroke} />
+          </IconButton>
+        </View>
       </View>
 
       {member.shareProgress ? (
@@ -143,7 +163,6 @@ export function MemberDetail({ member, nudging, onNudge, onClose }: {
         </View>
       ) : null}
 
-      <Button label="닫기" variant="ghost" size="sm" onPress={onClose} />
     </Card>
   );
 }
@@ -173,8 +192,13 @@ const styles = StyleSheet.create({
   name: { ...typeScale.caption, fontSize: 11, lineHeight: 15, marginTop: 2, maxWidth: CHIP_W - spacing.xs * 2 },
   bar: { width: CHIP_W - spacing.md * 2 },
   status: { fontFamily: mono.semiBold, fontSize: 11 },
+  // 자물쇠 칸은 글자 줄(11px)과 같은 높이를 지켜 칩 줄이 들쭉날쭉하지 않게 한다.
+  statusIcon: { height: 15, justifyContent: 'center' },
   count: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.4 },
+  countRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   detailHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
+  // × 는 머리 줄 오른쪽 끝 — 44pt 상자 여백만큼 바깥으로 밀어 카드 안쪽 선에 맞춘다.
+  detailClose: { marginLeft: 'auto', marginVertical: -10, marginRight: -10 },
   detailMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   detailNumeral: { fontFamily: mono.regular, fontSize: 11 },
   nudgeButtons: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },

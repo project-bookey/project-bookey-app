@@ -140,6 +140,12 @@ export const controlHeight = { md: 48, sm: 32, xs: 26 } as const;
  */
 export const iconStroke = { strokeWidth: 2, strokeLinecap: 'square', strokeLinejoin: 'miter' } as const;
 
+/**
+ * 글자 대신 쓰는 아이콘 크기(2026-10-05 사용자 결정 — 아이콘 고르기 페이지). meta 는 모노 메타·캡션 한 줄 안(사람·장소·시계 + 숫자),
+ * inline 은 작은 버튼·칩·태그 안(연필·휴지통·복사 …). 상자 없는 아이콘 버튼은 ICON_SIZE(24, collage/IconButton)다.
+ */
+export const iconSize = { meta: 12, inline: 16 } as const;
+
 export const statusLabel: Record<string, string> = {
   WANT_TO_READ: '읽고 싶음',
   READING: '읽는 중',

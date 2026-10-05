@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Star } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
-import { Card, FootAction, Tag, formatRelative } from '@/components/ui';
+import { Card, FootAction, IconMeta, Tag, formatRelative } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
@@ -71,7 +72,17 @@ export function ReviewCard({
       <View style={styles.footRow}>
         <FootAction label="책 보기" tone="accent" onPress={onOpenBook} accessibilityLabel={`${where} 상세`} />
         {rating ? (
-          <Text style={[typeScale.monoNumeral, styles.rating, { color: colors.accent }]}>★ {rating}</Text>
+          <IconMeta
+            icon={Star}
+            filled
+            size={13}
+            color={colors.accent}
+            textStyle={typeScale.monoNumeral}
+            accessibilityLabel={`별점 ${rating}점`}
+            style={styles.rating}
+          >
+            {rating}
+          </IconMeta>
         ) : null}
       </View>
     </Card>

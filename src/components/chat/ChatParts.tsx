@@ -216,11 +216,13 @@ export const composerInputStyle = {
  * 공용 버튼의 비활성처럼 흐려지고(0.35), 보내는 중에는 잉크를 유지한 채 스피너를 돌린다(중복 전송은 막는다).
  * compact 는 ChatComposer 안의 40pt(위아래 hitSlop 으로 44).
  */
-export function ChatSendButton({ onPress, disabled = false, loading = false, compact = false }: {
+export function ChatSendButton({ onPress, disabled = false, loading = false, compact = false, accessibilityLabel = '보내기' }: {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
   compact?: boolean;
+  /** 채팅이 아닌 입력줄(클럽 메모 댓글)에서 쓸 때 읽어 줄 말 — 기본 '보내기'. */
+  accessibilityLabel?: string;
 }) {
   const { colors } = useTheme();
   const dimmed = disabled && !loading;
@@ -229,7 +231,7 @@ export function ChatSendButton({ onPress, disabled = false, loading = false, com
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
-      accessibilityLabel="보내기"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       hitSlop={compact ? COMPOSER_SLOP : undefined}
       style={({ pressed }) => [

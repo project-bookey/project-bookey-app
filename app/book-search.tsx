@@ -6,6 +6,8 @@ import {
   type TextStyle,
 } from 'react-native';
 
+import { Check, Plus } from 'lucide-react-native';
+
 import { bookApi, libraryApi } from '@/api/endpoints';
 import type { BookSummary, ReadingStatus } from '@/api/types';
 import { Chip, MemoScrap, PaperScreen, SearchGlyph, TiltCover } from '@/components/collage';
@@ -328,7 +330,8 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
       </Pressable>
 
       {added ? (
-        <Chip label="담았어요" active />
+        // 담기·담았어요는 + · ✓ 아이콘만(2026-10-05 사용자 결정) — 이름은 읽어 줄 말로.
+        <Chip icon={Check} accessibilityLabel="담았어요" active />
       ) : choosing ? (
         <View style={styles.chipGroup}>
           {(
@@ -341,7 +344,7 @@ function ResultRow({ book, colors, choosing, added, failed, pending, onPress, on
           ))}
         </View>
       ) : (
-        <Chip label="담기" onPress={onOpenAdd} />
+        <Chip icon={Plus} accessibilityLabel="서재에 담기" onPress={onOpenAdd} />
       )}
     </View>
   );

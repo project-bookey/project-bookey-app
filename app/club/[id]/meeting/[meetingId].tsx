@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MapPin, Play } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { clubCommunityApi } from '@/api/endpoints';
@@ -21,7 +22,7 @@ import { PlaceMap } from '@/components/club/PlaceMap';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
 import { Button, Card, EmptyState, Eyebrow, Loading, TextLink, formatClock, linkLabel } from '@/components/ui';
-import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, layout, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle, sans } from '@/theme/tokens';
 
 /**
@@ -202,7 +203,11 @@ export default function MeetingDetailScreen() {
         </Card>
 
         <Card style={{ gap: spacing.sm }}>
-          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{m.placeName}</Text>
+          {/* 장소는 핀 아이콘과 함께(2026-10-05 사용자 결정 — 클럽 홈·모임 탭과 같은 표시). */}
+          <View style={styles.placeRow}>
+            <MapPin size={16} color={colors.textMuted} {...iconStroke} />
+            <Text style={[typeScale.bodyStrong, { color: colors.text, flexShrink: 1 }]}>{m.placeName}</Text>
+          </View>
           <Text style={[typeScale.body, { color: colors.textMuted }]}>{m.address}</Text>
           {m.latitude != null ? <PlaceMap latitude={m.latitude} longitude={m.longitude} /> : null}
           <Button label="지도 앱에서 보기" variant="outline" onPress={openMap} />
@@ -221,8 +226,8 @@ export default function MeetingDetailScreen() {
               {attendees.map((person) => (
                 <View key={person.userId} style={[styles.personRow, { borderBottomColor: colors.line }]}>
                   <Avatar uri={person.avatarUrl} nickname={person.nickname} size={34} />
+                  {/* 줄마다 붙던 '참여'는 뺐다 — 목록이 이미 참여자다(2026-10-05 사용자 결정). */}
                   <Text style={[typeScale.body, { color: colors.text, flex: 1 }]}>{person.nickname}</Text>
-                  <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>참여</Text>
                 </View>
               ))}
             </View>
@@ -270,6 +275,8 @@ export default function MeetingDetailScreen() {
           {/* 재고 있으면 모임 날이 지났든 취소됐든 참여를 뺐든 언제나 끝낼 수 있다 — 시작만 그날 안, 참여자로 묶는다. */}
           <Button
             label={running ? '같이 읽기 끝내기' : '같이 읽기 시작'}
+            icon={running ? undefined : Play}
+            iconFill
             variant={running ? 'danger' : joinFirst ? 'outline' : 'primary'}
             disabled={!running && (otherRunning || !canStartTogether || !m.attending)}
             onPress={() => (running ? end.mutate() : start.mutate())}
@@ -347,6 +354,7 @@ const styles = StyleSheet.create({
   manageButton: { flex: 1 },
   // 다른 모임에서 재는 중일 때 그 모임으로 — 가운데 줄 맞춤(카드의 시계·안내와 같은 축).
   togetherLink: { alignSelf: 'center' },
+  placeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',

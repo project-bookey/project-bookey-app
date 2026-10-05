@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MapPin, Users } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { clubCommunityApi, type ClubMeeting, type ClubMeetingInput } from '@/api/endpoints';
 import { MeetingFormFields, useMeetingForm } from '@/components/club/MeetingForm';
 import {
   MEETING_STATE_LABEL,
+  attendeeFigure,
   attendeeLabel,
   isTodayOrLater,
   meetingClock,
@@ -20,7 +22,7 @@ import { ReturnToClubHome } from '@/components/club/ReturnToClubHome';
 import { todayKst } from '@/components/clubLog';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
 import { Avatar } from '@/components/Avatar';
-import { Button, EmptyState, Eyebrow, Loading } from '@/components/ui';
+import { Button, EmptyState, Eyebrow, IconMeta, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, mono, pressedStyle } from '@/theme/tokens';
 
@@ -176,7 +178,16 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
         {m.book ? (
           <Text numberOfLines={1} style={[typeScale.caption, { color: colors.text }]}>읽을 책 · {m.book.title}</Text>
         ) : null}
-        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>{m.placeName}</Text>
+        {m.placeName ? (
+          <IconMeta
+            icon={MapPin}
+            color={colors.textMuted}
+            textStyle={typeScale.caption}
+            accessibilityLabel={`장소 ${m.placeName}`}
+          >
+            {m.placeName}
+          </IconMeta>
+        ) : null}
         <View style={styles.people}>
           {attendees.length > 0 ? (
             <View style={styles.avatars}>
@@ -187,9 +198,13 @@ function MeetingRow({ meeting: m, onPress }: { meeting: ClubMeeting; onPress: ()
               ))}
             </View>
           ) : null}
-          <Text style={[styles.peopleText, { color: colors.textFaint }]}>
-            {attendees.length > 0 || m.maxAttendees != null ? attendeeLabel(m) : '아직 참여자 없음'}
-          </Text>
+          {attendees.length > 0 || m.maxAttendees != null ? (
+            <IconMeta icon={Users} textStyle={styles.peopleText} accessibilityLabel={attendeeLabel(m)}>
+              {attendeeFigure(m)}
+            </IconMeta>
+          ) : (
+            <Text style={[styles.peopleText, { color: colors.textFaint }]}>아직 참여자 없음</Text>
+          )}
         </View>
       </View>
     </Pressable>

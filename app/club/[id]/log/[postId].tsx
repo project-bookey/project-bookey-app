@@ -4,15 +4,16 @@ import { useRef, useState } from 'react';
 import {
   Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { Heart } from 'lucide-react-native';
+import { Heart, Lock, MessageCircle } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
+import { ChatSendButton } from '@/components/chat/ChatParts';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboard';
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
-import { Button, FootAction, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
+import { Button, DeleteAction, EditAction, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { controlFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -144,12 +145,15 @@ export default function ClubLogScrapScreen() {
             <Pressable
               onPress={() => reveal.mutate()}
               accessibilityRole="button"
+              accessibilityLabel={`가려진 메모. ${data.anchorPage != null ? `${data.anchorPage}쪽까지 읽으면 열려요` : '완독하면 열려요'}. 그래도 볼래요`}
               style={[styles.polaroid, { backgroundColor: colors.memoPad, borderColor: colors.lineStrong }, cardShadow]}
             >
               <View style={[styles.photo, styles.maskedPhoto, { backgroundColor: colors.surfaceRaised }]}>
-                <Text style={[styles.maskedTitle, { color: colors.text }]}>
-                  {data.anchorPage != null ? `${data.anchorPage}쪽 메모` : '가려진 메모'}
-                </Text>
+                {/* 가려진 메모는 자물쇠로 말한다(2026-10-05 사용자 결정) — 쪽수가 있으면 그 아래 '120쪽 메모'. */}
+                <Lock size={24} color={colors.text} {...iconStroke} />
+                {data.anchorPage != null ? (
+                  <Text style={[styles.maskedTitle, { color: colors.text }]}>{`${data.anchorPage}쪽 메모`}</Text>
+                ) : null}
               </View>
               <Text style={[styles.caption, { color: colors.onMemoPad }]}>
                 {data.anchorPage != null
@@ -261,12 +265,12 @@ export default function ClubLogScrapScreen() {
 
           {mine && !editing && !ended ? (
             <View style={styles.ownerActions}>
-              <Button label="고치기" size="sm" variant="outline" onPress={startEditing} />
-              <Button
-                label={confirm === 'scrap' ? '한 번 더' : '삭제'}
-                size="sm"
-                variant="outline"
-                loading={remove.isPending}
+              {/* 고치기·삭제는 연필·휴지통 — 한 번 누른 삭제만 '한 번 더' 글자(앱 공통 규칙, 2026-10-05). */}
+              <EditAction target="메모" onPress={startEditing} />
+              <DeleteAction
+                target="메모"
+                confirming={confirm === 'scrap'}
+                disabled={remove.isPending}
                 onPress={() => {
                   if (confirm === 'scrap') { disarm(); remove.mutate(scrapId); } else arm('scrap');
                 }}
@@ -281,9 +285,13 @@ export default function ClubLogScrapScreen() {
           {!data.masked ? (
             <View style={styles.talks}>
               <Rule />
-              <Text style={[typeScale.label, { color: colors.textMuted }]}>
-                댓글{talks.length > 0 ? ` ${talks.length}` : ''}
-              </Text>
+              {/* 댓글 수는 둥근 말풍선 + 숫자(2026-10-05 사용자 결정 — 네모 말풍선은 채팅). */}
+              <View accessible accessibilityLabel={`댓글 ${talks.length}`} style={styles.talkCount}>
+                <MessageCircle size={16} color={colors.textMuted} {...iconStroke} />
+                {talks.length > 0 ? (
+                  <Text style={[typeScale.label, { color: colors.textMuted }]}>{talks.length}</Text>
+                ) : null}
+              </View>
               {talks.length === 0 ? (
                 <Text style={[typeScale.caption, { color: colors.textFaint }]}>
                   아직 댓글이 없어요. 먼저 남겨 보세요.
@@ -317,9 +325,9 @@ export default function ClubLogScrapScreen() {
               style={[styles.composerInput, { color: colors.text }]}
               multiline
             />
-            <Button
-              label="남기기"
-              size="sm"
+            {/* 채팅방과 같은 보내기 단추(2026-10-05 사용자 결정 — '남기기' 글자 대신). */}
+            <ChatSendButton
+              accessibilityLabel="댓글 남기기"
               disabled={talk.trim().length === 0}
               loading={speak.isPending}
               onPress={() => speak.mutate()}
@@ -346,15 +354,8 @@ function TalkRow({ talk, mine, confirming, onDelete }: {
         <Text style={[typeScale.caption, { color: colors.textFaint, flex: 1 }]}>
           {formatRelative(talk.createdAt)}
         </Text>
-        {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'(엽서·댓글·알림과 같은 FootAction). */}
-        {mine ? (
-          <FootAction
-            label={confirming ? '한 번 더' : '삭제'}
-            onPress={onDelete}
-            tone={confirming ? 'danger' : 'faint'}
-            accessibilityLabel={confirming ? '댓글 삭제 확인' : '댓글 삭제'}
-          />
-        ) : null}
+        {/* 삭제는 앱 어디서나 같은 모양 — 휴지통 → '한 번 더'(엽서·댓글·알림과 같은 DeleteAction). */}
+        {mine ? <DeleteAction target="댓글" confirming={confirming} onPress={onDelete} /> : null}
       </View>
       <Text style={[styles.talkBody, { color: colors.text }]}>{talk.body ?? '(가려진 댓글)'}</Text>
     </View>
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
   polaroid: { padding: spacing.md, paddingBottom: spacing.lg, borderRadius: radius.sm, borderWidth: hairline },
   photo: { width: '100%', aspectRatio: 1, borderRadius: 1 },
-  maskedPhoto: { alignItems: 'center', justifyContent: 'center' },
+  maskedPhoto: { alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   maskedTitle: { fontFamily: mono.semiBold, fontSize: 12 },
   caption: { fontFamily: serif.regular, fontSize: 16, lineHeight: 24, marginTop: spacing.md },
   captionInput: {
@@ -394,6 +395,7 @@ const styles = StyleSheet.create({
   },
   ownerActions: { flexDirection: 'row', gap: spacing.sm },
   talks: { gap: spacing.sm },
+  talkCount: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   talk: { borderTopWidth: hairline, paddingTop: spacing.sm, gap: spacing.xs },
   talkHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   talkBody: { fontFamily: serif.regular, fontSize: 15, lineHeight: 22 },

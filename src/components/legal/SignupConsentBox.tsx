@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Check } from 'lucide-react-native';
 
 import type { LegalDocumentKey, SignupConsent } from '@/api/types';
 import { linkLabel } from '@/components/ui';
 import { useLegalDocument } from '@/legal/useLegalDocument';
-import { hairline, pressedStyle, radius, spacing, typeScale, type ColorTokens } from '@/theme';
+import { hairline, iconStroke, pressedStyle, radius, spacing, typeScale, type ColorTokens } from '@/theme';
 
 import { LegalDocumentSheet } from './LegalDocumentSheet';
 
@@ -69,7 +70,7 @@ export function SignupConsentBox({ colors, value, onChange, disabled = false }: 
 
   const check = (on: boolean) => (
     <View style={[styles.check, on && styles.checkOn]}>
-      <Text style={styles.checkMark}>{on ? '✓' : ''}</Text>
+      {on ? <Check size={14} color={colors.onInk} {...iconStroke} /> : null}
     </View>
   );
 
@@ -179,7 +180,6 @@ function makeStyles(colors: ColorTokens) {
       justifyContent: 'center',
     },
     checkOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-    checkMark: { color: colors.onInk, fontSize: 13, fontWeight: '700' },
     label: { ...typeScale.caption, color: colors.text, flex: 1 },
     view: { ...typeScale.caption, color: colors.textMuted },
     hint: { ...typeScale.caption, color: colors.textFaint, marginTop: spacing.xs },

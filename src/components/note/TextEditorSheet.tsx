@@ -1,4 +1,5 @@
 import { StyleSheet, TextInput, View } from 'react-native';
+import { TextAlignCenter, TextAlignStart } from 'lucide-react-native';
 
 import type { MemberProgress } from '@/api/types';
 import { Button, Segmented } from '@/components/ui';
@@ -100,7 +101,11 @@ export function TextEditorSheet({ element, members, onPatch, onClose }: {
                 <PenSwatches value={element.color} onChange={(color) => onPatch({ color })} />
                 <View style={styles.grow}>
                   <Segmented
-                    options={[{ value: 'left', label: '왼쪽' }, { value: 'center', label: '가운데' }]}
+                    // 정렬은 아이콘만 — 글 편집기에서 익숙한 모양(2026-10-05 사용자 결정). 이름은 읽어 줄 말로.
+                    options={[
+                      { value: 'left', label: '왼쪽 정렬', icon: TextAlignStart },
+                      { value: 'center', label: '가운데 정렬', icon: TextAlignCenter },
+                    ]}
                     value={element.align}
                     onChange={(align) => onPatch({ align })}
                   />

@@ -2,16 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { clubApi } from '@/api/endpoints';
-import { MemoScrap, PaperScreen, SubHeader } from '@/components/collage';
+import { ICON_SIZE, MemoScrap, PaperScreen, SubHeader } from '@/components/collage';
 import {
   WEEK_CARD_BASE_WIDTH, WeekCard, addDays, clubLogKeys, mondayOf, todayKst,
 } from '@/components/clubLog';
 import { Button, Loading } from '@/components/ui';
 import { sharePng } from '@/lib/sharePng';
-import { layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
-import { mono } from '@/theme/tokens';
+import { iconStroke, layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 
 /** 내보내는 이미지 크기 — 인스타 스토리 1080×1920. */
 const EXPORT = { width: 1080, height: 1920 };
@@ -67,17 +67,19 @@ export default function ClubLogWeekScreen() {
           <Pressable
             onPress={() => setMonday(addDays(monday, -7))}
             accessibilityRole="button"
+            accessibilityLabel="지난주"
             style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
           >
-            <Text style={[styles.navLabel, { color: colors.text }]}>‹ 지난주</Text>
+            <ChevronLeft size={ICON_SIZE} color={colors.text} {...iconStroke} />
           </Pressable>
           {monday < thisMonday ? (
             <Pressable
               onPress={() => setMonday(addDays(monday, 7))}
               accessibilityRole="button"
+              accessibilityLabel="다음 주"
               style={({ pressed }) => [styles.navButton, pressed && pressedStyle]}
             >
-              <Text style={[styles.navLabel, { color: colors.text }]}>다음 주 ›</Text>
+              <ChevronRight size={ICON_SIZE} color={colors.text} {...iconStroke} />
             </Pressable>
           ) : null}
         </View>
@@ -119,10 +121,8 @@ export default function ClubLogWeekScreen() {
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
   weekNav: { flexDirection: 'row', justifyContent: 'space-between' },
-  // 11px 글자만으로는 손가락이 닿지 않아 44pt 상자로 키운다(UX 철칙 Fitts).
-  navButton: { minHeight: 44, minWidth: 44, justifyContent: 'center' },
-  // 주를 넘기는 유일한 길 — 공용 글자 링크(TextLink)와 같은 12px 본문색.
-  navLabel: { fontFamily: mono.medium, fontSize: 12, letterSpacing: 0.5 },
+  // 주를 넘기는 유일한 길 — 글자 없이 화살표만(2026-10-05 사용자 결정), 상자는 IconButton 과 같은 44pt.
+  navButton: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   cardWrap: { alignItems: 'center' },
   hint: { textAlign: 'center' },
 });

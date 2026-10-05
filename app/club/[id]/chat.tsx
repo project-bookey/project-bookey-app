@@ -4,17 +4,18 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, AppState, FlatList, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { Gift } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi, clubCommunityApi } from '@/api/endpoints';
 import {
   ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, chatListContent,
 } from '@/components/chat/ChatParts';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { ICON_SIZE, IconButton, PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardArea } from '@/components/keyboard';
 import { NoteSheet } from '@/components/note/NoteSheet';
-import { Button, Card, FootAction, Loading } from '@/components/ui';
-import { layout, spacing, typeScale, useTheme } from '@/theme';
+import { Button, Card, Loading } from '@/components/ui';
+import { iconStroke, layout, spacing, typeScale, useTheme } from '@/theme';
 import { hairline } from '@/theme/tokens';
 
 /** 새 메시지 폴링 주기(ms) — 1:1 대화방과 같다. */
@@ -92,7 +93,7 @@ export default function ClubChatScreen() {
   const items = useMemo(() => pages.data?.pages.flatMap((p) => p.messages) ?? [], [pages.data]);
 
   const giftSheet = (
-    <NoteSheet visible={showGift} title="채팅 이용권 선물" onClose={() => setShowGift(false)}>
+    <NoteSheet visible={showGift} title="채팅 이용권 선물" onClose={() => setShowGift(false)} closeButton>
       <Text style={[typeScale.caption, { color: colors.textMuted }]}>
         내 책갈피 2개로 고른 멤버의 채팅을 열어 줘요.
       </Text>
@@ -115,7 +116,6 @@ export default function ClubChatScreen() {
           {errorText(gift.error, '책갈피가 부족하거나 선물할 수 없어요.')}
         </Text>
       ) : null}
-      <Button label="닫기" variant="ghost" size="sm" onPress={() => setShowGift(false)} />
     </NoteSheet>
   );
 
@@ -124,7 +124,10 @@ export default function ClubChatScreen() {
       category={club.data?.name ?? '클럽 채팅'}
       right={
         <View style={styles.headerAction}>
-          <FootAction label="선물" onPress={() => setShowGift(true)} accessibilityLabel="채팅 이용권 선물" />
+          {/* 선물은 상자 아이콘(2026-10-05 사용자 결정) — 머리의 다른 버튼처럼 IconButton. */}
+          <IconButton onPress={() => setShowGift(true)} accessibilityLabel="채팅 이용권 선물">
+            <Gift size={ICON_SIZE} color={colors.text} {...iconStroke} />
+          </IconButton>
         </View>
       }
     />
@@ -232,7 +235,7 @@ function errorText(error: unknown, fallback: string): string {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   paging: { paddingVertical: spacing.md, alignItems: 'center' },
-  headerAction: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
+  headerAction: { minHeight: 44, justifyContent: 'center' },
   lock: { ...layout.content, flex: 1, justifyContent: 'center', padding: spacing.lg },
   lockTitle: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
   giftRow: {

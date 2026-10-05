@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Play } from 'lucide-react-native';
 
 import type { ReadingNow } from '@/api/types';
 import { Button } from '@/components/ui';
@@ -36,7 +37,7 @@ export function ReadingNowLine({ readers, onJoin }: { readers: ReadingNow[]; onJ
         </Text>
         <Text style={[styles.monoCaption, { color: colors.textMuted }]}>{elapsedLabel(earliest.startedAt)}</Text>
       </View>
-      {onJoin ? <Button label="같이 읽기" size="sm" variant="outline" onPress={onJoin} /> : null}
+      {onJoin ? <Button label="같이 읽기" icon={Play} iconFill size="sm" variant="outline" onPress={onJoin} /> : null}
     </View>
   );
 }

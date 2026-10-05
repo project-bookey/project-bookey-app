@@ -6,7 +6,7 @@ import { Trash2 } from 'lucide-react-native';
 import { notificationApi } from '@/api/endpoints';
 import type { Notification, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { FootAction, formatRelative } from '@/components/ui';
+import { DeleteAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { notificationTarget, openNotificationTarget } from '@/lib/notificationTarget';
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -103,11 +103,10 @@ export default function NotificationsScreen() {
                   <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
                     {formatRelative(item.sentAt ?? item.scheduledAt)}
                   </Text>
-                  <FootAction
-                    label={deleteConfirm.confirm === item.id ? '한 번 더' : '삭제'}
+                  <DeleteAction
+                    target={`${item.title} 알림`}
+                    confirming={deleteConfirm.confirm === item.id}
                     onPress={() => pressDelete(item.id)}
-                    tone={deleteConfirm.confirm === item.id ? 'danger' : 'faint'}
-                    accessibilityLabel={deleteConfirm.confirm === item.id ? `${item.title} 알림 삭제 확인` : `${item.title} 알림 삭제`}
                   />
                 </View>
                 <Text style={[styles.body, { color: colors.textMuted }]}>{item.body}</Text>

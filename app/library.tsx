@@ -4,13 +4,16 @@ import { useState } from 'react';
 import {
   FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { Pause, Plus } from 'lucide-react-native';
 
 import { libraryApi } from '@/api/endpoints';
 import type { ReadingRecord, ReadingStatus } from '@/api/types';
-import { Chip, PaperScreen, SubHeader } from '@/components/collage';
+import { Chip, ICON_SIZE, PaperScreen, SubHeader } from '@/components/collage';
 import { Button, EmptyState } from '@/components/ui';
 import type { ColorTokens, ThemeMode } from '@/theme';
-import { darkColors, hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import {
+  controlFace, darkColors, hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme,
+} from '@/theme';
 import { coverShadow } from '@/theme/palette';
 import { serif } from '@/theme/tokens';
 
@@ -22,7 +25,7 @@ const FILTERS: { value: ReadingStatus; label: string }[] = [
   { value: 'ABANDONED', label: '하차' },
 ];
 
-/** 그리드 항목 — 첫 셀은 항상 '+ 책 추가' 타일, 로딩 중엔 스켈레톤. */
+/** 그리드 항목 — 첫 셀은 항상 책 추가(+) 타일, 로딩 중엔 스켈레톤. */
 type GridItem =
   | { kind: 'add' }
   | { kind: 'skeleton'; key: number }
@@ -161,9 +164,14 @@ function GridTile({ record, colors, mode, onPress }: {
             )}
           </View>
 
+          {/* 쉬는 중은 일시정지 표시만(2026-10-05 사용자 결정 — 아이콘만 봐도 알 만한 것은 글자를 뺀다). */}
           {record.status === 'PAUSED' ? (
-            <View style={[styles.stateTag, { backgroundColor: colors.warnSoft }]}>
-              <Text style={[typeScale.monoLabel, styles.tagText, { color: colors.warn }]}>쉬는 중</Text>
+            <View
+              accessible
+              accessibilityLabel="쉬는 중"
+              style={[styles.stateTag, styles.iconTag, { backgroundColor: colors.warnSoft }]}
+            >
+              <Pause size={10} color={colors.warn} fill={colors.warn} {...iconStroke} />
             </View>
           ) : null}
           {abandoned ? (
@@ -193,13 +201,17 @@ function GridTile({ record, colors, mode, onPress }: {
   );
 }
 
-/** 첫 타일 — 점선 테두리 '+ 책 추가'. */
+/** 첫 타일 — 홈 책 추가 칸과 같은 회색 면에 + 아이콘만(이름은 접근성 라벨). */
 function AddTile({ colors, onPress }: { colors: ColorTokens; onPress: () => void }) {
   return (
-    <Pressable style={styles.cell} onPress={onPress} accessibilityRole="button" accessibilityLabel="책 추가">
-      <View style={[styles.cover, styles.addTile, { borderColor: colors.control }]}>
-        <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
+    <Pressable
+      style={({ pressed }) => [styles.cell, pressed && pressedStyle]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="책 추가"
+    >
+      <View style={[styles.cover, styles.addTile, controlFace(colors.tonal)]}>
+        <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
       </View>
     </Pressable>
   );
@@ -265,6 +277,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderBottomRightRadius: radius.sm,
   },
+  // 아이콘만 든 태그 — 글자 태그와 같은 높이가 되게 위아래를 조금 더 둔다.
+  iconTag: { paddingVertical: 4 },
   roundBadge: {
     position: 'absolute',
     top: 0,
@@ -275,11 +289,5 @@ const styles = StyleSheet.create({
   },
   track: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3 },
   fill: { height: 3 },
-  addTile: {
-    borderWidth: hairline,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
+  addTile: { borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
 });

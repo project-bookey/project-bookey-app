@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ellipsis, MessageSquare } from "lucide-react-native";
+import { Crown, Ellipsis, Globe, Lock, MapPin, MessageSquare, Pencil, Users } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
@@ -26,6 +26,7 @@ import {
 } from "@/components/club";
 import { MeetingNoteCell, MeetingNoteGrid } from "@/components/club/MeetingNoteGrid";
 import {
+  attendeeFigure,
   attendeeLabel,
   isTodayOrLater,
   meetingClock,
@@ -55,6 +56,7 @@ import {
   Button,
   Card,
   Eyebrow,
+  IconMeta,
   Loading,
   Toggle,
   linkLabel,
@@ -184,14 +186,6 @@ export default function ClubHomeScreen() {
   const ended = data.status === "ENDED" || data.status === "ARCHIVED";
   const isHost = data.myRole === "HOST";
   const host = data.members.find((m) => m.role === "HOST");
-  const metaLine = [
-    host ? `호스트 ${host.nickname}` : null,
-    `멤버 ${data.memberCount}/${data.memberLimit}`,
-    data.visibility === "PUBLIC" ? "공개" : "초대 코드로 참가",
-    ended ? "종료" : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
   const unreadChat = chatState.data?.unreadCount ?? 0;
   const intro = data.description?.trim() ?? "";
 
@@ -230,19 +224,22 @@ export default function ClubHomeScreen() {
               <Text numberOfLines={2} style={[styles.name, styles.flex, { color: colors.text }]}>
                 {data.name}
               </Text>
-              {/* 클럽을 연 사람만 — 이름 · 한 줄 소개 · 배경을 고치는 설정으로 */}
+              {/* 클럽을 연 사람만 — 이름 · 한 줄 소개 · 배경을 고치는 설정으로. 글자 대신 연필(2026-10-05 사용자 결정). */}
               {isHost ? (
-                <Button
-                  label="정보 수정"
-                  variant="outline"
-                  size="sm"
-                  onPress={() => router.push(`/club/${clubId}/settings`)}
-                />
+                <View style={styles.editInfo}>
+                  <IconButton onPress={() => router.push(`/club/${clubId}/settings`)} accessibilityLabel="클럽 정보 수정">
+                    <Pencil size={ICON_SIZE} color={colors.text} {...iconStroke} />
+                  </IconButton>
+                </View>
               ) : null}
             </View>
-            <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
-              {metaLine}
-            </Text>
+            <ClubMetaLine
+              host={host?.nickname}
+              memberCount={data.memberCount}
+              memberLimit={data.memberLimit}
+              isPublic={data.visibility === "PUBLIC"}
+              ended={ended}
+            />
           </View>
           {intro ? (
             <Text numberOfLines={INTRO_LINES} style={[styles.intro, { color: colors.text }]}>
@@ -558,9 +555,23 @@ function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
             </Text>
           </View>
         ) : null}
-        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
-          {m.placeName} · {attendeeLabel(m)}
-        </Text>
+        {/* 장소 = 핀, 참여 인원 = 사람(2026-10-05 사용자 결정). 긴 장소 이름만 줄어든다. */}
+        <View style={styles.meetingMeta}>
+          {m.placeName ? (
+            <IconMeta
+              icon={MapPin}
+              color={colors.textMuted}
+              textStyle={typeScale.caption}
+              accessibilityLabel={`장소 ${m.placeName}`}
+              style={styles.metaHost}
+            >
+              {m.placeName}
+            </IconMeta>
+          ) : null}
+          <IconMeta icon={Users} color={colors.textMuted} textStyle={typeScale.caption} accessibilityLabel={attendeeLabel(m)}>
+            {attendeeFigure(m)}
+          </IconMeta>
+        </View>
       </Pressable>
       {status ? (
         <Text style={[styles.attending, { color: m.attending ? colors.text : colors.textMuted }]}>{status}</Text>
@@ -575,6 +586,49 @@ function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
  * 추천 클럽 미리보기(비멤버) — 머리는 클럽 홈과 같은 얼굴이다: 배경(호스트가 올린 사진, 없으면 기본 배경) 위에
  * 이름 · 한 줄 정보(호스트 · 멤버 수) · 한 줄 소개. 클럽은 책 한 권에 묶이지 않으므로 책 표지 · 읽는 책은 보이지 않는다.
  */
+/**
+ * 머리 한 줄 — 호스트(왕관) · 멤버 수(사람들) · 공개(지구)/초대 코드로 참가(자물쇠)를 글자 대신 아이콘으로 쓴다
+ * (2026-10-05 사용자 결정). 스크린 리더는 원래 말로 읽는다. '종료'만 글자로 둔다 — 아이콘으로 가를 수 없는 상태어.
+ * 공개 여부를 모르는 미리보기(추천 클럽은 늘 공개)는 isPublic 없이 그린다.
+ */
+function ClubMetaLine({ host, memberCount, memberLimit, isPublic, ended }: {
+  host?: string;
+  memberCount: number;
+  memberLimit: number;
+  isPublic?: boolean;
+  ended: boolean;
+}) {
+  const { colors } = useTheme();
+  const tint = colors.textMuted;
+  return (
+    <View style={styles.metaRow}>
+      {host ? (
+        <IconMeta
+          icon={Crown}
+          color={tint}
+          textStyle={styles.metaLine}
+          accessibilityLabel={`호스트 ${host}`}
+          style={styles.metaHost}
+        >
+          {host}
+        </IconMeta>
+      ) : null}
+      <IconMeta
+        icon={Users}
+        color={tint}
+        textStyle={styles.metaLine}
+        accessibilityLabel={`멤버 ${memberCount}/${memberLimit}`}
+      >
+        {`${memberCount}/${memberLimit}`}
+      </IconMeta>
+      {isPublic === undefined ? null : (
+        <IconMeta icon={isPublic ? Globe : Lock} color={tint} accessibilityLabel={isPublic ? "공개 클럽" : "초대 코드로 참가"} />
+      )}
+      {ended ? <Text style={[styles.metaLine, { color: tint }]}>종료</Text> : null}
+    </View>
+  );
+}
+
 function PublicClubPreview({
   club,
   shareProgress,
@@ -591,13 +645,6 @@ function PublicClubPreview({
   const router = useRouter();
   const { colors } = useTheme();
   const ended = club.status === "ENDED" || club.status === "ARCHIVED";
-  const metaLine = [
-    club.hostNickname ? `호스트 ${club.hostNickname}` : null,
-    `멤버 ${club.memberCount}/${club.memberLimit}`,
-    ended ? "종료" : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
   const intro = club.description?.trim() ?? "";
 
   return (
@@ -615,9 +662,12 @@ function PublicClubPreview({
             <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
               {club.name}
             </Text>
-            <Text numberOfLines={1} style={[styles.metaLine, { color: colors.textMuted }]}>
-              {metaLine}
-            </Text>
+            <ClubMetaLine
+              host={club.hostNickname ?? undefined}
+              memberCount={club.memberCount}
+              memberLimit={club.memberLimit}
+              ended={ended}
+            />
           </View>
           {intro ? (
             <Text numberOfLines={INTRO_LINES} style={[styles.intro, { color: colors.text }]}>
@@ -668,8 +718,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   nameRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  // 44pt 상자의 여백만큼 오른쪽·위로 내밀어 연필이 이름 첫 줄과 화면 여백 선에 맞는다.
+  editInfo: { marginRight: -10, marginTop: -6 },
   name: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 32 },
   metaLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  // 덩어리 사이는 간격으로만 가른다(가운뎃점 없음). 긴 호스트 이름만 줄어들며 말줄임된다.
+  metaRow: { flexDirection: "row", alignItems: "center", columnGap: spacing.md },
+  metaHost: { flexShrink: 1 },
   body: { flex: 1 },
   // 홈 — 섹션 사이 xl, 섹션 안 sm~md(UX 철칙 Proximity).
   home: {
@@ -697,6 +752,7 @@ const styles = StyleSheet.create({
   when: { fontFamily: mono.semiBold, fontSize: 13 },
   meetingTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
   bookRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs },
+  meetingMeta: { flexDirection: "row", alignItems: "center", columnGap: spacing.md },
   attending: { fontFamily: mono.medium, fontSize: 11, letterSpacing: 0.3 },
   emptyMeeting: { gap: spacing.md },
   noteRow: { flexDirection: "row", gap: spacing.xs },
