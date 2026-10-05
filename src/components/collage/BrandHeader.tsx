@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { MessageSquare } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -38,8 +37,9 @@ export function BrandHeader() {
 }
 
 /**
- * 채팅 말풍선 — 안 읽은 메시지 수 배지, 누르면 채팅 목록(/chats). 클럽 홈 머리의 채팅 버튼과 같은 부품이다.
- * 목록 화면과 같은 쿼리(['chats'])라 캐시를 함께 쓰고, 채팅방을 읽으면 그쪽 무효화로 배지가 내려간다.
+ * 채팅 말풍선 — 안 읽은 메시지가 있으면 초록 점(개수는 접근성 라벨에만, 2026-10-05 시안 B), 누르면 채팅 목록(/chats).
+ * 말풍선은 옆의 종·책갈피처럼 각진 획으로 직접 그린다. 목록 화면과 같은 쿼리(['chats'])라 캐시를 함께 쓰고,
+ * 채팅방을 읽으면 그쪽 무효화로 점이 사라진다.
  */
 function ChatButton() {
   const router = useRouter();
@@ -51,11 +51,11 @@ function ChatButton() {
   return (
     <View ref={tourRef} collapsable={false} style={styles.chat}>
       <IconButton
-        badge={unread}
+        dot={unread > 0}
         onPress={() => router.push('/chats')}
         accessibilityLabel={unread > 0 ? `채팅, 안 읽은 메시지 ${unread}개` : '채팅'}
       >
-        <MessageSquare size={ICON_SIZE} color={colors.text} {...iconStroke} />
+        <ChatGlyph color={colors.text} />
       </IconButton>
     </View>
   );
@@ -96,6 +96,15 @@ function BookmarkBalance() {
         <PlusGlyph size={14} stroke={2.5} color={colors.text} />
       </View>
     </Pressable>
+  );
+}
+
+/** 각진 말풍선 — 꼬리는 왼쪽 아래. */
+function ChatGlyph({ color }: { color: string }) {
+  return (
+    <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <Path d="M4 4.5h16v11.5H10.5L6 20v-4H4z" stroke={color} {...iconStroke} />
+    </Svg>
   );
 }
 

@@ -196,6 +196,11 @@ export default function SettingsScreen() {
                 }}
               />
               <Button
+                label="차단한 사람"
+                variant="ghost"
+                onPress={() => router.push('/blocked')}
+              />
+              <Button
                 label="고객문의"
                 variant="ghost"
                 onPress={() => router.push('/inquiry')}

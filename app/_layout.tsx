@@ -90,6 +90,7 @@ export default function RootLayout() {
             <Stack.Screen name="visitors" options={{ title: '방문자' }} />
             <Stack.Screen name="follows" options={{ title: '팔로우' }} />
             <Stack.Screen name="chats" options={{ title: '채팅' }} />
+            <Stack.Screen name="blocked" options={{ title: '차단한 사람' }} />
             <Stack.Screen name="chat/[id]" options={{ title: '채팅' }} />
             <Stack.Screen name="review/[id]" options={{ title: '리뷰' }} />
             <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
