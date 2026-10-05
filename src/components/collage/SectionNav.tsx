@@ -442,7 +442,10 @@ function NavGlass({ style, interactive = false, children }: {
   );
 }
 
-/** 광장 독후감 쓰기 단추 — 바와 같은 유리 원에 초록 연필. 둘러보기 광장 단계가 이 단추를 비춘다. */
+/**
+ * 광장 독후감 쓰기 단추 — 바와 같은 유리 원에, 연필은 옆 탭 아이콘과 같은 회색(textMuted)으로 바와 한 몸처럼 둔다
+ * (사용자 결정 2026-10-05). 둘러보기 광장 단계가 이 단추를 비춘다.
+ */
 function ComposeDock({ onPress }: { onPress?: () => void }) {
   const { colors } = useTheme();
   const tourRef = useTourTarget('plaza-compose');
@@ -456,8 +459,8 @@ function ComposeDock({ onPress }: { onPress?: () => void }) {
         style={({ pressed }) => [styles.dockPress, pressed && styles.pressed]}
       >
         <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
-          <Path d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z" stroke={colors.accent} {...iconStroke} />
-          <Path d="m14.5 5.8 3.7 3.7" stroke={colors.accent} {...iconStroke} />
+          <Path d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z" stroke={colors.textMuted} {...iconStroke} />
+          <Path d="m14.5 5.8 3.7 3.7" stroke={colors.textMuted} {...iconStroke} />
         </Svg>
       </Pressable>
     </NavGlass>
