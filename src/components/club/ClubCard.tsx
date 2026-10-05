@@ -1,18 +1,18 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CalendarDays, Settings } from 'lucide-react-native';
+import { CalendarDays, Settings, Users } from 'lucide-react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
 import { ICON_SIZE, IconButton, StickyNote } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
+import { IconMeta } from '@/components/ui';
 import { ClubBackdrop } from './ClubBackdrop';
 import { meetingDay } from './meetingTime';
 import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
-import { mono } from '@/theme/tokens';
+import { mono, serif } from '@/theme/tokens';
 
-const AVATAR = 24;
-/** 제목 줄 오른쪽 끝에 보이는 프로필 사진 수 — 더 많으면 뒤에 '…'를 붙인다(2026-10-05 사용자 결정). */
-const MAX_AVATARS = 3;
+/** 한 줄 정보의 방장 프로필 사진 크기 — 옆 아이콘(12)보다 조금 커야 얼굴로 읽힌다. */
+const HOST_AVATAR = 16;
 /** 그림 띠 높이 — 96에서 144로 늘렸다(2026-10-05 사용자 결정). */
 const BAND_H = 144;
 /** 아이콘 버튼(44pt) 높이 — 톱니를 얹는 제목 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
@@ -23,7 +23,8 @@ const MANAGE_ROOM = 44;
 /**
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
  * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 내가 참여한 가장 가까운 모임의 스티키,
- * 아래 본문은 제목 줄(이름 + 오른쪽 끝에 함께하는 사람의 프로필 사진) · 한 줄 소개. 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
+ * 아래 본문은 클럽 홈 머리와 같은 모양 — 명조 이름, 한 줄 정보(방장 프로필 사진 + 이름 · 사람 아이콘 + 인원), 한 줄 소개
+ * (2026-10-05 사용자 결정). 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
  * 카드 본문은 누르면 클럽 홈으로. 호스트에게만 붙는 관리 톱니(IconButton — 클럽 정보의 톱니와 같은 아이콘·같은 설정 화면,
  * 2026-10-05 사용자 결정으로 '관리' 글자 대신)는 제목 줄 오른쪽 끝에 얹는다 —
  * 버튼 혼자 한 줄을 차지하지 않게. 본문 Pressable 의 형제로 둬 웹에서 button 안에 button 이 들어가지 않게 한다.
@@ -67,15 +68,17 @@ export function ClubCard({ club, onPress, onManage }: {
         </View>
 
         <View style={styles.body}>
-          {/* 제목 줄 — 함께하는 사람의 프로필 사진을 줄 오른쪽 끝에. 톱니가 얹히면 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
-          <View style={[styles.titleRow, onManage ? styles.titleRowWithManage : null]}>
-            <Text numberOfLines={1} style={[styles.name, styles.flex, { color: colors.text }]}>
-              {club.name}
-            </Text>
-            <MemberAvatars members={club.members ?? []} />
+          <View style={styles.nameGroup}>
+            {/* 제목 줄 — 톱니가 얹히면 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
+            <View style={onManage ? styles.titleRowWithManage : null}>
+              <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
+                {club.name}
+              </Text>
+            </View>
+            <CardMetaLine members={club.members ?? []} memberCount={club.memberCount} />
           </View>
           {club.description ? (
-            <Text numberOfLines={2} style={[styles.intro, { color: colors.textMuted }]}>{club.description}</Text>
+            <Text numberOfLines={2} style={[styles.intro, { color: colors.text }]}>{club.description}</Text>
           ) : null}
           <LiveLine members={club.members ?? []} />
         </View>
@@ -92,25 +95,26 @@ export function ClubCard({ club, onPress, onManage }: {
   );
 }
 
-/** 함께하는 사람 — 프로필 사진을 겹쳐 3개까지, 더 있으면 '…'. 지금 읽는 사람은 사진에 초록 점. */
-function MemberAvatars({ members }: { members: ClubMemberBrief[] }) {
+/**
+ * 한 줄 정보 — 클럽 홈의 한 줄과 같은 조판인데, 왕관 대신 방장의 프로필 사진을 이름 앞에 둔다(2026-10-05 사용자 결정).
+ * 목록 응답에는 정원 · 공개 범위가 없어 인원은 숫자만 쓴다.
+ */
+function CardMetaLine({ members, memberCount }: { members: ClubMemberBrief[]; memberCount: number }) {
   const { colors } = useTheme();
-  if (members.length === 0) return null;
-  const shown = members.slice(0, MAX_AVATARS);
+  const tint = colors.textMuted;
+  const host = members.find((m) => m.role === 'HOST');
 
   return (
-    <View style={styles.avatars}>
-      {shown.map((m, i) => (
-        <View key={m.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.surface }]}>
-          <Avatar uri={m.avatarUrl} nickname={m.nickname} size={AVATAR} />
-          {m.readingNow ? (
-            <View style={[styles.liveDot, { backgroundColor: colors.accent, borderColor: colors.surface }]} />
-          ) : null}
+    <View style={styles.metaRow}>
+      {host ? (
+        <View accessible accessibilityLabel={`호스트 ${host.nickname}`} style={styles.metaHost}>
+          <Avatar uri={host.avatarUrl} nickname={host.nickname} size={HOST_AVATAR} />
+          <Text numberOfLines={1} style={[styles.metaText, styles.metaHostName, { color: tint }]}>{host.nickname}</Text>
         </View>
-      ))}
-      {members.length > MAX_AVATARS ? (
-        <Text style={[styles.more, { color: colors.textMuted }]}>…</Text>
       ) : null}
+      <IconMeta icon={Users} color={tint} textStyle={styles.metaText} accessibilityLabel={`멤버 ${memberCount}명`}>
+        {`${memberCount}`}
+      </IconMeta>
     </View>
   );
 }
@@ -138,27 +142,20 @@ const styles = StyleSheet.create({
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  body: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.xs },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  titleRowWithManage: { minHeight: MANAGE_H, paddingRight: MANAGE_ROOM },
+  // 이름 묶음 · 소개 · 지금 읽는 중 사이는 sm, 이름 묶음 안은 xs(UX 철칙 Proximity).
+  body: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.sm },
+  nameGroup: { gap: spacing.xs },
+  titleRowWithManage: { minHeight: MANAGE_H, justifyContent: 'center', paddingRight: MANAGE_ROOM },
   // 본문 위 여백(md) 아래, 제목 줄과 같은 높이에 선다. 44pt 상자 여백(10)만큼 오른쪽으로 내밀어
   // 톱니 아이콘이 카드 안쪽 선(lg)에 맞는다.
   manage: { position: 'absolute', right: spacing.lg - 10, top: BAND_H + spacing.md },
-  name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
-  flex: { flex: 1 },
-  intro: { ...typeScale.caption, lineHeight: 18 },
-  avatars: { flexDirection: 'row', alignItems: 'center' },
-  more: { ...typeScale.caption, marginLeft: 2 },
-  avatarWrap: { borderRadius: radius.round, borderWidth: 2 },
-  liveDot: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 10,
-    height: 10,
-    borderRadius: radius.round,
-    borderWidth: 2,
-  },
+  // 이름 · 한 줄 정보 · 소개는 클럽 홈 머리와 같은 조판.
+  name: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 32 },
+  intro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', columnGap: spacing.md },
+  metaText: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
+  metaHost: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1, minWidth: 0 },
+  metaHostName: { flexShrink: 1 },
   liveLine: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   liveMark: { width: 6, height: 6, borderRadius: radius.round },
   liveText: { fontFamily: mono.medium, fontSize: 10.5, letterSpacing: 0.3 },
