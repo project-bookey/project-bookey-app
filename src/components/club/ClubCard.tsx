@@ -11,19 +11,21 @@ import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/th
 import { mono } from '@/theme/tokens';
 
 const AVATAR = 24;
-const MAX_AVATARS = 4;
-const BAND_H = 96;
-/** 아이콘 버튼(44pt) 높이 — 톱니를 얹는 함께하는 사람 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
+/** 제목 앞에 보이는 프로필 사진 수 — 더 많으면 뒤에 '…'를 붙인다(2026-10-05 사용자 결정). */
+const MAX_AVATARS = 3;
+/** 그림 띠 높이 — 96에서 144로 늘렸다(2026-10-05 사용자 결정). */
+const BAND_H = 144;
+/** 아이콘 버튼(44pt) 높이 — 톱니를 얹는 제목 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
 const MANAGE_H = 44;
-/** 함께하는 사람 줄 오른쪽에 톱니 몫으로 비워 두는 폭 — 상자 여백(10)을 카드 여백 쪽으로 민 만큼 뺀다. */
+/** 제목 줄 오른쪽에 톱니 몫으로 비워 두는 폭 — 상자 여백(10)을 카드 여백 쪽으로 민 만큼 뺀다. */
 const MANAGE_ROOM = 44;
 
 /**
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
  * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 내가 참여한 가장 가까운 모임의 스티키,
- * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람. 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
+ * 아래 본문은 제목 줄(함께하는 사람의 프로필 사진 + 이름) · 한 줄 소개. 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
  * 카드 본문은 누르면 클럽 홈으로. 호스트에게만 붙는 관리 톱니(IconButton — 클럽 정보의 톱니와 같은 아이콘·같은 설정 화면,
- * 2026-10-05 사용자 결정으로 '관리' 글자 대신)는 함께하는 사람 줄 오른쪽에 얹는다 —
+ * 2026-10-05 사용자 결정으로 '관리' 글자 대신)는 제목 줄 오른쪽 끝에 얹는다 —
  * 버튼 혼자 한 줄을 차지하지 않게. 본문 Pressable 의 형제로 둬 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
 export function ClubCard({ club, onPress, onManage }: {
@@ -39,7 +41,7 @@ export function ClubCard({ club, onPress, onManage }: {
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={club.name}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${club.name}, 멤버 ${club.memberCount}명`}>
         <View style={styles.band}>
           <ClubBackdrop uri={club.backgroundUrl} seed={club.id} />
           {/* 배경이 아래 본문으로 녹아들게 카드 표면색으로 덮는다 — 검은 스크림을 쓰지 않는다. */}
@@ -65,16 +67,17 @@ export function ClubCard({ club, onPress, onManage }: {
         </View>
 
         <View style={styles.body}>
-          <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>
-            {club.name}
-          </Text>
+          {/* 제목 줄 — 함께하는 사람의 프로필 사진을 이름 앞에. 톱니가 얹히면 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
+          <View style={[styles.titleRow, onManage ? styles.titleRowWithManage : null]}>
+            <MemberAvatars members={club.members ?? []} />
+            <Text numberOfLines={1} style={[styles.name, styles.flex, { color: colors.text }]}>
+              {club.name}
+            </Text>
+          </View>
           {club.description ? (
             <Text numberOfLines={2} style={[styles.intro, { color: colors.textMuted }]}>{club.description}</Text>
           ) : null}
-          {/* 톱니가 얹히는 줄 — 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
-          <View style={onManage ? styles.membersWithManage : undefined}>
-            <MembersLine members={club.members ?? []} />
-          </View>
+          <LiveLine members={club.members ?? []} />
         </View>
       </Pressable>
 
@@ -89,40 +92,41 @@ export function ClubCard({ club, onPress, onManage }: {
   );
 }
 
-/** 함께 읽는 사람 줄 — 아바타 겹침 + 이름들, 열린 세션이 있으면 점과 '지금 읽는 중'. */
-function MembersLine({ members }: { members: ClubMemberBrief[] }) {
+/** 함께하는 사람 — 프로필 사진을 겹쳐 3개까지, 더 있으면 '…'. 지금 읽는 사람은 사진에 초록 점. */
+function MemberAvatars({ members }: { members: ClubMemberBrief[] }) {
   const { colors } = useTheme();
+  if (members.length === 0) return null;
   const shown = members.slice(0, MAX_AVATARS);
-  const name = (m: ClubMemberBrief) => (m.isMe ? '나' : m.nickname);
-  const names = members.map(name);
-  const label = names.length <= 3 ? names.join(', ') : `${names.slice(0, 2).join(', ')} 외 ${names.length - 2}명`;
-  const live = members.filter((m) => m.readingNow);
 
   return (
-    <View style={styles.membersLine}>
-      <View style={styles.avatars}>
-        {shown.map((m, i) => (
-          <View key={m.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.surface }]}>
-            <Avatar uri={m.avatarUrl} nickname={m.nickname} size={AVATAR} />
-            {m.readingNow ? (
-              <View style={[styles.liveDot, { backgroundColor: colors.accent, borderColor: colors.surface }]} />
-            ) : null}
-          </View>
-        ))}
-      </View>
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>
-          {label || '아직 나뿐이에요'}
-        </Text>
-        {live.length > 0 ? (
-          <View style={styles.liveLine}>
-            <View style={[styles.liveMark, { backgroundColor: colors.accent }]} />
-            <Text numberOfLines={1} style={[styles.liveText, { color: colors.accent }]}>
-              {live.map(name).join(', ')} 지금 읽는 중
-            </Text>
-          </View>
-        ) : null}
-      </View>
+    <View style={styles.avatars}>
+      {shown.map((m, i) => (
+        <View key={m.userId} style={[styles.avatarWrap, { marginLeft: i === 0 ? 0 : -8, borderColor: colors.surface }]}>
+          <Avatar uri={m.avatarUrl} nickname={m.nickname} size={AVATAR} />
+          {m.readingNow ? (
+            <View style={[styles.liveDot, { backgroundColor: colors.accent, borderColor: colors.surface }]} />
+          ) : null}
+        </View>
+      ))}
+      {members.length > MAX_AVATARS ? (
+        <Text style={[styles.more, { color: colors.textMuted }]}>…</Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** 열린 독서가 있으면 점과 '○○ 지금 읽는 중' — 아무도 읽고 있지 않으면 그리지 않는다. */
+function LiveLine({ members }: { members: ClubMemberBrief[] }) {
+  const { colors } = useTheme();
+  const live = members.filter((m) => m.readingNow);
+  if (live.length === 0) return null;
+
+  return (
+    <View style={styles.liveLine}>
+      <View style={[styles.liveMark, { backgroundColor: colors.accent }]} />
+      <Text numberOfLines={1} style={[styles.liveText, { color: colors.accent }]}>
+        {live.map((m) => (m.isMe ? '나' : m.nickname)).join(', ')} 지금 읽는 중
+      </Text>
     </View>
   );
 }
@@ -135,14 +139,16 @@ const styles = StyleSheet.create({
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
   noteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   body: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.xs },
-  membersWithManage: { minHeight: MANAGE_H, justifyContent: 'center', paddingRight: MANAGE_ROOM },
-  // 본문 아래 여백(lg)에 맞춰 함께하는 사람 줄과 같은 높이에 선다. 44pt 상자 여백(10)만큼 오른쪽으로 내밀어
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  titleRowWithManage: { minHeight: MANAGE_H, paddingRight: MANAGE_ROOM },
+  // 본문 위 여백(md) 아래, 제목 줄과 같은 높이에 선다. 44pt 상자 여백(10)만큼 오른쪽으로 내밀어
   // 톱니 아이콘이 카드 안쪽 선(lg)에 맞는다.
-  manage: { position: 'absolute', right: spacing.lg - 10, bottom: spacing.lg },
+  manage: { position: 'absolute', right: spacing.lg - 10, top: BAND_H + spacing.md },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
+  flex: { flex: 1 },
   intro: { ...typeScale.caption, lineHeight: 18 },
-  membersLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
-  avatars: { flexDirection: 'row' },
+  avatars: { flexDirection: 'row', alignItems: 'center' },
+  more: { ...typeScale.caption, marginLeft: 2 },
   avatarWrap: { borderRadius: radius.round, borderWidth: 2 },
   liveDot: {
     position: 'absolute',
