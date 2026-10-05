@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { useRef } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubCommunityApi, type ClubMeeting } from '@/api/endpoints';
 import { MeetingFormFields, useMeetingForm } from '@/components/club/MeetingForm';
 import { meetingState } from '@/components/club/meetingTime';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
+import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboard';
 import { Button, EmptyState, Loading, linkLabel } from '@/components/ui';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
@@ -71,6 +72,10 @@ function MeetingEditForm({ clubId, meeting }: { clubId: number; meeting: ClubMee
   const qc = useQueryClient();
   const { colors } = useTheme();
   const form = useMeetingForm(meeting);
+  // 아래쪽 칸(최대 인원·설명)은 키보드에 가리기 쉽다 — 누르면 폼 끝까지 키보드 위로 올린다(모임 만들기와 같은 방식).
+  const scrollRef = useRef<ScrollView>(null);
+  const formRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
 
   const save = useMutation({
     mutationFn: () => clubCommunityApi.updateMeeting(clubId, meeting.id, form.toInput()),
@@ -88,8 +93,15 @@ function MeetingEditForm({ clubId, meeting }: { clubId: number; meeting: ClubMee
     <PaperScreen>
       <SubHeader category="모임 고치기" />
       <KeyboardArea>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
-          <MeetingFormFields clubId={clubId} form={form} />
+        <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
+          <View ref={formRef} style={styles.form}>
+            <MeetingFormFields
+              clubId={clubId}
+              form={form}
+              onLowerFieldFocus={() => revealAbove(formRef)}
+              onLowerFieldGrow={() => revealAbove(formRef, { onlyIfOpen: true })}
+            />
+          </View>
         </ScrollView>
 
         {/* 하단 띠 — 클럽 만들기와 같은 자리(ScrollView 의 형제)라 키보드가 뜨면 그 위에 붙는다.
@@ -110,7 +122,8 @@ function MeetingEditForm({ clubId, meeting }: { clubId: number; meeting: ClubMee
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, padding: spacing.lg, gap: spacing.md, paddingBottom: spacing.xxl },
+  container: { ...layout.content, padding: spacing.lg, paddingBottom: spacing.xxl },
+  form: { gap: spacing.md },
   // 하단 고정 띠 — 클럽 만들기의 띠와 같은 만듦새(머리카락 선 · 본문 폭 · 종이 배경).
   bottomBar: {
     ...layout.content,
