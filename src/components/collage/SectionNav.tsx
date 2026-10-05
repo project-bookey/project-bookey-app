@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
 import {
-  Animated, Easing, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, View,
+  Animated, BackHandler, Easing, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View,
   type StyleProp, type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useKeyboardOpen } from '@/components/keyboard';
 import { useTourTarget } from '@/components/tour/TourTarget';
 import { useTheme } from '@/theme';
-import { hairline, iconStroke, motion, pressedStyle, spacing } from '@/theme/tokens';
+import { hairline, iconStroke, motion, pressedStyle, spacing, typeScale } from '@/theme/tokens';
 
 export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
 
@@ -43,8 +43,10 @@ export const NAV_BAR_HEIGHT = 60;
 let lastTabIndex = SECTIONS.findIndex((section) => section.key === 'shelf');
 
 /**
- * 광장 쓰기 버튼(dock) — 광장에서만 바 오른쪽에 바와 같은 높이의 둥근 유리 단추를 세우고, 그만큼 바를 줄인다
- * (사용자 결정 2026-10-05, B안 · 움직임 ③ '스와이프를 따라').
+ * 바 옆 단추(dock) — 광장·클럽에서 바 오른쪽에 바와 같은 높이의 둥근 유리 단추를 세우고, 그만큼 바를 줄인다
+ * (사용자 결정 2026-10-05, B안 · 움직임 ③ '스와이프를 따라'). 광장은 독후감 쓰기(연필), 클럽은 만들기·참가
+ * 메뉴(＋ — 누르면 화면이 가라앉고 그 위로 유리 알약 둘이 올라온다). 광장 ↔ 클럽 사이에서는 바가 줄어든 채
+ * 단추 그림만 바뀐다.
  *
  * 줄어든 바: 왼쪽 끝 36 → 16, 오른쪽 끝 36 → 16 + 60(단추) + 8(틈) = 84. 화면 폭과 상관없이 같은 값이다.
  *
@@ -54,6 +56,7 @@ let lastTabIndex = SECTIONS.findIndex((section) => section.key === 'shelf');
  * 늘어나지 않게 한 뒤 아이콘·표식만 가운데 쪽으로 모은다 — 모두 네이티브 드라이버라 넘기는 손가락을 그대로 따른다.
  */
 const PLAZA_INDEX = SECTIONS.findIndex((section) => section.key === 'plaza');
+const CLUBS_INDEX = SECTIONS.findIndex((section) => section.key === 'clubs');
 const DOCK_SIZE = NAV_BAR_HEIGHT;
 /** 왼쪽 끝이 바깥으로 나가는 거리(36 → 16). */
 const DOCK_LEFT_OUT = spacing.xxl - spacing.lg;
@@ -69,6 +72,9 @@ const TAB_CENTER = (SECTIONS.length - 1) / 2;
 const TRACK_INSET = spacing.xs;
 /** 탭 칸 높이(styles.tab) — 유리(60) 안에서 위아래 1씩 남는다. */
 const TAB_HEIGHT = 58;
+/** 클럽 메뉴가 열리고 닫히는 시간(ms) — 닫힐 땐 조금 빨리. */
+const MENU_IN = 220;
+const MENU_OUT = 140;
 
 /**
  * 네이티브 헤더가 없는 메인 화면의 하단 탭.
@@ -77,7 +83,7 @@ const TAB_HEIGHT = 58;
  * 그 외 환경에서는 BlurView + 반투명 면으로 같은 형태와 대비를 유지한다.
  */
 export function SectionNav({
-  active, onSelect, pagerPosition, pagerOffset, onCompose,
+  active, onSelect, pagerPosition, pagerOffset, onCompose, onCreateClub, onJoinClub,
 }: {
   active: SectionKey;
   onSelect?: (route: string) => void;
@@ -85,6 +91,9 @@ export function SectionNav({
   pagerOffset?: Animated.Value;
   /** 있으면 광장에서 바 옆에 독후감 쓰기 단추를 세운다(위 dock 주석). */
   onCompose?: () => void;
+  /** 둘 다 있으면 클럽에서 바 옆에 만들기·참가 메뉴 단추를 세운다. */
+  onCreateClub?: () => void;
+  onJoinClub?: () => void;
 }) {
   const router = useRouter();
   const { colors } = useTheme();
@@ -141,25 +150,43 @@ export function SectionNav({
 
   const tabWidth = trackWidth > 0 ? (trackWidth - TRACK_INSET * 2) / SECTIONS.length : 0;
 
-  // ── 광장 쓰기 단추(dock) ──
-  const docks = onCompose != null;
-  const onPlaza = activeIndex === PLAZA_INDEX;
-  // 탭을 눌러 옮길 때만 쓰는 시간 몫. 페이저 값은 탭에서 한 번에 건너뛰므로 그때는 0.25초에 걸쳐 따라가게 섞는다.
-  const tapDock = useRef(new Animated.Value(onPlaza ? 1 : 0)).current;
+  // ── 바 옆 단추(dock) — 광장은 독후감 쓰기, 클럽은 만들기·참가 메뉴 ──
+  const clubMenu = onCreateClub != null && onJoinClub != null;
+  const composes = onCompose != null;
+  const docks = composes || clubMenu;
+  /** 구역마다 단추가 서는지 — '10000' 처럼 한 줄로 두어 아래 계산의 의존성으로 쓴다. */
+  const dockedKey = SECTIONS
+    .map((_, index) => ((index === PLAZA_INDEX && composes) || (index === CLUBS_INDEX && clubMenu) ? '1' : '0'))
+    .join('');
+  const dockedNow = dockedKey[activeIndex] === '1';
+  // 탭을 눌러 옮길 때만 쓰는 시간 몫. 페이저 값은 탭에서 한 번에 건너뛰므로, 그때는 위치를 0.25초에 걸쳐 옮겨 섞는다.
+  const tapPos = useRef(new Animated.Value(activeIndex)).current;
   const tapBlend = useRef(new Animated.Value(0)).current;
-  /** 줄어든 정도 — 넘기는 동안은 페이저 위치를 그대로 따르고(광장 1, 옆 구역 0), 탭으로 옮길 땐 시간 몫으로 바뀐다. */
+  /** 단추·바 모양이 따르는 위치 — 넘기는 동안은 페이저 값 그대로, 탭으로 옮길 땐 시간으로 옮긴 값. */
+  const dockPos = useMemo(() => Animated.add(
+    Animated.multiply(pagerTranslateX, Animated.add(1, Animated.multiply(tapBlend, -1))),
+    Animated.multiply(tapPos, tapBlend),
+  ), [pagerTranslateX, tapBlend, tapPos]);
+  /**
+   * 줄어든 정도 — 단추가 서는 구역에서 1, 아닌 구역에서 0, 그 사이는 넘긴 만큼.
+   * 맨 앞 구역의 왼쪽 되튐(overdrag)은 맨 앞 구역 값을 따른다 — 왼쪽엔 구역이 없다.
+   */
   const dock = useMemo(() => {
-    // 광장이 맨 앞이면 그 왼쪽으로 당기는 되튐(overdrag)에서도 줄어든 채로 둔다 — 왼쪽엔 구역이 없다.
-    const follow = pagerTranslateX.interpolate({
-      inputRange: [PLAZA_INDEX - 1, PLAZA_INDEX, PLAZA_INDEX + 1],
-      outputRange: [PLAZA_INDEX === 0 ? 1 : 0, 1, 0],
+    const flags = dockedKey.split('').map(Number);
+    return dockPos.interpolate({
+      inputRange: [-1, ...flags.map((_, index) => index)],
+      outputRange: [flags[0], ...flags],
       extrapolate: 'clamp',
     });
-    return Animated.add(
-      Animated.multiply(follow, Animated.add(1, Animated.multiply(tapBlend, -1))),
-      Animated.multiply(tapDock, tapBlend),
-    );
-  }, [pagerTranslateX, tapBlend, tapDock]);
+  }, [dockPos, dockedKey]);
+  /** 단추 그림 — 광장(연필)에서 클럽(＋)으로 넘어간 정도. 둘 중 하나만 서면 그 그림만 쓴다. */
+  const icons = useMemo(() => {
+    const mix = dockPos.interpolate({ inputRange: [PLAZA_INDEX, CLUBS_INDEX], outputRange: [0, 1], extrapolate: 'clamp' });
+    return {
+      pen: composes ? (clubMenu ? Animated.subtract(1, mix) : 1) : 0,
+      plus: clubMenu ? (composes ? mix : 1) : 0,
+    };
+  }, [dockPos, composes, clubMenu]);
   // 유리는 옮기고 좁히고, 탭 줄은 역배율로 되돌린다. 폭을 재기 전(첫 그리기)에는 아무것도 걸지 않는다.
   const dockTransforms = useMemo(() => {
     if (!docks || trackWidth <= 0) return null;
@@ -171,16 +198,13 @@ export function SectionNav({
     };
   }, [docks, trackWidth, dock]);
 
-  /** 탭으로 광장에 들고 날 때 — 지금 값에서 목표까지 시간으로 옮긴 뒤 다시 페이저 값을 따르게 한다. */
+  /** 탭으로 옮길 때 — 지금 구역에서 목표 구역까지 시간으로 옮긴 뒤 다시 페이저 값을 따르게 한다. */
   const easeDock = (index: number) => {
     if (!docks || !pagerPosition) return;
-    const from = onPlaza ? 1 : 0;
-    const to = index === PLAZA_INDEX ? 1 : 0;
-    if (from === to) return;
-    tapDock.setValue(from);
+    tapPos.setValue(activeIndex);
     tapBlend.setValue(1);
-    Animated.timing(tapDock, {
-      toValue: to,
+    Animated.timing(tapPos, {
+      toValue: index,
       duration: motion.base,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
@@ -189,6 +213,51 @@ export function SectionNav({
       if (finished) tapBlend.setValue(0);
     });
   };
+
+  // ── 클럽 메뉴 ──
+  const [menuOpen, setMenuOpen] = useState(false);
+  /** 닫히는 동안에도 그린다 — 다 닫히면 걷는다. */
+  const [menuShown, setMenuShown] = useState(false);
+  const menuAnim = useRef(new Animated.Value(0)).current;
+  const openMenu = (open: boolean) => {
+    setMenuOpen(open);
+    if (open) setMenuShown(true);
+    Animated.timing(menuAnim, {
+      toValue: open ? 1 : 0,
+      duration: open ? MENU_IN : MENU_OUT,
+      easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished && !open) setMenuShown(false);
+    });
+  };
+  // 구역이 바뀌거나 키보드가 뜨면 닫는다 — 열린 채 다른 화면에 남지 않게.
+  useEffect(() => {
+    if (menuOpen) openMenu(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, keyboardOpen]);
+  // 안드로이드 뒤로 가기는 메뉴부터 닫는다.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      openMenu(false);
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menuOpen]);
+  const pressDock = () => {
+    if (activeIndex === PLAZA_INDEX) onCompose?.();
+    else if (activeIndex === CLUBS_INDEX) openMenu(!menuOpen);
+  };
+  /** 메뉴에서 고르면 닫고 바로 그 화면으로 — 모달이 아니라 화면 전환과 엇갈리지 않는다. */
+  const pick = (go?: () => void) => {
+    openMenu(false);
+    go?.();
+  };
+  const dockLabel = activeIndex === CLUBS_INDEX
+    ? (menuOpen ? '메뉴 닫기' : '클럽 만들기·참가 메뉴 열기')
+    : '독후감 쓰기';
 
   const selectIndex = (index: number) => {
     const section = SECTIONS[index];
@@ -215,7 +284,7 @@ export function SectionNav({
   // 직접 재면 변형을 넣어 재는지가 플랫폼마다 갈린다. 끌기는 구역이 멈춰 있을 때 시작하므로 그때의 모양으로 센다.
   const measureTrack = () => {
     barRef.current?.measureInWindow((x, _y, width) => {
-      const shrunk = docks && onPlaza;
+      const shrunk = dockedNow;
       trackLeft.current = x + spacing.xxl - (shrunk ? DOCK_LEFT_OUT : 0) + TRACK_INSET;
       trackWidthRef.current = Math.max(width - spacing.xxl * 2 - (shrunk ? DOCK_SHRINK : 0) - TRACK_INSET * 2, 0);
     });
@@ -364,7 +433,7 @@ export function SectionNav({
   const display = keyboardOpen ? 'none' : 'flex';
   // 둘러보기가 탭 아이콘을 비출 자리 — 광장에서는 아이콘이 transform 으로 옮겨 있어(네이티브 드라이버 값은
   // 재는 쪽에서 안 보일 수 있다) 레이아웃으로 같은 자리에 둔 보이지 않는 칸을 대신 잰다.
-  const shrunkNow = docks && onPlaza;
+  const shrunkNow = dockedNow;
   const anchorTab = tabWidth > 0 ? tabWidth - (shrunkNow ? TAB_PULL : 0) : 0;
   const anchorLeft = spacing.xxl - (shrunkNow ? DOCK_LEFT_OUT : 0) + TRACK_INSET;
 
@@ -375,8 +444,19 @@ export function SectionNav({
           <NavGlass style={styles.glass} interactive>{tabs}</NavGlass>
         </Animated.View>
       </View>
+      {menuShown ? (
+        // 메뉴가 열리면 화면 전체(하단 바 포함)를 덮개로 가라앉힌다 — 누르면 닫힌다.
+        <Animated.View style={[styles.scrim, { backgroundColor: colors.scrimDim, opacity: menuAnim }]}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => openMenu(false)}
+            accessibilityRole="button"
+            accessibilityLabel="메뉴 닫기"
+          />
+        </Animated.View>
+      ) : null}
       {docks ? (
-        // 바와 같은 상자(여백 없음) — 쓰기 단추와 둘러보기 자리만 얹고 나머지 터치는 아래로 흘린다.
+        // 바와 같은 상자(여백 없음) — 단추와 둘러보기 자리만 얹고 나머지 터치는 아래로 흘린다.
         <View pointerEvents="box-none" style={[styles.dockLayer, { bottom, display }]}>
           {anchorTab > 0
             ? SECTIONS.map((section, index) => (
@@ -389,14 +469,31 @@ export function SectionNav({
             ))
             : null}
           <Animated.View
-            pointerEvents={onPlaza ? 'auto' : 'none'}
-            aria-hidden={!onPlaza}
-            accessibilityElementsHidden={!onPlaza}
-            importantForAccessibility={onPlaza ? 'auto' : 'no-hide-descendants'}
-            style={[styles.dock, dockTransforms ? dockTransforms.button : { opacity: onPlaza ? 1 : 0 }]}
+            pointerEvents={dockedNow ? 'auto' : 'none'}
+            aria-hidden={!dockedNow}
+            accessibilityElementsHidden={!dockedNow}
+            importantForAccessibility={dockedNow ? 'auto' : 'no-hide-descendants'}
+            style={[styles.dock, dockTransforms ? dockTransforms.button : { opacity: dockedNow ? 1 : 0 }]}
           >
-            <ComposeDock onPress={onCompose} />
+            <DockButton
+              label={dockLabel}
+              expanded={activeIndex === CLUBS_INDEX ? menuOpen : undefined}
+              onPress={pressDock}
+              pen={icons.pen}
+              plus={icons.plus}
+              turn={menuAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '45deg'] })}
+            />
           </Animated.View>
+        </View>
+      ) : null}
+      {menuShown ? (
+        // 단추 바로 위로 올라오는 유리 알약 둘 — 세로로 쌓을 땐 주요 동작(만들기)이 위(앱 공통 규칙).
+        <View
+          pointerEvents={menuOpen ? 'box-none' : 'none'}
+          style={[styles.menuLayer, { bottom: bottom + DOCK_SIZE + spacing.md }]}
+        >
+          <MenuPill label="클럽 만들기" icon="create" anim={menuAnim} range={[0.25, 1]} onPress={() => pick(onCreateClub)} />
+          <MenuPill label="코드로 참가" icon="join" anim={menuAnim} range={[0, 0.75]} onPress={() => pick(onJoinClub)} />
         </View>
       ) : null}
     </>
@@ -442,28 +539,100 @@ function NavGlass({ style, interactive = false, children }: {
   );
 }
 
+type AnimatedNumber = Animated.AnimatedInterpolation<number> | Animated.AnimatedSubtraction<number> | number;
+
 /**
- * 광장 독후감 쓰기 단추 — 바와 같은 유리 원에, 연필은 옆 탭 아이콘과 같은 회색(textMuted)으로 바와 한 몸처럼 둔다
- * (사용자 결정 2026-10-05). 둘러보기 광장 단계가 이 단추를 비춘다.
+ * 바 옆 단추 — 바와 같은 유리 원에, 그림은 옆 탭 아이콘과 같은 회색(textMuted)으로 바와 한 몸처럼 둔다
+ * (사용자 결정 2026-10-05). 광장은 연필, 클럽은 ＋(메뉴가 열리면 45° 돌아 ×). 둘러보기 광장·클럽 단계가 이 단추를 비춘다.
  */
-function ComposeDock({ onPress }: { onPress?: () => void }) {
+function DockButton({ label, expanded, onPress, pen, plus, turn }: {
+  label: string;
+  /** 클럽에서만 — 메뉴가 열려 있는지. */
+  expanded?: boolean;
+  onPress: () => void;
+  pen: AnimatedNumber;
+  plus: AnimatedNumber;
+  turn: Animated.AnimatedInterpolation<string>;
+}) {
   const { colors } = useTheme();
-  const tourRef = useTourTarget('plaza-compose');
+  const plazaRef = useTourTarget('plaza-compose');
+  const clubsRef = useTourTarget('club-actions');
+  const stroke = { stroke: colors.textMuted, ...iconStroke };
   return (
     <NavGlass style={styles.dockFace}>
       <Pressable
-        ref={tourRef}
+        ref={(node) => {
+          plazaRef(node);
+          clubsRef(node);
+        }}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="독후감 쓰기"
+        accessibilityLabel={label}
+        accessibilityState={expanded === undefined ? undefined : { expanded }}
         style={({ pressed }) => [styles.dockPress, pressed && styles.pressed]}
       >
-        <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
-          <Path d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z" stroke={colors.textMuted} {...iconStroke} />
-          <Path d="m14.5 5.8 3.7 3.7" stroke={colors.textMuted} {...iconStroke} />
-        </Svg>
+        <Animated.View style={[styles.dockIcon, { opacity: pen }]}>
+          <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+            <Path d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z" {...stroke} />
+            <Path d="m14.5 5.8 3.7 3.7" {...stroke} />
+          </Svg>
+        </Animated.View>
+        <Animated.View style={[styles.dockIcon, { opacity: plus, transform: [{ rotate: turn }] }]}>
+          <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
+            <Path d="M12 4.5v15M4.5 12h15" {...stroke} />
+          </Svg>
+        </Animated.View>
       </Pressable>
     </NavGlass>
+  );
+}
+
+/**
+ * 클럽 메뉴의 유리 알약 하나 — 단추와 같은 유리에 회색 그림 + 이름(사용자 결정 2026-10-05, 시안 ① 유리 알약).
+ * range 는 메뉴가 열리는 진행(0~1) 중 이 알약이 나타나는 구간 — 아래 것이 먼저, 위 것이 조금 늦게 올라온다.
+ */
+function MenuPill({ label, icon, anim, range, onPress }: {
+  label: string;
+  icon: 'create' | 'join';
+  anim: Animated.Value;
+  range: [number, number];
+  onPress?: () => void;
+}) {
+  const { colors } = useTheme();
+  const stroke = { stroke: colors.textMuted, ...iconStroke };
+  const shown = anim.interpolate({ inputRange: range, outputRange: [0, 1], extrapolate: 'clamp' });
+  return (
+    <Animated.View
+      style={[
+        styles.pillShadow,
+        { opacity: shown, transform: [{ translateY: shown.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] },
+      ]}
+    >
+      <NavGlass style={styles.pill}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          style={({ pressed }) => [styles.pillPress, pressed && styles.pressed]}
+        >
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+            {icon === 'create' ? (
+              <>
+                <Circle cx={9} cy={8.5} r={2.75} {...stroke} />
+                <Path d="M3.5 18.5c.7-2.8 2.6-4.5 5.5-4.5s4.8 1.7 5.5 4.5" {...stroke} />
+                <Path d="M18.5 8v7M15 11.5h7" {...stroke} />
+              </>
+            ) : (
+              <>
+                <Circle cx={8} cy={12} r={3.5} {...stroke} />
+                <Path d="M11.5 12H20.5M17.5 12v3M20.5 12v3" {...stroke} />
+              </>
+            )}
+          </Svg>
+          <Text style={[typeScale.bodyStrong, styles.pillLabel, { color: colors.text }]}>{label}</Text>
+        </Pressable>
+      </NavGlass>
+    </Animated.View>
   );
 }
 
@@ -587,7 +756,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    zIndex: 21,
+    zIndex: 22,
     width: '100%',
     maxWidth: 460,
     alignSelf: 'center',
@@ -616,6 +785,41 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   dockPress: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // 연필·＋ 를 한자리에 겹쳐 두고 불투명도로 바꾼다.
+  dockIcon: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  // 메뉴 덮개 — 바(20)보다 위, 단추·메뉴(22)보다 아래. 하단 바까지 함께 가라앉는다.
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 21 },
+  // 메뉴 층 — 바와 같은 상자 폭, 알약은 오른쪽(단추 위)에 붙는다. 상자가 알약을 감싸야 안드로이드에서도 눌린다.
+  menuLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 22,
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+    alignItems: 'flex-end',
+    paddingRight: spacing.lg,
+    gap: spacing.sm,
+  },
+  pillShadow: {
+    borderRadius: 26,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    elevation: 14,
+  },
+  pill: { height: 52, borderRadius: 26, borderWidth: hairline, overflow: 'hidden' },
+  pillPress: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 2,
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.lg + spacing.xs,
+  },
+  pillLabel: { fontSize: 15 },
   anchor: { position: 'absolute', top: (NAV_BAR_HEIGHT - TAB_HEIGHT) / 2, height: TAB_HEIGHT },
   track: {
     height: TAB_HEIGHT,

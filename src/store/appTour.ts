@@ -40,8 +40,9 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
     section: 'clubs',
     nav: true,
     target: 'club-actions',
+    inHeader: true,
     title: '클럽',
-    body: '함께 읽을 사람들과 클럽을 꾸려요. 초대 코드로 참가하거나 직접 만들고, 모임을 잡아 모임 노트를 같이 써요.',
+    body: '함께 읽을 사람들과 클럽을 꾸려요. 오른쪽 아래 버튼을 누르면 초대 코드로 참가하거나 클럽을 만들 수 있어요. 모임을 잡아 모임 노트도 같이 써요.',
   },
   {
     section: 'messenger',

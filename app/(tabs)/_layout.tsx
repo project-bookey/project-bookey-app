@@ -173,6 +173,9 @@ export default function MainTabsLayout() {
           pagerOffset={pagerOffset}
           // 광장에서만 바 옆에 독후감 쓰기 단추가 선다 — 넘기는 손가락을 따라 바가 줄고 단추가 비친다.
           onCompose={() => router.push('/post/new')}
+          // 클럽에서는 같은 자리의 ＋ 단추가 만들기·참가 메뉴를 연다.
+          onCreateClub={() => router.push('/club/create')}
+          onJoinClub={() => router.push('/club/join')}
         />
       </View>
       {/* 둘러보기는 이 화면 안에 그린다 — 비추는 요소들과 같은 화면 기준으로 재야 네이티브에서도 구멍이 제자리에 뚫린다. */}
