@@ -156,7 +156,7 @@ export function HeaderWallet() {
                   />
                 </View>
               ) : (
-                <WalletBalances wallet={wallet.data} />
+                <WalletBalances wallet={wallet.data} freeInline />
               )}
               <View style={styles.foot}>
                 <TextLink label="지갑" onPress={() => go('/wallet')} accessibilityLabel="지갑 열기" />

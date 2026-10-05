@@ -15,50 +15,67 @@ const BALANCE_ICON = 18;
 /**
  * 보유 세 칸 — 책갈피 · 엽서('+n 무료') · 우표를 아이콘 + 숫자로(2026-10-05 사용자 결정).
  * 지갑 화면과 헤더 지갑 카드(HeaderWallet)가 같이 쓴다. 스크린 리더는 칸마다 원래 말로 읽는다.
+ * freeInline 이면 '+n 무료'를 엽서 숫자 아래가 아니라 바로 옆에 나란히 둔다(헤더 지갑 카드 — 사용자 결정 2026-10-05).
+ * 그땐 엽서 칸이 길어지므로 세 칸을 같은 폭으로 나누지 않고 내용만큼 잡아 양 끝으로 벌린다.
  */
-export function WalletBalances({ wallet, style }: { wallet: WalletView | undefined; style?: ViewStyle }) {
+export function WalletBalances({ wallet, style, freeInline = false }: {
+  wallet: WalletView | undefined;
+  style?: ViewStyle;
+  freeInline?: boolean;
+}) {
   const { colors } = useTheme();
   const bookmarks = wallet?.bookmarkBalance ?? 0;
   const postcards = wallet?.postcardBalance ?? 0;
   const freeToday = wallet?.freePostcardsLeftToday ?? 0;
   const stamps = wallet?.stampBalance ?? 0;
   return (
-    <View style={[styles.balances, style]}>
+    <View style={[styles.balances, freeInline && styles.spread, style]}>
       <Balance
         icon={<BookmarkIcon size={BALANCE_ICON} color={colors.textMuted} />}
         value={bookmarks}
+        inline={freeInline}
         accessibilityLabel={`책갈피 ${bookmarks}개`}
       />
       <Balance
         icon={<Mail size={BALANCE_ICON} color={colors.textMuted} {...iconStroke} />}
         value={postcards}
         sub={freePostcardsTag(freeToday)}
+        inline={freeInline}
         accessibilityLabel={`엽서 ${postcards}장, 오늘 무료 ${freeToday}장`}
       />
       <Balance
         icon={<StampIcon size={BALANCE_ICON} color={colors.textMuted} />}
         value={stamps}
+        inline={freeInline}
         accessibilityLabel={`우표 ${stamps}개`}
       />
     </View>
   );
 }
 
-/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 아래에 '+n 무료'(0장이면 없음). */
-function Balance({ icon, value, sub, accessibilityLabel }: {
+/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 '+n 무료'(0장이면 없음)를 아래(기본) 또는 숫자 옆(inline)에. */
+function Balance({ icon, value, sub, inline = false, accessibilityLabel }: {
   icon: ReactNode;
   value: number;
   sub?: string | null;
+  inline?: boolean;
   accessibilityLabel: string;
 }) {
   const { colors } = useTheme();
+  const subText = sub ? (
+    <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textFaint }]}>{sub}</Text>
+  ) : null;
   return (
-    <View accessible accessibilityLabel={accessibilityLabel} style={styles.balance}>
+    <View accessible accessibilityLabel={accessibilityLabel} style={inline ? null : styles.balance}>
       <View style={styles.balanceTop}>
         {icon}
-        <Text style={[styles.balanceValue, { color: colors.text }]}>{value}</Text>
+        {/* 숫자와 '+n 무료'는 글자 바닥선을 맞춘다 — 아이콘은 가운데 맞춤 그대로. */}
+        <View style={styles.valueLine}>
+          <Text style={[styles.balanceValue, { color: colors.text }]}>{value}</Text>
+          {inline ? subText : null}
+        </View>
       </View>
-      {sub ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{sub}</Text> : null}
+      {inline ? null : subText}
     </View>
   );
 }
@@ -66,8 +83,11 @@ function Balance({ icon, value, sub, accessibilityLabel }: {
 const styles = StyleSheet.create({
   // 보유 세 칸 — 간격으로만 가른다(구분선 없음).
   balances: { flexDirection: 'row', gap: spacing.sm },
+  spread: { justifyContent: 'space-between' },
   balance: { flex: 1, gap: 2 },
   // 아이콘과 숫자는 한 덩어리 — 광학 보정 6px.
   balanceTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // 숫자 옆 '+n 무료'는 숫자와 한 덩어리 — 광학 보정 4px.
+  valueLine: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   balanceValue: { ...typeScale.monoNumeral, fontSize: 20, lineHeight: 26 },
 });
