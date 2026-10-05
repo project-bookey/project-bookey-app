@@ -453,6 +453,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postcards/{postcardId}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 엽서 열기 — 받은 사람만, 처음 연 시각을 남긴다(멱등). 보낸 사람에게는 알리지 않는다 */
+        post: operations["open"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}/open": {
         parameters: {
             query?: never;
@@ -463,7 +480,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 알림 열람 처리 */
-        post: operations["open"];
+        post: operations["open_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1093,7 +1110,7 @@ export interface paths {
         get: operations["list_3"];
         put?: never;
         /** 채팅방 열기 — 맞팔로우인 상대만, 이미 있으면 그 방 */
-        post: operations["open_1"];
+        post: operations["open_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2291,6 +2308,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/postcards/{postcardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 엽서 한 장 — 보낸 사람 또는 받은 사람만 */
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        /** 엽서 삭제 — 보낸 사람 또는 받은 사람만 */
+        delete: operations["delete_7"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/postcards/sent": {
         parameters: {
             query?: never;
@@ -2388,7 +2423,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
-        delete: operations["delete_7"];
+        delete: operations["delete_8"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2419,11 +2454,11 @@ export interface paths {
             cookie?: never;
         };
         /** 문의 한 건과 답변 — 내 문의만 */
-        get: operations["get_1"];
+        get: operations["get_2"];
         put?: never;
         post?: never;
         /** 문의 삭제 — 답변 전후 상관없이 지운다 */
-        delete: operations["delete_8"];
+        delete: operations["delete_9"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3199,7 +3234,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 세션 삭제 */
-        delete: operations["delete_9"];
+        delete: operations["delete_10"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3216,7 +3251,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 댓글 삭제 — 본인만 */
-        delete: operations["delete_10"];
+        delete: operations["delete_11"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3233,23 +3268,6 @@ export interface paths {
         put?: never;
         post?: never;
         /** 댓글 삭제 — 본인만, 답글도 함께 지워진다 */
-        delete: operations["delete_11"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/postcards/{postcardId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 엽서 삭제 — 보낸 사람 또는 받은 사람만 */
         delete: operations["delete_12"];
         options?: never;
         head?: never;
@@ -3925,6 +3943,8 @@ export interface components {
             mine: boolean;
             /** Format: date-time */
             createdAt: string;
+            /** Format: date-time */
+            openedAt?: string;
         };
         ReplyPostcardRequest: {
             body: string;
@@ -6685,6 +6705,28 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                postcardId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostcardView"];
+                };
+            };
+        };
+    };
+    open_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
                 notificationId: number;
             };
             cookie?: never;
@@ -7850,7 +7892,7 @@ export interface operations {
             };
         };
     };
-    open_1: {
+    open_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -9892,6 +9934,48 @@ export interface operations {
             };
         };
     };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postcardId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostcardView"];
+                };
+            };
+        };
+    };
+    delete_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postcardId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     sent: {
         parameters: {
             query?: {
@@ -10030,7 +10114,7 @@ export interface operations {
             };
         };
     };
-    delete_7: {
+    delete_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -10070,7 +10154,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -10092,7 +10176,7 @@ export interface operations {
             };
         };
     };
-    delete_8: {
+    delete_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -11134,7 +11218,7 @@ export interface operations {
             };
         };
     };
-    delete_9: {
+    delete_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -11154,7 +11238,7 @@ export interface operations {
             };
         };
     };
-    delete_10: {
+    delete_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -11175,33 +11259,13 @@ export interface operations {
             };
         };
     };
-    delete_11: {
+    delete_12: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 postId: number;
                 commentId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    delete_12: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                postcardId: number;
             };
             cookie?: never;
         };

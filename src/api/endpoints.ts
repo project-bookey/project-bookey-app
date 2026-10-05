@@ -578,6 +578,11 @@ export const postcardApi = {
     api<Page<PostcardView>>("/api/v1/postcards/sent", {
       query: { page, size },
     }),
+  /** 엽서 한 장 — 보낸 사람이나 받은 사람만. openedAt 은 받은 사람에게만 온다(보낸 사람에게 읽음 표시는 없다). */
+  get: (postcardId: number) => api<PostcardView>(`/api/v1/postcards/${postcardId}`),
+  /** 받은 사람이 엽서를 연다 — 처음 연 시각만 남는다(멱등). 보낸 사람에게는 알리지 않는다. */
+  open: (postcardId: number) =>
+    api<PostcardView>(`/api/v1/postcards/${postcardId}/open`, { method: "POST" }),
   /** 답장 — 우표 1개 소모(동봉 엽서는 무료). 답장이 오가면 채팅을 열 수 있다. */
   reply: (postcardId: number, body: string) =>
     api<PostcardView>(`/api/v1/postcards/${postcardId}/reply`, {
