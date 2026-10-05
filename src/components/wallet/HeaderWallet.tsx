@@ -2,16 +2,19 @@ import { useQuery } from '@tanstack/react-query';
 import { useIsFocused, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { Mail, Plus } from 'lucide-react-native';
 
 import { walletApi } from '@/api/endpoints';
+import { BookmarkIcon } from '@/components/collage/BookmarkIcon';
 import { ICON_SIZE, IconButton } from '@/components/collage/IconButton';
+import { StampIcon } from '@/components/collage/StampIcon';
 import { WalletIcon } from '@/components/collage/WalletIcon';
+import { freePostcardsTag } from '@/components/social/PostcardWalletLine';
 import { useTourTarget } from '@/components/tour/TourTarget';
-import { Button, TextLink } from '@/components/ui';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
-
-import { WalletBalances } from './WalletBalances';
+import { TextLink } from '@/components/ui';
+import {
+  controlFace, controlHeight, hairline, iconSize, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme,
+} from '@/theme';
 
 /** 카드가 커지는·접히는 시간 — 클럽 ＋ 메뉴와 같다. */
 const OPEN_MS = 220;
@@ -20,14 +23,20 @@ const CLOSE_MS = 140;
 const CARD_WIDTH = 280;
 /** 다 펼치기 전 카드 크기 — 아이콘만 하던 것이 커지는 것처럼 보이게 작게 시작한다. */
 const START_SCALE = 0.3;
+/** 윗줄 책갈피 아이콘 · 아랫줄 엽서 · 우표 아이콘(px). */
+const MAIN_ICON = 20;
+const MINOR_ICON = 16;
+/** 책갈피 추가 단추(32pt)를 위아래로 넓혀 44pt 터치 상자로 — 공용 작은 버튼과 같다. */
+const ADD_HIT_SLOP = { top: (44 - controlHeight.sm) / 2, bottom: (44 - controlHeight.sm) / 2 };
 
 type Anchor = { x: number; y: number; width: number; height: number };
 type Destination = '/wallet' | '/bookmarks';
 
 /**
  * 헤더 오른쪽 위 지갑 — 아이콘 하나로 두고, 누르면 그 자리에서 카드가 커지며 책갈피 · 엽서 · 우표를 보여 준다
- * (2026-10-05 사용자 결정 A안 — 책갈피 칩을 대신한다). 카드에는 제목 없이 세 칸과
- * '지갑 ›' · 초록 '책갈피 추가'만 둔다(사용자 결정 — 덮개 위 카드라 주요 버튼 하나를 초록으로).
+ * (2026-10-05 사용자 결정 A안 — 책갈피 칩을 대신한다). 카드 안은 배치 시안 C안(사용자 결정): 윗줄에 책갈피 숫자와
+ * 그 바로 옆 초록 '＋책갈피' 단추(글자 없이 아이콘 둘 — 무엇을 더하는지 가까이 둬서 읽히게), 아랫줄에 엽서('+n 무료'를 숫자 옆에)
+ * · 우표와 그 끝의 '지갑 ›'. 제목('내가 가진 것')은 두지 않는다.
  * 화면 전체를 덮어야 하므로(하단 바까지 클럽 ＋ 메뉴와 같은 회색 덮개) RN Modal 에 그리고, 아이콘 자리는 열 때
  * measureInWindow 로 잰다. 덮개 위에 같은 자리에 아이콘을 다시 그려 '여기서 열렸다'가 보이고, 그 아이콘·덮개·뒤로 가기로 닫힌다.
  */
@@ -38,6 +47,10 @@ export function HeaderWallet() {
   const isFocused = useIsFocused();
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
   const bookmarks = wallet.data?.bookmarkBalance ?? 0;
+  const postcards = wallet.data?.postcardBalance ?? 0;
+  const freeToday = wallet.data?.freePostcardsLeftToday ?? 0;
+  const free = freePostcardsTag(freeToday);
+  const stamps = wallet.data?.stampBalance ?? 0;
 
   const tourRef = useTourTarget('header-wallet');
   const anchorRef = useRef<View | null>(null);
@@ -145,28 +158,79 @@ export function HeaderWallet() {
               ]}
             >
               {wallet.isError && !wallet.data ? (
-                <View style={styles.errorRow}>
-                  <Text style={[typeScale.body, { color: colors.textMuted }]}>지갑을 불러오지 못했어요.</Text>
-                  <TextLink
-                    label="다시 시도"
-                    kind="action"
-                    onPress={() => wallet.refetch()}
-                    accessibilityLabel="지갑 다시 불러오기"
-                    style={styles.retry}
-                  />
-                </View>
+                <>
+                  <View style={styles.errorRow}>
+                    <Text style={[typeScale.body, { color: colors.textMuted }]}>지갑을 불러오지 못했어요.</Text>
+                    <TextLink
+                      label="다시 시도"
+                      kind="action"
+                      onPress={() => wallet.refetch()}
+                      accessibilityLabel="지갑 다시 불러오기"
+                      style={styles.retry}
+                    />
+                  </View>
+                  <View style={[styles.row, styles.secondRow]}>
+                    <TextLink label="지갑" onPress={() => go('/wallet')} accessibilityLabel="지갑 열기" />
+                    <AddBookmarks onPress={() => go('/bookmarks')} />
+                  </View>
+                </>
               ) : (
-                <WalletBalances wallet={wallet.data} freeInline />
+                <>
+                  <View style={styles.row}>
+                    <View accessible accessibilityLabel={`책갈피 ${bookmarks}개`} style={styles.item}>
+                      <BookmarkIcon size={MAIN_ICON} color={colors.textMuted} />
+                      <Text style={[styles.mainValue, { color: colors.text }]}>{bookmarks}</Text>
+                    </View>
+                    <AddBookmarks onPress={() => go('/bookmarks')} />
+                  </View>
+                  <View style={[styles.row, styles.secondRow]}>
+                    <View style={styles.minors}>
+                      <View
+                        accessible
+                        accessibilityLabel={`엽서 ${postcards}장, 오늘 무료 ${freeToday}장`}
+                        style={styles.item}
+                      >
+                        <Mail size={MINOR_ICON} color={colors.textMuted} {...iconStroke} />
+                        {/* 숫자와 '+n 무료'는 글자 바닥선을 맞춘다. */}
+                        <View style={styles.valueLine}>
+                          <Text style={[styles.minorValue, { color: colors.text }]}>{postcards}</Text>
+                          {free ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{free}</Text> : null}
+                        </View>
+                      </View>
+                      <View accessible accessibilityLabel={`우표 ${stamps}개`} style={styles.item}>
+                        <StampIcon size={MINOR_ICON} color={colors.textMuted} />
+                        <Text style={[styles.minorValue, { color: colors.text }]}>{stamps}</Text>
+                      </View>
+                    </View>
+                    <TextLink label="지갑" onPress={() => go('/wallet')} accessibilityLabel="지갑 열기" />
+                  </View>
+                </>
               )}
-              <View style={styles.foot}>
-                <TextLink label="지갑" onPress={() => go('/wallet')} accessibilityLabel="지갑 열기" />
-                <Button label="책갈피 추가" icon={Plus} size="sm" onPress={() => go('/bookmarks')} />
-              </View>
             </Animated.View>
           </View>
         ) : null}
       </Modal>
     </>
+  );
+}
+
+/**
+ * 책갈피 추가 — 초록 작은 단추에 ＋와 책갈피 아이콘만(사용자 결정 2026-10-05, 글자 없이). 공용 Button 은 아이콘을 하나만
+ * 받아서 같은 겉모습(32pt · control 모서리 · 평평한 초록 면)으로 직접 그린다. 스크린 리더는 '책갈피 추가'로 읽는다.
+ */
+function AddBookmarks({ onPress }: { onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={ADD_HIT_SLOP}
+      accessibilityRole="button"
+      accessibilityLabel="책갈피 추가"
+      style={({ pressed }) => [styles.add, controlFace(colors.accent), pressed && pressedStyle]}
+    >
+      <Plus size={14} color={colors.onAccent} {...iconStroke} />
+      <BookmarkIcon size={iconSize.inline} color={colors.onAccent} />
+    </Pressable>
   );
 }
 
@@ -178,11 +242,28 @@ const styles = StyleSheet.create({
     position: 'absolute',
     borderWidth: hairline,
     borderRadius: radius.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  secondRow: { marginTop: spacing.sm },
+  // 아랫줄 엽서 · 우표 — 덩어리 사이는 간격으로만 가른다.
+  minors: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  // 아이콘과 숫자는 한 덩어리 — 광학 보정 6px.
+  item: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // 숫자 옆 '+n 무료'는 숫자와 한 덩어리 — 광학 보정 4px.
+  valueLine: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+  mainValue: { ...typeScale.monoNumeral, fontSize: 24, lineHeight: 30 },
+  minorValue: { ...typeScale.monoNumeral, fontSize: 17, lineHeight: 22 },
+  // 공용 작은 버튼(buttonSm)과 같은 겉모습 — ＋와 책갈피는 한 덩어리로 붙인다(광학 보정 2px).
+  add: {
+    minHeight: controlHeight.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.control,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   errorRow: { gap: spacing.xs },
   retry: { alignSelf: 'flex-start' },
-  foot: { marginTop: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
