@@ -15,6 +15,7 @@ const BALANCE_ICON = 18;
 /**
  * 보유 세 칸 — 책갈피 · 엽서('+n 무료') · 우표를 아이콘 + 숫자로(2026-10-05 사용자 결정).
  * 지갑 화면이 쓴다(헤더 지갑 카드는 책갈피를 윗줄에 따로 두는 배치라 직접 그린다). 스크린 리더는 칸마다 원래 말로 읽는다.
+ * '+n 무료'는 헤더 지갑 카드처럼 엽서 숫자 바로 옆에 나란히 둔다(사용자 결정 2026-10-05).
  */
 export function WalletBalances({ wallet, style }: { wallet: WalletView | undefined; style?: ViewStyle }) {
   const { colors } = useTheme();
@@ -44,7 +45,7 @@ export function WalletBalances({ wallet, style }: { wallet: WalletView | undefin
   );
 }
 
-/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 아래에 '+n 무료'(0장이면 없음). */
+/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 숫자 옆에 '+n 무료'(0장이면 없음). */
 function Balance({ icon, value, sub, accessibilityLabel }: {
   icon: ReactNode;
   value: number;
@@ -54,11 +55,12 @@ function Balance({ icon, value, sub, accessibilityLabel }: {
   const { colors } = useTheme();
   return (
     <View accessible accessibilityLabel={accessibilityLabel} style={styles.balance}>
-      <View style={styles.balanceTop}>
-        {icon}
+      {icon}
+      {/* 숫자와 '+n 무료'는 글자 바닥선을 맞춘다. */}
+      <View style={styles.valueLine}>
         <Text style={[styles.balanceValue, { color: colors.text }]}>{value}</Text>
+        {sub ? <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textFaint }]}>{sub}</Text> : null}
       </View>
-      {sub ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{sub}</Text> : null}
     </View>
   );
 }
@@ -66,8 +68,10 @@ function Balance({ icon, value, sub, accessibilityLabel }: {
 const styles = StyleSheet.create({
   // 보유 세 칸 — 간격으로만 가른다(구분선 없음).
   balances: { flexDirection: 'row', gap: spacing.sm },
-  balance: { flex: 1, gap: 2 },
+  // 칸은 내용 폭에 남는 자리를 똑같이 더한다 — '+n 무료'가 붙어 긴 엽서 칸도 옆 칸을 밀지 않는다.
   // 아이콘과 숫자는 한 덩어리 — 광학 보정 6px.
-  balanceTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  balance: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // 숫자 옆 '+n 무료'는 숫자와 한 덩어리 — 광학 보정 4px.
+  valueLine: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   balanceValue: { ...typeScale.monoNumeral, fontSize: 20, lineHeight: 26 },
 });
