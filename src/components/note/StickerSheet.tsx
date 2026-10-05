@@ -15,13 +15,14 @@ import { BookStickerFace } from './elements/BookStickerFace';
 import { BOOK_STICKER_RATIO } from './noteDoc';
 import { EMOJI_STICKERS, STICKER_PACK } from './stickerPack';
 
-type Tab = 'bookey' | 'emoji' | 'pack' | 'book';
+type Tab = 'bookey' | 'emoji' | 'pack' | 'book' | 'card';
 
 const TABS: { value: Tab; label: string }[] = [
   { value: 'bookey', label: '이모티콘' },
   { value: 'emoji', label: '이모지' },
   { value: 'pack', label: '그림' },
-  { value: 'book', label: '책·카드' },
+  { value: 'book', label: '책' },
+  { value: 'card', label: '기록 카드' },
 ];
 
 /** 카드 미리보기 한 변 — 시트 격자에서 두 장씩 놓인다. */
@@ -40,9 +41,9 @@ export type StickerBook =
   | { state: 'ready'; book: BookSummary; label: string };
 
 /**
- * 스티커 고르기 — Bookey 이모티콘(채팅과 같은 묶음) / 이모지 24종 / 그림 팩 12종 /
- * 책·카드(모임의 책 표지 + 내 함께 독서 기록 카드: 모든 클럽, 최근 50장).
- * 한 번 누르면 바로 붙이고 닫힌다. 카드 목록은 책·카드 탭을 열 때만 받는다.
+ * 스티커 고르기 — Bookey 이모티콘(채팅과 같은 묶음) / 이모지 24종 / 그림 팩 12종 / 모임의 책 표지 /
+ * 내 함께 독서 기록 카드(모든 클럽, 최근 50장). 탭 다섯 칸은 사용자 결정(2026-10-05)이다.
+ * 한 번 누르면 바로 붙이고 닫힌다. 카드 목록은 카드 탭을 열 때만 받는다.
  */
 export function StickerSheet({ visible, book, onPick, onPickBook, onPickCard, onClose }: {
   visible: boolean;
@@ -59,7 +60,7 @@ export function StickerSheet({ visible, book, onPick, onPickBook, onPickCard, on
   const cards = useQuery({
     queryKey: ['activityCards', 'mine'],
     queryFn: clubCommunityApi.myActivityCards,
-    enabled: visible && tab === 'book',
+    enabled: visible && tab === 'card',
   });
 
   let body: ReactNode;
@@ -105,16 +106,18 @@ export function StickerSheet({ visible, book, onPick, onPickBook, onPickCard, on
       ));
       break;
     case 'book':
+      // 머리말이 어느 쪽 책(이 모임 · 클럽이 지금 읽는)인지 알려 준다.
       body = (
         <>
-          <Section title={book.state === 'ready' ? book.label : '이 모임의 책'}>
-            <BookPick book={book} onPick={onPickBook} />
-          </Section>
-          <Section title="내 기록 카드">
-            <CardPicks cards={cards} onPick={onPickCard} />
-          </Section>
+          <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>
+            {book.state === 'ready' ? book.label : '이 모임의 책'}
+          </Text>
+          <BookPick book={book} onPick={onPickBook} />
         </>
       );
+      break;
+    case 'card':
+      body = <CardPicks cards={cards} onPick={onPickCard} />;
       break;
   }
 
@@ -124,23 +127,12 @@ export function StickerSheet({ visible, book, onPick, onPickBook, onPickCard, on
       {tab === 'bookey' ? <BookeyPackTabs value={pack.id} onChange={setPackId} /> : null}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={tab === 'book' ? styles.sections : styles.grid}
+        contentContainerStyle={tab === 'book' ? styles.book : styles.grid}
         keyboardShouldPersistTaps="handled"
       >
         {body}
       </ScrollView>
     </NoteSheet>
-  );
-}
-
-/** 책·카드 탭의 묶음 하나 — 머리말 바로 밑에 붙는 격자. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.section}>
-      <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>{title}</Text>
-      <View style={styles.grid}>{children}</View>
-    </View>
   );
 }
 
@@ -223,9 +215,8 @@ const styles = StyleSheet.create({
   cardNote: { width: '100%', paddingVertical: spacing.md, alignItems: 'flex-start', gap: spacing.xs },
   scroll: { maxHeight: 320 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  // 머리말↔격자는 붙이고(xs), 묶음 사이는 띄운다(lg).
-  sections: { gap: spacing.lg },
-  section: { gap: spacing.xs },
+  // 머리말 바로 밑에 표지 — 표지만 눌리게 왼쪽에 붙인다.
+  book: { gap: spacing.xs, alignItems: 'flex-start' },
   // 채팅 이모티콘 칸과 같은 크기.
   bookeyCell: {
     width: 72,
