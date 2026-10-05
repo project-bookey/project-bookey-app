@@ -2,7 +2,7 @@
  * bookey 디자인 토큰 — 모드(다크/라이트) 무관 값.
  *
  * 방향: "콜라주 책상" — 어두운 책상 위에 책·메모·스티키 노트가 흩어진 감각.
- * 본문·라벨·숫자는 IBM Plex Sans KR, 표제·인용은 세리프(마루 부리)로 위계를 준다.
+ * 모든 텍스트는 고운바탕을 사용하고 크기와 굵기로 위계를 준다.
  * 형태는 오려 낸 종이처럼 네모.
  * 설계 문서: docs/superpowers/specs/2026-09-01-collage-redesign-design.md
  */
@@ -29,29 +29,25 @@ export const radius = {
 } as const;
 
 /**
- * 브랜드 서체 — IBM Plex Sans KR (assets/fonts, 앱 시작 시 expo-font 로 로드).
- * 2026-10-04 Pretendard 에서 교체 — 요즘 앱·AI 생성 화면에서 너무 흔해서. 숫자 폭이 모두 같아(tabular)
- * 타이머처럼 매초 바뀌는 숫자도 흔들리지 않는다.
+ * 브랜드 서체 — 고운바탕 (assets/fonts, 앱 시작 시 expo-font 로 로드).
  * 웨이트별 파일을 별도 패밀리로 등록하므로, 스타일에는 fontFamily 만 쓰고
  * fontWeight 를 함께 지정하지 않는다 (iOS 가 다른 웨이트를 찾다 시스템 폰트로
  * 떨어지는 것을 막기 위함).
  */
 export const sans = {
-  regular: 'IBMPlexSansKR-Regular', // 400
-  semiBold: 'IBMPlexSansKR-SemiBold', // 600
-  bold: 'IBMPlexSansKR-Bold', // 700
-  extraBold: 'IBMPlexSansKR-Bold', // 이 서체는 700 이 가장 굵다 — 위계는 크기로 준다
+  regular: 'GowunBatang-Regular', // 400
+  semiBold: 'GowunBatang-Bold', // 고운바탕은 400/700 두 굵기를 제공한다
+  bold: 'GowunBatang-Bold', // 700
+  extraBold: 'GowunBatang-Bold', // 가장 굵은 700을 사용하고 위계는 크기로 보완한다
 } as const;
 
 /**
- * 세리프(마루 부리) — 표제·섹션 헤딩·인용문 전용. 2026-10-04 나눔명조에서 교체.
- * Google Fonts 에 없어 파일(assets/fonts)로 넣는다. 키 이름은 쓰임새(본문/표제/히어로)를 따르고
- * 실제 굵기는 한 단계씩 가볍다 — 서체 시안(2026-10-04)에서 고른 짝 그대로.
+ * 기존 스타일 API 호환을 위해 sans/serif 토큰 이름은 유지하되 모두 고운바탕을 가리킨다.
  */
 export const serif = {
-  regular: 'MaruBuri-Regular', // 400
-  bold: 'MaruBuri-SemiBold', // 600
-  extraBold: 'MaruBuri-Bold', // 700
+  regular: 'GowunBatang-Regular', // 400
+  bold: 'GowunBatang-Bold', // 700
+  extraBold: 'GowunBatang-Bold', // 700
 } as const;
 
 /**
@@ -65,8 +61,8 @@ export const mono = {
   semiBold: sans.bold,
 } as const;
 
-/** 노트 텍스트에서 사용자가 고르는 '모노' 글꼴 — 앱 화면(라벨·숫자)에는 쓰지 않는다. */
-export const noteMono = 'IBMPlexMono_400Regular';
+/** 노트의 기존 '모노' 옵션도 전역 서체 통일을 위해 고운바탕으로 표시한다. */
+export const noteMono = 'GowunBatang-Regular';
 
 /** 타입 스케일. 위계는 크기 + 웨이트로 만든다. */
 export const typeScale = {

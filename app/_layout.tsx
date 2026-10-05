@@ -1,4 +1,3 @@
-import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -26,14 +25,8 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const { mode } = useTheme();
   const [fontsLoaded] = useFonts({
-    'IBMPlexSansKR-Regular': require('../assets/fonts/IBMPlexSansKR-Regular.ttf'),
-    'IBMPlexSansKR-SemiBold': require('../assets/fonts/IBMPlexSansKR-SemiBold.ttf'),
-    'IBMPlexSansKR-Bold': require('../assets/fonts/IBMPlexSansKR-Bold.ttf'),
-    'MaruBuri-Regular': require('../assets/fonts/MaruBuri-Regular.ttf'),
-    'MaruBuri-SemiBold': require('../assets/fonts/MaruBuri-SemiBold.ttf'),
-    'MaruBuri-Bold': require('../assets/fonts/MaruBuri-Bold.ttf'),
-    // 노트 텍스트의 '모노' 글꼴 전용 — 앱 라벨·숫자는 본문 서체를 쓴다(tokens.ts noteMono).
-    IBMPlexMono_400Regular,
+    'GowunBatang-Regular': require('../assets/fonts/GowunBatang-Regular.ttf'),
+    'GowunBatang-Bold': require('../assets/fonts/GowunBatang-Bold.ttf'),
   });
 
   useEffect(() => {
