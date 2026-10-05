@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { Plus } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { chatApi, libraryApi, postApi, profileApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { Post, ReadingRecord } from '@/api/types';
 import {
-  MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
+  ICON_SIZE, MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/Avatar';
 import { KeyboardScroll } from '@/components/keyboard';
@@ -352,20 +353,20 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               ))}
             </View>
           ) : shelf.length === 0 && mine ? (
+            // 홈 '읽고 싶은 책'의 빈 행과 같은 모양 — 회색 면 + 아이콘 칸 옆에 안내 두 줄(2026-10-05 사용자 결정).
             <View style={styles.shelfList}>
               <Pressable
                 onPress={() => router.navigate('/book-search')}
                 accessibilityRole="button"
                 accessibilityLabel="책 추가"
+                style={({ pressed }) => [styles.shelfAdd, controlFace(colors.tonal), pressed && pressedStyle]}
               >
-                <View style={[styles.shelfGhost, { borderColor: colors.control }]}>
-                  <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-                  <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
-                </View>
+                <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
               </Pressable>
-              {[0, 1].map((i) => (
-                <View key={i} style={[styles.shelfGhost, { borderColor: colors.lineStrong }]} />
-              ))}
+              <View style={styles.shelfAddCopy}>
+                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>서재에 담긴 책이 아직 없어요</Text>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>마음에 드는 책을 찾아 담아 보세요</Text>
+              </View>
             </View>
           ) : shelf.length === 0 ? (
             <Text style={[typeScale.caption, styles.shelfEmpty, { color: colors.textFaint }]}>
@@ -956,16 +957,14 @@ const styles = StyleSheet.create({
     height: Math.round(SHELF_COVER_W * 1.5),
     borderRadius: radius.sm,
   },
-  shelfGhost: {
+  shelfAdd: {
     width: SHELF_COVER_W,
     height: Math.round(SHELF_COVER_W * 1.5),
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderStyle: 'dashed',
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
   },
+  shelfAddCopy: { flex: 1, minWidth: 0, alignSelf: 'center', gap: spacing.xs },
 
   statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
   statCell: { flex: 1, gap: 3 },

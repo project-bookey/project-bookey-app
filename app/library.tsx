@@ -4,13 +4,16 @@ import { useState } from 'react';
 import {
   FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
+import { Plus } from 'lucide-react-native';
 
 import { libraryApi } from '@/api/endpoints';
 import type { ReadingRecord, ReadingStatus } from '@/api/types';
-import { Chip, PaperScreen, SubHeader } from '@/components/collage';
+import { Chip, ICON_SIZE, PaperScreen, SubHeader } from '@/components/collage';
 import { Button, EmptyState } from '@/components/ui';
 import type { ColorTokens, ThemeMode } from '@/theme';
-import { darkColors, hairline, layout, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import {
+  controlFace, darkColors, hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme,
+} from '@/theme';
 import { coverShadow } from '@/theme/palette';
 import { serif } from '@/theme/tokens';
 
@@ -193,13 +196,17 @@ function GridTile({ record, colors, mode, onPress }: {
   );
 }
 
-/** 첫 타일 — 점선 테두리 '+ 책 추가'. */
+/** 첫 타일 — 회색 면에 + 아이콘만(홈 '책 추가' 칸과 같은 모양, 2026-10-05 사용자 결정). 이름은 접근성 라벨로만. */
 function AddTile({ colors, onPress }: { colors: ColorTokens; onPress: () => void }) {
   return (
-    <Pressable style={styles.cell} onPress={onPress} accessibilityRole="button" accessibilityLabel="책 추가">
-      <View style={[styles.cover, styles.addTile, { borderColor: colors.control }]}>
-        <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-        <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>책 추가</Text>
+    <Pressable
+      style={({ pressed }) => [styles.cell, pressed && pressedStyle]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="책 추가"
+    >
+      <View style={[styles.cover, styles.addTile, controlFace(colors.tonal)]}>
+        <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
       </View>
     </Pressable>
   );
@@ -276,10 +283,8 @@ const styles = StyleSheet.create({
   track: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3 },
   fill: { height: 3 },
   addTile: {
-    borderWidth: hairline,
-    borderStyle: 'dashed',
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
   },
 });
