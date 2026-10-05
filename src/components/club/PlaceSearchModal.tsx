@@ -18,8 +18,9 @@ export type PlacePick = {
   /** 주소로 찾은 곳은 건물 이름이 없을 수 있다(빈 문자열) — 폼이 기본 이름을 넣는다. */
   placeName: string;
   address: string;
-  latitude: number;
-  longitude: number;
+  /** 좌표를 끝내 못 찾은 주소는 비어 있다 — 폼은 지도 없이 장소명·주소만 채운다. */
+  latitude?: number;
+  longitude?: number;
   mapUrl?: string;
 };
 
@@ -64,6 +65,8 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
   const [keyword, setKeyword] = useState('');
   /** 포커스 표시는 입력창(웹 기본 outline) 대신 검색바 테두리로 그린다. */
   const [focused, setFocused] = useState(false);
+  /** 좌표 없는 주소를 골라 위치를 찾는 중인 줄 — 그동안 다른 줄은 누르지 않는다. */
+  const [locating, setLocating] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setKeyword(keywordOf(input)), PLACE_DEBOUNCE_MS);
@@ -114,8 +117,8 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
     value: {
       placeName: a.buildingName,
       address: a.roadAddress || a.address,
-      latitude: a.latitude,
-      longitude: a.longitude,
+      latitude: a.latitude ?? undefined,
+      longitude: a.longitude ?? undefined,
     },
   }));
   // 주소를 적는 중이면 주소가 먼저 — 같은 주소의 가게 이름들에 묻히지 않게. 가게 이름을 적으면 가게가 먼저.
@@ -128,12 +131,24 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
     if (index === 0 || rows[index - 1].kind !== rows[index].kind) return rows[index].kind === 'address' ? '주소' : '장소';
     return null;
   };
-  const pins = rows.map((row) => ({
-    key: row.key,
-    latitude: row.value.latitude,
-    longitude: row.value.longitude,
-    label: String(row.no),
-  }));
+  // 좌표가 있는 결과만 찍는다 — 주소 검색이 좌표를 못 붙인 줄은 목록에만 있다.
+  const pins = rows.flatMap((row) => row.value.latitude != null && row.value.longitude != null
+    ? [{ key: row.key, kind: row.kind, latitude: row.value.latitude, longitude: row.value.longitude, label: String(row.no) }]
+    : []);
+  const addressPins = pins.filter((pin) => pin.kind === 'address');
+
+  // 좌표 없는 주소를 고르면 그 주소 하나만 위치를 물어 채운다 — 못 찾아도 장소명·주소는 고른다.
+  const pick = async (row: Row) => {
+    if (locating) return;
+    if (row.value.latitude != null) {
+      onSelect(row.value);
+      return;
+    }
+    setLocating(row.key);
+    const at = await clubCommunityApi.geocodePlace(clubId, row.value.address).catch(() => null);
+    setLocating(null);
+    onSelect(at ? { ...row.value, latitude: at.latitude, longitude: at.longitude } : row.value);
+  };
 
   // 결과가 없을 때 — 검색 전 안내 / 오류(다시 시도) / 빈 결과.
   const empty = () => {
@@ -206,7 +221,7 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
                 <PinMap
                   height={180}
                   pins={pins}
-                  fitTo={addressFirst ? pins.slice(0, addressRows.length) : undefined}
+                  fitTo={addressFirst && addressPins.length > 0 ? addressPins : undefined}
                 />
               </View>
             ) : null
@@ -220,9 +235,11 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
                 </Text>
               ) : null}
               <Pressable
-                onPress={() => onSelect(item.value)}
+                onPress={() => pick(item)}
+                disabled={locating != null}
                 accessibilityRole="button"
                 accessibilityLabel={`${item.title} 선택`}
+                accessibilityState={{ busy: locating === item.key }}
                 style={({ pressed }) => [styles.row, { borderBottomColor: colors.line }, pressed ? pressedStyle : null]}
               >
                 <Text style={[styles.no, { color: colors.textMuted }]}>{item.no}</Text>
@@ -231,6 +248,9 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
                   {/* 건물 이름 없이 찾은 주소는 제목이 곧 주소라 아랫줄을 되풀이하지 않는다. */}
                   {item.sub && item.sub !== item.title ? (
                     <Text numberOfLines={2} style={[typeScale.caption, { color: colors.textMuted }]}>{item.sub}</Text>
+                  ) : null}
+                  {locating === item.key ? (
+                    <Text style={[typeScale.caption, { color: colors.textMuted }]}>위치를 찾고 있어요</Text>
                   ) : null}
                 </View>
               </Pressable>

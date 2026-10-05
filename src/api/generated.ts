@@ -5142,9 +5142,9 @@ export interface components {
             buildingName?: string;
             zonecode?: string;
             /** Format: double */
-            latitude: number;
+            latitude?: number;
             /** Format: double */
-            longitude: number;
+            longitude?: number;
         };
         PageResponseMeetingNoteView: {
             content?: components["schemas"]["MeetingNoteView"][];
