@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { chatApi, walletApi } from '@/api/endpoints';
 import { BrandWordmark } from '@/components/BrandWordmark';
+import { BookmarkIcon } from '@/components/collage/BookmarkIcon';
 import { ICON_SIZE, IconButton } from '@/components/collage/IconButton';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
@@ -79,7 +80,7 @@ function BookmarkBalance() {
         pressed && styles.pressed,
       ]}
     >
-      <BookmarkGlyph color={colors.textMuted} />
+      <BookmarkIcon size={14} color={colors.textMuted} />
       <Text
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -108,14 +109,6 @@ function ChatGlyph({ color }: { color: string }) {
 const BADGE_HIT_SLOP = { top: 6, bottom: 6 };
 
 /** 책갈피 — 이모지는 플랫폼마다 그림이 달라 선으로 직접 그린다. 끝은 각지게. */
-function BookmarkGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 3h12v18l-6-4.5L6 21z" stroke={color} {...iconStroke} />
-    </Svg>
-  );
-}
-
 const styles = StyleSheet.create({
   wrap: {
     minHeight: 62,

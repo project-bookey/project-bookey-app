@@ -1,12 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ArrowRight, Mail } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { walletApi } from '@/api/endpoints';
-import { PaperScreen, SubHeader } from '@/components/collage';
-import { Button, Card, Eyebrow, KeyValue, Rule, Tag, TextLink } from '@/components/ui';
-import { layout, spacing, typeScale, useTheme } from '@/theme';
+import { BookmarkIcon, PaperScreen, StampIcon, SubHeader } from '@/components/collage';
+import { Button, Card, Eyebrow, Tag, TextLink } from '@/components/ui';
+import { iconStroke, layout, spacing, typeScale, useTheme } from '@/theme';
+
+/** 보유 칸 아이콘(px). */
+const BALANCE_ICON = 18;
+/** 교환 줄 아이콘(px). */
+const EXCHANGE_ICON = 16;
 
 /**
  * 지갑 — 프로필 상단 '지갑' 메모를 누르면 들어온다.
@@ -14,6 +21,8 @@ import { layout, spacing, typeScale, useTheme } from '@/theme';
  * 보유(책갈피·엽서·우표) · 교환 · 구독을 한 화면에 모은다. 예전에는 프로필 소셜 구역의 지갑 카드가
  * 맡던 몫이라 호출하는 API·캐시 키(['wallet'])는 그대로다. 책갈피 구매는 /bookmarks,
  * 구독 시작·안내는 /subscription 이 그대로 맡고 여기서는 문만 연다.
+ * 책갈피·엽서·우표는 이름 대신 아이콘 + 숫자로 쓴다(2026-10-05 사용자 결정) — 헤더 책갈피 칩과 같은 그림이고,
+ * 교환은 '책갈피 1 → 엽서 1'을 아이콘으로 그린 줄에 '교환' 버튼을 둔다. 스크린 리더는 원래 말로 읽는다.
  */
 export default function WalletScreen() {
   const router = useRouter();
@@ -57,15 +66,23 @@ export default function WalletScreen() {
                 />
               </View>
             ) : (
-              <View style={{ marginTop: spacing.sm }}>
-                <KeyValue label="책갈피" value={`${bookmarks}개`} />
-                <Rule />
-                <KeyValue
-                  label="엽서"
-                  value={`${w?.postcardBalance ?? 0}장 · 오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`}
+              <View style={styles.balances}>
+                <Balance
+                  icon={<BookmarkIcon size={BALANCE_ICON} color={colors.textMuted} />}
+                  value={bookmarks}
+                  accessibilityLabel={`책갈피 ${bookmarks}개`}
                 />
-                <Rule />
-                <KeyValue label="우표" value={`${w?.stampBalance ?? 0}개`} />
+                <Balance
+                  icon={<Mail size={BALANCE_ICON} color={colors.textMuted} {...iconStroke} />}
+                  value={w?.postcardBalance ?? 0}
+                  sub={`오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`}
+                  accessibilityLabel={`엽서 ${w?.postcardBalance ?? 0}장, 오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`}
+                />
+                <Balance
+                  icon={<StampIcon size={BALANCE_ICON} color={colors.textMuted} />}
+                  value={w?.stampBalance ?? 0}
+                  accessibilityLabel={`우표 ${w?.stampBalance ?? 0}개`}
+                />
               </View>
             )}
             <View style={styles.actions}>
@@ -76,24 +93,24 @@ export default function WalletScreen() {
           {/* 교환 — 책갈피가 기축, 엽서(1)·우표(2)로 바꾼다. 잔액이 모자라면 버튼을 잠근다. */}
           <Card>
             <Eyebrow>교환</Eyebrow>
-            <View style={styles.actions}>
-              <Button
-                label="엽서로 교환 (책갈피 1)"
-                variant="outline"
-                size="sm"
+            <View style={styles.exchanges}>
+              <ExchangeRow
+                cost={1}
+                to={<Mail size={EXCHANGE_ICON} color={colors.textMuted} {...iconStroke} />}
+                accessibilityLabel="책갈피 1개를 엽서 1장으로 교환"
                 onPress={() => exchange.mutate('POSTCARD')}
                 disabled={exchange.isPending || bookmarks < 1}
               />
-              <Button
-                label="우표로 교환 (책갈피 2)"
-                variant="outline"
-                size="sm"
+              <ExchangeRow
+                cost={2}
+                to={<StampIcon size={EXCHANGE_ICON} color={colors.textMuted} />}
+                accessibilityLabel="책갈피 2개를 우표 1개로 교환"
                 onPress={() => exchange.mutate('STAMP')}
                 disabled={exchange.isPending || bookmarks < 2}
               />
             </View>
             <Text style={[typeScale.caption, styles.hint, { color: colors.textFaint }]}>
-              책갈피 1개 → 엽서 1장 · 책갈피 2개 → 우표 1개 · 바꾼 책갈피는 환불되지 않아요
+              바꾼 책갈피는 환불되지 않아요
             </Text>
             {exchangeError ? (
               <Text style={[typeScale.caption, styles.hint, { color: colors.danger }]} accessibilityRole="alert">
@@ -123,12 +140,76 @@ export default function WalletScreen() {
   );
 }
 
+/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 아래에 오늘 무료 장수. */
+function Balance({ icon, value, sub, accessibilityLabel }: {
+  icon: ReactNode;
+  value: number;
+  sub?: string;
+  accessibilityLabel: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View accessible accessibilityLabel={accessibilityLabel} style={styles.balance}>
+      <View style={styles.balanceTop}>
+        {icon}
+        <Text style={[styles.balanceValue, { color: colors.text }]}>{value}</Text>
+      </View>
+      {sub ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{sub}</Text> : null}
+    </View>
+  );
+}
+
+/** 교환 한 줄 — 왼쪽은 '책갈피 n → 받는 것 1'을 아이콘으로, 오른쪽은 '교환' 버튼. */
+function ExchangeRow({ cost, to, accessibilityLabel, onPress, disabled }: {
+  cost: number;
+  to: ReactNode;
+  accessibilityLabel: string;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.exchangeRow}>
+      <View accessible accessibilityLabel={accessibilityLabel} style={styles.formula}>
+        <View style={styles.formulaItem}>
+          <BookmarkIcon size={EXCHANGE_ICON} color={colors.textMuted} />
+          <Text style={[styles.formulaValue, { color: colors.text }]}>{cost}</Text>
+        </View>
+        <ArrowRight size={14} color={colors.textFaint} {...iconStroke} />
+        <View style={styles.formulaItem}>
+          {to}
+          <Text style={[styles.formulaValue, { color: colors.text }]}>1</Text>
+        </View>
+      </View>
+      <Button
+        label="교환"
+        accessibilityLabel={accessibilityLabel}
+        variant="outline"
+        size="sm"
+        onPress={onPress}
+        disabled={disabled}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { ...layout.content, paddingTop: spacing.md, paddingBottom: spacing.xxl, gap: spacing.xl },
   block: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   hint: { marginTop: spacing.sm },
+  // 보유 세 칸 — 간격으로만 가른다(구분선 없음).
+  balances: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
+  balance: { flex: 1, gap: 2 },
+  // 아이콘과 숫자는 한 덩어리 — 광학 보정 6px.
+  balanceTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  balanceValue: { ...typeScale.monoNumeral, fontSize: 20, lineHeight: 26 },
+  exchanges: { marginTop: spacing.sm, gap: spacing.xs },
+  exchangeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  formula: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  formulaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  formulaValue: { ...typeScale.monoNumeral },
   copy: { marginTop: spacing.sm },
   errorRow: { marginTop: spacing.sm, gap: spacing.xs },
   retry: { alignSelf: 'flex-start' },
