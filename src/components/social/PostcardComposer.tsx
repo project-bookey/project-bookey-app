@@ -11,6 +11,8 @@ import { ICON_SIZE, IconButton } from '@/components/collage';
 import { Button, Card, Toggle } from '@/components/ui';
 import { hairline, iconStroke, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
+import { PostcardWalletLine } from './PostcardWalletLine';
+
 /** 엽서 본문 최대 글자 수 — 서버 정책과 같은 값 (§14.9: 한글 완성형 글자 기준). */
 const MAX_GRAPHEMES = 16;
 
@@ -107,9 +109,7 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
       </View>
 
       {wallet.data ? (
-        <Text style={[typeScale.caption, { color: colors.textFaint }]}>
-          오늘 무료 엽서 {wallet.data.freePostcardsLeftToday}장 · 보유 엽서 {wallet.data.postcardBalance}장
-        </Text>
+        <PostcardWalletLine freeToday={wallet.data.freePostcardsLeftToday} postcards={wallet.data.postcardBalance} />
       ) : null}
 
       {error ? (
