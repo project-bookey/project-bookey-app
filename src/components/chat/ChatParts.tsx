@@ -14,7 +14,7 @@ import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
 /**
  * 채팅 공용 부품 — 클럽 채팅과 1:1 대화방이 같은 말풍선·같은 입력 줄을 쓰도록 모은다.
  * 상대 말은 종이(surface)에 헤어라인, 내 말은 잉크 반전. 민트(accent)는 쓰지 않는다 —
- * 보내기도 잉크 면에 선 아이콘이다(클럽 채팅은 네모, 1:1 유리 입력 상자 안은 동그라미). 이름·시각은 모노.
+ * 보내기도 잉크 면에 선 아이콘이다(채팅의 유리 입력 상자 안은 동그라미, 클럽 메모 댓글 입력줄은 네모). 이름·시각은 모노.
  */
 
 /** 대화 목록 안쪽 여백 — 두 채팅이 같은 폭·같은 간격으로 말풍선을 놓는다. */
@@ -150,29 +150,6 @@ export function ChatError({ message }: { message: string }) {
 }
 
 /**
- * 입력 줄 — 화면 하단에 붙고 홈 인디케이터만큼 띄운다(키보드 위에 붙어 있을 땐 그 몫을 거둔다).
- * 화면의 KeyboardArea 안에 둔다. 안에 입력창·보내기 등을 나란히 놓는다.
- */
-export function ChatInputBar({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
-  const paddingBottom = useBottomBarPadding(spacing.md);
-  return (
-    <View
-      style={[
-        styles.inputBar,
-        {
-          borderTopColor: colors.line,
-          backgroundColor: colors.bg,
-          paddingBottom,
-        },
-      ]}
-    >
-      {children}
-    </View>
-  );
-}
-
-/**
  * 웹 미리보기에서만 한 줄로 시작 — 브라우저는 여러 줄 입력칸(textarea)을 기본 두 줄 높이로 그린다.
  * 기기에서는 내용에 맞춰 자라므로 건드리지 않는다(react-native-web 은 numberOfLines 를 rows 로 옮긴다).
  */
@@ -196,10 +173,10 @@ export function ChatInput({ style, ...props }: TextInputProps) {
 }
 
 /**
- * 1:1 대화방의 떠 있는 입력 줄 — 위 선·바탕 띠 없이 화면 아래에 떠서 메시지가 유리 밑으로 지나간다
- * (2026-10-05 둥근 시안 1, 사용자 결정). KeyboardArea 안에 두면 키보드 위로 같이 올라간다.
- * 목록이 끝까지 가려지지 않게 onHeight 로 제 높이를 알리고, 쓰는 화면이 그만큼 목록 아래를 비운다.
- * 클럽 채팅은 ChatInputBar 그대로다.
+ * 채팅방(1:1·클럽)의 떠 있는 입력 줄 — 위 선·바탕 띠 없이 화면 아래에 떠서 메시지가 유리 밑으로 지나간다
+ * (2026-10-05 둥근 시안 1, 사용자 결정 — 1:1 에 먼저 넣고 같은 날 클럽 채팅도 따랐다). KeyboardArea 안에 두면
+ * 키보드 위로 같이 올라간다. 목록이 끝까지 가려지지 않게 onHeight 로 제 높이를 알리고, 쓰는 화면이 그만큼
+ * 목록 아래를 비운다. 홈 인디케이터만큼 띄우고, 키보드 위에 붙어 있을 땐 그 몫을 거둔다.
  */
 export function ChatFloatingBar({ onHeight, children }: { onHeight: (height: number) => void; children: ReactNode }) {
   const paddingBottom = useBottomBarPadding(spacing.md);
@@ -216,7 +193,7 @@ export function ChatFloatingBar({ onHeight, children }: { onHeight: (height: num
 }
 
 /**
- * 1:1 대화방 입력 상자 — 이모티콘 · 입력 · 보내기를 유리 캡슐 하나에 묶는다. 하단 탭 바와 같은 유리(NavGlass)·
+ * 채팅 입력 상자 — 이모티콘(1:1 만) · 입력 · 보내기를 유리 캡슐 하나에 묶는다. 하단 탭 바와 같은 유리(NavGlass)·
  * 그림자로, 버튼 캡슐·그림자 금지의 예외다(하단 바와 같은 사용자 결정). 여러 줄로 자라면 모서리는 그대로 두고
  * 둥근 네모가 된다. ChatFloatingBar 안에 두고, 안에 넣는 입력창은 테두리 없이(composerInput) 쓴다.
  */
@@ -321,14 +298,6 @@ const styles = StyleSheet.create({
   time: { fontFamily: mono.regular, fontSize: 9.5, letterSpacing: 0.3, alignSelf: 'flex-end', marginTop: 2 },
   flip: { transform: [{ scaleY: -1 }] },
   error: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xs },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderTopWidth: hairline,
-  },
   input: {
     ...typeScale.body,
     flex: 1,
