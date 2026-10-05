@@ -4,10 +4,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import type { RemarkKind } from '@/api/types';
 import { NoteSheet } from '@/components/note/NoteSheet';
-import { ClosingBookHead, type FinishedBook } from '@/components/review/FinishReviewSheet';
 import { Button } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
+import { ClosingBookHead, type FinishedBook } from './ClosingBookHead';
 import { RemarkField } from './RemarkField';
 import { useSaveRemark } from './queries';
 
@@ -22,10 +22,10 @@ const SHEET_TITLE: Record<RemarkKind, string> = {
 
 /**
  * 한 마디 시트 — 하차한 그 순간, 그리고 나중에 '한 마디 남기기'·'고치기'로 연다.
- * 완독한 순간은 완독 시트(FinishReviewSheet)의 첫 단계가 같은 칸으로 받는다.
+ * 완독한 순간은 완독 카드 시트(FinishCardSheet)가 카드 안 칸으로 받는다.
  *
  * initial 이 있으면 고치기 — 지금 한 마디를 채워 열고 [취소][저장]. 없으면 [나중에][남기기].
- * 열 때만 그리고 닫으면 걷어 낸다(완독 시트와 같이) — 다시 열면 지난 실패 없이 지금 한 마디나 빈 칸에서 시작한다.
+ * 열 때만 그리고 닫으면 걷어 낸다(완독 카드 시트와 같이) — 다시 열면 지난 실패 없이 지금 한 마디나 빈 칸에서 시작한다.
  */
 export function RemarkSheet({ rid, bookId, book, kind, initial, onClose }: {
   rid: number;
@@ -78,7 +78,7 @@ export function RemarkSheet({ rid, bookId, book, kind, initial, onClose }: {
 }
 
 const styles = StyleSheet.create({
-  // 묶음 사이는 lg, 묶음 안은 xs~sm — 완독 시트와 같은 리듬.
+  // 묶음 사이는 lg, 묶음 안은 xs~sm — 완독 카드 시트와 같은 리듬.
   content: { gap: spacing.lg },
   footer: { gap: spacing.sm },
   actions: { flexDirection: 'row', gap: spacing.sm },

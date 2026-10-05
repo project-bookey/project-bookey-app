@@ -23,8 +23,9 @@ import type { BookBand, BookNote } from '@/components/collage';
 import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
 import { MyRemark } from '@/components/remark/MyRemark';
 import { RemarkTicker } from '@/components/remark/RemarkTicker';
-import { useMyRemark, useSaveRemark } from '@/components/remark/queries';
-import { FinishReviewSheet, type FinishedBook } from '@/components/review/FinishReviewSheet';
+import type { FinishedBook } from '@/components/remark/ClosingBookHead';
+import { FinishCardSheet } from '@/components/remark/FinishCardSheet';
+import { useMyRemark } from '@/components/remark/queries';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { reviewMutationError, useRemoveReview, useUpdateReview } from '@/components/review/useReviewMutations';
@@ -83,7 +84,7 @@ function shortDate(date: Date, withYear: boolean): string {
   return withYear ? `${date.getFullYear()}.${md}` : md;
 }
 
-/** 완독 시트의 한 줄 — '9.12 → 10.4 · 6시간 20분'. 모르는 쪽은 뺀다. */
+/** 완독 카드·한 줄평 시트의 기간 줄 — '9.12 → 10.4 · 6시간 20분'. 모르는 쪽은 뺀다. */
 function finishMeta(record: ReadingRecord): string | undefined {
   const parts: string[] = [];
   if (record.startedAt) {
@@ -102,7 +103,7 @@ export default function BookDetailScreen() {
   const queryClient = useQueryClient();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  // finished=1 — 타이머에서 방금 완독하고 넘어왔다. 완독 리뷰 시트를 띄운다.
+  // finished=1 — 타이머에서 방금 완독하고 넘어왔다. 완독 카드 시트를 띄운다.
   const { id, recordId, finished } = useLocalSearchParams<{ id: string; recordId?: string; finished?: string }>();
   const bookId = Number(id);
   const paramRid = recordId ? Number(recordId) : null;
@@ -159,7 +160,7 @@ export default function BookDetailScreen() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['library', 'record', rid], updated);
       invalidateRecord();
-      // 내려놓는 순간에 한 마디를 묻는다 — 완독 시트와 같은 자리, 비워 두고 닫아도 된다.
+      // 내려놓는 순간에 한 마디를 묻는다 — 완독 카드 시트와 같은 자리, 비워 두고 닫아도 된다.
       setRemarkSheetOpen(true);
     },
   });
@@ -192,11 +193,16 @@ export default function BookDetailScreen() {
   const lag = progress ? getLagStyle(colors)[progress.lagLevel] : null;
   const actionFailed = (finish.isError && !finish.isPending) || (abandon.isError && !abandon.isPending);
   const rating = pickRating(book.data);
-  // 방금 다 읽은 책 — 완독 리뷰 시트에 띄울 표지·제목·기간. 기록이 완독으로 바뀐 걸 확인한 뒤에만 만든다.
+  // 방금 다 읽은 책 — 완독 카드 시트에 띄울 표지·제목·기간. 기록이 완독으로 바뀐 걸 확인한 뒤에만 만든다.
   const finishedBook: FinishedBook | null =
     (finished === '1' || justFinished) && !finishPromptClosed && info && record.data?.status === 'FINISHED'
       ? { title: info.title, coverUrl: info.coverUrl, meta: finishMeta(record.data) }
       : null;
+  // 이번 완독에 이미 남긴 한 줄평이 있으면 그 글로 채워 연다. 방금 다 읽었을 때만 받는다.
+  // 받은 뒤에만 띄운다 — 늦게 온 한 줄평이 빈칸을 덮어쓰지 않게. 받지 못했으면(서버 오류 등) 빈칸으로 연다.
+  const myRemark = useMyRemark(finishedBook ? rid : null);
+  const finishedRemark = myRemark.data?.kind === 'FINISHED' ? myRemark.data.body : undefined;
+  const showFinishCard = finishedBook != null && rid != null && (myRemark.isSuccess || myRemark.isError);
   // 다 읽었거나 내려놓은 기록 — 진척 카드에 내 한 마디 줄을 둔다.
   const closedKind = record.data?.status === 'FINISHED' || record.data?.status === 'ABANDONED'
     ? record.data.status
@@ -361,9 +367,6 @@ export default function BookDetailScreen() {
             bookId={bookId}
             rid={rid}
             colors={colors}
-            finishedBook={finishedBook}
-            roundStartedAt={record.data?.startedAt}
-            onFinishPromptClose={() => setFinishPromptClosed(true)}
             composing={reviewComposing}
             onComposingChange={setReviewComposing}
             onEditingChange={setReviewEditing}
@@ -385,6 +388,17 @@ export default function BookDetailScreen() {
             />
           </View>
         </LinearGradient>
+      ) : null}
+
+      {/* 방금 다 읽었으면 축하하며 내 완독 카드를 보여 주고 한 줄평을 카드에 받는다. 한 번 닫으면 다시 띄우지 않는다. */}
+      {showFinishCard ? (
+        <FinishCardSheet
+          rid={rid}
+          bookId={bookId}
+          book={finishedBook}
+          initial={finishedRemark}
+          onClose={() => setFinishPromptClosed(true)}
+        />
       ) : null}
     </PaperScreen>
   );
@@ -936,19 +950,14 @@ function useBookReviews(bookId: number) {
 
 /**
  * 리뷰 | 독후감 탭 섹션(A1) — 리뷰 목록·인라인 작성 폼과 책별 독후감 탭을 한 제목줄 아래에 둔다.
- * 방금 완독한 책(finishedBook)이면 완독 리뷰 시트도 여기서 띄운다 — 리뷰 목록·작성 상태를 이 섹션이 쥐고 있어서
- * 시트와 인라인 폼이 같은 별점·글을 나눠 쓴다.
+ * 완독 때 리뷰는 묻지 않는다(사용자 결정 2026-10-05) — 완독 카드 시트는 화면이 띄우고, 리뷰는 여기 '쓰기'로만 쓴다.
  */
 function ReviewSection({
-  bookId, rid, colors, finishedBook, roundStartedAt, onFinishPromptClose, composing, onComposingChange, onEditingChange,
+  bookId, rid, colors, composing, onComposingChange, onEditingChange,
 }: {
   bookId: number;
   rid: number | null;
   colors: ColorTokens;
-  finishedBook: FinishedBook | null;
-  /** 이번 회차를 시작한 때 — 그 뒤에 쓴 내 리뷰가 있으면 완독 시트로 또 묻지 않는다(리뷰는 몇 개든 더 쓸 수 있다). */
-  roundStartedAt?: string;
-  onFinishPromptClose: () => void;
   /** 작성 폼이 펼쳐져 있는지 — 화면이 하단 CTA 를 숨기려고 쥔다. */
   composing: boolean;
   onComposingChange: (composing: boolean) => void;
@@ -964,16 +973,8 @@ function ReviewSection({
   const [tab, setTab] = useState<RecordTab>('REVIEW');
   const open = composing;
   const setOpen = onComposingChange;
-  // 방금 리뷰를 남겼는지 — 목록이 다시 오기 전에 완독 시트가 또 뜨지 않게 한다.
-  const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
-  // 완독 시트의 첫 단계 — 책을 덮으며 한 마디. 남기거나 건너뛰면 다시 묻지 않는다.
-  // 방금 다 읽었을 때만 묻는다 — 읽는 중인 책을 열 때마다 받을 까닭이 없다.
-  const myRemark = useMyRemark(finishedBook ? rid : null);
-  const saveRemark = useSaveRemark(rid, bookId);
-  const [remarkDraft, setRemarkDraft] = useState('');
-  const [remarkPassed, setRemarkPassed] = useState(false);
 
   // 내 리뷰 고치기·삭제 — 목록 조각 오른쪽 아래 버튼으로 상세에 들어가지 않고 그 자리에서 다룬다.
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -1020,11 +1021,9 @@ function ReviewSection({
       // 리뷰 목록 캐시는 도서 상세·리뷰 상세 두 곳에 흩어져 있어 공용 무효화 함수로 한 번에 정리한다.
       invalidateReviewLists(queryClient);
       setOpen(false);
-      setDone(true);
       // 리뷰는 한 사람이 여러 개 쓸 수 있다 — 다음에 '쓰기'를 누르면 빈 칸에서 시작한다.
       setRating(0);
       setBody('');
-      if (finishedBook) onFinishPromptClose();
     },
   });
 
@@ -1036,38 +1035,6 @@ function ReviewSection({
       : null;
 
   const items = reviews.data?.content ?? [];
-
-  // 이번 회차에 이미 남긴 리뷰가 보이면 완독 시트로 또 묻지 않는다. 첫 쪽에 없어 놓치면 시트가 뜨지만, 리뷰는 여러 개 쓸 수 있어 그대로 하나 더 남는다.
-  const roundStart = roundStartedAt ? new Date(roundStartedAt).getTime() : 0;
-  const reviewedThisRound = items.some(
-    (review) => review.authorId === myId && new Date(review.createdAt).getTime() >= roundStart,
-  );
-  // 이번 완독의 한 마디가 아직 없으면 리뷰보다 먼저 묻는다. 하차 때 남긴 한 마디(ABANDONED)는 완독의 말로 다시 받는다.
-  const needsRemark = !remarkPassed && myRemark.isSuccess && myRemark.data?.kind !== 'FINISHED';
-  const needsReview = !reviewedThisRound && !done;
-  // 목록을 받은 뒤에만 띄운다 — 이미 쓴 리뷰·한 마디가 늦게 도착해 시트가 떴다 사라지지 않게.
-  // 한 마디를 받지 못했으면(서버 오류 등) 그 단계만 건너뛰고 리뷰는 그대로 묻는다.
-  const showFinishSheet = finishedBook != null && rid != null && reviews.isSuccess
-    && (myRemark.isSuccess || myRemark.isError) && (needsRemark || needsReview);
-
-  // 한 마디 단계를 마친다 — 리뷰까지 받을 게 없으면 시트를 닫는다.
-  const passRemark = () => {
-    setRemarkPassed(true);
-    if (!needsReview) onFinishPromptClose();
-  };
-  const remarkError = saveRemark.isError && !saveRemark.isPending
-    ? saveRemark.error instanceof ApiError ? saveRemark.error.message : '남기지 못했어요 · 다시 시도'
-    : null;
-
-  // 시트를 닫아도 쓰던 글은 버리지 않는다 — 리뷰 탭의 인라인 폼으로 펼쳐 이어 쓰게 한다.
-  const closeFinishSheet = () => {
-    if (body.trim().length > 0) {
-      setTab('REVIEW');
-      setOpen(true);
-    }
-    create.reset();
-    onFinishPromptClose();
-  };
 
   // 우측 액션은 탭별 — 리뷰는 '쓰기', 독후감은 작성 화면으로 나가는 '쓰기'.
   // 리뷰는 이 책의 읽기 기록이 있어야 쓸 수 있지만, 독후감은 서재에 담지 않은 책에도 쓸 수 있다.
@@ -1162,31 +1129,6 @@ function ReviewSection({
           )}
         </>
       )}
-
-      {showFinishSheet ? (
-        <FinishReviewSheet
-          book={finishedBook}
-          rating={rating}
-          onRating={setRating}
-          body={body}
-          onBody={setBody}
-          onSubmit={() => create.mutate()}
-          onClose={closeFinishSheet}
-          pending={create.isPending}
-          error={errorMessage}
-          remarkStep={needsRemark ? {
-            value: remarkDraft,
-            onChange: setRemarkDraft,
-            onSubmit: () => saveRemark.mutate(remarkDraft.trim(), {
-              onSuccess: () => { setRemarkDraft(''); passRemark(); },
-            }),
-            onSkip: passRemark,
-            skipLabel: needsReview ? '건너뛰기' : '나중에',
-            pending: saveRemark.isPending,
-            error: remarkError,
-          } : null}
-        />
-      ) : null}
     </View>
   );
 }

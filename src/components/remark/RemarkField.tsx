@@ -14,7 +14,7 @@ const PLACEHOLDER: Record<RemarkKind, string> = {
 
 /**
  * 한 마디 칸 — 한 문장이라 줄바꿈은 받지 않는다(엔터는 키보드를 내린다). 글자 수는 클럽 한 줄 소개처럼 도움말 줄에 센다.
- * 완독 시트·하차 시트·고치기 시트가 같은 칸을 쓴다.
+ * 하차 시트·고치기 시트가 같은 칸을 쓴다. 완독 카드 시트는 카드 안에 따로 그린 칸으로 받는다.
  */
 export function RemarkField({ value, onChange, kind }: {
   value: string;
