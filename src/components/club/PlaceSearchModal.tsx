@@ -25,14 +25,20 @@ export type PlacePick = {
 
 type Row = { key: string; no: number; kind: 'place' | 'address'; title: string; sub: string; value: PlacePick };
 
-/** 입력이 이만큼 멈추면 찾는다(탐색 화면과 같다). */
-const PLACE_DEBOUNCE_MS = 400;
+/** 한 자 적을 때마다 찾는다 — 키 하나하나마다 부르지 않게 아주 잠깐만 기다린다. */
+const PLACE_DEBOUNCE_MS = 200;
+
+/** 조합 중인 끝 자모('양화ㄹ'의 'ㄹ')는 떼고 찾는다 — 한 글자가 완성될 때까지 결과가 깜빡이지 않게. */
+const keywordOf = (input: string) => input.trim().replace(/[ㄱ-ㅎㅏ-ㅣ]+$/, '').trim();
+
+/** 주소를 적는 중이다 — 숫자가 있거나 '양화로' · '서교동' · '마포구'처럼 주소 단위로 끝나는 말이 있다. */
+const looksLikeAddress = (keyword: string) => /\d|(로|길|동|읍|면|리|구|시|군)(\s|$)/.test(keyword);
 
 /**
  * 장소 찾기 — 새 모임 폼의 장소 칸을 누르면 바로 뜨는 전체 화면 검색. 탐색 화면처럼 검색바 · '취소'를 맨 위에 두고,
  * 적는 대로 장소 이름(카페·서점 …)과 주소를 함께 찾아, 결과를 번호 핀으로 지도에 찍고 그 아래 같은 번호로 늘어놓는다.
- * 주소를 적었으면(번지·도로명까지 맞는 주소가 나오면) 그 주소가 1번이고 지도도 그 자리를 비춘다 — 같은 주소의 가게
- * 이름들에 묻히지 않게. 결과를 누르면 그 장소를 고르고 닫힌다.
+ * 주소는 한 자 적을 때마다 관련 주소를 내준다('양화로 4' → 양화로 4x …, 서버의 도로명주소 검색). 주소를 적는 중이면
+ * 주소가 1번부터 오고 지도도 그 주소들을 비춘다 — 같은 주소의 가게 이름들에 묻히지 않게. 결과를 누르면 그 장소를 고르고 닫힌다.
  */
 export function PlaceSearchModal({ clubId, visible, onClose, onSelect }: {
   clubId: number;
@@ -60,7 +66,7 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setKeyword(input.trim()), PLACE_DEBOUNCE_MS);
+    const timer = setTimeout(() => setKeyword(keywordOf(input)), PLACE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [input]);
 
@@ -112,8 +118,8 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
       longitude: a.longitude,
     },
   }));
-  // 주소를 적었다 — 도로명이나 번지까지 맞는 주소가 나왔다. '합정동'처럼 동네 이름만 맞은 것은 아니다(그땐 가게 이름이 먼저).
-  const addressFirst = (found?.addresses ?? []).some((a) => a.roadAddress || /\d/.test(a.address));
+  // 주소를 적는 중이면 주소가 먼저 — 같은 주소의 가게 이름들에 묻히지 않게. 가게 이름을 적으면 가게가 먼저.
+  const addressFirst = addressRows.length > 0 && looksLikeAddress(keyword);
   const rows: Row[] = (addressFirst ? [...addressRows, ...placeRows] : [...placeRows, ...addressRows])
     .map((row, i) => ({ ...row, no: i + 1 }));
   /** 묶음 이름은 주소와 장소가 함께 나올 때만 — 각 묶음의 첫 줄 위에. */
@@ -163,7 +169,7 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
             <TextInput
               value={input}
               onChangeText={setInput}
-              onSubmitEditing={() => setKeyword(input.trim())}
+              onSubmitEditing={() => setKeyword(keywordOf(input))}
               placeholder="카페·서점 이름이나 주소"
               placeholderTextColor={colors.textFaint}
               returnKeyType="search"
