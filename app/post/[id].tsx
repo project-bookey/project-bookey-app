@@ -7,7 +7,7 @@ import { ApiError } from '@/api/client';
 import { postApi } from '@/api/endpoints';
 import { invalidatePostLists, postKey, syncViewCount } from '@/api/postCache';
 import type { Post } from '@/api/types';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { MemoScrap, PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { KeyboardScroll } from '@/components/keyboard';
 import { LikeAction } from '@/components/post/LikeAction';
 import { PostBody } from '@/components/post/PostBody';
@@ -260,6 +260,23 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
           onDone={onClosePostcard}
         />
       ) : null}
+
+      {/* ⑥ 이 책으로 나도 쓰기 — 남의 글을 다 읽은 자리가 내 생각이 떠오르는 자리다(사용자 결정 2026-10-05).
+          그 책이 골라진 쓰기 화면으로 보낸다. 책 없는 글·내 글에는 두지 않는다. 강조색은 '엽서 보내기' 몫이라 테두리 버튼. */}
+      {post.bookId != null && !post.mine ? (
+        <MemoScrap rotate={0} style={styles.writeOwn}>
+          <TiltCover uri={post.bookCoverUrl} title={post.bookTitle} width={40} tilt={-3} entering={false} />
+          <View style={styles.writeOwnText}>
+            <Text style={[typeScale.bodyStrong, { color: colors.text }]}>이 책을 읽었나요?</Text>
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>내 생각도 독후감으로 남겨 보세요</Text>
+          </View>
+          <FootAction
+            label="이 책으로 쓰기"
+            onPress={() => router.push({ pathname: '/post/new', params: { bookId: String(post.bookId) } })}
+            accessibilityLabel="이 책으로 독후감 쓰기"
+          />
+        </MemoScrap>
+      ) : null}
     </View>
   );
 }
@@ -282,4 +299,7 @@ const styles = StyleSheet.create({
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에. 테두리 버튼(FootAction)은 옆으로 넓어지지 않아 sm 간격이면 떨어진다.
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // 이 책으로 나도 쓰기 — 액션 줄과는 섹션 사이 간격(article 의 lg + sm = xl)만큼 띄운다.
+  writeOwn: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
+  writeOwnText: { flex: 1, gap: 2 },
 });
