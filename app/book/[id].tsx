@@ -20,7 +20,7 @@ import { BookPostsTab } from '@/components/book/BookPostsTab';
 import { LikeAction } from '@/components/post/LikeAction';
 import { PaperScreen, StickyNote, SubHeader, TiltCover } from '@/components/collage';
 import type { BookBand, BookNote } from '@/components/collage';
-import { KeyboardArea, KeyboardScroll, useKeyboardOpen } from '@/components/keyboard';
+import { KeyboardArea, KeyboardScroll, useKeyboardOpen, useKeyboardReveal } from '@/components/keyboard';
 import { MyRemark } from '@/components/remark/MyRemark';
 import { RemarkTicker } from '@/components/remark/RemarkTicker';
 import { useMyRemark, useSaveRemark } from '@/components/remark/queries';
@@ -736,6 +736,9 @@ function ProgressEditor({ rid, progress, colors }: {
   const [editing, setEditing] = useState(false);
   const editingRef = useRef(false);
   const [text, setText] = useState('');
+  // 숫자 키패드가 뜨면 고치는 쪽수 줄이 가리지 않게 키보드 위로 올린다.
+  const numbersRef = useRef<View>(null);
+  const reveal = useKeyboardReveal();
 
   const widthRef = useRef(0);
   const startXRef = useRef(0);
@@ -810,7 +813,7 @@ function ProgressEditor({ rid, progress, colors }: {
 
   return (
     <>
-      <View style={styles.progressNumbers}>
+      <View ref={numbersRef} style={styles.progressNumbers}>
         {editing ? (
           <TextInput
             value={text}
@@ -821,6 +824,7 @@ function ProgressEditor({ rid, progress, colors }: {
             selectTextOnFocus
             onSubmitEditing={confirmEdit}
             onBlur={confirmEdit}
+            onFocus={() => reveal(numbersRef)}
             accessibilityLabel="현재 페이지 입력"
             style={[styles.bigNumber, styles.bigNumberInput, {
               color: colors.text, borderBottomColor: colors.accent,

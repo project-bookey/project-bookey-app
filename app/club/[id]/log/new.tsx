@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi, libraryApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { KeyboardArea, KeyboardDock } from '@/components/keyboard';
+import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboard';
 import { clubLogKeys, kstTime, todayKst, useMyClubRecord } from '@/components/clubLog';
 import { Button, Card, Eyebrow, Toggle, formatDuration } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -46,6 +46,10 @@ export default function ClubLogNewScreen() {
   const [body, setBody] = useState('');
   // 타이머에서 왔으면 방금 읽은 마지막 쪽이 채워져 있고, 보드에서 왔으면 내 진도가 채워진다. 직접 고칠 수 있다.
   const [page, setPage] = useState(endPage != null ? String(endPage) : '');
+  // 두 칸은 사진 밑 맨 아래라 키보드에 가리기 쉽다 — 누르면 쪽수 칸까지 키보드 위로 올린다.
+  const scrollRef = useRef<ScrollView>(null);
+  const pageGroupRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
   const [anchor, setAnchor] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -142,7 +146,7 @@ export default function ClubLogNewScreen() {
         }
       />
       <KeyboardArea>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {fromSession ? (
           <Card style={styles.summary}>
             <SummaryCell label="방금 읽은 시간" value={formatDuration(durationSec)} colors={colors} />
@@ -197,11 +201,12 @@ export default function ClubLogNewScreen() {
             placeholderTextColor={colors.textFaint}
             style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.text }]}
             accessibilityLabel="한 줄"
+            onFocus={() => revealAbove(pageGroupRef)}
           />
           <Text style={[styles.counter, { color: colors.textFaint }]}>{body.length}/{BODY_MAX}</Text>
         </View>
 
-        <View style={{ gap: spacing.sm }}>
+        <View ref={pageGroupRef} style={{ gap: spacing.sm }}>
           <Eyebrow>몇 쪽까지 읽었나요</Eyebrow>
           <View style={styles.pageRow}>
             <TextInput
@@ -212,6 +217,7 @@ export default function ClubLogNewScreen() {
               placeholderTextColor={colors.textFaint}
               style={[styles.pageInput, { backgroundColor: colors.surface, borderColor: colors.line, color: colors.text }]}
               accessibilityLabel="몇 쪽까지 읽었나요"
+              onFocus={() => revealAbove(pageGroupRef)}
             />
             <Text style={[typeScale.caption, { color: colors.textFaint, flex: 1 }]}>
               {atPage == null

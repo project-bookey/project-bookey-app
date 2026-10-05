@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
 import { CODE_EXPIRED_MESSAGE, FieldError, isEmail, TimedCodeInput } from '@/components/auth/authFields';
-import { KeyboardArea } from '@/components/keyboard';
+import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
 import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
@@ -50,6 +50,10 @@ export default function PasswordResetScreen() {
   const codeLeft = useSecondsLeft(codeExpiresAt);
   const [resent, setResent] = useState(false);
   const [code, setCode] = useState('');
+  // 코드는 숫자 키패드라 iOS 에선 닫는 키가 없다 — 칸을 누르면 '비밀번호 바꾸기'까지 키보드 위로 올린다.
+  const scrollRef = useRef<ScrollView>(null);
+  const submitRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
   const [password, setPassword] = useState('');
   const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -162,6 +166,7 @@ export default function PasswordResetScreen() {
           </Pressable>
         </View>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + insets.bottom }]}
           keyboardShouldPersistTaps="handled"
         >
@@ -195,6 +200,7 @@ export default function PasswordResetScreen() {
                       putError('code', null);
                     }}
                     accessibilityLabel="인증 코드"
+                    onFocus={() => revealAbove(submitRef)}
                   />
                   <Pressable
                     onPress={sendCode}
@@ -233,12 +239,14 @@ export default function PasswordResetScreen() {
                   autoCorrect={false}
                   returnKeyType="done"
                   onSubmitEditing={submit}
+                  onFocus={() => revealAbove(submitRef)}
                 />
                 <FieldError colors={darkColors} message={errors.password} />
               </View>
               {/* 어느 칸에도 걸리지 않는 실패는 누른 버튼 바로 위에 — 가입 화면과 같은 자리(Proximity). */}
               <FieldError colors={darkColors} message={errors.form} />
               <Pressable
+                ref={submitRef}
                 onPress={submit}
                 disabled={busy}
                 style={({ pressed }) => [styles.cta, (pressed || busy) && styles.ctaDisabled]}

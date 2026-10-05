@@ -23,7 +23,7 @@ import {
 } from '@/components/legal/SignupConsentBox';
 import { SocialConsentSheet } from '@/components/legal/SocialConsentSheet';
 import { CODE_EXPIRED_MESSAGE, FieldError, isEmail, TimedCodeInput } from '@/components/auth/authFields';
-import { KeyboardArea } from '@/components/keyboard';
+import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
 import { linkLabel } from '@/components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -102,6 +102,9 @@ export default function LoginScreen() {
   const kakao = useKakaoLogin();
 
   const scrollRef = useRef<ScrollView>(null);
+  // 인증 코드는 숫자 키패드라 iOS 에선 닫는 키가 없다 — 칸을 누르면 바로 밑 '인증 코드 확인'까지 키보드 위로 올린다.
+  const codeFieldRef = useRef<View>(null);
+  const revealAbove = useScrollReveal(scrollRef);
   const scrollY = useRef(0);
   const formY = useRef(0);
   const fieldY = useRef<Partial<Record<FieldSpot, number>>>({});
@@ -584,7 +587,7 @@ export default function LoginScreen() {
               </View>
             ) : null}
             {isSignup && signupConfig.data?.verification === 'EMAIL_CODE' ? (
-              <View style={styles.field} onLayout={trackField('code')}>
+              <View ref={codeFieldRef} style={styles.field} onLayout={trackField('code')}>
                 <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
                 <View style={styles.codeRow}>
                   {/* 입력 마감까지 남은 시간은 칸 안 오른쪽 — 끝나면 붉게 바뀌고 칸 밑에 다시 받으라는 경고가 뜬다. */}
@@ -601,6 +604,7 @@ export default function LoginScreen() {
                       putError('code', null);
                     }}
                     accessibilityLabel="이메일 인증 코드"
+                    onFocus={() => revealAbove(codeFieldRef)}
                   />
                   {/* 다시 받기는 기다림 없이 바로 열려 있다(사용자 결정) — 남용은 서버가 1시간 횟수 상한으로 막는다. */}
                   <Pressable
