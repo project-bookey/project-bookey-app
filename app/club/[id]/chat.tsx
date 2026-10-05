@@ -9,7 +9,8 @@ import { Gift } from 'lucide-react-native';
 import { ApiError } from '@/api/client';
 import { clubApi, clubCommunityApi } from '@/api/endpoints';
 import {
-  ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, chatListContent,
+  COMPOSER_HEIGHT, ChatBubble, ChatComposer, ChatEmpty, ChatError, ChatFloatingBar, ChatInput, ChatSendButton,
+  chatListContent, composerInputStyle,
 } from '@/components/chat/ChatParts';
 import { ICON_SIZE, IconButton, PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardArea } from '@/components/keyboard';
@@ -26,6 +27,7 @@ const POLL_MS = 4000;
  * 키보드가 올라와도 머리·탭에 자리를 뺏기지 않고, 뒤로 가면 클럽 홈으로 돌아온다.
  * 잠겨 있으면 책갈피로 여는 안내, 열리면 말풍선 목록과 입력 줄. 말풍선·입력 줄·보내기는
  * 1:1 대화방과 같은 부품(ChatParts)이다 — 상대 말은 종이에 헤어라인, 내 말은 잉크 반전, 민트는 쓰지 않는다.
+ * 입력 줄은 1:1 과 같은 떠 있는 유리 캡슐(2026-10-05 사용자 요청)이고, 이모티콘이 없어 입력 · 보내기만 담는다.
  */
 export default function ClubChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +36,8 @@ export default function ClubChatScreen() {
   const { colors } = useTheme();
   const [draft, setDraft] = useState('');
   const [showGift, setShowGift] = useState(false);
+  // 떠 있는 입력 줄 높이 — 재기 전에는 한 줄 상자 + 최소 아래 여백으로 잡아 둔다.
+  const [barHeight, setBarHeight] = useState(COMPOSER_HEIGHT + spacing.md);
 
   // 머리의 클럽 이름 — 클럽 홈에서 왔으면 이미 캐시에 있다.
   const club = useQuery({
@@ -186,7 +190,8 @@ export default function ClubChatScreen() {
           inverted
           data={items}
           keyExtractor={(m) => String(m.id)}
-          contentContainerStyle={chatListContent}
+          // 맨 아래(inverted 라 paddingTop)는 떠 있는 입력 줄만큼 비운다 — 오류 줄이 뜨면 그 줄이 자리를 비운다.
+          contentContainerStyle={[chatListContent, { paddingTop: send.error ? spacing.lg : barHeight + spacing.lg }]}
           // 1:1 대화방과 같게 — 이전 메시지를 받는 중엔 다시 부르지 않고, 목록 끝(위쪽)에 진행 표시를 둔다.
           onEndReachedThreshold={0.4}
           onEndReached={() => {
@@ -204,25 +209,36 @@ export default function ClubChatScreen() {
           )}
           ListEmptyComponent={<ChatEmpty description="첫 마디를 남겨 보세요." />}
         />
-        {send.error ? <ChatError message={errorText(send.error, '메시지를 보내지 못했어요.')} /> : null}
-        <ChatInputBar>
-          <ChatInput
-            value={draft}
-            onChangeText={(next) => {
-              setDraft(next);
-              // 1:1 대화방처럼 다시 쓰기 시작하면 실패 문구를 거둔다.
-              if (send.isError) send.reset();
-            }}
-          />
-          <ChatSendButton
-            onPress={() => {
-              const body = draft.trim();
-              if (body) send.mutate(body);
-            }}
-            disabled={draft.trim().length === 0}
-            loading={send.isPending}
-          />
-        </ChatInputBar>
+        {send.error ? (
+          // 오류 줄은 목록 아래 제자리에 — 떠 있는 입력 줄 높이만큼 아래를 비운다.
+          <View style={{ paddingBottom: barHeight + spacing.md }}>
+            <ChatError message={errorText(send.error, '메시지를 보내지 못했어요.')} />
+          </View>
+        ) : null}
+        <ChatFloatingBar onHeight={setBarHeight}>
+          <ChatComposer>
+            <ChatInput
+              value={draft}
+              onChangeText={(next) => {
+                setDraft(next);
+                // 1:1 대화방처럼 다시 쓰기 시작하면 실패 문구를 거둔다.
+                if (send.isError) send.reset();
+              }}
+              // 유리 위에서는 textFaint 안내 글자가 흐려 한 단계 진하게 둔다.
+              placeholderTextColor={colors.textMuted}
+              style={[composerInputStyle, styles.composerInput]}
+            />
+            <ChatSendButton
+              compact
+              onPress={() => {
+                const body = draft.trim();
+                if (body) send.mutate(body);
+              }}
+              disabled={draft.trim().length === 0}
+              loading={send.isPending}
+            />
+          </ChatComposer>
+        </ChatFloatingBar>
       </KeyboardArea>
     </PaperScreen>
   );
@@ -235,6 +251,8 @@ function errorText(error: unknown, fallback: string): string {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   paging: { paddingVertical: spacing.md, alignItems: 'center' },
+  // 왼쪽에 이모티콘 단추가 없어 캡슐의 둥근 끝에서 글자를 띄운다.
+  composerInput: { paddingLeft: spacing.md },
   headerAction: { minHeight: 44, justifyContent: 'center' },
   lock: { ...layout.content, flex: 1, justifyContent: 'center', padding: spacing.lg },
   lockTitle: { ...typeScale.titleSerif, fontSize: 20, lineHeight: 27 },
