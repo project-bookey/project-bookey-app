@@ -8,7 +8,7 @@ import { walletApi } from '@/api/endpoints';
 import { ICON_SIZE, IconButton } from '@/components/collage/IconButton';
 import { WalletIcon } from '@/components/collage/WalletIcon';
 import { useTourTarget } from '@/components/tour/TourTarget';
-import { Button, Eyebrow, TextLink } from '@/components/ui';
+import { Button, TextLink } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
 import { WalletBalances } from './WalletBalances';
@@ -26,7 +26,8 @@ type Destination = '/wallet' | '/bookmarks';
 
 /**
  * 헤더 오른쪽 위 지갑 — 아이콘 하나로 두고, 누르면 그 자리에서 카드가 커지며 책갈피 · 엽서 · 우표를 보여 준다
- * (2026-10-05 사용자 결정 A안 — 책갈피 칩을 대신한다). 카드에는 '지갑 ›'과 '책갈피 구매'를 둔다.
+ * (2026-10-05 사용자 결정 A안 — 책갈피 칩을 대신한다). 카드에는 제목 없이 세 칸과
+ * '지갑 ›' · 초록 '책갈피 추가'만 둔다(사용자 결정 — 덮개 위 카드라 주요 버튼 하나를 초록으로).
  * 화면 전체를 덮어야 하므로(하단 바까지 클럽 ＋ 메뉴와 같은 회색 덮개) RN Modal 에 그리고, 아이콘 자리는 열 때
  * measureInWindow 로 잰다. 덮개 위에 같은 자리에 아이콘을 다시 그려 '여기서 열렸다'가 보이고, 그 아이콘·덮개·뒤로 가기로 닫힌다.
  */
@@ -143,7 +144,6 @@ export function HeaderWallet() {
                 },
               ]}
             >
-              <Eyebrow>내가 가진 것</Eyebrow>
               {wallet.isError && !wallet.data ? (
                 <View style={styles.errorRow}>
                   <Text style={[typeScale.body, { color: colors.textMuted }]}>지갑을 불러오지 못했어요.</Text>
@@ -156,11 +156,11 @@ export function HeaderWallet() {
                   />
                 </View>
               ) : (
-                <WalletBalances wallet={wallet.data} style={styles.balances} />
+                <WalletBalances wallet={wallet.data} />
               )}
               <View style={styles.foot}>
                 <TextLink label="지갑" onPress={() => go('/wallet')} accessibilityLabel="지갑 열기" />
-                <Button label="책갈피 구매" icon={Plus} variant="outline" size="sm" onPress={() => go('/bookmarks')} />
+                <Button label="책갈피 추가" icon={Plus} size="sm" onPress={() => go('/bookmarks')} />
               </View>
             </Animated.View>
           </View>
@@ -182,8 +182,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     paddingHorizontal: spacing.lg,
   },
-  balances: { marginTop: spacing.md },
-  errorRow: { marginTop: spacing.sm, gap: spacing.xs },
+  errorRow: { gap: spacing.xs },
   retry: { alignSelf: 'flex-start' },
   foot: { marginTop: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
