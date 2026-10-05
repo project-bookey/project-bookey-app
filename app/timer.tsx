@@ -389,19 +389,12 @@ export default function TimerScreen() {
             ) : null}
           </ScrollView>
 
-          {/* 엄지가 닿는 아래 — 읽는 동안은 [잠깐 쉬기][독서 마치기], 시작 전에는 '독서 시작' 하나. */}
+          {/* 엄지가 닿는 아래 — 읽는 동안은 '독서 마치기'와 '잠깐 쉬기'를 세로 한 줄로(사용자 요청 2026-10-05),
+              시작 전에는 '독서 시작' 하나. 세로로 쌓을 땐 로그인·비밀번호 찾기처럼 주요 버튼이 위, 보조가 아래. */}
           <KeyboardDock style={styles.dock}>
             {notice ? <Text style={[styles.error, { color: colors.danger }]}>{notice}</Text> : null}
             {session ? (
               <View style={styles.actions}>
-                <Button
-                  label={paused ? playLabel('이어서 읽기') : playLabel('잠깐 쉬기', '⏸')}
-                  variant="outline"
-                  onPress={() => pauseToggle.mutate({ sessionId: session.id, action: paused ? 'resume' : 'pause' })}
-                  loading={pauseToggle.isPending}
-                  disabled={end.isPending}
-                  style={styles.secondary}
-                />
                 <Button
                   label="독서 마치기"
                   onPress={() => {
@@ -410,7 +403,13 @@ export default function TimerScreen() {
                     setFinishOpen(true);
                   }}
                   disabled={pauseToggle.isPending}
-                  style={styles.primary}
+                />
+                <Button
+                  label={paused ? playLabel('이어서 읽기') : playLabel('잠깐 쉬기', '⏸')}
+                  variant="outline"
+                  onPress={() => pauseToggle.mutate({ sessionId: session.id, action: paused ? 'resume' : 'pause' })}
+                  loading={pauseToggle.isPending}
+                  disabled={end.isPending}
                 />
               </View>
             ) : (
@@ -498,10 +497,7 @@ const styles = StyleSheet.create({
   // 경과 시간 — 화면의 주인공. 시간 단위(00:00:00)까지 가면 좁은 화면에서 한 줄에 맞게 줄어든다.
   clock: { fontFamily: mono.semiBold, fontSize: 72, letterSpacing: 2 },
   dock: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.sm },
-  actions: { flexDirection: 'row', gap: spacing.sm },
-  // 주요 버튼을 조금 더 넓게 — 엄지가 먼저 닿는 쪽(UX 철칙 Fitts). 앱 전체 순서대로 주요 버튼이 오른쪽.
-  secondary: { flex: 1 },
-  primary: { flex: 1.4 },
+  actions: { gap: spacing.sm },
   error: { ...typeScale.caption, lineHeight: 17 },
   keyboardToolbar: {
     minHeight: 44,
