@@ -175,10 +175,13 @@ export default function BookDetailScreen() {
   const description = book.data?.description;
   const progress = record.data?.progress;
   // 장정본 표지 — 띠지엔 내 기록의 상태·진행, 뒤장 메모장엔 줄거리(홈 히어로와 같은 연출).
+  // 읽고 싶음은 아래 담기 토글과 같은 '읽고 싶은 책'으로 쓴다(사용자 결정 2026-10-05).
   const bound = {
     band: record.data
       ? {
-          title: statusLabel[record.data.status] ?? record.data.status,
+          title: record.data.status === 'WANT_TO_READ'
+            ? '읽고 싶은 책'
+            : statusLabel[record.data.status] ?? record.data.status,
           meta: progress && progress.totalPages > 0
             ? `${progress.currentPage} / ${progress.totalPages} · ${percent(progress.completionRate ?? 0)}`
             : undefined,
