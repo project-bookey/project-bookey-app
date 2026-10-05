@@ -55,10 +55,10 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
   {
     section: 'messenger',
     nav: false,
-    target: 'header-bookmarks',
+    target: 'header-wallet',
     inHeader: true,
-    title: '책갈피',
-    body: '앱 안에서 쓰는 화폐예요. 엽서·우표로 바꾸거나 클럽 자리를 늘릴 때 써요. 누르면 더 살 수 있어요.',
+    title: '지갑',
+    body: '누르면 책갈피·엽서·우표가 얼마나 남았는지 펼쳐 보여 줘요. 책갈피는 앱 안에서 쓰는 화폐라 엽서·우표로 바꾸거나 클럽 자리를 늘릴 때 써요.',
   },
   {
     section: 'profile',

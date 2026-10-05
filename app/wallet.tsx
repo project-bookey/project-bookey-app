@@ -8,21 +8,19 @@ import { ApiError } from '@/api/client';
 import { walletApi } from '@/api/endpoints';
 import { BookmarkIcon, PaperScreen, StampIcon, SubHeader } from '@/components/collage';
 import { Button, Card, Eyebrow, Tag, TextLink } from '@/components/ui';
-import { freePostcardsTag } from '@/components/social/PostcardWalletLine';
+import { WalletBalances } from '@/components/wallet/WalletBalances';
 import { iconStroke, layout, spacing, typeScale, useTheme } from '@/theme';
 
-/** 보유 칸 아이콘(px). */
-const BALANCE_ICON = 18;
 /** 교환 줄 아이콘(px). */
 const EXCHANGE_ICON = 16;
 
 /**
- * 지갑 — 프로필 상단 '지갑' 메모를 누르면 들어온다.
+ * 지갑 — 프로필 상단 '지갑' 메모나 헤더 지갑 카드의 '지갑 ›'으로 들어온다.
  *
  * 보유(책갈피·엽서·우표) · 교환 · 구독을 한 화면에 모은다. 예전에는 프로필 소셜 구역의 지갑 카드가
  * 맡던 몫이라 호출하는 API·캐시 키(['wallet'])는 그대로다. 책갈피 구매는 /bookmarks,
  * 구독 시작·안내는 /subscription 이 그대로 맡고 여기서는 문만 연다.
- * 책갈피·엽서·우표는 이름 대신 아이콘 + 숫자로 쓴다(2026-10-05 사용자 결정) — 헤더 책갈피 칩과 같은 그림이고,
+ * 책갈피·엽서·우표는 이름 대신 아이콘 + 숫자로 쓴다(2026-10-05 사용자 결정) — 보유 세 칸은 헤더 지갑 카드와 같은 WalletBalances 이고,
  * 교환은 '책갈피 1 → 엽서 1'을 아이콘으로 그린 줄에 '교환' 버튼을 둔다. 스크린 리더는 원래 말로 읽는다.
  */
 export default function WalletScreen() {
@@ -67,24 +65,7 @@ export default function WalletScreen() {
                 />
               </View>
             ) : (
-              <View style={styles.balances}>
-                <Balance
-                  icon={<BookmarkIcon size={BALANCE_ICON} color={colors.textMuted} />}
-                  value={bookmarks}
-                  accessibilityLabel={`책갈피 ${bookmarks}개`}
-                />
-                <Balance
-                  icon={<Mail size={BALANCE_ICON} color={colors.textMuted} {...iconStroke} />}
-                  value={w?.postcardBalance ?? 0}
-                  sub={freePostcardsTag(w?.freePostcardsLeftToday ?? 0)}
-                  accessibilityLabel={`엽서 ${w?.postcardBalance ?? 0}장, 오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`}
-                />
-                <Balance
-                  icon={<StampIcon size={BALANCE_ICON} color={colors.textMuted} />}
-                  value={w?.stampBalance ?? 0}
-                  accessibilityLabel={`우표 ${w?.stampBalance ?? 0}개`}
-                />
-              </View>
+              <WalletBalances wallet={w} style={styles.balances} />
             )}
             <View style={styles.actions}>
               <Button label="책갈피 구매" variant="outline" size="sm" onPress={() => router.push('/bookmarks')} />
@@ -141,25 +122,6 @@ export default function WalletScreen() {
   );
 }
 
-/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 아래에 '+n 무료'(0장이면 없음). */
-function Balance({ icon, value, sub, accessibilityLabel }: {
-  icon: ReactNode;
-  value: number;
-  sub?: string | null;
-  accessibilityLabel: string;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View accessible accessibilityLabel={accessibilityLabel} style={styles.balance}>
-      <View style={styles.balanceTop}>
-        {icon}
-        <Text style={[styles.balanceValue, { color: colors.text }]}>{value}</Text>
-      </View>
-      {sub ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{sub}</Text> : null}
-    </View>
-  );
-}
-
 /** 교환 한 줄 — 왼쪽은 '책갈피 n → 받는 것 1'을 아이콘으로, 오른쪽은 '교환' 버튼. */
 function ExchangeRow({ cost, to, accessibilityLabel, onPress, disabled }: {
   cost: number;
@@ -200,12 +162,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   hint: { marginTop: spacing.sm },
-  // 보유 세 칸 — 간격으로만 가른다(구분선 없음).
-  balances: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
-  balance: { flex: 1, gap: 2 },
-  // 아이콘과 숫자는 한 덩어리 — 광학 보정 6px.
-  balanceTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  balanceValue: { ...typeScale.monoNumeral, fontSize: 20, lineHeight: 26 },
+  balances: { marginTop: spacing.md },
   exchanges: { marginTop: spacing.sm, gap: spacing.xs },
   exchangeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
   formula: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

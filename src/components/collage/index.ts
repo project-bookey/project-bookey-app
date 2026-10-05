@@ -20,3 +20,4 @@ export { StickyNote } from './StickyNote';
 export { SubHeader } from './SubHeader';
 export { TiltCover, useCoverEntrance } from './TiltCover';
 export type { StackOffset } from './TiltCover';
+export { WalletIcon } from './WalletIcon';
