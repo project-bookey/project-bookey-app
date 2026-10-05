@@ -20,14 +20,15 @@ export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' |
  * 하단 구역 네비. 탐색은 홈의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
  * 홈(내 책 · key shelf)은 가운데에 두고 집 아이콘을 쓴다(광장은 펼친 책).
- * 메신저(엽서함·채팅)는 헤더 아이콘 둘이던 것을 사람 사이 글끼리 한 구역으로 묶은 것.
+ * 엽서(키 messenger, 우표 아이콘)는 받은·보낸 엽서를 한 목록으로 모은 구역 — 채팅은 구역이 아니라
+ * 헤더 왼쪽 말풍선(BrandHeader)으로 어디서든 연다(2026-10-05, 사용자 결정).
  * 설정은 탭이 아니라 '나' 화면 프로필 행의 톱니로 들어가는 서브 화면이다(2026-09-08).
  */
 const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[] = [
   { key: 'plaza', label: '광장', path: '/plaza', route: 'plaza' },
   { key: 'clubs', label: '클럽', path: '/clubs', route: 'clubs' },
   { key: 'shelf', label: '홈', path: '/home', route: 'home' },
-  { key: 'messenger', label: '메신저', path: '/messenger', route: 'messenger' },
+  { key: 'messenger', label: '엽서', path: '/messenger', route: 'messenger' },
   { key: 'me', label: '나', path: '/profile', route: 'profile' },
 ];
 
@@ -682,6 +683,11 @@ function SectionTab({ section, selected, visuallySelected, shift, tourTarget, on
   );
 }
 
+/** 우표 톱니 테두리 — 16×16 네모의 네 변마다 반지름 1 반원 홈 셋(시계 방향으로 돌며 안쪽으로 판다). */
+const STAMP_EDGE = 'M4 4H7a1 1 0 0 0 2 0H11a1 1 0 0 0 2 0H15a1 1 0 0 0 2 0H20V7a1 1 0 0 0 0 2V11a1 1 0 0 0 0 2'
+  + 'V15a1 1 0 0 0 0 2V20H17a1 1 0 0 0-2 0H13a1 1 0 0 0-2 0H9a1 1 0 0 0-2 0H4V17a1 1 0 0 0 0-2V13a1 1 0 0 0 0-2'
+  + 'V9a1 1 0 0 0 0-2z';
+
 function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
   const stroke = { stroke: color, ...iconStroke };
   const size = 27;
@@ -712,10 +718,11 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
         </Svg>
       );
     case 'messenger':
-      // 말풍선 — 헤더에 있던 채팅 아이콘과 같은 꼴을 탭 크기(22)로.
+      // 우표 — 가장자리가 반원으로 파인 톱니 테두리에 안쪽 네모(2026-10-05 시안 B).
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Path d="M5 6.5h14v8.5h-8.5L7 18.5V15H5z" {...stroke} />
+          <Path d={STAMP_EDGE} {...stroke} />
+          <Path d="M8 8h8v8H8z" {...stroke} />
         </Svg>
       );
     case 'me':

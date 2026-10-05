@@ -32,12 +32,12 @@ export function showSection(route: SectionRoute) {
 }
 
 /**
- * 어느 화면에서든 메인 탭의 한 구역을 연다 — 알림에서 메신저로, 내 프로필에서 '나'로 갈 때 쓴다.
+ * 어느 화면에서든 메인 탭의 한 구역을 연다 — 엽서 알림에서 엽서 구역으로, 내 프로필에서 '나'로 갈 때 쓴다.
  *
  * `router.navigate('/messenger')`·`<Redirect href="/profile">` 처럼 경로로 가면 하위 화면 위에서는
  * 메인 탭이 한 벌 더 쌓이고, 메인 탭 URL 은 보이는 구역을 따라가지 않아 돌아가도 그 구역이 열리지 않는다.
  * 그래서 dismissTo 로 쌓인 화면을 걷고 원래 메인 탭으로 돌아간 뒤(없으면 지금 화면을 메인 탭으로 바꾼다),
- * pager 는 맡겨 둔 구역으로 메인 탭 레이아웃이 넘긴다. params 는 그 구역 화면이 읽는 주소 값이다(메신저 pane 등).
+ * pager 는 맡겨 둔 구역으로 메인 탭 레이아웃이 넘긴다. params 는 그 구역 화면이 읽는 주소 값이다.
  */
 export function openSection(route: SectionRoute, params?: Record<string, string>) {
   useSectionPager.setState({ pending: route });

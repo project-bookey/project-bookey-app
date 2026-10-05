@@ -5,7 +5,7 @@ import type { SectionRoute } from '@/components/pager/sectionPager';
 
 /**
  * 둘러보기 한 단계 — 메인 탭 한 구역을 보여 주고, 그 구역의 하단 탭 아이콘과 화면 속 핵심 요소를 함께 비춘다.
- * 하단 탭은 아이콘만 있어 이름(홈·메신저·나)을 익힐 곳이 여기뿐이다 — 제목은 탭의 접근성 라벨과 같게 둔다.
+ * 하단 탭은 아이콘만 있어 이름(홈·엽서·나)을 익힐 곳이 여기뿐이다 — 제목은 탭의 접근성 라벨과 같게 둔다.
  */
 export type TourStep = {
   /** 이 단계에서 보여 줄 메인 탭 구역. */
@@ -47,9 +47,10 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
   {
     section: 'messenger',
     nav: true,
-    target: 'messenger-panes',
-    title: '메신저',
-    body: '독후감이나 독자 페이지에서 주고받은 엽서가 여기 모여요. 엽서에 답장이 오가면 채팅이 열려요.',
+    target: 'header-chat',
+    inHeader: true,
+    title: '엽서',
+    body: '독후감이나 독자 페이지에서 주고받은 엽서가 여기 모여요. 봉투는 받은 엽서, 종이비행기는 보낸 엽서예요. 답장이 오가면 열리는 채팅은 왼쪽 위 말풍선에서 봐요.',
   },
   {
     section: 'messenger',

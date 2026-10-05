@@ -41,8 +41,9 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CLUB_NUDGE': return club('/club/[id]');
     case 'POST_LIKED':
     case 'POST_COMMENTED': return one('/post/[id]', 'postId');
-    case 'POSTCARD_RECEIVED': return { section: 'messenger', params: { pane: 'inbox' } };
-    case 'POSTCARD_REPLIED': return { section: 'messenger', params: { pane: 'sent' } };
+    // 받은·보낸 엽서는 엽서 구역의 한 목록에 섞여 있다.
+    case 'POSTCARD_RECEIVED':
+    case 'POSTCARD_REPLIED': return { section: 'messenger' };
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
     // 고객문의 답변 — 그 문의 화면에서 답을 읽는다.
     case 'INQUIRY_ANSWERED': return one('/inquiry/[id]', 'inquiryId');

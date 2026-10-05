@@ -11,7 +11,6 @@ import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatMessage } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { openSection } from '@/components/pager/sectionPager';
 import { KeyboardArea } from '@/components/keyboard';
 import { BookeyPackTabs } from '@/components/chat/BookeyPackTabs';
 import { BOOKEY_STICKER_PACKS, findBookeyChatSticker } from '@/components/chat/bookeyStickers';
@@ -88,9 +87,9 @@ export default function ChatRoomScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
       queryClient.removeQueries({ queryKey: ['chatMessages', chatId] });
-      // 돌아갈 화면이 없으면(알림으로 바로 들어온 방 등) 메신저 '채팅' 칸을 연다.
+      // 돌아갈 화면이 없으면(알림으로 바로 들어온 방 등) 채팅 목록을 연다.
       if (router.canGoBack()) router.back();
-      else openSection('messenger', { pane: 'chats' });
+      else router.replace('/chats');
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : '채팅을 삭제하지 못했어요.'),
   });

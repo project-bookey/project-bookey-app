@@ -1,60 +1,16 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-
 import { PaperScreen } from '@/components/collage';
-import { ChatList } from '@/components/messenger/ChatList';
 import { PostcardList } from '@/components/messenger/PostcardList';
-import { layout, spacing } from '@/theme';
-import { TourTarget } from '@/components/tour/TourTarget';
-import { SwipeableTabs } from '@/components/SwipeableTabs';
-import { Segmented } from '@/components/ui';
-
-/** 메신저의 칸 — 엽서함 두 상자와 채팅을 한 줄로 편다(엽서 → 답장 → 채팅 순서 그대로). */
-type Pane = 'inbox' | 'sent' | 'chats';
-const PANES: { value: Pane; label: string }[] = [
-  { value: 'inbox', label: '받은 엽서' },
-  { value: 'sent', label: '보낸 엽서' },
-  { value: 'chats', label: '채팅' },
-];
-const PANE_VALUES: readonly Pane[] = ['inbox', 'sent', 'chats'];
-const isPane = (v: unknown): v is Pane => v === 'inbox' || v === 'sent' || v === 'chats';
 
 /**
- * 메신저 구역 — 엽서함(받은·보낸)과 채팅을 하단 탭 하나로 묶는다.
- * 전엔 헤더 왼쪽의 엽서함·채팅 아이콘 둘로 각각 들어갔는데, 사람 사이 오가는 글은 한 자리에
- * 있어야 한다는 요청(2026-09-08)으로 구역이 됐다. 옛 경로 `/postcards`·`/chats` 는 openSection 으로
- * 이 구역의 그 칸을 연다(`?pane=` 로 칸을 지정).
+ * 엽서 구역(키 messenger, 하단 탭 우표 아이콘) — 받은 엽서와 보낸 엽서를 한 목록으로 모은다.
+ * 예전엔 받은 엽서 · 보낸 엽서 · 채팅 세 칸을 오갔는데, 2026-10-05 사용자 결정으로 두 엽서함을 합쳐
+ * 카드마다 봉투·종이비행기로 가르고, 채팅은 다섯 구역 헤더 왼쪽 말풍선(BrandHeader → /chats)으로 옮겼다.
+ * 옛 경로 `/postcards` 와 엽서 알림은 openSection 으로 이 구역을 연다.
  */
 export default function MessengerScreen() {
-  const params = useLocalSearchParams<{ pane?: string }>();
-  const [pane, setPane] = useState<Pane>(isPane(params.pane) ? params.pane : 'inbox');
-
-  // 알림(openSection)·옛 경로로 칸이 지정돼 들어오면 그 칸을 편다. 편 뒤에는 주소에서 지운다 —
-  // 직접 다른 칸으로 옮긴 뒤 같은 칸을 가리키는 알림이 또 와도 값이 바뀌어 다시 펴지게.
-  useEffect(() => {
-    if (!isPane(params.pane)) return;
-    setPane(params.pane);
-    router.setParams({ pane: undefined });
-  }, [params.pane]);
-
   return (
     <PaperScreen>
-      <View style={styles.panes}>
-        <TourTarget id="messenger-panes">
-          <Segmented options={PANES} value={pane} onChange={setPane} />
-        </TourTarget>
-      </View>
-      <SwipeableTabs values={PANE_VALUES} value={pane} onChange={setPane}>
-        {pane === 'chats' ? <ChatList /> : <PostcardList box={pane === 'inbox' ? 'INBOX' : 'SENT'} />}
-      </SwipeableTabs>
+      <PostcardList />
     </PaperScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  panes: {
-    ...layout.content,
-    padding: spacing.lg,
-  },
-});

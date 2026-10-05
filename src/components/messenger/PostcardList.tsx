@@ -1,40 +1,72 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { Mail, Send } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
+} from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
-import type { PostcardView } from '@/api/types';
+import type { Page, PostcardView } from '@/api/types';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
 import { NAV_CLEARANCE } from '@/components/collage';
 import { KeyboardArea, KeyboardRevealProvider, useKeyboardReveal } from '@/components/keyboard';
-import { Button, Card, EmptyState, FootAction, Tag, formatRelative } from '@/components/ui';
+import { Button, Card, EmptyState, FootAction, Tag, TextLink, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
-import { hairline, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
 const MAX_GRAPHEMES = 16;
-
-export type PostcardBox = 'INBOX' | 'SENT';
+/** 받은·보낸 엽서를 한 번에 받아 오는 수 — 서버에 둘을 합친 목록이 없어 상자마다 이만큼 받아 섞는다. */
+const PAGE_SIZE = 50;
 
 /**
- * 엽서함 (§14.2) — 받은 엽서에 답장(우표 1개, 동봉 엽서는 무료)하면 두 사람 사이에 채팅이 열린다.
- * 답장하지 않아도 아무 일도 일어나지 않는다 — 거절 통보는 없다.
- *
- * 메신저 구역(app/(tabs)/messenger.tsx)의 '받은 엽서'·'보낸 엽서' 칸이다 — 어느 칸인지는
- * 구역 화면의 칸 전환이 정하고 여기는 그 상자 하나만 그린다.
+ * 받은 엽서와 보낸 엽서를 한 줄로 섞는다 — 최신순(같은 시각이면 id 큰 것 먼저).
+ * 한쪽에 다음 쪽이 남아 있으면, 그쪽에서 받은 가장 오래된 엽서보다 오래된 것은 뺀다 — 그 사이에 안 받은
+ * 엽서가 끼어 있을 수 있어서, 남기면 순서가 틀린다.
  */
-export function PostcardList({ box }: { box: PostcardBox }) {
+export function mergePostcards(inbox: Page<PostcardView>, sent: Page<PostcardView>): PostcardView[] {
+  const time = (card: PostcardView) => Date.parse(card.createdAt);
+  const cutoff = Math.max(
+    ...[inbox, sent]
+      .filter((page) => page.hasNext && page.content.length > 0)
+      .map((page) => Math.min(...page.content.map(time))),
+    -Infinity,
+  );
+  return [...inbox.content, ...sent.content]
+    .filter((card) => time(card) >= cutoff)
+    .sort((a, b) => time(b) - time(a) || b.id - a.id);
+}
+
+/**
+ * 엽서 구역 (§14.2) — 받은 엽서와 보낸 엽서를 한 목록에 섞고, 카드마다 봉투(받은)·종이비행기(보낸)로 가른다
+ * (2026-10-05, 사용자 결정). 받은 엽서에 답장(우표 1개, 동봉 엽서는 무료)하면 두 사람 사이에 채팅이 열린다 —
+ * 채팅은 헤더 왼쪽 말풍선에서 연다. 답장하지 않아도 아무 일도 일어나지 않는다 — 거절 통보는 없다.
+ */
+export function PostcardList() {
   const { colors } = useTheme();
+  // 당겨서 새로고침 표시는 손으로 당긴 때만 — 다른 화면의 무효화로 다시 받을 때는 돌지 않게 따로 쥔다.
+  const [pulling, setPulling] = useState(false);
 
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.get });
   const list = useQuery({
-    queryKey: ['postcards', box],
-    queryFn: () => (box === 'INBOX' ? postcardApi.inbox() : postcardApi.sent()),
+    queryKey: ['postcards', 'ALL'],
+    queryFn: async () => {
+      const [inbox, sent] = await Promise.all([
+        postcardApi.inbox(0, PAGE_SIZE),
+        postcardApi.sent(0, PAGE_SIZE),
+      ]);
+      return mergePostcards(inbox, sent);
+    },
   });
 
-  const items = list.data?.content ?? [];
+  const items = list.data ?? [];
+  const pull = async () => {
+    setPulling(true);
+    await Promise.all([list.refetch(), wallet.refetch()]);
+    setPulling(false);
+  };
   // 답장 칸을 누르면 그 밑 보내기 버튼까지 키보드 위로 올린다. FlatList 의 getScrollResponder() 는 실제로는
   // 안쪽 ScrollView 를 돌려준다(타입 선언만 어긋나 있다).
   const listRef = useRef<FlatList<PostcardView>>(null);
@@ -49,6 +81,7 @@ export function PostcardList({ box }: { box: PostcardBox }) {
           keyExtractor={(card) => String(card.id)}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => void pull()} />}
           ListHeaderComponent={
             wallet.data ? (
               <Text style={[typeScale.caption, styles.wallet, { color: colors.textFaint }]}>
@@ -57,17 +90,17 @@ export function PostcardList({ box }: { box: PostcardBox }) {
               </Text>
             ) : null
           }
-          renderItem={({ item }) => <PostcardRow card={item} box={box} />}
+          renderItem={({ item }) => <PostcardRow card={item} />}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
           ListEmptyComponent={
-            list.isLoading ? null : box === 'INBOX' ? (
+            list.isLoading ? null : list.isError ? (
               <EmptyState
-                title="아직 받은 엽서가 없어요"
-                description="광장에 독후감을 올리면 엽서가 올 거예요."
+                title="엽서를 불러오지 못했어요"
+                action={<TextLink label="다시 시도" kind="action" onPress={() => list.refetch()} />}
               />
             ) : (
               <EmptyState
-                title="아직 보낸 엽서가 없어요"
+                title="아직 주고받은 엽서가 없어요"
                 description="광장에서 마음에 드는 독후감에 엽서를 보내 보세요."
               />
             )
@@ -78,7 +111,7 @@ export function PostcardList({ box }: { box: PostcardBox }) {
   );
 }
 
-function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
+function PostcardRow({ card }: { card: PostcardView }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
@@ -90,10 +123,12 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
   const { confirm, arm, disarm } = useDeleteConfirm<number>();
   const confirmingDelete = confirm === card.id;
 
-  const inbox = box === 'INBOX';
+  // mine = 내가 보낸 엽서(서버가 보낸 사람으로 정한다).
+  const inbox = !card.mine;
   const counterpartName = inbox ? card.fromNickname : card.toNickname;
   const counterpartAvatar = inbox ? card.fromAvatarUrl : card.toAvatarUrl;
   const counterpartId = inbox ? card.fromUserId : card.toUserId;
+  const DirectionIcon = inbox ? Mail : Send;
   const replied = card.status === 'REPLIED';
   const used = countGraphemes(body);
   const over = used > MAX_GRAPHEMES;
@@ -141,6 +176,14 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
               <PersonGlyph size={AVATAR_SIZE} color={colors.textFaint} />
             </View>
           )}
+          {/* 받은 엽서는 봉투, 보낸 엽서는 종이비행기 — 방향은 옆 '…에게서 / …에게' 글자로도 읽힌다. */}
+          <DirectionIcon
+            size={DIRECTION_ICON}
+            color={colors.textMuted}
+            {...iconStroke}
+            style={styles.directionIcon}
+            aria-hidden
+          />
           <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.personName, { color: colors.text }]}>
             {inbox ? `${counterpartName}에게서` : `${counterpartName}에게`}
           </Text>
@@ -232,14 +275,19 @@ function PostcardRow({ card, box }: { card: PostcardView; box: PostcardBox }) {
   );
 }
 
+/** 받은·보낸 표시 아이콘 크기 — 이름(15px) 옆에서 글자 높이와 맞는 16(2026-10-05 시안 ①). */
+const DIRECTION_ICON = 16;
+
 const styles = StyleSheet.create({
-  // 좌우 여백은 다른 구역 목록(클럽)과 같은 lg — 위 칸 전환 버튼과 가장자리를 맞춘다.
-  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: NAV_CLEARANCE },
+  // 좌우 여백은 다른 구역 목록(클럽)과 같은 lg, 위는 헤더와 첫 줄 사이를 띄운다.
+  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: NAV_CLEARANCE },
   wallet: { marginBottom: spacing.md },
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   // 긴 닉네임은 말줄임 — 오른쪽 시간·삭제를 밀어내지 않는다.
   person: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   personName: { flexShrink: 1 },
+  // 긴 닉네임이 말줄임될 때 아이콘까지 눌려 작아지지 않게.
+  directionIcon: { flexShrink: 0 },
   headMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   // 아바타는 앱 공통 크기(광장 카드·홈 '오늘의 글'과 같은 AVATAR_SIZE) — 여기서만 작으면 다른 사람처럼 보인다.
   avatar: {
