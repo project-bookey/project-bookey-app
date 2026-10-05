@@ -206,8 +206,8 @@ export function MeetingFormFields({ clubId, form, onLowerFieldFocus, onLowerFiel
         <Button label="서재에서 고르기" variant="outline" onPress={() => setShowBooks(true)} />
       )}
 
-      {/* 장소 칸을 누르면 바로 전체 화면 장소 찾기가 뜬다(홈 검색바 → 탐색과 같은 방식). 이름으로 찾으면
-          이름·주소·지도가 한 번에 채워지고, 찾는 곳이 없으면 그 화면에서 주소로 찾는다. */}
+      {/* 장소 칸을 누르면 바로 전체 화면 장소 찾기가 뜬다(홈 검색바 → 탐색과 같은 방식). 적는 대로 이름과 주소를
+          함께 찾아 지도에 찍고, 고르면 이름·주소·지도가 한 번에 채워진다. */}
       <Eyebrow>장소</Eyebrow>
       <Pressable
         onPress={() => setShowPlace(true)}
