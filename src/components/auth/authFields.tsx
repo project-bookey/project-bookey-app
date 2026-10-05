@@ -2,6 +2,7 @@ import {
   StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle,
 } from 'react-native';
 
+import type { EmailCodeResponse } from '@/api/types';
 import { spacing, typeScale, type ColorTokens } from '@/theme';
 
 /*
@@ -14,15 +15,43 @@ export const isEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value) && value.
 /** 인증 코드 입력 시간이 끝났을 때 코드 칸 밑에 띄우는 경고. */
 export const CODE_EXPIRED_MESSAGE = '입력 시간이 지났어요. 코드를 다시 받아 주세요.';
 
+/** 같은 이메일로 1시간 안에 받은 코드 수와 그 상한 — '다시 받기' 버튼에 'used/limit' 으로 붙인다. */
+export type CodeSends = { used: number; limit: number };
+
 /**
- * 코드 칸 밑 안내 아래 한 줄로 붙이는 '다시 받기' 남은 횟수 — 서버가 코드를 보낼 때 알려 준 resendsLeft(1시간 안에 더 받을 수 있는 수)로 쓴다.
- * 서버가 횟수를 세지 못했으면(값 없음) 줄을 붙이지 않는다. 다 써도 버튼은 막지 않는다 — 언제 풀리는지 모르니, 누르면 서버가
- * '잠시 후 다시 받아 주세요'로 답한다(그래서 여기선 그 말을 되풀이하지 않는다).
+ * 코드 발급 응답에서 받은 수를 꺼낸다(서버가 1시간 상한을 센다). 서버가 횟수를 세지 못했거나(resendsLeft 없음)
+ * 상한을 주지 않는 옛 서버면 null — 버튼에 숫자를 붙이지 않는다.
  */
-export const withResendsLeft = (hint: string, left: number | null | undefined) => {
-  if (left == null) return hint;
-  return `${hint}\n${left > 0 ? `다시 받기는 ${left}번 남았어요.` : '다시 받기를 모두 썼어요.'}`;
-};
+export const codeSendsOf = (res: EmailCodeResponse): CodeSends | null =>
+  res.resendsLeft == null || !(res.sendLimit > 0)
+    ? null
+    : { used: res.sendLimit - res.resendsLeft, limit: res.sendLimit };
+
+/** 화면 읽기 프로그램이 읽을 버튼 이름 — '3/10' 은 분수로 읽히니 말로 풀어 쓴다. */
+export const resendA11yLabel = (label: string, sends: CodeSends | null) =>
+  sends ? `${label}, ${sends.limit}번 중 ${sends.used}번 받음` : label;
+
+/**
+ * 코드 받기 버튼 글자 — 받은 수를 'used/limit' 으로 붙이고, 상한까지 받았으면 그 숫자를 붉게 쓴다.
+ * 다 받아도 버튼은 막지 않는다 — 언제 풀리는지 모르니, 누르면 서버가 '잠시 후 다시 받아 주세요'로 답한다.
+ */
+export function ResendLabel({ label, sends, colors, style }: {
+  label: string;
+  sends: CodeSends | null;
+  colors: ColorTokens;
+  style: StyleProp<TextStyle>;
+}) {
+  return (
+    <Text style={style}>
+      {label}
+      {sends ? (
+        <Text style={[styles.sendCount, { color: sends.used >= sends.limit ? colors.danger : colors.textMuted }]}>
+          {` ${sends.used}/${sends.limit}`}
+        </Text>
+      ) : null}
+    </Text>
+  );
+}
 
 /** 남은 초를 '2:59' 꼴로. */
 const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -79,4 +108,5 @@ const styles = StyleSheet.create({
   timed: { paddingRight: 64 },
   clock: { position: 'absolute', right: spacing.md },
   clockLabel: { ...typeScale.label, fontVariant: ['tabular-nums'] },
+  sendCount: { fontVariant: ['tabular-nums'] },
 });
