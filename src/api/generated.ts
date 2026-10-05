@@ -4465,6 +4465,8 @@ export interface components {
             /** Format: int64 */
             expiresInSec: number;
             devCode?: string;
+            /** Format: int32 */
+            resendsLeft?: number;
         };
         EmailLoginRequest: {
             /** Format: email */
