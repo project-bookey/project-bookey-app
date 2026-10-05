@@ -32,12 +32,12 @@ WebBrowser.maybeCompleteAuthSession();
 const BUTTON_HEIGHT = 48;
 
 /** 경고를 띄우는 자리 — 칸 하나에 걸리는 오류는 그 칸 밑에, 어느 칸에도 걸리지 않는 오류(로그인 실패·소셜 등)는 버튼 바로 위(form)에. */
-type FieldSpot = 'email' | 'nickname' | 'password' | 'identity' | 'code';
+type FieldSpot = 'email' | 'code' | 'nickname' | 'password' | 'identity';
 type ErrorSpot = FieldSpot | 'form';
 type FormErrors = Partial<Record<ErrorSpot, string>>;
 
 /** 화면에 놓인 순서 — 경고가 여럿이면 맨 위 칸으로 스크롤한다. */
-const FIELD_ORDER: FieldSpot[] = ['email', 'nickname', 'password', 'identity', 'code'];
+const FIELD_ORDER: FieldSpot[] = ['email', 'code', 'nickname', 'password', 'identity'];
 
 /** 서버 오류 코드가 가리키는 칸. 여기 없는 코드(또는 지금 화면에 없는 칸)는 부른 쪽이 정한 자리에 둔다. */
 const SERVER_ERROR_SPOT: Record<string, FieldSpot> = {
@@ -156,7 +156,7 @@ export default function LoginScreen() {
     }
   };
 
-  /** 경고 하나를 띄우고 그 칸이 보이게 한다 — '코드 받기'를 누른 자리에서 이메일 칸이 위로 지나가 있을 수 있다. */
+  /** 경고 하나를 띄우고 그 칸이 보이게 한다 — 누른 버튼 자리에서 경고가 걸린 칸이 화면 위로 지나가 있을 수 있다. */
   const flagError = (spot: ErrorSpot, message: string) => {
     putError(spot, message);
     revealFirstError({ [spot]: message });
@@ -507,6 +507,66 @@ export default function LoginScreen() {
               />
               <FieldError colors={darkColors} message={errors.email} />
             </View>
+            {isSignup && signupConfig.data?.verification === 'EMAIL_CODE' ? (
+              <View ref={codeFieldRef} style={styles.field} onLayout={trackField('code')}>
+                <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
+                <View style={styles.codeRow}>
+                  {/* 입력 마감까지 남은 시간은 칸 안 오른쪽 — 끝나면 붉게 바뀌고 칸 밑에 다시 받으라는 경고가 뜬다. */}
+                  <TimedCodeInput
+                    colors={darkColors}
+                    inputStyle={styles.input}
+                    timing={codeTiming}
+                    secondsLeft={codeLeft}
+                    error={codeError}
+                    value={code}
+                    onChangeText={(value) => {
+                      setCode(value);
+                      setCodeVerified(false);
+                      putError('code', null);
+                    }}
+                    accessibilityLabel="이메일 인증 코드"
+                    onFocus={() => revealAbove(codeFieldRef)}
+                  />
+                  {/* 다시 받기는 기다림 없이 바로 열려 있다(사용자 결정) — 남용은 서버가 1시간 횟수 상한으로 막는다. */}
+                  <Pressable
+                    onPress={requestCode}
+                    disabled={busy || codeLoading}
+                    style={({ pressed }) => [
+                      styles.codeButton,
+                      (pressed || busy || codeLoading) && styles.pressed,
+                    ]}
+                    accessibilityRole="button"
+                  >
+                    {codeLoading
+                      ? <ActivityIndicator color={darkColors.text} />
+                      : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
+                  </Pressable>
+                </View>
+                <FieldError colors={darkColors} message={codeError} />
+                {codeSent ? (
+                  <>
+                    <Pressable
+                      onPress={verifyCode}
+                      disabled={busy || codeVerifyLoading || code.length !== 6 || codeVerified || codeExpired}
+                      style={({ pressed }) => [
+                        styles.identityButton,
+                        (pressed || busy || codeVerifyLoading || codeVerified || codeExpired) && styles.pressed,
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      {codeVerifyLoading
+                        ? <ActivityIndicator color={darkColors.text} />
+                        : <Text style={[typeScale.label, { color: codeVerified ? darkColors.accent : darkColors.text }]}>
+                            {codeVerified ? '✓ 이메일 인증 완료' : '인증 코드 확인'}
+                          </Text>}
+                    </Pressable>
+                    {!codeVerified ? (
+                      <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 {codeValidMinutes}분 안에 입력해 주세요.</Text>
+                    ) : null}
+                  </>
+                ) : null}
+              </View>
+            ) : null}
             {isSignup ? (
               <View style={styles.field} onLayout={trackField('nickname')}>
                 <Text style={styles.fieldLabel}>닉네임</Text>
@@ -584,66 +644,6 @@ export default function LoginScreen() {
                   </Pressable>
                 )}
                 <FieldError colors={darkColors} message={errors.identity} />
-              </View>
-            ) : null}
-            {isSignup && signupConfig.data?.verification === 'EMAIL_CODE' ? (
-              <View ref={codeFieldRef} style={styles.field} onLayout={trackField('code')}>
-                <Text style={styles.fieldLabel}>이메일 인증 코드</Text>
-                <View style={styles.codeRow}>
-                  {/* 입력 마감까지 남은 시간은 칸 안 오른쪽 — 끝나면 붉게 바뀌고 칸 밑에 다시 받으라는 경고가 뜬다. */}
-                  <TimedCodeInput
-                    colors={darkColors}
-                    inputStyle={styles.input}
-                    timing={codeTiming}
-                    secondsLeft={codeLeft}
-                    error={codeError}
-                    value={code}
-                    onChangeText={(value) => {
-                      setCode(value);
-                      setCodeVerified(false);
-                      putError('code', null);
-                    }}
-                    accessibilityLabel="이메일 인증 코드"
-                    onFocus={() => revealAbove(codeFieldRef)}
-                  />
-                  {/* 다시 받기는 기다림 없이 바로 열려 있다(사용자 결정) — 남용은 서버가 1시간 횟수 상한으로 막는다. */}
-                  <Pressable
-                    onPress={requestCode}
-                    disabled={busy || codeLoading}
-                    style={({ pressed }) => [
-                      styles.codeButton,
-                      (pressed || busy || codeLoading) && styles.pressed,
-                    ]}
-                    accessibilityRole="button"
-                  >
-                    {codeLoading
-                      ? <ActivityIndicator color={darkColors.text} />
-                      : <Text style={styles.codeButtonLabel}>{codeSent ? '다시 받기' : '코드 받기'}</Text>}
-                  </Pressable>
-                </View>
-                <FieldError colors={darkColors} message={codeError} />
-                {codeSent ? (
-                  <>
-                    <Pressable
-                      onPress={verifyCode}
-                      disabled={busy || codeVerifyLoading || code.length !== 6 || codeVerified || codeExpired}
-                      style={({ pressed }) => [
-                        styles.identityButton,
-                        (pressed || busy || codeVerifyLoading || codeVerified || codeExpired) && styles.pressed,
-                      ]}
-                      accessibilityRole="button"
-                    >
-                      {codeVerifyLoading
-                        ? <ActivityIndicator color={darkColors.text} />
-                        : <Text style={[typeScale.label, { color: codeVerified ? darkColors.accent : darkColors.text }]}>
-                            {codeVerified ? '✓ 이메일 인증 완료' : '인증 코드 확인'}
-                          </Text>}
-                    </Pressable>
-                    {!codeVerified ? (
-                      <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 {codeValidMinutes}분 안에 입력해 주세요.</Text>
-                    ) : null}
-                  </>
-                ) : null}
               </View>
             ) : null}
             {isSignup ? (
