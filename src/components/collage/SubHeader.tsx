@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { ReactNode, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme';
@@ -13,17 +13,24 @@ const MIN_SIDE = 44;
  * 서브 화면 헤더 — 배경 없이 종이 위에 얹힌다(PaperScreen 안에서 쓴다).
  * 우측은 슬롯이며 기본값은 비어 있다 — 동작 없는 ⋯ 버튼을 만들지 않는다.
  */
-export function SubHeader({ category, right, onBack }: {
+export function SubHeader({ category, right, onBack, sheet = false }: {
   /** 가운데 카테고리 표기 — 모노 아이브로우. */
   category?: string;
   /** 우측 슬롯 — 없으면 자리만 비워 좌우 균형을 맞춘다. */
   right?: ReactNode;
   /** 기본 동작은 뒤로 가기 — 돌아갈 곳이 없으면 서가로. */
   onBack?: () => void;
+  /**
+   * presentation: 'modal' 로 뜨는 화면. iOS 에서는 시트가 상태 표시줄 아래에서 시작하는데 인셋은 앱 전체 기준
+   * 그대로 와서, 그만큼 위가 빈 띠로 남는다 — 시트에서는 인셋 대신 작은 여백만 둔다(네이티브 헤더도 같은 처리).
+   * 안드로이드·웹의 modal 은 전체 화면이라 그대로 인셋을 쓴다.
+   */
+  sheet?: boolean;
 }) {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const topInset = sheet && Platform.OS === 'ios' ? spacing.sm : insets.top;
   // 우측 슬롯이 44pt 보다 넓으면(아이콘 두 개 등) 왼쪽도 같은 폭을 비워 가운데 카테고리가 실제 중앙에 오게 한다.
   const [rightWidth, setRightWidth] = useState(MIN_SIDE);
 
@@ -38,7 +45,7 @@ export function SubHeader({ category, right, onBack }: {
   };
 
   return (
-    <View style={[styles.bar, { paddingTop: insets.top }]}>
+    <View style={[styles.bar, { paddingTop: topInset }]}>
       <View style={styles.row}>
         <View style={[styles.side, { minWidth: rightWidth }]}>
           <Pressable
