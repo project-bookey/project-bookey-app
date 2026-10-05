@@ -245,7 +245,7 @@ export function Field({ label, hint, error, style, ...props }: TextInputProps & 
 }
 
 /**
- * 세그먼트 — 회색 톤 트랙 안에 고른 칸을 종이색으로 까는 모양(2026-10-05 '부드러운 네모'). 메신저·광장의 칸 바꾸기도
+ * 세그먼트 — 회색 톤 트랙 안에 고른 칸을 종이색으로 까는 모양(2026-10-05 '부드러운 네모'). 팔로우·고객문의의 칸 바꾸기도
  * 이것 하나를 쓴다(예전 CapsuleTabs 를 합쳤다). 트랙 높이 44pt 를 넘겨 칸 전체가 손가락 상자다.
  */
 export function Segmented<T extends string>({ options, value, onChange }: {

@@ -1,15 +1,16 @@
-import { useEffect } from 'react';
-
-import { PaperScreen } from '@/components/collage';
-import { openSection } from '@/components/pager/sectionPager';
+import { PaperScreen, SubHeader } from '@/components/collage';
+import { ChatList } from '@/components/messenger/ChatList';
 
 /**
- * 채팅 목록은 메신저 구역의 한 칸이 됐다 — 옛 경로로 들어오면 그 칸을 연다.
- * Redirect 로 보내면 이 화면이 새 메인 탭으로 바뀌어, 앱이 떠 있을 때 옛 링크로 들어오면 메인 탭이 한 벌 더 쌓였다.
+ * 채팅 목록 (§14.3) — 다섯 구역 헤더 왼쪽의 말풍선으로 들어오는 전체 화면.
+ * 예전엔 메신저 구역의 한 칸이었는데, 엽서 구역은 엽서만 두고 채팅은 어디서든 한 번에 열게 됐다
+ * (2026-10-05, 사용자 결정).
  */
-export default function ChatsRedirect() {
-  useEffect(() => {
-    openSection('messenger', { pane: 'chats' });
-  }, []);
-  return <PaperScreen>{null}</PaperScreen>;
+export default function ChatsScreen() {
+  return (
+    <PaperScreen>
+      <SubHeader category="채팅" />
+      <ChatList />
+    </PaperScreen>
+  );
 }
