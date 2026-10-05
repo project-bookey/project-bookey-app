@@ -253,7 +253,7 @@ export default function TimerScreen() {
   if (record.isLoading || current.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="타이머" sheet />
+        <SubHeader category="타이머" />
         <Loading />
       </PaperScreen>
     );
@@ -295,9 +295,8 @@ export default function TimerScreen() {
     <PaperScreen>
       {/* 마치기 시트가 떠 있는 동안 뒤 화면은 화면 낭독기에서 숨긴다. */}
       <View style={styles.fill} aria-hidden={sheetVisible}>
-        <SubHeader category="타이머" sheet />
+        <SubHeader category="타이머" />
 
-        {/* 시트로 뜨는 화면(iOS)이라 화면 맨 위에서 시작하지 않는다 — KeyboardArea 가 창 기준으로 재서 맞춘다. */}
         <KeyboardArea>
           <ScrollView
             ref={scrollRef}
