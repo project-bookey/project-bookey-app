@@ -27,7 +27,7 @@ export const codeSendsOf = (res: EmailCodeResponse): CodeSends | null =>
     ? null
     : { used: res.sendLimit - res.resendsLeft, limit: res.sendLimit };
 
-/** 화면 읽기 프로그램이 읽을 버튼 이름 — '3/10' 은 분수로 읽히니 말로 풀어 쓴다. */
+/** 화면 읽기 프로그램이 읽을 버튼 이름 — '3/5' 는 분수로 읽히니 말로 풀어 쓴다. */
 export const resendA11yLabel = (label: string, sends: CodeSends | null) =>
   sends ? `${label}, ${sends.limit}번 중 ${sends.used}번 받음` : label;
 
