@@ -36,17 +36,18 @@ export function PlaceMap({ latitude, longitude }: { latitude?: number; longitude
 }
 
 /**
- * 여러 곳을 한 지도에 — 모든 핀이 들어오도록 확대를 맞추고, label 이 있으면 번호 핀으로 찍는다(장소 찾기 결과).
- * 지도는 보기만 하는 그림이다 — 고르는 일은 옆 목록이 한다.
+ * 여러 곳을 한 지도에 — 모든 핀(fitTo 를 주면 그 핀들)이 들어오도록 확대를 맞추고, label 이 있으면 번호 핀으로
+ * 찍는다(장소 찾기 결과). 지도는 보기만 하는 그림이다 — 고르는 일은 옆 목록이 한다.
  */
-export function PinMap({ pins, height = HEIGHT }: { pins: MapPin[]; height?: number }) {
+export function PinMap({ pins, fitTo, height = HEIGHT }: { pins: MapPin[]; fitTo?: MapPin[]; height?: number }) {
   const { colors } = useTheme();
   const [width, setWidth] = useState(320);
   if (pins.length === 0) return null;
 
   const points = pins.map((pin) => ({ pin, ...unitPoint(pin.latitude, pin.longitude) }));
-  const us = points.map((p) => p.u);
-  const vs = points.map((p) => p.v);
+  const framed = fitTo?.length ? fitTo.map((pin) => unitPoint(pin.latitude, pin.longitude)) : points;
+  const us = framed.map((p) => p.u);
+  const vs = framed.map((p) => p.v);
   const [minU, maxU, minV, maxV] = [Math.min(...us), Math.max(...us), Math.min(...vs), Math.max(...vs)];
   // 모든 핀이 여백 안에 드는 가장 큰 확대. 한 점(또는 같은 자리)이면 기본 확대.
   const spanU = (maxU - minU) * TILE;
