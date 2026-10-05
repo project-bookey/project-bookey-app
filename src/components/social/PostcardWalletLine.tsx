@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Mail } from 'lucide-react-native';
 
-import { StampIcon } from '@/components/collage';
+import { StampIcon } from '@/components/collage/StampIcon';
 import { iconSize, iconStroke, spacing, typeScale, useTheme } from '@/theme';
 
 /**
