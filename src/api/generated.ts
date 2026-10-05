@@ -4467,6 +4467,8 @@ export interface components {
             devCode?: string;
             /** Format: int32 */
             resendsLeft?: number;
+            /** Format: int32 */
+            sendLimit: number;
         };
         EmailLoginRequest: {
             /** Format: email */

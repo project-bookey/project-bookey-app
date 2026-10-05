@@ -7,7 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
-import { CODE_EXPIRED_MESSAGE, FieldError, isEmail, withResendsLeft, TimedCodeInput } from '@/components/auth/authFields';
+import {
+  CODE_EXPIRED_MESSAGE, codeSendsOf, FieldError, isEmail, resendA11yLabel, ResendLabel, TimedCodeInput, type CodeSends,
+} from '@/components/auth/authFields';
 import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
@@ -49,8 +51,8 @@ export default function PasswordResetScreen() {
   const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
   const codeLeft = useSecondsLeft(codeExpiresAt);
   const [resent, setResent] = useState(false);
-  /** 이 이메일로 1시간 안에 더 받을 수 있는 코드 수 — 서버가 알려 주지 않으면 null(안내에서 뺀다). */
-  const [resendsLeft, setResendsLeft] = useState<number | null>(null);
+  /** 이 이메일로 1시간 안에 받은 코드 수/상한 — '다시 받기'에 붙인다. 서버가 알려 주지 않으면 null. */
+  const [sends, setSends] = useState<CodeSends | null>(null);
   const [code, setCode] = useState('');
   // 코드는 숫자 키패드라 iOS 에선 닫는 키가 없다 — 칸을 누르면 '비밀번호 바꾸기'까지 키보드 위로 올린다.
   const scrollRef = useRef<ScrollView>(null);
@@ -105,7 +107,7 @@ export default function PasswordResetScreen() {
       setResent(sentTo != null);
       setSentTo(target);
       setValidMinutes(Math.max(1, Math.round(result.expiresInSec / 60)));
-      setResendsLeft(result.resendsLeft ?? null);
+      setSends(codeSendsOf(result));
       setCodeExpiresAt(requestedAt + result.expiresInSec * 1000);
       // 새 코드를 받으면 이전 코드는 못 쓴다. 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
       setCode(result.devCode ?? '');
@@ -210,15 +212,17 @@ export default function PasswordResetScreen() {
                     disabled={busy}
                     style={({ pressed }) => [styles.codeButton, (pressed || busy) && styles.pressed]}
                     accessibilityRole="button"
+                    accessibilityLabel={resendA11yLabel('다시 받기', sends)}
                   >
                     {sending
                       ? <ActivityIndicator color={darkColors.text} />
-                      : <Text style={styles.codeButtonLabel}>다시 받기</Text>}
+                      : <ResendLabel label="다시 받기" sends={sends} colors={darkColors} style={styles.codeButtonLabel} />}
                   </Pressable>
                 </View>
                 <FieldError colors={darkColors} message={codeError} />
                 <Text style={styles.hint}>
-                  {withResendsLeft(`${resent ? '새 코드를 보냈어요. ' : ''}${validMinutes}분 안에 입력해 주세요.`, resendsLeft)}
+                  {resent ? '새 코드를 보냈어요. ' : ''}
+                  {`${validMinutes}분 안에 입력해 주세요.`}
                 </Text>
               </View>
               <View style={styles.field}>
