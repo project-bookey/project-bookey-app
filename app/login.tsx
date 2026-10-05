@@ -698,7 +698,7 @@ function LoginForm() {
               <Apple.AppleAuthenticationButton
                 buttonType={Apple.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={Apple.AppleAuthenticationButtonStyle.WHITE}
-                cornerRadius={radius.md}
+                cornerRadius={radius.button}
                 style={styles.appleButton}
                 onPress={submitApple}
               />
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
   // 코드 받기 — 받은 수/상한을 라벨에 붙여야 해서 직접 그리되 공용 Button(outline, md)과 같은 값을 쓴다.
   codeButton: {
     minHeight: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     ...controlFace(darkColors.tonal),
     alignItems: 'center',
     justifyContent: 'center',
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
   codeHint: { ...typeScale.caption, color: darkColors.textFaint },
   identityDone: {
     minHeight: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     borderWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',
@@ -816,7 +816,7 @@ const styles = StyleSheet.create({
   appleButton: { height: controlHeight.md, width: '100%' },
   kakaoButton: {
     minHeight: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     backgroundColor: '#FEE500',
     alignItems: 'center',
     justifyContent: 'center',
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   kakaoLabel: { ...typeScale.bodyStrong, color: '#191919' },
   googleButton: {
     minHeight: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     borderWidth: hairline,
     borderColor: darkColors.control,
     alignItems: 'center',

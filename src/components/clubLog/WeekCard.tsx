@@ -56,7 +56,7 @@ export const WeekCard = forwardRef<View, { week: ClubLogWeek; width: number }>(f
         paddingHorizontal: s(24),
         overflow: 'hidden',
         // 이미지로 저장하는 카드 — 앱 카드가 둥글어져도 예전 종이 모서리(4)에 가깝게 둔다.
-        borderRadius: s(radius.badge),
+        borderRadius: s(radius.lg),
         // 화면 배경과 같은 색이라 테두리가 없으면 카드 경계가 사라진다.
         borderWidth: 1,
         borderColor: colors.line,

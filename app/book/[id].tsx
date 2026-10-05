@@ -1178,7 +1178,7 @@ const styles = StyleSheet.create({
   // 공용 Button(md)과 같은 값 — 아이콘을 품고 접근성 상태(selected)를 내야 해서 직접 그린다.
   actionButton: {
     minHeight: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,

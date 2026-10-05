@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     minHeight: 88,
     maxHeight: 180,
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     padding: spacing.md,
     fontSize: 16,
     lineHeight: 24,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   pageInput: {
     width: 84,
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     ...typeScale.monoNumeral,

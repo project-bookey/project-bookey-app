@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   stickerButton: {
     width: controlHeight.md,
     height: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },

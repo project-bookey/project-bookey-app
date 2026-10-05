@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   // 책 검색 입력 — 공용 입력(Field)과 같은 모서리.
   searchInput: {
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontFamily: sans.regular,

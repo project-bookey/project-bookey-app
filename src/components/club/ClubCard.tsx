@@ -117,7 +117,7 @@ function MembersLine({ members }: { members: ClubMemberBrief[] }) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius.md, borderWidth: hairline, overflow: 'hidden' },
+  card: { borderRadius: radius.lg, borderWidth: hairline, overflow: 'hidden' },
   band: { height: BAND_H, overflow: 'hidden' },
   bandNote: { position: 'absolute', right: spacing.lg, top: spacing.md },
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
