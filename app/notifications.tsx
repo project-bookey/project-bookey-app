@@ -1,19 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
-import { Trash2 } from 'lucide-react-native';
 
 import { notificationApi } from '@/api/endpoints';
 import type { Notification, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
+import { SwipeRow } from '@/components/SwipeRow';
 import { FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { notificationTarget, openNotificationTarget } from '@/lib/notificationTarget';
-import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 알림 목록 — 항목을 누르면 열람 처리하고, 알림이 가리키는 화면으로 간다.
- * 지우기는 밀어서 휴지통을 누르거나, 시각 옆 '삭제'를 두 번 누른다 — 제스처만으로 되는 기능은 두지 않는다.
+ * 지우기는 밀어서 '삭제'를 누르거나, 시각 옆 '삭제'를 두 번 누른다 — 제스처만으로 되는 기능은 두지 않는다.
+ * 밀기는 채팅 목록과 같은 SwipeRow(2026-10-05 시안 D)다.
  */
 export default function NotificationsScreen() {
   const { colors } = useTheme();
@@ -76,25 +76,15 @@ export default function NotificationsScreen() {
             <View style={{ height: hairline, backgroundColor: colors.line }} />
           )}
           renderItem={({ item }) => (
-            <Swipeable
-              overshootRight={false}
-              rightThreshold={44}
-              renderRightActions={() => (
-                <View style={styles.deleteTray}>
-                  <Pressable
-                    onPress={() => remove.mutate(item.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${item.title} 알림 삭제`}
-                    style={({ pressed }) => [
-                      styles.deleteAction,
-                      { backgroundColor: colors.danger },
-                      pressed ? pressedStyle : null,
-                    ]}
-                  >
-                    <Trash2 size={27} color={colors.bg} {...iconStroke} />
-                  </Pressable>
-                </View>
-              )}
+            <SwipeRow
+              actions={[{
+                key: 'delete',
+                label: '삭제',
+                icon: 'trash',
+                tone: 'danger',
+                onPress: () => remove.mutate(item.id),
+                accessibilityLabel: `${item.title} 알림 삭제`,
+              }]}
             >
               <Pressable onPress={() => tap(item)} style={[styles.row, { backgroundColor: colors.bg }]}>
                 <View style={styles.rowHead}>
@@ -112,7 +102,7 @@ export default function NotificationsScreen() {
                 </View>
                 <Text style={[styles.body, { color: colors.textMuted }]}>{item.body}</Text>
               </Pressable>
-            </Swipeable>
+            </SwipeRow>
           )}
         />
       )}
@@ -128,6 +118,4 @@ const styles = StyleSheet.create({
   title: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 25, flex: 1 },
   body: { ...typeScale.body, fontSize: 15, lineHeight: 22 },
   dot: { width: 6, height: 6, borderRadius: radius.round },
-  deleteTray: { width: 84, alignItems: 'center', justifyContent: 'center' },
-  deleteAction: { width: 62, height: 62, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
 });

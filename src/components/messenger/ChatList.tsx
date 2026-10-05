@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -10,9 +9,10 @@ import { chatApi } from '@/api/endpoints';
 import type { ChatSummary } from '@/api/types';
 import { chatMessagePreview } from '@/components/chat/bookeyStickers';
 import { PersonGlyph } from '@/components/Avatar';
+import { SwipeRow, closeOpenSwipeRow } from '@/components/SwipeRow';
 import { EmptyState, TextLink, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, layout, pressedStyle, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 import { useBlockUser } from './useBlockUser';
 
@@ -24,7 +24,7 @@ const AVATAR = 48;
  * 채팅 화면(app/chats.tsx)이 머리 아래에 그린다. 쿼리는 헤더 말풍선의 안 읽은 표시와 같은 키(['chats'])다.
  *
  * 줄 모양은 메신저 표준(2026-10-05 시안 A): 이름 줄 끝에 시간, 미리보기 줄 끝에 안 읽은 수.
- * 줄마다 서 있던 '삭제' 버튼은 빼고, 줄을 왼쪽으로 밀면 '차단'·'삭제'가 나온다(사용자 결정).
+ * 줄마다 서 있던 '삭제' 버튼은 빼고, 줄을 왼쪽으로 밀면 '차단'·'삭제'가 나온다(사용자 결정, 단추는 SwipeRow 시안 D).
  * 같은 동작은 채팅방 머리의 ⋯ 메뉴에도 있다 — 제스처만으로 할 수 있는 기능을 두지 않는다.
  */
 export function ChatList() {
@@ -37,8 +37,6 @@ export function ChatList() {
   const [pulling, setPulling] = useState(false);
   const { confirm, arm, disarm } = useDeleteConfirm<number>();
   const { confirmBlock } = useBlockUser();
-  // 밀어서 연 줄 — 차단을 취소하면 닫아 둔다.
-  const openRows = useRef(new Map<number, Swipeable | null>());
 
   const list = useQuery({
     queryKey: ['chats'],
@@ -64,8 +62,9 @@ export function ChatList() {
     arm(chatId);
   };
   const pressBlock = async (chat: ChatSummary) => {
+    // 차단을 취소하면 밀어 둔 줄을 닫는다(막으면 줄이 목록에서 빠진다).
     const blocked = await confirmBlock(chat.otherUserId, chat.otherNickname);
-    if (!blocked) openRows.current.get(chat.id)?.close();
+    if (!blocked) closeOpenSwipeRow();
   };
   const pull = async () => {
     setPulling(true);
@@ -91,29 +90,26 @@ export function ChatList() {
         </Text>
       ) : null}
       renderItem={({ item }) => (
-        <Swipeable
-          ref={(node) => { openRows.current.set(item.id, node); }}
-          overshootRight={false}
-          rightThreshold={44}
-          onSwipeableClose={() => { if (confirm === item.id) disarm(); }}
-          renderRightActions={() => (
-            <View style={styles.tray}>
-              <TrayAction
-                label="차단"
-                onPress={() => void pressBlock(item)}
-                face={colors.tonal}
-                ink={colors.text}
-                accessibilityLabel={`${item.otherNickname}님 차단`}
-              />
-              <TrayAction
-                label={confirm === item.id ? '한 번 더' : '삭제'}
-                onPress={() => pressDelete(item.id)}
-                face={colors.danger}
-                ink={colors.bg}
-                accessibilityLabel={confirm === item.id ? '채팅 삭제 확인' : '채팅 삭제'}
-              />
-            </View>
-          )}
+        <SwipeRow
+          onClose={() => { if (confirm === item.id) disarm(); }}
+          actions={[
+            {
+              key: 'block',
+              label: '차단',
+              icon: 'block',
+              tone: 'neutral',
+              onPress: () => void pressBlock(item),
+              accessibilityLabel: `${item.otherNickname}님 차단`,
+            },
+            {
+              key: 'delete',
+              label: confirm === item.id ? '한 번 더' : '삭제',
+              icon: 'trash',
+              tone: 'danger',
+              onPress: () => pressDelete(item.id),
+              accessibilityLabel: confirm === item.id ? '채팅 삭제 확인' : '채팅 삭제',
+            },
+          ]}
         >
           <ChatRow
             chat={item}
@@ -129,7 +125,7 @@ export function ChatList() {
             onBlock={() => void pressBlock(item)}
             onDelete={() => pressDelete(item.id)}
           />
-        </Swipeable>
+        </SwipeRow>
       )}
       ListEmptyComponent={
         list.isLoading ? null : list.isError ? (
@@ -146,26 +142,6 @@ export function ChatList() {
         )
       }
     />
-  );
-}
-
-/** 밀면 나오는 네모 단추 — 알림 화면의 밀어서 지우기와 같은 크기·모서리. */
-function TrayAction({ label, onPress, face, ink, accessibilityLabel }: {
-  label: string;
-  onPress: () => void;
-  face: string;
-  ink: string;
-  accessibilityLabel: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [styles.trayAction, { backgroundColor: face }, pressed ? pressedStyle : null]}
-    >
-      <Text numberOfLines={1} style={[styles.trayLabel, { color: ink }]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -254,7 +230,4 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   separator: { height: hairline, marginLeft: spacing.lg + AVATAR + spacing.md },
-  tray: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md },
-  trayAction: { width: 62, height: 62, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
-  trayLabel: { fontFamily: sans.semiBold, fontSize: 14 },
 });
