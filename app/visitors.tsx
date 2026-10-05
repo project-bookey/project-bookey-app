@@ -6,8 +6,8 @@ import { ApiError } from '@/api/client';
 import { profileApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
-import { EmptyState, formatRelative } from '@/components/ui';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, EmptyState, formatRelative } from '@/components/ui';
+import { hairline, layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 
 /** 내 방문자 (§14.2) — 구독 회원 전용. 방문자를 누르면 그 사람의 마이페이지로 간다. */
 export default function VisitorsScreen() {
@@ -26,13 +26,10 @@ export default function VisitorsScreen() {
           title="구독하면 볼 수 있어요"
           description="구독하면 누가 내 페이지에 다녀갔는지 볼 수 있어요."
           action={(
-            <Pressable
+            <Button
+              label="구독하기"
               onPress={() => router.push({ pathname: '/subscription', params: { feature: 'visitors' } })}
-              accessibilityRole="button"
-              style={[styles.subscribeCta, { backgroundColor: colors.accent }]}
-            >
-              <Text style={[typeScale.label, { color: colors.onAccent }]}>구독하기</Text>
-            </Pressable>
+            />
           )}
         />
       ) : (
@@ -47,7 +44,7 @@ export default function VisitorsScreen() {
             <Pressable
               onPress={() => router.push(`/user/${item.userId}`)}
               accessibilityRole="button"
-              style={styles.row}
+              style={({ pressed }) => [styles.row, pressed && pressedStyle]}
             >
               {item.avatarUrl ? (
                 <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
@@ -82,11 +79,5 @@ const styles = StyleSheet.create({
   avatar: {
     width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-  },
-  subscribeCta: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.sm,
   },
 });

@@ -45,6 +45,8 @@ import {
   useMyClubRecord,
 } from "@/components/clubLog";
 import {
+  ICON_SIZE,
+  IconButton,
   PaperScreen,
   SubHeader,
   TiltCover,
@@ -58,7 +60,7 @@ import {
   linkLabel,
 } from "@/components/ui";
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from "@/theme";
-import { mono, sans, serif } from "@/theme/tokens";
+import { mono, serif } from "@/theme/tokens";
 
 const CLUB_TAB_VALUES: readonly ClubTabKey[] = ["home", "meetings", "notes"];
 /** 함께하는 사람 줄에 겹쳐 보일 프로필 수. */
@@ -203,34 +205,24 @@ export default function ClubHomeScreen() {
           locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
         />
+        {/* 배경 사진 위에 떠 있는 머리 — 뒤로·채팅·⋯ 는 유리 원(2026-10-05 버튼 비교 페이지 15-F). */}
         <SubHeader
           category="클럽"
+          floating
           right={
-            // 두 아이콘은 44pt 상자를 sm 만큼 떼어 둔다(오터치 방지).
+            // 두 원은 터치 상자(44)가 겹치지 않게 sm 만큼 떼어 둔다(오터치 방지).
             <View style={styles.headerActions}>
-              <Pressable
+              <IconButton
+                glass
+                badge={unreadChat}
                 onPress={() => router.push(`/club/${clubId}/chat`)}
-                accessibilityRole="button"
                 accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
-                style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
               >
-                <MessageSquare size={22} color={colors.text} {...iconStroke} />
-                {unreadChat > 0 ? (
-                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                    <Text style={[styles.badgeText, { color: colors.onAccent }]}>
-                      {unreadChat > 9 ? "9+" : unreadChat}
-                    </Text>
-                  </View>
-                ) : null}
-              </Pressable>
-              <Pressable
-                onPress={() => router.push(`/club/${clubId}/info`)}
-                accessibilityRole="button"
-                accessibilityLabel="클럽 정보"
-                style={({ pressed }) => [styles.headerButton, pressed && pressedStyle]}
-              >
-                <Ellipsis size={22} color={colors.text} {...iconStroke} />
-              </Pressable>
+                <MessageSquare size={ICON_SIZE.glass} color={colors.text} {...iconStroke} />
+              </IconButton>
+              <IconButton glass onPress={() => router.push(`/club/${clubId}/info`)} accessibilityLabel="클럽 정보">
+                <Ellipsis size={ICON_SIZE.glass} color={colors.text} {...iconStroke} />
+              </IconButton>
             </View>
           }
         />
@@ -669,26 +661,7 @@ function PublicClubPreview({
 }
 
 const styles = StyleSheet.create({
-  headerActions: { flexDirection: "row", gap: spacing.sm },
-  headerButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  // 서가 헤더의 알림 종과 같은 배지 — 숫자 배지는 악센트를 쓰는 예외다.
-  badge: {
-    position: "absolute",
-    top: 4,
-    right: 2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: radius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
-  badgeText: { fontFamily: sans.bold, fontSize: 10 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   // 머리 — 이름 묶음 · 소개 · 함께하는 사람 사이는 md, 그룹 안은 xs.
   top: {
     ...layout.content,

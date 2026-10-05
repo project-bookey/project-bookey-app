@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { libraryApi } from '@/api/endpoints';
@@ -9,8 +9,8 @@ import type { ReadingRecord } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { FinishCardFace, RemarkCardQuote } from '@/components/remark/FinishCardFace';
 import { useMyRemark } from '@/components/remark/queries';
-import { EmptyState, FootAction, formatRelative, linkLabel } from '@/components/ui';
-import { layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, EmptyState, FootAction, formatRelative } from '@/components/ui';
+import { layout, pressedStyle, radius, spacing, useTheme } from '@/theme';
 
 /** 한 번에 받는 장 수 — 카드마다 한 줄평을 따로 받으므로 한 쪽을 작게 잡아 처음 요청이 몰리지 않게. */
 const PAGE_SIZE = 20;
@@ -67,16 +67,7 @@ export default function FinishCardsScreen() {
             <EmptyState
               title="완독 카드를 불러오지 못했어요"
               description="잠시 후 다시 시도해 주세요."
-              action={(
-                <Pressable
-                  onPress={() => cards.refetch()}
-                  accessibilityRole="button"
-                  accessibilityLabel="다시 시도"
-                  style={({ pressed }) => [styles.retry, pressed && pressedStyle]}
-                >
-                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-                </Pressable>
-              )}
+              action={<Button label="다시 시도" variant="outline" onPress={() => cards.refetch()} />}
             />
           ) : (
             <EmptyState title="아직 완독 카드가 없어요" description="책을 다 읽으면 여기에 완독 카드가 모여요." />
@@ -139,6 +130,4 @@ const styles = StyleSheet.create({
   skeletonList: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   skeleton: { height: 132, borderRadius: radius.md },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
-  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

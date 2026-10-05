@@ -7,7 +7,7 @@ import { walletApi } from '@/api/endpoints';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
 import { useTourTarget } from '@/components/tour/TourTarget';
-import { hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { glassFace, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 구역 화면 공통 헤더 — 가운데 워드마크, 오른쪽에 책갈피 잔액·알림 종.
@@ -61,7 +61,7 @@ function BookmarkBalance() {
       accessibilityLabel={`책갈피 ${balance}개, 구매하기`}
       style={({ pressed }) => [
         styles.bookmarkBadge,
-        { borderColor: colors.control, backgroundColor: colors.surface },
+        glassFace(colors, colors.tonal),
         pressed && styles.pressed,
       ]}
     >
@@ -103,10 +103,10 @@ function ComposeButton() {
   );
 }
 
-/** 연필 — 종(22)과 같은 크기, 같은 각진 획. */
+/** 연필 — 종(24)과 같은 크기, 같은 각진 획. */
 function PencilGlyph({ color }: { color: string }) {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path d="M5 18.5 6.2 14 15.8 4.4a2 2 0 0 1 2.8 0l1 1a2 2 0 0 1 0 2.8L10 17.8z" stroke={color} {...iconStroke} />
       <Path d="m14.5 5.8 3.7 3.7" stroke={color} {...iconStroke} />
     </Svg>
@@ -141,8 +141,7 @@ const styles = StyleSheet.create({
     height: 32,
     minWidth: 74,
     maxWidth: 92,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
+    borderRadius: radius.control,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -153,7 +152,7 @@ const styles = StyleSheet.create({
   bookmarkCount: { ...typeScale.monoLabel, flex: 1, textAlign: 'right', fontSize: 11, lineHeight: 14 },
   plusButton: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   // 44pt 터치 상자 — 왼쪽으로 되돌려 연필이 화면 여백 선(spacing.lg)에 맞춰 선다.
-  composeButton: { width: 44, height: 44, marginLeft: -11, alignItems: 'center', justifyContent: 'center' },
+  composeButton: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
   pressed: pressedStyle,
   wordmark: {
     position: 'absolute',

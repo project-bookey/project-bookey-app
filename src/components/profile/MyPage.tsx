@@ -20,11 +20,13 @@ import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { useTourTarget } from '@/components/tour/TourTarget';
 import {
-  Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
+  Button, Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
-import { hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import {
+  controlHeight, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme,
+} from '@/theme';
 import { rowOffsetY, sans, serif, tiltFor } from '@/theme/tokens';
 
 /** 아바타 지름(px) — 시안 A. 글줄 가운데에 앉히므로 이름·핸들·팔로우 세 줄 높이보다 조금 크다. */
@@ -54,7 +56,8 @@ const SHELF_ALL_HIT_SLOP = { top: 16, bottom: 14, left: 8, right: spacing.lg };
  *
  * 위에서부터 세 묶음이다 — 묶음 사이는 간격으로만 가른다.
  *  1. 프로필: 사진·이름·팔로워/팔로잉. 나는 사진 변경(아바타 하나로만)·편집(연필)·설정,
- *     남은 오른쪽 팔로우 칩과 팔로워 줄 아래 채팅·엽서 링크(시안 A) — 팔로우는 이 화면에서만 한다.
+ *     남은 오른쪽 팔로우 칩(맞팔로우 여부도 이 라벨이 알린다)과 팔로워 줄 아래 채팅·엽서 링크(시안 A)
+ *     — 팔로우는 이 화면에서만 한다.
  *  2. 오늘(나만): 지갑 메모/방문 노트, 출석.
  *  3. 기록: 서재 선반 · 기록 카드(스트릭·히트맵) · 내 독후감 링크(남은 공개 독후감).
  * 내 팔로워·팔로잉 숫자를 누르면 팔로우 목록 화면(/follows)으로 넘어간다.
@@ -224,14 +227,10 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               </View>
             ) : (
               <>
+                {/* 나를 팔로우하는지·맞팔로우인지는 오른쪽 팔로우 버튼 라벨이 알린다 — 여기 따로 적지 않는다. */}
                 <View style={styles.profileSocial}>
                   <SocialCount label="팔로워" value={followerCount} />
                   <SocialCount label="팔로잉" value={followingCount} />
-                  {p?.mutual || p?.followsMe ? (
-                    <Text style={[styles.socialText, { color: p.mutual ? colors.accent : colors.textFaint }]}>
-                      {p.mutual ? '맞팔로우' : '나를 팔로우'}
-                    </Text>
-                  ) : null}
                 </View>
                 {/* 채팅은 엽서 답장이 오간 사이(canChat)에만 — 서버 거절도 아래에 그대로 표시한다. */}
                 {p ? (
@@ -277,17 +276,17 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               hitSlop={8}
               style={({ pressed }) => [
                 styles.settingsButton,
-                { borderColor: colors.control, backgroundColor: colors.surface },
+                glassFace(colors, colors.tonal),
                 pressed && styles.pressed,
               ]}
             >
               <GearLine size={14} color={colors.text} />
-              <Text style={[typeScale.monoLabel, { color: colors.text }]}>설정</Text>
+              <Text style={[styles.settingsLabel, { color: colors.text }]}>설정</Text>
             </Pressable>
           ) : userId != null ? (
             // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
             <View style={styles.followSlot}>
-              <FollowButton userId={userId} nickname={p?.nickname} />
+              <FollowButton userId={userId} nickname={p?.nickname} followsMe={p?.followsMe} />
             </View>
           ) : null}
         </View>
@@ -525,12 +524,7 @@ function PublicPosts({ userId }: { userId: number }) {
       ) : posts.isError ? (
         <EmptyState
           title="독후감을 불러오지 못했어요"
-          action={
-            <Pressable onPress={() => posts.refetch()} hitSlop={8} accessibilityRole="button"
-              style={({ pressed }) => pressed && styles.pressed}>
-              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-            </Pressable>
-          }
+          action={<Button label="다시 시도" variant="outline" onPress={() => posts.refetch()} />}
         />
       ) : items.length === 0 ? (
         <EmptyState title="아직 공개한 독후감이 없어요" />
@@ -566,18 +560,13 @@ function PublicPosts({ userId }: { userId: number }) {
             </Pressable>
           ))}
           {posts.hasNextPage ? (
-            <Pressable
-              onPress={() => posts.fetchNextPage()}
-              disabled={posts.isFetchingNextPage}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.more, pressed && styles.pressed]}
-            >
+            <View style={styles.more}>
               {posts.isFetchingNextPage ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('더 보기', 'action')}</Text>
+                <TextLink label="더 보기" kind="action" onPress={() => posts.fetchNextPage()} />
               )}
-            </Pressable>
+            </View>
           ) : null}
         </>
       )}
@@ -894,16 +883,17 @@ const styles = StyleSheet.create({
   // 닉네임 옆 연필은 상자 없이 둔다(사용자 결정 2026-10-04 — 테두리 상자로 바꿨다가 되돌림).
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
+  // 겉모습은 Button sm(32pt · 회색 톤 유리 · control 모서리)과 같고 터치 상자는 hitSlop 으로 넓힌다.
   settingsButton: {
     alignSelf: 'flex-end',
-    height: 30,
-    paddingHorizontal: spacing.sm + 2,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
+    height: controlHeight.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.control,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
+  settingsLabel: { ...typeScale.label, fontSize: 12 },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 본문 크기(15)로 키웠다(2026-10-04).
   socialText: { fontFamily: sans.regular, fontSize: 16, lineHeight: 24 },

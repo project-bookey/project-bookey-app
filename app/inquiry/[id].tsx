@@ -11,7 +11,7 @@ import type { Inquiry, InquiryImage, InquirySummary, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { InquiryStatusTag } from '@/components/inquiry/InquiryStatusTag';
 import { inquiriesKey, inquiryKey } from '@/components/inquiry/queries';
-import { EmptyState, Eyebrow, FootAction, linkLabel } from '@/components/ui';
+import { Button, EmptyState, Eyebrow, FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -116,11 +116,7 @@ export default function InquiryDetailScreen() {
     <EmptyState
       title="문의를 불러오지 못했어요"
       description="잠시 후 다시 시도해 주세요."
-      action={(
-        <Pressable onPress={() => inquiry.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도" style={styles.retry}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-        </Pressable>
-      )}
+      action={<Button label="다시 시도" variant="outline" onPress={() => inquiry.refetch()} />}
     />
   ) : null;
 
@@ -230,7 +226,6 @@ function InquiryArticle({ inquiry, onOpenPhoto, confirming, deleteError, onDelet
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   skeleton: { height: 200, borderRadius: radius.md },
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   group: { gap: spacing.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headMeta: { flex: 1 },
@@ -247,7 +242,7 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     width: 44,
     height: 44,
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
   },

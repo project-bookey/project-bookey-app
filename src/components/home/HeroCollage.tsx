@@ -5,8 +5,8 @@ import type { SharedValue } from 'react-native-reanimated';
 
 import type { ReadingRecord } from '@/api/types';
 import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
-import { pressedStyle, useTheme } from '@/theme';
-import { radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
+import { glassFace, pressedStyle, useTheme } from '@/theme';
+import { controlHeight, radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
 import { playLabel } from '@/components/ui';
 
 /**
@@ -102,7 +102,7 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
   onContinue: (record: ReadingRecord) => void;
   onDetail: (record: ReadingRecord) => void;
 }) {
-  const { colors, cardShadow } = useTheme();
+  const { colors } = useTheme();
   const window = useWindowDimensions();
   // 실제 콜라주 판 폭. 레이아웃 전 첫 프레임은 화면 폭으로 근사한다.
   const [boardW, setBoardW] = useState(0);
@@ -225,15 +225,13 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
         <View style={[styles.ctaRow, { left: Math.round(W * G.ctaLeftRatio), right: ctaRight, top: ctaTop }]}>
           <Pressable
             onPress={() => onContinue(record)}
-            style={({ pressed }) => [
-              styles.cta, cardShadow, { backgroundColor: colors.accent },
-              pressed && pressedStyle,
-            ]}
+            // 공용 Button(primary, md)과 같은 면 — 접근성 이름('이어서 읽기')을 따로 주려고 직접 그린다.
+            style={({ pressed }) => [styles.cta, glassFace(colors, colors.accent), pressed && pressedStyle]}
             accessibilityRole="button"
             accessibilityLabel="이어서 읽기"
           >
             {/* 시안 라벨 — '읽기'를 붙이면 스트릭 캡션이 메모 조각에 닿아 말줄임된다. */}
-            <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('이어서')}</Text>
+            <Text style={[styles.ctaLabel, { color: colors.onAccentGlass }]}>{playLabel('이어서')}</Text>
           </Pressable>
           {streakLine ? (
             /* 좁은 폭(360)에선 메모 조각에 밀려 한 줄에 안 들어간다 — 말줄임 대신 가운뎃점에서 줄을 나눠 두 줄로 내린다. */
@@ -281,12 +279,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cta: {
-    minHeight: 44,
+    minHeight: controlHeight.md,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
   },
+  ctaLabel: { ...typeScale.label, fontSize: 14 },
   shelf: { position: 'absolute', transform: [{ rotate: '-2deg' }] },
   shelfEyebrow: { fontSize: 9 },
   // 시안 23px 세리프 두 줄 — 노트 표제(21)보다 한 단 크게, 자간은 살짝 조인다.

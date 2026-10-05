@@ -1,11 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, StyleSheet, Text, View } from 'react-native';
 import { useIsFocused, useRouter } from 'expo-router';
 
 import type { Banner } from '@/api/types';
 import { useAppTour } from '@/store/appTour';
-import { hairline, pressedStyle, radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
+import { Button } from '@/components/ui';
+import { hairline, radius, sans, serif, spacing, typeScale, useTheme } from '@/theme';
 import { InlineMarkdownText } from './InlineMarkdownText';
 
 const DISMISSED_KEY = 'bookey.dismissedNoticeId';
@@ -64,27 +65,9 @@ export function NoticePopup({ notice }: { notice?: Banner }) {
             </Text>
           ) : null}
           <View style={styles.actions}>
-            <Pressable
-              onPress={dismiss}
-              accessibilityRole="button"
-              accessibilityLabel="공지 닫기"
-              style={({ pressed }) => [styles.button, { borderColor: colors.control }, pressed && pressedStyle]}
-            >
-              <Text style={[typeScale.label, { color: colors.text }]}>닫기</Text>
-            </Pressable>
-            {notice.linkUrl ? (
-              <Pressable
-                onPress={openLink}
-                accessibilityRole="button"
-                style={({ pressed }) => [
-                  styles.button,
-                  { backgroundColor: colors.accent, borderColor: colors.accent },
-                  pressed && pressedStyle,
-                ]}
-              >
-                <Text style={[typeScale.label, { color: colors.onAccent }]}>자세히 보기</Text>
-              </Pressable>
-            ) : null}
+            {/* [닫기][자세히 보기] — 주요 버튼이 오른쪽. */}
+            <Button label="닫기" accessibilityLabel="공지 닫기" variant="outline" onPress={dismiss} />
+            {notice.linkUrl ? <Button label="자세히 보기" onPress={openLink} /> : null}
           </View>
         </View>
       </View>
@@ -110,15 +93,6 @@ const styles = StyleSheet.create({
   },
   subtitle: { marginTop: spacing.xs },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
-  button: {
-    minWidth: 64,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: hairline,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-  },
   titleStrong: { fontFamily: serif.extraBold },
   subtitleStrong: { fontFamily: sans.semiBold },
 });

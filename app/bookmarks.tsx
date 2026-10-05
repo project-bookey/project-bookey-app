@@ -156,12 +156,13 @@ export default function BookmarksScreen() {
                   onPress={() => setAmount(amount)}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  style={[
+                  style={({ pressed }) => [
                     styles.preset,
                     {
                       borderColor: selected ? colors.ink : colors.control,
                       backgroundColor: selected ? colors.surfaceRaised : colors.surface,
                     },
+                    pressed && !selected && pressedStyle,
                   ]}
                 >
                   <Text style={[styles.presetTitle, { color: colors.text }]}>{amount}개</Text>

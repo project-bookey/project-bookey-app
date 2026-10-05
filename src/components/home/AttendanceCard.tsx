@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { attendanceApi } from '@/api/endpoints';
-import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, TextLink } from '@/components/ui';
+import { controlHeight, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 
 export function AttendanceCard() {
   const { colors } = useTheme();
@@ -56,36 +57,30 @@ export function AttendanceCard() {
                   : `${data.nextRewardDay}일째 출석하면 우표 1개를 드려요.`}
         </Text>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={done ? '오늘 출석 완료' : '오늘 출석체크'}
-        disabled={done || completed || checkIn.isPending}
-        onPress={() => checkIn.mutate()}
-        style={({ pressed }) => [
-          styles.button,
-          { backgroundColor: done ? colors.surfaceRaised : colors.accent },
-          pressed && styles.pressed,
-        ]}
-      >
-        <Text style={[typeScale.label, { color: done ? colors.textMuted : colors.onAccent }]}>
-          {checkIn.isPending ? '확인 중…' : done ? '출석 완료' : completed ? '이번 달 출석 끝' : '출석하기'}
-        </Text>
-      </Pressable>
-      <Pressable
+      {done || completed ? (
+        // 마친 상태는 버튼이 아니라 표시 — 흐린 비활성 버튼 대신 회색 면에 상태 말을 둔다.
+        <View style={[styles.button, styles.doneBox, { backgroundColor: colors.surfaceRaised }]}>
+          <Text style={[styles.doneLabel, { color: colors.textMuted }]}>{done ? '출석 완료' : '이번 달 출석 끝'}</Text>
+        </View>
+      ) : (
+        <Button
+          label={checkIn.isPending ? '확인 중…' : '출석하기'}
+          accessibilityLabel="오늘 출석체크"
+          onPress={() => checkIn.mutate()}
+          disabled={checkIn.isPending}
+          style={styles.button}
+        />
+      )}
+      {/* 카드 아래 접고 펴는 줄 — 구분선은 line, 줄 전체가 44pt 터치 상자. */}
+      <TextLink
+        label={expanded ? '달력 접기' : '달력 보기'}
+        kind="action"
         onPress={() => setExpanded((value) => !value)}
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
         accessibilityLabel={expanded ? '출석 달력 접기' : '출석 달력 펼치기'}
-        style={({ pressed }) => [
-          styles.expandButton,
-          { borderColor: colors.control },
-          pressed && styles.pressed,
-        ]}
-      >
-        <Text style={[typeScale.monoLabel, { color: colors.text }]}>
-          {expanded ? '달력 접기' : '달력 보기'}
-        </Text>
-      </Pressable>
+        accessibilityState={{ expanded }}
+        hitSlop={null}
+        style={{ ...styles.expandButton, borderColor: colors.line }}
+      />
       {expanded ? (
       <View style={styles.board} accessibilityLabel={`이번 달 ${data.monthlyAttendanceDays}일 출석`}>
         <View style={styles.calendarHeader}>
@@ -129,7 +124,7 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.lg,
     borderWidth: hairline,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     padding: spacing.lg,
     flexDirection: 'row', flexWrap: 'wrap',
     alignItems: 'center',
@@ -137,15 +132,15 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, gap: spacing.xs },
   title: { ...typeScale.bodyStrong, fontSize: 17 },
-  button: {
-    minWidth: 92,
-    minHeight: 44,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
+  button: { minWidth: 92 },
+  doneBox: {
+    minHeight: controlHeight.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: pressedStyle,
+  doneLabel: { ...typeScale.label, fontSize: 14 },
   expandButton: {
     width: '100%',
     minHeight: 44,
@@ -165,7 +160,7 @@ const styles = StyleSheet.create({
   day: {
     width: 28,
     height: 28,
-    borderRadius: radius.sm,
+    borderRadius: radius.badge,
     borderWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',
