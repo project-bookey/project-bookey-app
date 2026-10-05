@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
   FlatList, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,

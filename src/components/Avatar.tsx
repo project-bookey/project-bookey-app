@@ -1,4 +1,5 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { CachedImage as Image } from '@/components/CachedImage';
 
 import { hairline, radius, useTheme } from '@/theme';
 

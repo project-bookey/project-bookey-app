@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Plus, Users } from 'lucide-react-native';
 

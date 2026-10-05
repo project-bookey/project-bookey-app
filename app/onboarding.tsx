@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, Text, View,

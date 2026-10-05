@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Moon, Smartphone, Sun, type LucideIcon } from 'lucide-react-native';
 

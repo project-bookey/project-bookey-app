@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { ArrowLeft } from 'lucide-react-native';
 import { ReactNode, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';

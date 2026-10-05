@@ -1,7 +1,7 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 

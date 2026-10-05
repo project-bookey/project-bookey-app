@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { CachedImage as Image } from '@/components/CachedImage';
 
 import { clubCommunityApi } from '@/api/endpoints';
 import type { ActivityCard, BookSummary } from '@/api/types';

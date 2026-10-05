@@ -11,6 +11,7 @@ import { PushNotifications } from '@/components/notifications/PushNotifications'
 import { useAuth } from '@/store/auth';
 import { useThemePreference } from '@/store/themePreference';
 import { useTheme } from '@/theme';
+import { navigationTransition } from '@/navigation/transitionGuard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,7 +52,13 @@ export default function RootLayout() {
           <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
           {/* 헤더는 전역으로 끈다(화면 안의 SectionNav·SubHeader 가 대신한다).
               그래도 title 은 남긴다 — 웹에서 브라우저 탭·히스토리 제목으로 쓰인다. */}
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack
+            screenOptions={{ headerShown: false }}
+            screenListeners={{
+              transitionStart: () => navigationTransition.start(),
+              transitionEnd: () => navigationTransition.finish(),
+            }}
+          >
             <Stack.Screen name="(tabs)" options={{ title: 'BOOKEY' }} />
             <Stack.Screen name="library" options={{ title: '서재' }} />
             <Stack.Screen name="book-search" options={{ title: '탐색' }} />
@@ -87,6 +94,7 @@ export default function RootLayout() {
             <Stack.Screen name="book/[id]" options={{ title: '책 정보' }} />
             <Stack.Screen name="user/[id]" options={{ title: '프로필' }} />
             <Stack.Screen name="postcards" options={{ title: '엽서함' }} />
+            <Stack.Screen name="postcard/[id]" options={{ title: '엽서' }} />
             <Stack.Screen name="visitors" options={{ title: '방문자' }} />
             <Stack.Screen name="follows" options={{ title: '팔로우' }} />
             <Stack.Screen name="chats" options={{ title: '채팅' }} />

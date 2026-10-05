@@ -69,7 +69,8 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-iap"
+      "expo-iap",
+      "expo-image"
     ],
     "extra": {
       "apiBaseUrl": "https://api.bookey.site",

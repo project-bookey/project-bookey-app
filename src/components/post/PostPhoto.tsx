@@ -1,4 +1,5 @@
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { CachedImage as Image } from '@/components/CachedImage';
 
 import { hairline, radius, useTheme } from '@/theme';
 
@@ -20,7 +21,8 @@ export function PostPhoto({ source, label }: { source: PhotoSource; label: strin
   return (
     <Image
       source={{ uri: source.uri }}
-      resizeMode="cover"
+      contentFit="cover"
+      recyclingKey={source.uri}
       accessibilityLabel={label}
       style={[styles.photo, { aspectRatio: ratio, backgroundColor: colors.surfaceDeep, borderColor: colors.line }]}
     />

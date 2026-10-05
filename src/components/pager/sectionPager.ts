@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router } from '@/navigation';
 import { create } from 'zustand';
 
 /** 메인 탭(PagerView) 다섯 구역 — `app/(tabs)/_layout.tsx` 의 페이지 순서와 같은 이름. */

@@ -1,5 +1,5 @@
 import { useIsFetching, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';

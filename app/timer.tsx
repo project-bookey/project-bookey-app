@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
   AppState, InputAccessoryView, Keyboard, Platform,

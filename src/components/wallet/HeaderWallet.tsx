@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useIsFocused, useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from '@/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Mail, Plus } from 'lucide-react-native';

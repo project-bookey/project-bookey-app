@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, type Href } from '@/navigation';
 
 import type { Notification } from '@/api/types';
 import { openSection, type SectionRoute } from '@/components/pager/sectionPager';

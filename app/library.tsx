@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { useState } from 'react';
 import {
   FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,

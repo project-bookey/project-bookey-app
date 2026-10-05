@@ -216,8 +216,8 @@ export const composerInputStyle = {
 } as const;
 
 /**
- * 보내기 — 48pt 잉크 네모(공용 버튼과 같은 controlFace·md 모서리)에 위 화살표 선 아이콘. 쓸 말이 없으면
- * 공용 버튼의 비활성처럼 흐려지고(0.35), 보내는 중에는 잉크를 유지한 채 스피너를 돌린다(중복 전송은 막는다).
+ * 보내기 — 공용 강조 버튼과 같은 초록색 면에 위 화살표 선 아이콘. 쓸 말이 없으면
+ * 공용 버튼의 비활성처럼 흐려지고(0.35), 보내는 중에는 같은 면에 스피너를 돌린다(중복 전송은 막는다).
  * compact 는 유리 캡슐(ChatComposer) 안의 40pt 동그라미(사방 hitSlop 으로 44).
  */
 export function ChatSendButton({ onPress, disabled = false, loading = false, compact = false, accessibilityLabel = '보내기' }: {
@@ -241,15 +241,15 @@ export function ChatSendButton({ onPress, disabled = false, loading = false, com
       style={({ pressed }) => [
         styles.send,
         compact ? styles.sendCompact : null,
-        controlFace(colors.ink),
+        controlFace(colors.accent),
         dimmed ? styles.dimmed : null,
         pressed ? pressedStyle : null,
       ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={colors.onInk} />
+        <ActivityIndicator size="small" color={colors.onAccent} />
       ) : (
-        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.onInk}>
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.onAccent}>
           <Path d="M12 19V5M6 11l6-6 6 6" {...iconStroke} />
         </Svg>
       )}

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { Linking, Modal, StyleSheet, Text, View } from 'react-native';
-import { useIsFocused, useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from '@/navigation';
 
 import type { Banner } from '@/api/types';
 import { useAppTour } from '@/store/appTour';

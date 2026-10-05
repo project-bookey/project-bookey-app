@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { ChevronDown, ImagePlus, TextQuote } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';

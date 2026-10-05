@@ -4,7 +4,7 @@ import { useIAP, type Purchase } from 'expo-iap';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 
 import { ApiError } from '@/api/client';
 import { bookmarkPurchaseApi } from '@/api/endpoints';

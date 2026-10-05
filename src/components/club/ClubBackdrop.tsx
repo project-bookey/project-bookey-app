@@ -1,17 +1,18 @@
-import { Image, StyleSheet, type ImageSourcePropType, type StyleProp, type ViewStyle, type ImageStyle } from 'react-native';
+import { StyleSheet, type ImageSourcePropType, type StyleProp, type ViewStyle } from 'react-native';
+import { CachedImage as Image } from '@/components/CachedImage';
 
 /** 모임별 기본 사진 — 정적 경로로 앱에 포함해 네트워크 없이도 표시한다. */
 const DEFAULT_BACKGROUNDS: readonly ImageSourcePropType[] = [
-  require('../../../assets/club-backgrounds/01-sunny-cafe.jpg'),
-  require('../../../assets/club-backgrounds/02-rainy-night-cafe.jpg'),
-  require('../../../assets/club-backgrounds/03-bookshop.jpg'),
-  require('../../../assets/club-backgrounds/04-forest-window.jpg'),
-  require('../../../assets/club-backgrounds/05-city-night.jpg'),
-  require('../../../assets/club-backgrounds/06-seaside-terrace.jpg'),
-  require('../../../assets/club-backgrounds/07-library.jpg'),
-  require('../../../assets/club-backgrounds/08-hanok.jpg'),
-  require('../../../assets/club-backgrounds/09-park-bench.jpg'),
-  require('../../../assets/club-backgrounds/10-home-study.jpg'),
+  require('../../../assets/optimized/club-backgrounds/01-sunny-cafe.webp'),
+  require('../../../assets/optimized/club-backgrounds/02-rainy-night-cafe.webp'),
+  require('../../../assets/optimized/club-backgrounds/03-bookshop.webp'),
+  require('../../../assets/optimized/club-backgrounds/04-forest-window.webp'),
+  require('../../../assets/optimized/club-backgrounds/05-city-night.webp'),
+  require('../../../assets/optimized/club-backgrounds/06-seaside-terrace.webp'),
+  require('../../../assets/optimized/club-backgrounds/07-library.webp'),
+  require('../../../assets/optimized/club-backgrounds/08-hanok.webp'),
+  require('../../../assets/optimized/club-backgrounds/09-park-bench.webp'),
+  require('../../../assets/optimized/club-backgrounds/10-home-study.webp'),
 ];
 
 /**
@@ -31,10 +32,11 @@ export function ClubBackdrop({ uri, seed, style, resizeMode = 'cover' }: {
       source={uri ? { uri } : DEFAULT_BACKGROUNDS[index]}
       style={[
         StyleSheet.absoluteFill,
-        { width: '100%', height: '100%', objectFit: resizeMode } as ImageStyle,
+        { width: '100%', height: '100%' },
         style as object,
       ]}
-      resizeMode={resizeMode}
+      contentFit={resizeMode}
+      recyclingKey={uri || `club-default-${index}`}
       accessibilityIgnoresInvertColors
     />
   );

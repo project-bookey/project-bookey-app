@@ -1,4 +1,5 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { CachedImage as Image } from '@/components/CachedImage';
 
 import { controlFace, pressedStyle, radius, sans, spacing, useTheme } from '@/theme';
 import { BOOKEY_STICKER_PACKS } from './bookeyStickers';
@@ -31,7 +32,7 @@ export function BookeyPackTabs({ value, onChange }: { value: string; onChange: (
               pressed ? pressedStyle : null,
             ]}
           >
-            <Image source={pack.thumbnail} style={styles.thumb} resizeMode="contain" />
+            <Image source={pack.thumbnail} style={styles.thumb} contentFit="contain" />
             <Text numberOfLines={1} style={[styles.name, { color: selected ? colors.onInk : colors.textMuted }]}>
               {pack.name}
             </Text>

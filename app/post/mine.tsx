@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import { PencilLine } from 'lucide-react-native';
 
 import { postApi } from '@/api/endpoints';

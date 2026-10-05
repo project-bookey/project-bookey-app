@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router } from '@/navigation';
 import { useEffect } from 'react';
 
 import { PaperScreen } from '@/components/collage';

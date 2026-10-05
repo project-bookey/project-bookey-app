@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/navigation';
 import {
   Animated, BackHandler, Easing, type GestureResponderEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View,
   type StyleProp, type ViewStyle,

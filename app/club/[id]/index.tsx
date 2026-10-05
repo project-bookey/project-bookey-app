@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "@/navigation";
 import { Crown, Ellipsis, Globe, Lock, MapPin, MessageSquare, Pencil, Users } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {

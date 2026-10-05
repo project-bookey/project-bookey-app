@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { ArrowLeft } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import {

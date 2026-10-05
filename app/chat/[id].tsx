@@ -1,10 +1,10 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { Ellipsis } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, AppState, BackHandler, FlatList, Pressable,
-  Image, ScrollView, StyleSheet, Text, View,
+  ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -12,6 +12,7 @@ import { ApiError } from '@/api/client';
 import { chatApi } from '@/api/endpoints';
 import type { ChatMessage } from '@/api/types';
 import { PersonGlyph } from '@/components/Avatar';
+import { CachedImage as Image } from '@/components/CachedImage';
 import { ICON_SIZE, IconButton, PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardArea } from '@/components/keyboard';
 import { BookeyPackTabs } from '@/components/chat/BookeyPackTabs';

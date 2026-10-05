@@ -1,5 +1,5 @@
 import * as Google from 'expo-auth-session/providers/google';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import * as WebBrowser from 'expo-web-browser';
 import { CircleCheck } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';

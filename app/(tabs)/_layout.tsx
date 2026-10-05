@@ -1,4 +1,4 @@
-import { useIsFocused, usePathname, useRouter } from 'expo-router';
+import { useIsFocused, usePathname, useRouter } from '@/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import PagerView, { type PagerViewOnPageSelectedEvent } from '@/components/pager/PagerView';
@@ -43,6 +43,12 @@ export default function MainTabsLayout() {
   const pendingIndex = useRef<number | null>(null);
   const returningFromDetail = useRef(routeIndex < 0);
   const [activeIndex, setActiveIndex] = useState(initialRouteIndex);
+  // 처음부터 보이지 않는 다섯 탭의 요청을 한꺼번에 보내지 않는다. 한 번 연 탭은 상태를 유지한다.
+  const [visited, setVisited] = useState<ReadonlySet<number>>(() => new Set([initialRouteIndex]));
+  const visit = (index: number) => setVisited((previous) => {
+    if (previous.has(index)) return previous;
+    return new Set([...previous, index]);
+  });
   const pagerPosition = useRef(new Animated.Value(initialRouteIndex)).current;
   const pagerOffset = useRef(new Animated.Value(0)).current;
 
@@ -62,6 +68,7 @@ export default function MainTabsLayout() {
     visibleIndex.current = routeIndex;
     lastMainIndex = routeIndex;
     setActiveIndex(routeIndex);
+    visit(routeIndex);
     pagerPosition.setValue(routeIndex);
     pagerOffset.setValue(0);
     // 링크·뒤로가기로 탭 경로가 바뀐 경우도 슬라이드하지 않고 즉시 맞춘다.
@@ -69,6 +76,7 @@ export default function MainTabsLayout() {
   }, [routeIndex]);
 
   const selectPage = (index: number) => {
+    visit(index);
     pendingIndex.current = null;
     pagerPosition.setValue(index);
     pagerOffset.setValue(0);
@@ -84,6 +92,7 @@ export default function MainTabsLayout() {
     if (index < 0 || index === pendingIndex.current) return;
     if (index === visibleIndex.current && pendingIndex.current === null) return;
     pendingIndex.current = index;
+    visit(index);
     // 입력 피드백은 즉시 보여 주고, 실제 페이지 상태는 onPageSelected에서 확정한다.
     pagerPosition.setValue(index);
     pagerOffset.setValue(0);
@@ -96,6 +105,7 @@ export default function MainTabsLayout() {
     const index = ROUTES.indexOf(route);
     if (index < 0 || index === visibleIndex.current) return;
     pendingIndex.current = index;
+    visit(index);
     pagerPosition.setValue(index);
     pagerOffset.setValue(0);
     pageRef.current?.setPageWithoutAnimation(index);
@@ -150,7 +160,7 @@ export default function MainTabsLayout() {
             ref={pageRef}
             style={styles.pager}
             initialPage={initialRouteIndex}
-            // 다섯 메인 화면을 유지해 멀리 있는 탭도 첫 클릭부터 즉시 보이게 한다.
+            // 페이지 슬롯과 한 번 방문한 화면은 유지한다. 미방문 화면만 첫 선택 때 불러온다.
             offscreenPageLimit={ROUTES.length}
             overdrag
             onPageScroll={Animated.event(
@@ -159,11 +169,11 @@ export default function MainTabsLayout() {
             )}
             onPageSelected={(event: PagerViewOnPageSelectedEvent) => selectPage(event.nativeEvent.position)}
           >
-            <View key="plaza" collapsable={false}><PlazaScreen /></View>
-            <View key="clubs" collapsable={false}><ClubsScreen /></View>
-            <View key="home" collapsable={false}><HomeScreen /></View>
-            <View key="messenger" collapsable={false}><MessengerScreen /></View>
-            <View key="profile" collapsable={false}><ProfileScreen /></View>
+            <View key="plaza" collapsable={false}>{visited.has(0) ? <PlazaScreen /> : null}</View>
+            <View key="clubs" collapsable={false}>{visited.has(1) ? <ClubsScreen /> : null}</View>
+            <View key="home" collapsable={false}>{visited.has(2) ? <HomeScreen /> : null}</View>
+            <View key="messenger" collapsable={false}>{visited.has(3) ? <MessengerScreen /> : null}</View>
+            <View key="profile" collapsable={false}>{visited.has(4) ? <ProfileScreen /> : null}</View>
           </AnimatedPagerView>
         </View>
         <SectionNav

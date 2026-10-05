@@ -1,4 +1,5 @@
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { CachedImage as Image } from '@/components/CachedImage';
 
 import { findBookeyChatSticker } from '@/components/chat/bookeyStickers';
 import { useTheme } from '@/theme';

@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PaperScreen, SubHeader } from '@/components/collage';

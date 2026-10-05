@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from '@/navigation';
 import { useRef, useState } from 'react';
 import {
-  Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { Heart, Lock, MessageCircle } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
+import { CachedImage as Image } from '@/components/CachedImage';
 import { clubApi } from '@/api/endpoints';
 import type { ClubPost } from '@/api/types';
 import { ChatSendButton } from '@/components/chat/ChatParts';

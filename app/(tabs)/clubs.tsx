@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from '@/navigation';
 import { useCallback } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 
