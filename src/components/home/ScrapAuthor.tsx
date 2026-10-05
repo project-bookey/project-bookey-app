@@ -18,13 +18,13 @@ import { spacing, typeScale, useTheme } from '@/theme';
  * 홈 '오늘의 글' 조각 머리의 작성자 행 — 아바타 옆에 두 줄.
  *
  *   닉네임 ………………… [독후감]  ← 종류 태그
- *   책 제목 ………………… ♡ 12  ← 핫 지표(좋아요 하트 + 수)
+ *   책 제목 ………………… ♡ 12  ← 핫 지표(좋아요 하트 + 수) — 완독 조각은 언제 다 읽었는지(3일 전)
  *
  * 광장 카드의 작성자 줄과 같은 짜임이라 눈에 익고, 오른쪽 열이 각 줄의 글자
  * 밑선에 맞아 떨어진다 — 처음엔 핫 지표를 행 세로 가운데에 하나만 뒀는데 어느 줄에도
  * 안 맞아 떠 보인다는 피드백(2026-09-08, 시안 D)으로 종류·좋아요를 두 줄에 나눠 앉혔다.
  *
- * 독후감 조각(PostScrap 의 home)이 이 행을 머리에 세운다.
+ * 독후감 조각(PostScrap 의 home)과 완독 조각(FinishScrap)이 이 행을 머리에 세운다.
  * 높이(AUTHOR_H)와 아래 간격(AUTHOR_GAP)을 여기서 못 박아 행 높이 계산(HomeScraps 의 ROW_H)에
  * 그대로 들어간다 — 쓰는 쪽이 간격을 따로 주면 행 높이와 어긋난다.
  *
@@ -33,17 +33,20 @@ import { spacing, typeScale, useTheme } from '@/theme';
  * 아바타는 앱 공용 Avatar 를 그대로 쓴다 — 사진이 없으면 실루엣.
  * 누를 수 없다 — 바깥 행 하나가 통째로 버튼이다(HomeScraps 의 rowWrap 주석 참고).
  */
-export function ScrapAuthor({ nickname, avatarUrl, where, kind, likes }: {
+export function ScrapAuthor({ nickname, avatarUrl, where, kind, likes, when }: {
   nickname: string;
   avatarUrl?: string | null;
   /** 둘째 줄 왼쪽 — 책 제목. 길면 말줄임. */
   where: string;
-  /** 첫째 줄 오른쪽 태그 — 무슨 글의 조각인지. */
-  kind: '독후감';
-  /** 둘째 줄 오른쪽 핫 지표 — 좋아요 수. 하트 + 숫자로 그린다(LikeCount). */
-  likes: number;
+  /** 첫째 줄 오른쪽 태그 — 무슨 조각인지. */
+  kind: '독후감' | '완독';
+  /** 둘째 줄 오른쪽 핫 지표 — 좋아요 수. 하트 + 숫자로 그린다(LikeCount). 독후감 조각 몫. */
+  likes?: number;
+  /** 둘째 줄 오른쪽 — 좋아요가 없는 완독 조각은 언제 다 읽었는지('3일 전')를 둔다. */
+  when?: string;
 }) {
   const { colors } = useTheme();
+  const statText = [typeScale.monoLabel, styles.stat, { color: colors.textMuted }];
   return (
     <View style={styles.row}>
       <Avatar uri={avatarUrl} nickname={nickname} size={AUTHOR_AVATAR} />
@@ -58,11 +61,11 @@ export function ScrapAuthor({ nickname, avatarUrl, where, kind, likes }: {
           <Text numberOfLines={1} style={[typeScale.monoLabel, styles.where, { color: colors.textFaint }]}>
             {where}
           </Text>
-          <LikeCount
-            count={likes}
-            color={colors.textMuted}
-            textStyle={[typeScale.monoLabel, styles.stat, { color: colors.textMuted }]}
-          />
+          {likes != null ? (
+            <LikeCount count={likes} color={colors.textMuted} textStyle={statText} />
+          ) : (
+            <Text style={statText}>{when}</Text>
+          )}
         </View>
       </View>
     </View>

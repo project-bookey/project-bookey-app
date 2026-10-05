@@ -911,7 +911,7 @@ export const reviewApi = {
 };
 
 export const plazaApi = {
-  /** 광장 피드 — 앱은 완독 자랑(FINISH)만 받는다(밑줄은 앱에서 걷어냈다). */
+  /** 광장 피드 — 앱은 완독 자랑(FINISH)만 받아 홈 '오늘의 글'에 세운다(밑줄은 앱에서 걷어냈다). */
   feed: (type: PlazaItemType, page = 0, size = 20) =>
     api<Page<PlazaItem>>("/api/v1/plaza/feed", {
       query: { type, page, size },

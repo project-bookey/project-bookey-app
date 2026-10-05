@@ -5,14 +5,14 @@ import { postApi } from '@/api/endpoints';
 import { postFeedKey } from '@/api/postCache';
 import { PostList } from '@/components/post/PostList';
 
-/** 한 번에 받아오는 독후감 건수 — 광장 피드와 같은 크기. */
+/** 한 번에 받아오는 독후감 건수 — 카드가 커서 한 화면에 서너 장만 들어온다. */
 const PAGE_SIZE = 10;
 
 /**
- * 독후감 무한 피드 — 광장 '독후감' 탭의 본문.
+ * 독후감 무한 피드 — 광장의 본문.
  *
- * 광장 피드(`/plaza/feed`)와는 다른 API·다른 캐시라 쿼리를 따로 세운다. 탭을 바꿀 때
- * 헤더(칩 행·컴포저)는 그대로여야 하므로 광장이 만든 헤더를 그대로 받아 얹는다.
+ * 광장 피드(`/plaza/feed`, 홈 '오늘의 글'의 완독 자랑)와는 다른 API·다른 캐시다.
+ * 헤더(제목·'+ 독후감')는 광장이 만들어 넘기고 여기서는 그대로 얹는다.
  * 목록의 뼈대(스켈레톤·빈 상태·무한 스크롤·부분 실패 재시도)는 '내 독후감'과 나눠 쓴다(PostList).
  */
 export function PostFeed({ ListHeaderComponent }: { ListHeaderComponent: ReactElement }) {
