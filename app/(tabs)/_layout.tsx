@@ -142,7 +142,8 @@ export default function MainTabsLayout() {
         importantForAccessibility={hiddenForTour ? 'no-hide-descendants' : 'auto'}
       >
         <View style={{ paddingTop: insets.top }}>
-          <BrandHeader />
+          {/* 독후감 쓰기 연필은 광장이 보이는 동안만 헤더 왼쪽에 선다. */}
+          <BrandHeader showCompose={ROUTES[activeIndex] === 'plaza'} />
         </View>
         <View ref={pagesRef} collapsable={false} style={styles.pages} onLayout={() => setPagerReady(true)}>
           <AnimatedPagerView
