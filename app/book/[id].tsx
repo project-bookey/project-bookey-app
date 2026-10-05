@@ -518,7 +518,7 @@ function BookLike({ bookId, liked, count }: { bookId: number; liked: boolean; co
 }
 
 /**
- * 액션 바 — 서재에 없거나 읽고 싶음일 때 [읽고 싶음 토글][독서 시작].
+ * 액션 바 — 서재에 없거나 읽고 싶음일 때 [읽고 싶은 책 토글][독서 시작].
  * 읽고 싶음은 누를 때마다 켜지고(담기) 꺼진다(서재에서 빼기) — 켜지면 잉크로 뒤집고 체크 아이콘을 단다.
  * 두 상태 모두 버튼 자리가 같아 켰다 껐다 해도 화면이 움직이지 않는다.
  */
@@ -580,7 +580,7 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
           disabled={busy}
           onPress={toggleWant}
           accessibilityRole="button"
-          accessibilityLabel="읽고 싶음"
+          accessibilityLabel="읽고 싶은 책"
           accessibilityState={{ selected: wanted, disabled: busy }}
           style={({ pressed }) => [
             styles.actionButton,
@@ -594,7 +594,7 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
           ]}
         >
           <ToggleIcon size={16} color={toggleColor} {...iconStroke} />
-          <Text style={[typeScale.label, { color: toggleColor }]}>읽고 싶음</Text>
+          <Text style={[typeScale.label, { color: toggleColor }]}>읽고 싶은 책</Text>
         </Pressable>
         <Pressable
           disabled={busy}
