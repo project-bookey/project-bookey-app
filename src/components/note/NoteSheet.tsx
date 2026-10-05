@@ -10,16 +10,18 @@ import { hairline } from '@/theme/tokens';
  * 키보드가 뜨면 시트가 그 위로 올라온다. 입력이 있는 시트는 scroll 을 켠다 — 작은 폰에서 키보드 위 자리가 모자라도
  * 시트 안을 굴려 '완료'에 닿는다(목록을 품은 시트는 안쪽 목록이 스스로 스크롤하므로 끈 채로 둔다).
  */
-export function NoteSheet({ visible, title, onClose, scroll = false, children }: {
+export function NoteSheet({ visible, title, onClose, onDismiss, scroll = false, children }: {
   visible: boolean;
   title: string;
   onClose: () => void;
+  /** 닫힘 애니메이션이 끝난 뒤 — iOS 에서만 불린다(RN Modal 의 onDismiss). 닫고 화면을 넘길 때 쓴다. */
+  onDismiss?: () => void;
   scroll?: boolean;
   children: ReactNode;
 }) {
   const { colors } = useTheme();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
       <KeyboardArea style={styles.fill}>
         <Pressable style={[styles.backdrop, { backgroundColor: colors.scrimDim }]} onPress={onClose} accessibilityLabel="닫기" />
         <KeyboardDock stacked style={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.lineStrong }]}>

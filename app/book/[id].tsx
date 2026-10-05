@@ -399,6 +399,10 @@ export default function BookDetailScreen() {
           book={finishedBook}
           initial={finishedRemark}
           onClose={() => setFinishPromptClosed(true)}
+          onWritePost={() => {
+            setFinishPromptClosed(true);
+            router.push({ pathname: '/post/new', params: { bookId: String(bookId) } });
+          }}
         />
       ) : null}
     </PaperScreen>
