@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import type { Remark } from '@/api/types';
 import { useKeyboardReveal } from '@/components/keyboard';
 import { Button, Eyebrow, FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { pressedStyle, spacing, typeScale, useTheme } from '@/theme';
+import { spacing, typeScale, useTheme } from '@/theme';
 
 import { FinishCardFace, RemarkCardCount, RemarkCardInput, RemarkCardQuote } from './FinishCardFace';
 import { useDeleteRemark, useSaveRemark } from './queries';
@@ -15,11 +15,13 @@ import { useDeleteRemark, useSaveRemark } from './queries';
  * 다 읽은 회차의 내 완독 카드 — 한 줄평을 카드 안에서 바로 남기고 고친다(사용자 결정 2026-10-05).
  * 도서 상세 '내 진도'(MyRemark)와 내 완독 카드 모음(/finish-cards)이 같은 카드를 쓴다.
  *
- * '한 줄평 남기기'·'고치기'를 누르면 카드 안 한 줄평 자리가 입력칸으로 바뀌고, 카드 밑 버튼이
- * [취소][남기기|저장]이 된다 — 도서 상세 리뷰 목록의 제자리 고치기와 같은 방식이다.
+ * '한 줄평 남기기'·[고치기][삭제]는 메모 안 오른쪽 아래에 한 단 작게(FootAction xs) 둔다 — 버튼이 카드 밖에 떠 있으면
+ * 어느 카드 것인지 경계가 흐려져서 카드 하나를 한 덩어리로 만들었다(시안 C, 사용자 결정 2026-10-05). 리뷰 조각이
+ * 고치기·삭제를 카드 안에 두는 것과 같은 방식이다. 누르면 카드 안 한 줄평 자리가 입력칸으로 바뀌고, 카드 밑에
+ * [취소][남기기|저장]이 붙는다 — 도서 상세 리뷰 목록의 제자리 고치기와 같다.
  *
  * 고치는 중인지는 카드가 쥐거나(editing 을 넘기지 않을 때) 화면이 쥔다 — 모음 화면은 한 번에 한 장만 열어 둔다.
- * onOpen 을 넘기면 고치지 않는 동안 카드 얼굴을 눌러 그 책으로 간다. 버튼 줄은 얼굴 밖이라 누르는 자리가 겹치지 않는다.
+ * onOpen 을 넘기면 고치지 않는 동안 카드 본문·표지를 눌러 그 책으로 간다. 카드 안 버튼은 그 누르는 자리 밖이다.
  * KeyboardScroll · KeyboardRevealProvider 안에 둔다 — 입력칸을 누르면 그 밑 버튼 줄까지 키보드 위로 올린다.
  */
 export function MyFinishCard({
@@ -71,37 +73,37 @@ export function MyFinishCard({
     : null;
   const unchanged = remark != null && draft.trim() === remark.body.trim();
 
-  const face = (
-    <FinishCardFace title={title} coverUrl={coverUrl} when={finishedAt ? formatRelative(finishedAt) : ''}>
-      {editing ? (
-        <RemarkCardInput
-          value={draft}
-          onChange={setDraft}
-          autoFocus
-          onFocus={() => reveal(actionsRef)}
-          onContentSizeChange={() => reveal(actionsRef, { onlyIfOpen: true })}
-        />
-      ) : (
-        <RemarkCardQuote body={remark?.body} />
-      )}
-    </FinishCardFace>
-  );
-
   return (
     // 라벨·카드·버튼이 한 묶음 — 카드는 라벨보다 덩치가 커 라벨과 붙으면 답답해 sm 로 띄운다.
     <View style={styles.block}>
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {/* 입력칸이 든 얼굴은 버튼으로 감싸지 않는다 — 웹에서 <button> 안에 글 칸이 들어간다. */}
-      {onOpen && !editing ? (
-        <Pressable
-          onPress={onOpen}
-          accessibilityRole="button"
-          accessibilityLabel={`${title} 완독 카드 · 도서 상세로`}
-          style={({ pressed }) => [pressed && pressedStyle]}
-        >
-          {face}
-        </Pressable>
-      ) : face}
+      <FinishCardFace
+        title={title}
+        coverUrl={coverUrl}
+        when={finishedAt ? formatRelative(finishedAt) : ''}
+        // 입력칸이 든 얼굴은 누르는 자리로 만들지 않는다 — 웹에서 <button> 안에 글 칸이 들어간다.
+        onPress={onOpen && !editing ? onOpen : undefined}
+        pressLabel={`${title} 완독 카드 · 도서 상세로`}
+        footer={editing ? null : remark ? (
+          <RemarkActions rid={rid} bookId={bookId} onEdit={startEdit} inCard />
+        ) : (
+          <View style={styles.inCardActions}>
+            <FootAction size="xs" label="한 줄평 남기기" onPress={startEdit} />
+          </View>
+        )}
+      >
+        {editing ? (
+          <RemarkCardInput
+            value={draft}
+            onChange={setDraft}
+            autoFocus
+            onFocus={() => reveal(actionsRef)}
+            onContentSizeChange={() => reveal(actionsRef, { onlyIfOpen: true })}
+          />
+        ) : (
+          <RemarkCardQuote body={remark?.body} />
+        )}
+      </FinishCardFace>
 
       {editing ? (
         <>
@@ -120,27 +122,31 @@ export function MyFinishCard({
             />
           </View>
         </>
-      ) : remark ? (
-        <RemarkActions rid={rid} bookId={bookId} onEdit={startEdit} />
-      ) : (
-        <View style={styles.actions}>
-          <FootAction label="한 줄평 남기기" onPress={startEdit} />
-        </View>
-      )}
+      ) : null}
     </View>
   );
 }
 
-/** 남긴 한 줄평 밑 [고치기][삭제] — 삭제는 앱 어디서나 같은 말·같은 모양('삭제' → '한 번 더'). */
-export function RemarkActions({ rid, bookId, onEdit }: { rid: number; bookId: number; onEdit: () => void }) {
+/**
+ * 남긴 한 줄평 밑 [고치기][삭제] — 삭제는 앱 어디서나 같은 말·같은 모양('삭제' → '한 번 더').
+ * inCard 면 완독 카드 메모 안 오른쪽 아래에 한 단 작게(xs) 붙는다. 아니면(하차한 기록의 '내 한 줄평') 글 밑 왼쪽.
+ */
+export function RemarkActions({ rid, bookId, onEdit, inCard = false }: {
+  rid: number;
+  bookId: number;
+  onEdit: () => void;
+  inCard?: boolean;
+}) {
   const { colors } = useTheme();
   const remove = useDeleteRemark(rid, bookId);
   const { confirm, arm, disarm } = useDeleteConfirm<true>();
+  const size = inCard ? 'xs' : 'sm';
   return (
     <>
-      <View style={styles.actions}>
-        <FootAction label="고치기" onPress={() => { disarm(); onEdit(); }} accessibilityLabel="한 줄평 고치기" />
+      <View style={inCard ? styles.inCardActions : styles.actions}>
+        <FootAction size={size} label="고치기" onPress={() => { disarm(); onEdit(); }} accessibilityLabel="한 줄평 고치기" />
         <FootAction
+          size={size}
           label={confirm ? '한 번 더' : '삭제'}
           tone={confirm ? 'danger' : 'faint'}
           disabled={remove.isPending}
@@ -151,7 +157,7 @@ export function RemarkActions({ rid, bookId, onEdit }: { rid: number; bookId: nu
         />
       </View>
       {remove.isError && !remove.isPending ? (
-        <Text style={[typeScale.caption, { color: colors.warn }]}>지우지 못했어요 · 다시 눌러 주세요</Text>
+        <Text style={[typeScale.caption, inCard && styles.inCardNotice, { color: colors.warn }]}>지우지 못했어요 · 다시 눌러 주세요</Text>
       ) : null}
     </>
   );
@@ -160,6 +166,9 @@ export function RemarkActions({ rid, bookId, onEdit }: { rid: number; bookId: nu
 const styles = StyleSheet.create({
   block: { gap: spacing.sm },
   actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  // 메모 안 맨 아래 줄 — 한 줄평과 한 묶음이라 sm 만 띄우고 오른쪽 끝에 붙인다(리뷰 조각의 고치기·삭제 자리처럼).
+  inCardActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
+  inCardNotice: { textAlign: 'right', marginTop: spacing.xs },
   editActions: { flexDirection: 'row', gap: spacing.sm },
   editAction: { flex: 1 },
 });
