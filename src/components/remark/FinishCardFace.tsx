@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { TextInputProps } from 'react-native';
 
 import { MemoScrap, TiltCover } from '@/components/collage';
 import { ScrapAuthor } from '@/components/home/ScrapAuthor';
 import { useAuth } from '@/store/auth';
-import { radius, spacing, typeScale, useTheme } from '@/theme';
+import { pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, serif } from '@/theme/tokens';
 
 import { REMARK_MAX } from './queries';
@@ -20,30 +20,70 @@ const COVER_W = 72;
  * 완독 카드 시트와 '내 진도' 카드에서 적거나 고칠 때는 한 줄평 자리에 입력칸(RemarkCardInput)을,
  * 보여 줄 때는 남긴 한 줄평(RemarkCardQuote)을 넣는다. 내 완독 카드 모음(/finish-cards)도 같은 얼굴이다.
  * 카드는 기울이지 않는다 — 입력칸이 들면 커서·선택 핸들이 비뚤어진다. 콜라주 맛은 옆 표지의 기울기가 낸다.
+ *
+ * footer 는 메모 안 맨 아래 — 고치기·삭제를 카드 안에 넣어 카드 하나가 한 덩어리로 읽히게 한다(시안 C, 사용자 결정 2026-10-05).
+ * onPress 를 주면 본문(작성자 행 + 한 줄평)과 표지를 따로 누르는 자리로 만든다 — 메모 전체를 버튼으로 감싸면
+ * footer 의 버튼이 버튼 안에 들어간다(웹에서는 <button> 안의 <button>). 스크린리더에는 본문 버튼 하나만 읽힌다.
  */
-export function FinishCardFace({ title, coverUrl, when, children }: {
+export function FinishCardFace({ title, coverUrl, when, children, footer, onPress, pressLabel }: {
   title: string;
   coverUrl?: string | null;
   /** 작성자 행 오른쪽 — '방금' · '3일 전'. */
   when: string;
   children: ReactNode;
+  /** 메모 안 맨 아래 줄 — 누르는 자리(onPress) 밖이다. */
+  footer?: ReactNode;
+  onPress?: () => void;
+  /** 본문 버튼의 읽는 이름. */
+  pressLabel?: string;
 }) {
   const me = useAuth((state) => state.user);
+  const body = (
+    <>
+      <ScrapAuthor nickname={me?.nickname ?? ''} avatarUrl={me?.avatarUrl} where={title} kind="완독" when={when} />
+      {children}
+    </>
+  );
+  const cover = <TiltCover uri={coverUrl} title={title} width={COVER_W} tilt={2} entering={false} />;
   return (
     <View style={styles.row}>
       <MemoScrap rotate={0} style={styles.card}>
-        <ScrapAuthor nickname={me?.nickname ?? ''} avatarUrl={me?.avatarUrl} where={title} kind="완독" when={when} />
-        {children}
+        {onPress ? (
+          <Pressable
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={pressLabel ?? title}
+            style={({ pressed }) => [pressed && pressedStyle]}
+          >
+            {body}
+          </Pressable>
+        ) : body}
+        {footer}
       </MemoScrap>
-      {/* 표지는 그림일 뿐 — 작성자 행이 이미 책 제목을 읽어 준다. 세 플랫폼 모두 가지째 숨긴다. */}
-      <View
-        style={styles.coverSlot}
-        aria-hidden
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <TiltCover uri={coverUrl} title={title} width={COVER_W} tilt={2} entering={false} />
-      </View>
+      {/* 표지는 그림일 뿐 — 작성자 행이 이미 책 제목을 읽어 준다. 세 플랫폼 모두 가지째 숨긴다.
+          누를 수 있을 때도 손가락으로만 — 탭 이동·스크린리더는 본문 버튼 하나로 충분하다. */}
+      {onPress ? (
+        <Pressable
+          onPress={onPress}
+          focusable={false}
+          accessible={false}
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={({ pressed }) => [styles.coverSlot, pressed && pressedStyle]}
+        >
+          {cover}
+        </Pressable>
+      ) : (
+        <View
+          style={styles.coverSlot}
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {cover}
+        </View>
+      )}
     </View>
   );
 }

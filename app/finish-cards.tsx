@@ -25,7 +25,7 @@ const FINISH_CARDS_KEY = ['library', 'FINISHED', 'cards'] as const;
  *
  * 카드는 도서 상세 '내 진도'의 것과 같은 MyFinishCard 다 — 한 줄평을 여기서도 카드 안에서 바로 남기고 고친다
  * (사용자 결정 2026-10-05). 한 번에 한 장만 열어 둔다 — 다른 카드의 '고치기'를 누르면 열려 있던 카드는 닫힌다.
- * 카드 얼굴을 누르면 그 회차의 도서 상세로 간다(고치는 동안은 빼고).
+ * 카드 본문·표지를 누르면 그 회차의 도서 상세로 간다(고치는 동안은 빼고). 고치기·삭제는 메모 안 오른쪽 아래다.
  * 한 줄평은 카드마다 따로 받는다 — 서버에 '내 한 줄평 목록'이 없어서다. 목록이 그리는 카드만 받으니 처음 요청은 한 쪽 남짓이다.
  */
 export default function FinishCardsScreen() {
@@ -156,8 +156,8 @@ function FinishCardItem({ record, editing, onEditingChange }: {
 }
 
 const styles = StyleSheet.create({
-  // 카드 사이는 xl — 카드와 그 밑 버튼 줄(sm 남짓)보다 확실히 멀어야 어느 버튼이 어느 카드 것인지 읽힌다(Proximity).
-  list: { ...layout.content, paddingTop: spacing.md, gap: spacing.xl },
+  // 카드 사이 — 고치기·삭제가 메모 안으로 들어가 카드 하나가 한 덩어리라, 시안 C 대로 20 이면 충분히 나뉜다.
+  list: { ...layout.content, paddingTop: spacing.md, gap: spacing.lg + spacing.xs },
   item: { marginHorizontal: spacing.lg },
   // 한 줄평 한 줄(줄높이 24) 자리 — 받아 오면 글이 이 자리에 들어앉아 카드가 덜 들썩인다.
   quoteSlot: { height: 24 },
