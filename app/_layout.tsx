@@ -87,6 +87,7 @@ export default function RootLayout() {
             <Stack.Screen name="club/[id]/log/new" options={{ title: '메모 남기기' }} />
             <Stack.Screen name="club/[id]/log/week" options={{ title: '이번 주 카드' }} />
             <Stack.Screen name="club/[id]/log/[postId]" options={{ title: '메모' }} />
+            <Stack.Screen name="club/[id]/meeting/edit/[meetingId]" options={{ title: '모임 고치기' }} />
             <Stack.Screen name="club/[id]/note/[meetingId]" options={{ title: '모임 노트' }} />
             <Stack.Screen name="book/[id]" options={{ title: '책 정보' }} />
             <Stack.Screen name="user/[id]" options={{ title: '프로필' }} />

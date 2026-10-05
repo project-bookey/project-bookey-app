@@ -28,7 +28,7 @@ import { pressedStyle, sans } from '@/theme/tokens';
  * 모임 상세 — 예전 골격(굵은 제목 · 큰 시간 카드 · 장소/설명/참여자/함께 독서 카드)을 그대로 두고
  * 이번 라운드의 수정만 이식했다(2026-09-29 사용자 결정 A + 숫자 띠): 글꼴은 토큰(sans.extraBold)으로,
  * 제목 아래 숫자 띠(날짜·시간·참여), 지도는 헤어라인 틀 + 잉크 점, 참여자는 표준 아바타,
- * 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
+ * 고치기는 모임 고치기 화면(같은 폼)으로, 취소는 확인 창, 오류는 notify · EmptyState, 뒤로 가기는 SubHeader 기본 동작.
  * 함께 독서를 끝내면 그 모임의 공유 노트로 간다 — 참여한 멤버가 같은 대형노트에 그날을 함께 남긴다.
  * 같이 읽기와 노트 쓰기는 참여자만 한다. 모임을 연 사람은 늘 참여자다(참여 취소 대신 모임 취소).
  * 노트는 모임 상세에서 언제든 다시 열 수 있다.
@@ -133,7 +133,7 @@ export default function MeetingDetailScreen() {
       : '취소된 모임이에요';
   const attendees = m.attendees ?? [];
   const full = meetingFull(m);
-  // 모임은 멤버 누구나 연다 — 취소는 연 사람(m.host)과 클럽 호스트만.
+  // 모임은 멤버 누구나 연다 — 고치기 · 취소는 연 사람(m.host)과 클럽 호스트만.
   const canCancel = isHost || m.host;
   const running = current.data?.meetingId === mid;
   const otherRunning = Boolean(current.data && !running);
@@ -308,16 +308,27 @@ export default function MeetingDetailScreen() {
         </Card>
 
         {canCancel && state === 'open' ? (
-          // 파괴적 동작 — 주요 버튼들과 섹션 간격(xl) 이상 떼어 둔다.
-          <Button
-            label="모임 취소"
-            variant="danger"
-            style={{ marginTop: spacing.xl }}
-            loading={cancel.isPending}
-            onPress={async () => {
-              if (await confirmAsync('이 모임을 취소할까요? 참여자에게도 취소로 보여요.', '모임 취소')) cancel.mutate();
-            }}
-          />
+          // 연 사람 · 클럽 호스트가 모임을 다루는 두 동작은 한 줄에 — 위 주요 버튼들과는 섹션 간격(xl) 이상 떼어 둔다.
+          <View style={styles.manageRow}>
+            <Button
+              label="고치기"
+              variant="outline"
+              style={styles.manageButton}
+              onPress={() => router.push({
+                pathname: '/club/[id]/meeting/edit/[meetingId]',
+                params: { id: String(clubId), meetingId: String(mid), ...(isHost ? { host: '1' } : {}) },
+              })}
+            />
+            <Button
+              label="모임 취소"
+              variant="danger"
+              style={styles.manageButton}
+              loading={cancel.isPending}
+              onPress={async () => {
+                if (await confirmAsync('이 모임을 취소할까요? 참여자에게도 취소로 보여요.', '모임 취소')) cancel.mutate();
+              }}
+            />
+          </View>
         ) : null}
       </ScrollView>
     </PaperScreen>
@@ -332,6 +343,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: sans.extraBold, fontSize: 30, lineHeight: 38, letterSpacing: -0.5, marginTop: 2 },
   time: { fontFamily: sans.extraBold, fontSize: 38, lineHeight: 46, letterSpacing: -0.5, marginTop: 2 },
   link: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
+  manageRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xl },
+  manageButton: { flex: 1 },
   // 다른 모임에서 재는 중일 때 그 모임으로 — 가운데 줄 맞춤(카드의 시계·안내와 같은 축).
   togetherLink: { alignSelf: 'center' },
   personRow: {
