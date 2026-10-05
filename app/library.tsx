@@ -201,7 +201,7 @@ function GridTile({ record, colors, mode, onPress }: {
   );
 }
 
-/** 첫 타일 — 홈 책 추가 칸과 같은 회색 면에 + 아이콘만(이름은 접근성 라벨). */
+/** 첫 타일 — 회색 면에 + 아이콘만(홈 '책 추가' 칸과 같은 모양, 2026-10-05 사용자 결정). 이름은 접근성 라벨로만. */
 function AddTile({ colors, onPress }: { colors: ColorTokens; onPress: () => void }) {
   return (
     <Pressable
@@ -289,5 +289,9 @@ const styles = StyleSheet.create({
   },
   track: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3 },
   fill: { height: 3 },
-  addTile: { borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  addTile: {
+    borderRadius: radius.control,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

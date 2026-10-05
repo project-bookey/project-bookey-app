@@ -348,20 +348,20 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               ))}
             </View>
           ) : shelf.length === 0 && mine ? (
+            // 홈 '읽고 싶은 책'의 빈 행과 같은 모양 — 회색 면 + 아이콘 칸 옆에 안내 두 줄(2026-10-05 사용자 결정).
             <View style={styles.shelfList}>
               <Pressable
                 onPress={() => router.navigate('/book-search')}
                 accessibilityRole="button"
                 accessibilityLabel="책 추가"
+                style={({ pressed }) => [styles.shelfAdd, controlFace(colors.tonal), pressed && pressedStyle]}
               >
-                {/* 홈 책 추가 칸과 같은 회색 면에 + 아이콘만 — 이름은 접근성 라벨. */}
-                <View style={[styles.shelfGhost, styles.shelfAdd, controlFace(colors.tonal)]}>
-                  <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
-                </View>
+                <Plus size={ICON_SIZE} color={colors.text} {...iconStroke} />
               </Pressable>
-              {[0, 1].map((i) => (
-                <View key={i} style={[styles.shelfGhost, { borderColor: colors.lineStrong }]} />
-              ))}
+              <View style={styles.shelfAddCopy}>
+                <Text style={[typeScale.bodyStrong, { color: colors.text }]}>서재에 담긴 책이 아직 없어요</Text>
+                <Text style={[typeScale.caption, { color: colors.textMuted }]}>마음에 드는 책을 찾아 담아 보세요</Text>
+              </View>
             </View>
           ) : shelf.length === 0 ? (
             <Text style={[typeScale.caption, styles.shelfEmpty, { color: colors.textFaint }]}>
@@ -933,18 +933,14 @@ const styles = StyleSheet.create({
     height: Math.round(SHELF_COVER_W * 1.5),
     borderRadius: radius.sm,
   },
-  shelfGhost: {
+  shelfAdd: {
     width: SHELF_COVER_W,
     height: Math.round(SHELF_COVER_W * 1.5),
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderStyle: 'dashed',
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
   },
-  // 책 추가 칸 — 점선 대신 회색 면(누르는 것만 살짝 둥글게).
-  shelfAdd: { borderWidth: 0, borderRadius: radius.control },
+  shelfAddCopy: { flex: 1, minWidth: 0, alignSelf: 'center', gap: spacing.xs },
 
   statRow: { flexDirection: 'row', alignItems: 'stretch', marginTop: spacing.md },
   statCell: { flex: 1, gap: 3 },
