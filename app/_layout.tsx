@@ -75,7 +75,9 @@ export default function RootLayout() {
             <Stack.Screen name="inquiry/new" options={{ title: '문의하기' }} />
             <Stack.Screen name="inquiry/[id]" options={{ title: '문의 내용' }} />
             <Stack.Screen name="subscription" options={{ title: '구독' }} />
-            <Stack.Screen name="timer" options={{ title: '독서 타이머', presentation: 'modal' }} />
+            {/* 모달(iOS 시트)로 띄우지 않는다 — 시트 안에서는 measureInWindow 가 시트 위끝을 0 으로 재 키보드 위로 덜 올라가
+                쪽수 키패드가 '독서 마치기'를 덮었다(2026-10-05). 입력이 있는 화면은 다른 하위 화면처럼 push 로 연다. */}
+            <Stack.Screen name="timer" options={{ title: '독서 타이머' }} />
             <Stack.Screen name="club/join" options={{ title: '코드로 참가' }} />
             <Stack.Screen name="club/create" options={{ title: '클럽 만들기' }} />
             <Stack.Screen name="club/[id]/index" options={{ title: '클럽' }} />
