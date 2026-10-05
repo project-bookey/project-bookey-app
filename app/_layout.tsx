@@ -87,7 +87,6 @@ export default function RootLayout() {
             <Stack.Screen name="book/[id]" options={{ title: '책 정보' }} />
             <Stack.Screen name="user/[id]" options={{ title: '프로필' }} />
             <Stack.Screen name="postcards" options={{ title: '엽서함' }} />
-            <Stack.Screen name="postcard/[id]" options={{ title: '엽서' }} />
             <Stack.Screen name="visitors" options={{ title: '방문자' }} />
             <Stack.Screen name="follows" options={{ title: '팔로우' }} />
             <Stack.Screen name="chats" options={{ title: '채팅' }} />
