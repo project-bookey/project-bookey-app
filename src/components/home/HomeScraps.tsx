@@ -11,10 +11,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { postApi } from '@/api/endpoints';
+import { plazaApi, postApi } from '@/api/endpoints';
 import { POST_HOME_KEY } from '@/api/postCache';
-import type { Post } from '@/api/types';
+import type { PlazaItem, Post } from '@/api/types';
 import { TiltCover } from '@/components/collage';
+import { FinishScrap } from '@/components/home/FinishScrap';
 import { HomeSection } from '@/components/home/HomeSection';
 import { PostScrap } from '@/components/post/PostScrap';
 import { motion, spacing, typeScale, useTheme } from '@/theme';
@@ -22,6 +23,13 @@ import { TextLink } from '@/components/ui';
 
 /** 스포트라이트에 세우는 독후감 수 — 6초마다 한 장씩 돌린다. */
 const FEED_SIZE = 5;
+/** 독후감 사이사이에 끼우는 완독 자랑 수 — 최근에 다 읽은 순. */
+const FINISH_SIZE = 5;
+/**
+ * '오늘의 글' 완독 자랑 몫의 캐시 키 — ['plaza'] 아래라 한 줄평을 남기거나 지우면(remark/queries)
+ * 함께 새로 받는다. 홈 당겨서 새로고침도 이 키를 본다.
+ */
+export const FINISH_HOME_KEY = ['plaza', 'home'] as const;
 /** 회전 간격(ms). */
 const ROTATE_MS = 6000;
 /** 표지 스크랩 폭(px) — 시안 2a 의 78px 자리. */
@@ -57,12 +65,33 @@ const CARD_TILT = [-1.2, 1];
 
 const EASE_OUT = Easing.out(Easing.quad);
 
+/** 스포트라이트 한 장 — 독후감이거나 완독 자랑이다. */
+type Spot = { kind: 'post'; post: Post } | { kind: 'finish'; item: PlazaItem };
+
+/** 신원 — 완독 자랑에는 id 가 없어 사람·책·시각 조합으로 가른다. */
+function spotKey(spot: Spot): string {
+  return spot.kind === 'post'
+    ? `p${spot.post.id}`
+    : `f${spot.item.authorId}-${spot.item.bookId}-${spot.item.occurredAt}`;
+}
+
+/** 독후감과 완독 자랑을 한 장씩 번갈아 세운다 — 한쪽이 모자라면 남은 쪽이 이어서 선다. */
+function interleave(posts: Post[], finishes: PlazaItem[]): Spot[] {
+  const spots: Spot[] = [];
+  for (let i = 0; i < Math.max(posts.length, finishes.length); i++) {
+    if (i < posts.length) spots.push({ kind: 'post', post: posts[i] });
+    if (i < finishes.length) spots.push({ kind: 'finish', item: finishes[i] });
+  }
+  return spots;
+}
+
 /**
- * 홈 히어로 바로 아래('지금 붐비는 책' 위) '오늘의 글' — 광장의 독후감 중 핫한 것을
- * 한 장씩 스포트라이트로 세우고 6초마다 돌린다 (시안 2a: 글 카드 + 표지 스크랩 한 쌍).
+ * 홈 히어로 바로 아래('지금 붐비는 책' 위) '오늘의 글' — 광장의 독후감 중 핫한 것과 최근 완독 자랑을
+ * 번갈아 한 장씩 스포트라이트로 세우고 6초마다 돌린다 (시안 2a: 글 카드 + 표지 스크랩 한 쌍).
+ * 완독 자랑은 광장 탭에서 여기로 옮겼다 — 광장은 독후감만 보여 준다(사용자 결정 2026-10-05).
  *
- * 조각 머리에는 작성자 아바타·닉네임을 세운다(PostScrap 의 home) — 누구의 글인지가 먼저 읽히게.
- * 0건이면 섹션을 통째로 감춘다 — 홈에 빈 상자를 남기지 않는다. 그래서 섹션 틀(HomeSection: 괘선 + 위 여백)도
+ * 조각 머리에는 작성자 아바타·닉네임을 세운다(PostScrap 의 home · FinishScrap) — 누구의 글인지가 먼저 읽히게.
+ * 둘 다 0건이면 섹션을 통째로 감춘다 — 홈에 빈 상자를 남기지 않는다. 그래서 섹션 틀(HomeSection: 괘선 + 위 여백)도
  * 홈이 아니라 여기서 두른다. 홈이 감싸면 조각이 없을 때 괘선과 여백만 덩그러니 남는다 —
  * HomeSection 은 자식이 null 을 그리는지 알 수 없다(자식은 늘 '있는' 엘리먼트다).
  *
@@ -74,8 +103,8 @@ const EASE_OUT = Easing.out(Easing.quad);
  * 광장으로 가는 이동은 push 가 아니라 navigate 다 — 구역(서가·탐색·광장·나) 사이는
  * push 하면 오갈 때마다 스택에 같은 구역이 쌓인다.
  *
- * 조각을 누르면 그 독후감의 상세(app/post/[id].tsx)로 간다 — 스포트라이트에서 잘려 보이던 글을
- * 통째로 읽는다. 헤더 '광장 →' 만 광장으로 남는다.
+ * 독후감 조각을 누르면 그 독후감의 상세(app/post/[id].tsx)로 간다 — 스포트라이트에서 잘려 보이던 글을
+ * 통째로 읽는다. 완독 조각은 그 책의 상세로 간다. 헤더 '광장 →' 만 광장으로 남는다.
  */
 export function HomeScraps() {
   const router = useRouter();
@@ -85,21 +114,29 @@ export function HomeScraps() {
     queryKey: POST_HOME_KEY,
     queryFn: () => postApi.feed('HOT', 0, FEED_SIZE),
   });
+  const finishes = useQuery({
+    queryKey: FINISH_HOME_KEY,
+    queryFn: () => plazaApi.feed('FINISH', 0, FINISH_SIZE),
+  });
 
-  /** 회전 목록 — 핫한 순(좋아요 내림차순, 동률이면 최신순)으로 세운다. */
-  const spotlight = useMemo<Post[]>(() => (
-    [...(posts.data?.content ?? [])].sort((a, b) => {
+  /**
+   * 회전 목록 — 독후감은 핫한 순(좋아요 내림차순, 동률이면 최신순), 완독 자랑은 서버가 준 최신순.
+   * 한쪽 쿼리가 실패해도 다른 쪽만으로 선다.
+   */
+  const spotlight = useMemo<Spot[]>(() => {
+    const hotPosts = [...(posts.data?.content ?? [])].sort((a, b) => {
       const hot = b.likeCount - a.likeCount;
       if (hot !== 0) return hot;
       return (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt);
-    })
-  ), [posts.data]);
+    });
+    return interleave(hotPosts, finishes.data?.content ?? []);
+  }, [posts.data, finishes.data]);
 
   /**
    * 회전 목록의 신원 — 다시 받아 온 목록이 달라지면 같은 turn 에 서 있던 조각이 다른 글로 갈린다.
    * 그 교체도 연출을 타야 해서 신원을 정착 애니메이션의 의존성으로 쓴다.
    */
-  const spotlightId = useMemo(() => spotlight.map((post) => post.id).join('|'), [spotlight]);
+  const spotlightId = useMemo(() => spotlight.map(spotKey).join('|'), [spotlight]);
 
   // 계속 증가하는 카운터를 목록 길이로 나눠 쓴다 — 목록이 줄어도 범위를 벗어나지 않는다.
   const [turn, setTurn] = useState(0);
@@ -152,8 +189,20 @@ export function HomeScraps() {
     transform: [{ rotate: `${settle.value * tilt}deg` }],
   }));
 
-  const post = spotlight[index];
-  if (!post) return null;
+  const spot = spotlight[index];
+  if (!spot) return null;
+
+  // 표지·누를 곳·라벨 — 독후감은 그 글의 상세로, 완독 자랑은 그 책의 상세로.
+  const cover = spot.kind === 'post'
+    // 책 없는 독후감은 표지에 세울 책 제목이 없다 — 글 제목으로 대신 채운다.
+    ? { uri: spot.post.bookCoverUrl, title: spot.post.bookTitle ?? spot.post.title }
+    : { uri: spot.item.bookCoverUrl, title: spot.item.bookTitle };
+  const openSpot = () => router.push(
+    spot.kind === 'post' ? `/post/${spot.post.id}` : `/book/${spot.item.bookId}`,
+  );
+  const spotLabel = spot.kind === 'post'
+    ? `${spot.post.authorNickname}의 독후감 ${spot.post.title} · 독후감 상세로`
+    : `${spot.item.authorNickname}의 완독 ${spot.item.bookTitle} · 도서 상세로`;
 
   /** 헤더 '광장 →' — 목적지가 특정 글이 아니라 구역 자체라 navigate 로 연다. */
   const openPlaza = () => router.navigate('/plaza');
@@ -163,7 +212,9 @@ export function HomeScraps() {
       <Animated.View style={[styles.cardSlot, cardStyle]}>
         {/* onPress 를 주지 않는다 — 누를 자리는 바깥 행 버튼 하나뿐이다(rowWrap 주석 참고).
             기울기는 회전 연출과 함께 움직여야 해서 바깥에서 준다. */}
-        <PostScrap post={post} rotate={0} variant="home" />
+        {spot.kind === 'post'
+          ? <PostScrap post={spot.post} rotate={0} variant="home" />
+          : <FinishScrap item={spot.item} />}
       </Animated.View>
 
       {/*
@@ -184,9 +235,8 @@ export function HomeScraps() {
         importantForAccessibility="no-hide-descendants"
       >
         <TiltCover
-          uri={post.bookCoverUrl}
-          // 책 없는 독후감은 표지에 세울 책 제목이 없다 — 글 제목으로 대신 채운다.
-          title={post.bookTitle ?? post.title}
+          uri={cover.uri}
+          title={cover.title}
           width={COVER_W}
           tilt={2}
           entering={false}
@@ -208,11 +258,11 @@ export function HomeScraps() {
 
             누를 자리는 **행 전체 하나**다 — 조각에만 버튼을 달면 표지·카드와 표지 사이 여백·좌우 패딩은
             눌리지 않아, 표지를 겨냥한 탭이 무반응이면 사용자에겐 앱이 먹통으로 읽힌다.
-            그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음) 독후감 조각은 onPress 없이 그림으로만 그려진다. */}
+            그래서 버튼은 여기 하나로 두고(웹 중첩 <button> 없음) 조각은 onPress 없이 그림으로만 그려진다. */}
         <Pressable
-          onPress={() => router.push(`/post/${post.id}`)}
+          onPress={openSpot}
           accessibilityRole="button"
-          accessibilityLabel={`${post.authorNickname}의 독후감 ${post.title} · 독후감 상세로`}
+          accessibilityLabel={spotLabel}
           style={styles.rowWrap}
         >
           {row}

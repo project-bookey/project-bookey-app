@@ -33,7 +33,7 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
     nav: true,
     target: 'plaza-actions',
     title: '광장',
-    body: "다른 독자들의 독후감과 완독 자랑이 올라와요. 내 독후감은 '+ 독후감'으로 올려요.",
+    body: "다른 독자들의 독후감이 올라와요. 내 독후감은 '+ 독후감'으로 올려요.",
   },
   {
     section: 'clubs',
