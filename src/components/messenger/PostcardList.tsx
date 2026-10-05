@@ -12,6 +12,7 @@ import type { Page, PostcardView } from '@/api/types';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
 import { NAV_CLEARANCE } from '@/components/collage';
 import { KeyboardArea, KeyboardRevealProvider, useKeyboardReveal } from '@/components/keyboard';
+import { PostcardWalletLine } from '@/components/social/PostcardWalletLine';
 import { Button, Card, DeleteAction, EmptyState, Tag, TextLink, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
@@ -84,10 +85,13 @@ export function PostcardList() {
           refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => void pull()} />}
           ListHeaderComponent={
             wallet.data ? (
-              <Text style={[typeScale.caption, styles.wallet, { color: colors.textFaint }]}>
-                오늘 무료 엽서 {wallet.data.freePostcardsLeftToday}장 · 보유 엽서{' '}
-                {wallet.data.postcardBalance}장 · 우표 {wallet.data.stampBalance}개
-              </Text>
+              <View style={styles.wallet}>
+                <PostcardWalletLine
+                  freeToday={wallet.data.freePostcardsLeftToday}
+                  postcards={wallet.data.postcardBalance}
+                  stamps={wallet.data.stampBalance}
+                />
+              </View>
             ) : null
           }
           renderItem={({ item }) => <PostcardRow card={item} />}
