@@ -75,7 +75,15 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
     mutationFn: () => chatApi.open(userId as number),
     onSuccess: (chat) => {
       setChatError(null);
-      router.push({ pathname: '/chat/[id]', params: { id: String(chat.id), name: chat.otherNickname } });
+      router.push({
+        pathname: '/chat/[id]',
+        params: {
+          id: String(chat.id),
+          name: chat.otherNickname,
+          userId: String(chat.otherUserId),
+          ...(chat.otherAvatarUrl ? { avatar: chat.otherAvatarUrl } : null),
+        },
+      });
     },
     onError: (e) => setChatError(e instanceof ApiError ? e.message : '채팅을 열지 못했어요.'),
   });

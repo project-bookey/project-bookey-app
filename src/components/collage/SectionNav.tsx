@@ -20,7 +20,7 @@ export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' |
  * 하단 구역 네비. 탐색은 홈의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
  * 홈(내 책 · key shelf)은 가운데에 두고 집 아이콘을 쓴다(광장은 펼친 책).
- * 엽서(키 messenger, 우표 아이콘)는 받은·보낸 엽서를 한 목록으로 모은 구역 — 채팅은 구역이 아니라
+ * 엽서(키 messenger, 편지지 아이콘)는 받은·보낸 엽서를 한 목록으로 모은 구역 — 채팅은 구역이 아니라
  * 헤더 왼쪽 말풍선(BrandHeader)으로 어디서든 연다(2026-10-05, 사용자 결정).
  * 설정은 탭이 아니라 '나' 화면 프로필 행의 톱니로 들어가는 서브 화면이다(2026-09-08).
  */
@@ -683,11 +683,6 @@ function SectionTab({ section, selected, visuallySelected, shift, tourTarget, on
   );
 }
 
-/** 우표 톱니 테두리 — 16×16 네모의 네 변마다 반지름 1 반원 홈 셋(시계 방향으로 돌며 안쪽으로 판다). */
-const STAMP_EDGE = 'M4 4H7a1 1 0 0 0 2 0H11a1 1 0 0 0 2 0H15a1 1 0 0 0 2 0H20V7a1 1 0 0 0 0 2V11a1 1 0 0 0 0 2'
-  + 'V15a1 1 0 0 0 0 2V20H17a1 1 0 0 0-2 0H13a1 1 0 0 0-2 0H9a1 1 0 0 0-2 0H4V17a1 1 0 0 0 0-2V13a1 1 0 0 0 0-2'
-  + 'V9a1 1 0 0 0 0-2z';
-
 function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
   const stroke = { stroke: color, ...iconStroke };
   const size = 27;
@@ -718,11 +713,13 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
         </Svg>
       );
     case 'messenger':
-      // 우표 — 가장자리가 반원으로 파인 톱니 테두리에 안쪽 네모(2026-10-05 시안 B).
+      // 편지지 — 봉투에서 반쯤 꺼낸 줄 친 편지지(2026-10-05 시안 B, 우표 대신).
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Path d={STAMP_EDGE} {...stroke} />
-          <Path d="M8 8h8v8H8z" {...stroke} />
+          <Path d="M6.5 12.5V3.5h11v9" {...stroke} />
+          <Path d="M9.5 7h5M9.5 9.75h3" {...stroke} />
+          <Path d="M3.5 11v9.5h17V11" {...stroke} />
+          <Path d="m3.5 11 8.5 6 8.5-6" {...stroke} />
         </Svg>
       );
     case 'me':

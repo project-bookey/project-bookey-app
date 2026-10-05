@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -9,16 +10,22 @@ import { chatApi } from '@/api/endpoints';
 import type { ChatSummary } from '@/api/types';
 import { chatMessagePreview } from '@/components/chat/bookeyStickers';
 import { PersonGlyph } from '@/components/Avatar';
-import { EmptyState, FootAction, TextLink, formatRelative } from '@/components/ui';
+import { EmptyState, TextLink, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+
+import { useBlockUser } from './useBlockUser';
 
 /** 채팅 상대 사진 지름(px) — 목록 행이 커서 작성자 아바타(AVATAR_SIZE)보다 한 단 크다. */
-const AVATAR = 44;
+const AVATAR = 48;
 
 /**
  * 채팅 목록 (§14.3) — 엽서 답장이 오간 사이만. 마지막 메시지 최신순, 15초마다 갱신.
- * 채팅 화면(app/chats.tsx)이 머리 아래에 그린다. 쿼리는 헤더 말풍선의 안 읽은 수 배지와 같은 키(['chats'])다.
+ * 채팅 화면(app/chats.tsx)이 머리 아래에 그린다. 쿼리는 헤더 말풍선의 안 읽은 표시와 같은 키(['chats'])다.
+ *
+ * 줄 모양은 메신저 표준(2026-10-05 시안 A): 이름 줄 끝에 시간, 미리보기 줄 끝에 안 읽은 수.
+ * 줄마다 서 있던 '삭제' 버튼은 빼고, 줄을 왼쪽으로 밀면 '차단'·'삭제'가 나온다(사용자 결정).
+ * 같은 동작은 채팅방 머리의 ⋯ 메뉴에도 있다 — 제스처만으로 할 수 있는 기능을 두지 않는다.
  */
 export function ChatList() {
   const router = useRouter();
@@ -29,6 +36,10 @@ export function ChatList() {
   // 당겨서 새로고침 표시는 손으로 당긴 때만 — 15초마다 도는 갱신에 매번 돌지 않게 따로 쥔다.
   const [pulling, setPulling] = useState(false);
   const { confirm, arm, disarm } = useDeleteConfirm<number>();
+  const { confirmBlock } = useBlockUser();
+  // 밀어서 연 줄 — 차단을 취소하면 닫아 둔다.
+  const openRows = useRef(new Map<number, Swipeable | null>());
+
   const list = useQuery({
     queryKey: ['chats'],
     queryFn: () => chatApi.list(),
@@ -52,7 +63,10 @@ export function ChatList() {
     }
     arm(chatId);
   };
-
+  const pressBlock = async (chat: ChatSummary) => {
+    const blocked = await confirmBlock(chat.otherUserId, chat.otherNickname);
+    if (!blocked) openRows.current.get(chat.id)?.close();
+  };
   const pull = async () => {
     setPulling(true);
     await list.refetch();
@@ -62,11 +76,14 @@ export function ChatList() {
   return (
     <FlatList
       data={items}
+      // '삭제' → '한 번 더' 처럼 줄 밖 상태로 바뀌는 단추가 있어 그 값이 바뀌면 줄을 다시 그린다.
+      extraData={confirm}
       keyExtractor={(chat) => String(chat.id)}
       contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xl }]}
       refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => void pull()} />}
+      // 구분선은 글 시작선에서 — 사진 옆은 비워 줄이 묶여 보이게 한다.
       ItemSeparatorComponent={() => (
-        <View style={{ height: hairline, backgroundColor: colors.line }} />
+        <View style={[styles.separator, { backgroundColor: colors.line }]} />
       )}
       ListHeaderComponent={error ? (
         <Text style={[typeScale.caption, styles.error, { color: colors.danger }]} accessibilityRole="alert">
@@ -74,15 +91,45 @@ export function ChatList() {
         </Text>
       ) : null}
       renderItem={({ item }) => (
-        <ChatRow
-          chat={item}
-          confirming={confirm === item.id}
-          onOpen={() => router.push({
-            pathname: '/chat/[id]',
-            params: { id: String(item.id), name: item.otherNickname },
-          })}
-          onDelete={() => pressDelete(item.id)}
-        />
+        <Swipeable
+          ref={(node) => { openRows.current.set(item.id, node); }}
+          overshootRight={false}
+          rightThreshold={44}
+          onSwipeableClose={() => { if (confirm === item.id) disarm(); }}
+          renderRightActions={() => (
+            <View style={styles.tray}>
+              <TrayAction
+                label="차단"
+                onPress={() => void pressBlock(item)}
+                face={colors.tonal}
+                ink={colors.text}
+                accessibilityLabel={`${item.otherNickname}님 차단`}
+              />
+              <TrayAction
+                label={confirm === item.id ? '한 번 더' : '삭제'}
+                onPress={() => pressDelete(item.id)}
+                face={colors.danger}
+                ink={colors.bg}
+                accessibilityLabel={confirm === item.id ? '채팅 삭제 확인' : '채팅 삭제'}
+              />
+            </View>
+          )}
+        >
+          <ChatRow
+            chat={item}
+            onOpen={() => router.push({
+              pathname: '/chat/[id]',
+              params: {
+                id: String(item.id),
+                name: item.otherNickname,
+                userId: String(item.otherUserId),
+                ...(item.otherAvatarUrl ? { avatar: item.otherAvatarUrl } : null),
+              },
+            })}
+            onBlock={() => void pressBlock(item)}
+            onDelete={() => pressDelete(item.id)}
+          />
+        </Swipeable>
       )}
       ListEmptyComponent={
         list.isLoading ? null : list.isError ? (
@@ -102,79 +149,112 @@ export function ChatList() {
   );
 }
 
-function ChatRow({ chat, confirming, onOpen, onDelete }: {
+/** 밀면 나오는 네모 단추 — 알림 화면의 밀어서 지우기와 같은 크기·모서리. */
+function TrayAction({ label, onPress, face, ink, accessibilityLabel }: {
+  label: string;
+  onPress: () => void;
+  face: string;
+  ink: string;
+  accessibilityLabel: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={({ pressed }) => [styles.trayAction, { backgroundColor: face }, pressed ? pressedStyle : null]}
+    >
+      <Text numberOfLines={1} style={[styles.trayLabel, { color: ink }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function ChatRow({ chat, onOpen, onBlock, onDelete }: {
   chat: ChatSummary;
-  confirming: boolean;
   onOpen: () => void;
+  onBlock: () => void;
   onDelete: () => void;
 }) {
   const { colors } = useTheme();
+  const unread = chat.unreadCount > 0;
 
   return (
-    <View style={styles.row}>
-      <Pressable onPress={onOpen} accessibilityRole="button" style={styles.rowMain}>
-        {chat.otherAvatarUrl ? (
-          <Image source={{ uri: chat.otherAvatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
-            <PersonGlyph size={AVATAR} color={colors.textFaint} />
-          </View>
-        )}
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[typeScale.bodyStrong, { color: colors.text }]}>
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={unread
+        ? `${chat.otherNickname}, 안 읽은 메시지 ${chat.unreadCount}개`
+        : chat.otherNickname}
+      // 스크린 리더는 밀기 대신 동작 메뉴로 차단·삭제한다.
+      accessibilityActions={[{ name: 'block', label: '차단' }, { name: 'delete', label: '삭제' }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'block') onBlock();
+        if (event.nativeEvent.actionName === 'delete') onDelete();
+      }}
+      style={({ pressed }) => [styles.row, { backgroundColor: colors.bg }, pressed ? pressedStyle : null]}
+    >
+      {chat.otherAvatarUrl ? (
+        <Image source={{ uri: chat.otherAvatarUrl }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, { backgroundColor: colors.surfaceRaised }]}>
+          <PersonGlyph size={AVATAR} color={colors.textFaint} />
+        </View>
+      )}
+      <View style={styles.main}>
+        <View style={styles.line}>
+          <Text numberOfLines={1} style={[typeScale.bodyStrong, styles.grow, { color: colors.text }]}>
             {chat.otherNickname}
           </Text>
+          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
+            {formatRelative(chat.lastMessageAt ?? chat.createdAt)}
+          </Text>
+        </View>
+        <View style={styles.line}>
           <Text
-            style={[typeScale.caption, {
-              color: chat.unreadCount > 0 ? colors.text : colors.textFaint,
-            }]}
             numberOfLines={1}
+            style={[typeScale.caption, styles.grow, { color: unread ? colors.text : colors.textFaint }]}
           >
             {chat.lastMessageBody
               ? chatMessagePreview(chat.lastMessageBody)
               : '엽서로 연결됐어요. 첫 인사를 건네 보세요'}
           </Text>
-        </View>
-      </Pressable>
-      {/* 오른쪽 메타 — 시간 위에 안읽음 배지를 얹은 묶음, 그 옆에 삭제. 셋을 세로로 쌓으면 행이 높고 답답하다. */}
-      <View style={styles.meta}>
-        <View style={styles.metaStack}>
-          <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
-            {formatRelative(chat.lastMessageAt ?? chat.createdAt)}
-          </Text>
-          {chat.unreadCount > 0 ? (
+          {unread ? (
             <View style={[styles.badge, { backgroundColor: colors.accent }]}>
               <Text style={[typeScale.monoLabel, { color: colors.onAccent }]}>
-                {chat.unreadCount}
+                {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
               </Text>
             </View>
           ) : null}
         </View>
-        <FootAction
-          label={confirming ? '한 번 더' : '삭제'}
-          onPress={onDelete}
-          tone={confirming ? 'danger' : 'faint'}
-          accessibilityLabel={confirming ? '채팅 삭제 확인' : '채팅 삭제'}
-        />
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  // 좌우 여백은 머리(SubHeader)와 같은 lg. 아래 여백은 홈 인디케이터 몫과 함께 화면이 준다.
-  list: { ...layout.content, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  error: { marginBottom: spacing.sm },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
-  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  // 줄이 화면 끝까지 닿아야 밀었을 때 단추가 가장자리에서 나온다 — 좌우 여백은 줄 안에 둔다.
+  list: { ...layout.content, paddingTop: spacing.sm },
+  error: { marginBottom: spacing.sm, paddingHorizontal: spacing.lg },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
   avatar: {
     width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2,
     alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  metaStack: { alignItems: 'flex-end', gap: spacing.xs },
+  main: { flex: 1, minWidth: 0, gap: spacing.xs },
+  line: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  grow: { flex: 1, minWidth: 0 },
   badge: {
     minWidth: 20, height: 20, borderRadius: radius.sm, paddingHorizontal: 6,
     alignItems: 'center', justifyContent: 'center',
   },
+  separator: { height: hairline, marginLeft: spacing.lg + AVATAR + spacing.md },
+  tray: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md },
+  trayAction: { width: 62, height: 62, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
+  trayLabel: { fontFamily: sans.semiBold, fontSize: 14 },
 });

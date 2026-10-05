@@ -16,9 +16,11 @@ const MIN_SIDE = 44;
  * 서브 화면 헤더 — 배경 없이 종이 위에 얹힌다(PaperScreen 안에서 쓴다).
  * 우측은 슬롯이며 기본값은 비어 있다 — 동작 없는 ⋯ 버튼을 만들지 않는다.
  */
-export function SubHeader({ category, right, onBack }: {
+export function SubHeader({ category, center, right, onBack }: {
   /** 가운데 카테고리 표기 — 모노 아이브로우. */
   category?: string;
+  /** 가운데를 직접 그릴 때(채팅방의 상대 사진·이름) — 있으면 category 대신 쓴다. */
+  center?: ReactNode;
   /** 우측 슬롯 — 없으면 자리만 비워 좌우 균형을 맞춘다. */
   right?: ReactNode;
   /** 기본 동작은 뒤로 가기 — 돌아갈 곳이 없으면 서가로. */
@@ -52,9 +54,13 @@ export function SubHeader({ category, right, onBack }: {
           </View>
         </View>
 
-        <Text numberOfLines={1} style={[typeScale.monoEyebrow, styles.category, { color: colors.textFaint }]}>
-          {category ?? ''}
-        </Text>
+        {center ? (
+          <View style={styles.center}>{center}</View>
+        ) : (
+          <Text numberOfLines={1} style={[typeScale.monoEyebrow, styles.category, { color: colors.textFaint }]}>
+            {category ?? ''}
+          </Text>
+        )}
 
         <View
           style={[styles.side, styles.rightSlot]}
@@ -83,4 +89,5 @@ const styles = StyleSheet.create({
   // 화살표는 터치 상자(44) 안에서 가운데라, 상자를 왼쪽으로 내밀어 화살표를 화면 여백 선에 맞춘다.
   back: { minWidth: MIN_SIDE, alignSelf: 'flex-start', justifyContent: 'center', marginLeft: -(44 - ICON_SIZE) / 2 },
   category: { flexShrink: 1 },
+  center: { flexShrink: 1, alignItems: 'center' },
 });

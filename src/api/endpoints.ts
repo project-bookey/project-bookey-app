@@ -7,6 +7,7 @@ import type {
   BookSummary,
   ChatMessage,
   ChatMessages,
+  BlockedUser,
   ChatSummary,
   ClubHome,
   ClubLogDay,
@@ -623,6 +624,19 @@ export const chatApi = {
     }),
   remove: (chatId: number) =>
     api<void>(`/api/v1/chats/${chatId}`, { method: "DELETE" }),
+};
+
+/**
+ * 차단 — 한 방향, 상대에게 알리지 않는다. 막으면 그 사람과의 엽서·채팅방이 내 목록에서 빠지고(풀면 다시 보인다),
+ * 서로 엽서·채팅을 보낼 수 없다. 광장의 독후감·댓글·팔로우는 그대로다.
+ */
+export const blockApi = {
+  block: (userId: number) =>
+    api<BlockedUser>(`/api/v1/blocks/${userId}`, { method: "POST" }),
+  unblock: (userId: number) =>
+    api<void>(`/api/v1/blocks/${userId}`, { method: "DELETE" }),
+  list: (page = 0, size = 50) =>
+    api<Page<BlockedUser>>("/api/v1/blocks", { query: { page, size } }),
 };
 
 export type ClubChatState = {

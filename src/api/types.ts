@@ -46,6 +46,7 @@ export type UserProfileView = Schemas['UserProfileView'];
 export type VisitorView = Schemas['VisitorView'];
 export type LikerView = Schemas['LikerView'];
 export type ChatSummary = Schemas['ChatSummaryView'];
+export type BlockedUser = Schemas['BlockedUserView'];
 export type ChatMessage = Schemas['ChatMessageView'];
 export type ChatMessages = Schemas['ChatMessagesView'];
 

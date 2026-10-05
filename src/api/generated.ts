@@ -1204,6 +1204,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/blocks/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 차단 — 이미 막았으면 그대로 성공. 그 사람과의 엽서·채팅방이 내 목록에서 빠진다 */
+        post: operations["block"];
+        /** 차단 풀기 — 막지 않았어도 그대로 성공 */
+        delete: operations["unblock"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/social": {
         parameters: {
             query?: never;
@@ -2898,6 +2916,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내가 차단한 사람 — 최근에 막은 순 */
+        get: operations["list_10"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banners": {
         parameters: {
             query?: never;
@@ -2906,7 +2941,7 @@ export interface paths {
             cookie?: never;
         };
         /** 활성 배너/공지 목록 — 기간 내, 정렬 순 */
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3042,7 +3077,7 @@ export interface paths {
             cookie?: never;
         };
         /** 고객문의 목록 — 답변 대기만 보면 오래 기다린 순, 그 밖에는 최신순 */
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4416,6 +4451,14 @@ export interface components {
             successUrl?: string;
             failUrl?: string;
         };
+        BlockedUserView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            /** Format: date-time */
+            blockedAt: string;
+        };
         SignupConsent: {
             termsAgreed?: boolean;
             termsVersion?: string;
@@ -5248,6 +5291,18 @@ export interface components {
             /** Format: int64 */
             savedCount: number;
         };
+        PageResponseBlockedUserView: {
+            content?: components["schemas"]["BlockedUserView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         BannerView: {
             /** Format: int64 */
             id: number;
@@ -5653,6 +5708,7 @@ export type SchemaBookLikeView = components['schemas']['BookLikeView'];
 export type SchemaBookmarkPurchaseVerifyRequest = components['schemas']['BookmarkPurchaseVerifyRequest'];
 export type SchemaBookmarkPurchaseCheckoutRequest = components['schemas']['BookmarkPurchaseCheckoutRequest'];
 export type SchemaBookmarkPurchaseCheckoutView = components['schemas']['BookmarkPurchaseCheckoutView'];
+export type SchemaBlockedUserView = components['schemas']['BlockedUserView'];
 export type SchemaSignupConsent = components['schemas']['SignupConsent'];
 export type SchemaSocialLoginRequest = components['schemas']['SocialLoginRequest'];
 export type SchemaTokenResponse = components['schemas']['TokenResponse'];
@@ -5737,6 +5793,7 @@ export type SchemaChatGiftCandidate = components['schemas']['ChatGiftCandidate']
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
 export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
 export type SchemaPopularBookView = components['schemas']['PopularBookView'];
+export type SchemaPageResponseBlockedUserView = components['schemas']['PageResponseBlockedUserView'];
 export type SchemaBannerView = components['schemas']['BannerView'];
 export type SchemaSignupConfigResponse = components['schemas']['SignupConfigResponse'];
 export type SchemaPageResponseUserRow = components['schemas']['PageResponseUserRow'];
@@ -8007,6 +8064,48 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["BookmarkPurchaseCheckoutView"];
                 };
+            };
+        };
+    };
+    block: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BlockedUserView"];
+                };
+            };
+        };
+    };
+    unblock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -10674,6 +10773,29 @@ export interface operations {
     list_10: {
         parameters: {
             query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseBlockedUserView"];
+                };
+            };
+        };
+    };
+    list_11: {
+        parameters: {
+            query?: {
                 kind?: "AD" | "NOTICE";
             };
             header?: never;
@@ -10851,7 +10973,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 status?: "WAITING" | "ANSWERED";
