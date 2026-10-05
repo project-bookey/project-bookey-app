@@ -17,7 +17,7 @@ import { clubApi, clubCommunityApi, meetingNoteApi, type ClubMeeting } from "@/a
 import type { ClubHome, ClubPreview } from "@/api/types";
 import { Avatar } from "@/components/Avatar";
 import {
-  ClubBackdrop,
+  ClubHead,
   ClubTabs,
   type ClubTabKey,
   clubTabOf,
@@ -190,31 +190,31 @@ export default function ClubHomeScreen() {
 
   return (
     <PaperScreen>
-      {/* 사진은 별도의 커버에, 이름과 소개는 종이 배경에 두어 둘 다 선명하게 보인다. */}
-      <View>
-        <SubHeader
-          category="클럽"
-          right={
-            // 두 아이콘은 44pt 터치 상자를 sm 만큼 떼어 둔다(오터치 방지).
-            <View style={styles.headerActions}>
-              <IconButton
-                badge={unreadChat}
-                onPress={() => router.push(`/club/${clubId}/chat`)}
-                accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
-              >
-                <MessageSquare size={ICON_SIZE} color={colors.text} {...iconStroke} />
-              </IconButton>
-              <IconButton onPress={() => router.push(`/club/${clubId}/info`)} accessibilityLabel="클럽 정보">
-                <Ellipsis size={ICON_SIZE} color={colors.text} {...iconStroke} />
-              </IconButton>
-            </View>
-          }
-        />
-        <View style={styles.coverFrame}>
-          <View style={styles.cover}>
-            <ClubBackdrop uri={data.backgroundUrl} seed={data.id} resizeMode="contain" />
-          </View>
-        </View>
+      {/* 머리 — 그림을 헤더 뒤로 깔고 아래 끝을 종이색으로 녹여, 이름 묶음을 그 위에 겹쳐 올린다(C안, 2026-10-05). */}
+      <ClubHead
+        uri={data.backgroundUrl}
+        seed={data.id}
+        header={
+          <SubHeader
+            category="클럽"
+            right={
+              // 두 아이콘은 44pt 터치 상자를 sm 만큼 떼어 둔다(오터치 방지).
+              <View style={styles.headerActions}>
+                <IconButton
+                  badge={unreadChat}
+                  onPress={() => router.push(`/club/${clubId}/chat`)}
+                  accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
+                >
+                  <MessageSquare size={ICON_SIZE} color={colors.text} {...iconStroke} />
+                </IconButton>
+                <IconButton onPress={() => router.push(`/club/${clubId}/info`)} accessibilityLabel="클럽 정보">
+                  <Ellipsis size={ICON_SIZE} color={colors.text} {...iconStroke} />
+                </IconButton>
+              </View>
+            }
+          />
+        }
+      >
         {/* 명조 이름 · 모노 한 줄 · 한 줄 소개 · 함께하는 사람. 소개가 없으면 호스트에게만 적으러 가는 링크 */}
         <View style={styles.top}>
           <View style={{ gap: spacing.xs }}>
@@ -274,7 +274,7 @@ export default function ClubHomeScreen() {
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ClubHead>
 
       <ClubTabs clubId={clubId} active={tab} onSelect={changeTab} />
 
@@ -581,7 +581,7 @@ function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
 }
 
 /**
- * 추천 클럽 미리보기(비멤버) — 클럽 홈처럼 사진 커버 아래에
+ * 추천 클럽 미리보기(비멤버) — 클럽 홈과 같은 머리(`ClubHead`): 헤더 뒤로 깐 그림이 녹는 자리에
  * 이름 · 한 줄 정보(호스트 · 멤버 수) · 한 줄 소개. 클럽은 책 한 권에 묶이지 않으므로 책 표지 · 읽는 책은 보이지 않는다.
  */
 /**
@@ -647,13 +647,11 @@ function PublicClubPreview({
 
   return (
     <PaperScreen>
-      <View>
-        <SubHeader category="추천 클럽" onBack={() => router.back()} />
-        <View style={styles.coverFrame}>
-          <View style={styles.cover}>
-            <ClubBackdrop uri={club.backgroundUrl} seed={club.id} resizeMode="contain" />
-          </View>
-        </View>
+      <ClubHead
+        uri={club.backgroundUrl}
+        seed={club.id}
+        header={<SubHeader category="추천 클럽" onBack={() => router.back()} />}
+      >
         <View style={styles.top}>
           <View style={{ gap: spacing.xs }}>
             <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
@@ -672,7 +670,7 @@ function PublicClubPreview({
             </Text>
           ) : null}
         </View>
-      </View>
+      </ClubHead>
       <ScrollView contentContainerStyle={styles.container}>
         {club.joinable ? (
           <Card style={{ gap: spacing.md }}>
@@ -705,8 +703,6 @@ function PublicClubPreview({
 }
 
 const styles = StyleSheet.create({
-  coverFrame: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  cover: { width: "100%", aspectRatio: 3 / 2, borderRadius: radius.lg, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   // 머리 — 이름 묶음 · 소개 · 함께하는 사람 사이는 md, 그룹 안은 xs.
   top: {

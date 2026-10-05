@@ -1,5 +1,5 @@
 /** 클럽 화면 공용 — 홈의 멤버 스트립과 설정·홈이 함께 쓰는 대화상자. */
-export { ClubBackdrop } from './ClubBackdrop';
+export { CLUB_HEAD_OVERLAP, ClubBackdrop, ClubHead, ClubHeadImage } from './ClubBackdrop';
 export { ClubCard } from './ClubCard';
 export { CopyCodeButton } from './CopyCodeButton';
 export { MemberDetail, MemberStrip, NUDGES } from './MemberStrip';
