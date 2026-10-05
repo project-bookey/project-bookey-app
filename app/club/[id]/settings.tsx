@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from '@/navigation';
 import { type ReactNode, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -11,7 +10,7 @@ import { clubApi } from '@/api/endpoints';
 import { prepareImage } from '@/api/upload';
 import type { ClubHome, ClubVisibility, MemberProgress } from '@/api/types';
 import {
-  CLUB_DESCRIPTION_MAX, ClubBackdrop, CopyCodeButton, ReturnToClubHome, confirmAsync, notify,
+  CLUB_DESCRIPTION_MAX, CLUB_HEAD_OVERLAP, ClubHeadImage, CopyCodeButton, ReturnToClubHome, confirmAsync, notify,
 } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { KeyboardScroll, useScrollReveal } from '@/components/keyboard';
@@ -184,13 +183,8 @@ function SettingsForm({ club }: { club: ClubHome }) {
       <KeyboardScroll ref={scrollRef} contentContainerStyle={styles.container}>
         {/* 미리보기 — 클럽 홈 머리가 어떻게 보이는지 그대로. 입력 중인 이름 · 한 줄 소개가 바로 비친다 */}
         <View style={{ gap: spacing.sm }}>
-          <View style={[styles.preview, { borderColor: colors.line }]}>
-            <ClubBackdrop uri={club.backgroundUrl} seed={club.id} />
-            <LinearGradient
-              colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
-              locations={[0, 0.55, 1]}
-              style={StyleSheet.absoluteFill}
-            />
+          <View style={[styles.preview, { borderColor: colors.line, backgroundColor: colors.bg }]}>
+            <ClubHeadImage uri={club.backgroundUrl} seed={club.id} />
             <View style={styles.previewText}>
               <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
                 {name.trim() || club.name}
@@ -422,15 +416,20 @@ const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
   title: { ...typeScale.titleSerif, fontSize: 22, lineHeight: 30 },
   section: { borderTopWidth: hairline, paddingTop: spacing.lg },
-  // 머리 미리보기 — 클럽 홈과 같은 배경 · 그라데이션 위에 이름 · 한 줄 소개를 아래쪽에 얹는다.
+  // 머리 미리보기 — 클럽 홈과 같은 그림 · 그라데이션에, 이름 · 한 줄 소개를 그림이 녹는 아래쪽에 겹쳐 얹는다.
   preview: {
-    aspectRatio: 16 / 9,
     borderWidth: hairline,
     borderRadius: radius.md,
     overflow: 'hidden',
-    justifyContent: 'flex-end',
   },
-  previewText: { padding: spacing.lg, gap: spacing.xs },
+  // 3:2 그림 높이(폭의 2/3)의 CLUB_HEAD_OVERLAP 만큼 — 여백 %는 부모 폭 기준이다.
+  previewText: {
+    marginTop: `${-(200 / 3) * CLUB_HEAD_OVERLAP}%`,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    gap: spacing.xs,
+  },
   previewIntro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
   backdropActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
