@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { CalendarDays, Settings, Users } from 'lucide-react-native';
+import { CalendarDays, Crown, Settings, Users } from 'lucide-react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
 import { ICON_SIZE, IconButton, StickyNote } from '@/components/collage';
@@ -11,8 +11,10 @@ import { meetingDay } from './meetingTime';
 import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
-/** 한 줄 정보의 방장 프로필 사진 크기 — 옆 아이콘(12)보다 조금 커야 얼굴로 읽힌다. */
-const HOST_AVATAR = 16;
+/** 한 줄 정보의 방장 프로필 사진 크기 — 16에서 키웠다(2026-10-05 사용자 결정). */
+const HOST_AVATAR = 24;
+/** 방장 사진 머리에 얹는 왕관 크기. */
+const HOST_CROWN = 14;
 /** 그림 띠 높이 — 96에서 144로 늘렸다(2026-10-05 사용자 결정). */
 const BAND_H = 144;
 /** 아이콘 버튼(44pt) 높이 — 톱니를 얹는 제목 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
@@ -96,7 +98,7 @@ export function ClubCard({ club, onPress, onManage }: {
 }
 
 /**
- * 한 줄 정보 — 클럽 홈의 한 줄과 같은 조판인데, 왕관 대신 방장의 프로필 사진을 이름 앞에 둔다(2026-10-05 사용자 결정).
+ * 한 줄 정보 — 클럽 홈의 한 줄과 같은 조판인데, 방장의 프로필 사진을 이름 앞에 두고 그 머리에 왕관을 얹는다(2026-10-05 사용자 결정).
  * 목록 응답에는 정원 · 공개 범위가 없어 인원은 숫자만 쓴다.
  */
 function CardMetaLine({ members, memberCount }: { members: ClubMemberBrief[]; memberCount: number }) {
@@ -108,7 +110,13 @@ function CardMetaLine({ members, memberCount }: { members: ClubMemberBrief[]; me
     <View style={styles.metaRow}>
       {host ? (
         <View accessible accessibilityLabel={`호스트 ${host.nickname}`} style={styles.metaHost}>
-          <Avatar uri={host.avatarUrl} nickname={host.nickname} size={HOST_AVATAR} />
+          <View>
+            <Avatar uri={host.avatarUrl} nickname={host.nickname} size={HOST_AVATAR} />
+            {/* 금색 토큰이 없어 잉크 선에 카드 면색을 채운다 — 사진 테두리를 가리며 머리에 얹힌다. */}
+            <View style={styles.crown}>
+              <Crown size={HOST_CROWN} color={colors.text} fill={colors.surface} {...iconStroke} />
+            </View>
+          </View>
           <Text numberOfLines={1} style={[styles.metaText, styles.metaHostName, { color: tint }]}>{host.nickname}</Text>
         </View>
       ) : null}
@@ -152,10 +160,17 @@ const styles = StyleSheet.create({
   // 이름 · 한 줄 정보 · 소개는 클럽 홈 머리와 같은 조판.
   name: { ...typeScale.displaySerif, fontSize: 24, lineHeight: 32 },
   intro: { fontFamily: serif.regular, fontSize: 15, lineHeight: 24 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', columnGap: spacing.md },
+  // 왕관이 사진 위로 솟는 만큼 위를 비운다.
+  metaRow: { flexDirection: 'row', alignItems: 'center', columnGap: spacing.md, paddingTop: 6 },
   metaText: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   metaHost: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1, minWidth: 0 },
   metaHostName: { flexShrink: 1 },
+  crown: {
+    position: 'absolute',
+    top: -9,
+    left: (HOST_AVATAR - HOST_CROWN) / 2,
+    transform: [{ rotate: '-12deg' }],
+  },
   liveLine: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   liveMark: { width: 6, height: 6, borderRadius: radius.round },
   liveText: { fontFamily: mono.medium, fontSize: 10.5, letterSpacing: 0.3 },
