@@ -56,7 +56,8 @@ const SHELF_ALL_HIT_SLOP = { top: 16, bottom: 14, left: 8, right: spacing.lg };
  *
  * 위에서부터 세 묶음이다 — 묶음 사이는 간격으로만 가른다.
  *  1. 프로필: 사진·이름·팔로워/팔로잉. 나는 사진 변경(아바타 하나로만)·편집(연필)·설정,
- *     남은 오른쪽 팔로우 칩과 팔로워 줄 아래 채팅·엽서 링크(시안 A) — 팔로우는 이 화면에서만 한다.
+ *     남은 오른쪽 팔로우 칩(맞팔로우 여부도 이 라벨이 알린다)과 팔로워 줄 아래 채팅·엽서 링크(시안 A)
+ *     — 팔로우는 이 화면에서만 한다.
  *  2. 오늘(나만): 지갑 메모/방문 노트, 출석.
  *  3. 기록: 서재 선반 · 기록 카드(스트릭·히트맵) · 내 독후감 링크(남은 공개 독후감).
  * 내 팔로워·팔로잉 숫자를 누르면 팔로우 목록 화면(/follows)으로 넘어간다.
@@ -226,14 +227,10 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               </View>
             ) : (
               <>
+                {/* 나를 팔로우하는지·맞팔로우인지는 오른쪽 팔로우 버튼 라벨이 알린다 — 여기 따로 적지 않는다. */}
                 <View style={styles.profileSocial}>
                   <SocialCount label="팔로워" value={followerCount} />
                   <SocialCount label="팔로잉" value={followingCount} />
-                  {p?.mutual || p?.followsMe ? (
-                    <Text style={[styles.socialText, { color: p.mutual ? colors.accent : colors.textFaint }]}>
-                      {p.mutual ? '맞팔로우' : '나를 팔로우'}
-                    </Text>
-                  ) : null}
                 </View>
                 {/* 채팅은 엽서 답장이 오간 사이(canChat)에만 — 서버 거절도 아래에 그대로 표시한다. */}
                 {p ? (
@@ -289,7 +286,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
           ) : userId != null ? (
             // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
             <View style={styles.followSlot}>
-              <FollowButton userId={userId} nickname={p?.nickname} />
+              <FollowButton userId={userId} nickname={p?.nickname} followsMe={p?.followsMe} />
             </View>
           ) : null}
         </View>

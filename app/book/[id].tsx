@@ -289,6 +289,7 @@ export default function BookDetailScreen() {
                   bookId={bookId}
                   book={{ title: info?.title ?? '', coverUrl: info?.coverUrl, meta: finishMeta(record.data) }}
                   kind={closedKind}
+                  finishedAt={record.data.finishedAt}
                   sheetOpen={remarkSheetOpen}
                   onSheetOpenChange={setRemarkSheetOpen}
                 />
