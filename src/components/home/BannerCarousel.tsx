@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.xs + 2,
     paddingVertical: 2,
-    borderRadius: radius.sm,
+    borderRadius: radius.badge,
     marginBottom: spacing.xs,
   },
   placeholder: {

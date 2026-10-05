@@ -1,9 +1,12 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { useTheme } from '@/theme';
-import { hairline, pressedStyle, radius, spacing, typeScale } from '@/theme/tokens';
+import { glassFace, useTheme } from '@/theme';
+import { pressedStyle, radius, spacing, typeScale } from '@/theme/tokens';
 
-/** 네모 칩 — 탐색 무드 칩·광장 필터 칩 공용. 활성은 잉크로 찍은 도장처럼 반전한다. */
+/**
+ * 칩 — 탐색 분야·문의 분류·서재 필터 공용. 꺼짐은 회색 톤, 켜짐은 잉크를 버튼과 같은 유리 면(glassFace)으로 깐다
+ * (2026-10-05 버튼 비교 페이지 — 부드러운 네모·55% 투명). 겉모습 약 31pt · 11px 은 그대로(사용자 결정).
+ */
 export function Chip({ label, active = false, onPress, disabled = false, accessibilityLabel }: {
   label: string;
   active?: boolean;
@@ -26,9 +29,7 @@ export function Chip({ label, active = false, onPress, disabled = false, accessi
       accessibilityState={{ selected: active, disabled: inert }}
       style={({ pressed }) => [
         styles.chip,
-        active
-          ? { backgroundColor: colors.ink, borderColor: colors.ink }
-          : { backgroundColor: 'transparent', borderColor: colors.control },
+        glassFace(colors, active ? colors.ink : colors.tonal),
         disabled ? styles.disabled : null,
         pressed && !inert && !active && pressedStyle,
       ]}
@@ -45,11 +46,10 @@ const CHIP_HIT_SLOP = { top: 7, bottom: 7 };
 
 const styles = StyleSheet.create({
   chip: {
-    borderRadius: radius.sm,
-    borderWidth: hairline,
+    borderRadius: radius.control,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignSelf: 'flex-start',
   },
-  disabled: { opacity: 0.4 },
+  disabled: { opacity: 0.35 },
 });

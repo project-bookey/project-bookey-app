@@ -53,7 +53,8 @@ export function ActivityCardFace({ card, size }: { card: ActivityCardSnapshot; s
         backgroundColor: colors.surface,
         borderWidth: hairline,
         borderColor: colors.lineStrong,
-        borderRadius: radius.md,
+        // 노트에 붙인 종이 카드 — 앱의 카드(md)가 둥글어져도 노트 위 종이는 예전 모서리(4)를 지킨다.
+        borderRadius: radius.badge,
       }}
     >
       <Text

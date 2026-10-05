@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import type { ReactElement, ReactNode } from 'react';
 import { useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 
 import { flattenPosts } from '@/api/postCache';
 import type { Page, Post } from '@/api/types';
@@ -9,8 +9,8 @@ import { NAV_CLEARANCE } from '@/components/collage';
 import { openSection } from '@/components/pager/sectionPager';
 import { PostCard } from '@/components/post/PostCard';
 import { useLikePost } from '@/components/post/useLikePost';
-import { EmptyState, FootAction, linkLabel } from '@/components/ui';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, EmptyState, FootAction } from '@/components/ui';
+import { layout, radius, spacing, useTheme } from '@/theme';
 
 /**
  * PostList 가 쿼리에서 보는 몫 — `useInfiniteQuery(...)` 결과를 그대로 넘기면 맞는다.
@@ -101,16 +101,7 @@ export function PostList({
           <EmptyState
             title={errorTitle}
             description="잠시 후 다시 시도해 주세요."
-            action={(
-              <Pressable
-                onPress={() => query.refetch()}
-                accessibilityRole="button"
-                accessibilityLabel="다시 시도"
-                style={styles.retry}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-              </Pressable>
-            )}
+            action={<Button label="다시 시도" variant="outline" onPress={() => query.refetch()} />}
           />
         ) : (
           <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
@@ -127,7 +118,6 @@ export function PostList({
             <FootAction
               label="더 불러오지 못했어요 · 다시 시도"
               onPress={() => (query.hasNextPage ? query.fetchNextPage() : query.refetch())}
-              tone="accent"
               accessibilityLabel="독후감 더 불러오기"
             />
           </View>
@@ -145,6 +135,4 @@ const styles = StyleSheet.create({
   skeletonList: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   skeleton: { height: 160, borderRadius: radius.md },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
-  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

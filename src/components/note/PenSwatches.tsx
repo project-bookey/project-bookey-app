@@ -59,6 +59,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.xs,
   },
   rowRoomy: { gap: spacing.lg, paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
-  box: { width: 28, height: 28, borderWidth: 2, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
-  swatch: { width: 18, height: 18, borderRadius: radius.sm },
+  // 고른 색의 테두리 상자(작은 누름 칸)와 그 안의 색 — 모서리가 겹쳐 보이게 안쪽은 한 단 작게 둥글린다.
+  box: { width: 28, height: 28, borderWidth: 2, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  swatch: { width: 18, height: 18, borderRadius: radius.badge },
 });

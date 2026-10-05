@@ -217,17 +217,17 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   // 머리말 바로 밑에 표지 — 표지만 눌리게 왼쪽에 붙인다.
   book: { gap: spacing.xs, alignItems: 'flex-start' },
-  // 채팅 이모티콘 칸과 같은 크기.
+  // 채팅 이모티콘 칸과 같은 크기·같은 모양 — 그림 고르는 격자라 버튼 면 대신 얇은 선만 둔다.
   bookeyCell: {
     width: 72,
     height: 72,
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bookeyThumb: { width: 66, height: 66 },
-  emojiCell: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm },
+  emojiCell: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.control },
   emoji: { fontSize: 28, lineHeight: 36 },
   packCell: {
     width: 76,
@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
   },
 });

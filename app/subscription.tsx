@@ -13,7 +13,7 @@ import {
   Button, Card, Eyebrow, KeyValue, Rule, Tag, linkLabel,
 } from '@/components/ui';
 import { openLegal, type LegalSection } from '@/legal/links';
-import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 
 const FEATURE_COPY: Record<string, string> = {
   visitors: '누가 내 페이지를 다녀갔는지 확인할 수 있어요.',
@@ -219,7 +219,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     lineHeight: 18,
     borderTopWidth: hairline,
-    borderRadius: radius.sm,
     paddingTop: spacing.sm,
   },
 });

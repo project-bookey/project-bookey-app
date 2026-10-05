@@ -5,10 +5,10 @@ import { StyleSheet, View } from 'react-native';
 import { PaperScreen } from '@/components/collage';
 import { ChatList } from '@/components/messenger/ChatList';
 import { PostcardList } from '@/components/messenger/PostcardList';
-import { CapsuleTabs } from '@/components/CapsuleTabs';
 import { layout, spacing } from '@/theme';
 import { TourTarget } from '@/components/tour/TourTarget';
 import { SwipeableTabs } from '@/components/SwipeableTabs';
+import { Segmented } from '@/components/ui';
 
 /** 메신저의 칸 — 엽서함 두 상자와 채팅을 한 줄로 편다(엽서 → 답장 → 채팅 순서 그대로). */
 type Pane = 'inbox' | 'sent' | 'chats';
@@ -42,7 +42,7 @@ export default function MessengerScreen() {
     <PaperScreen>
       <View style={styles.panes}>
         <TourTarget id="messenger-panes">
-          <CapsuleTabs items={PANES} value={pane} onChange={setPane} />
+          <Segmented options={PANES} value={pane} onChange={setPane} />
         </TourTarget>
       </View>
       <SwipeableTabs values={PANE_VALUES} value={pane} onChange={setPane}>

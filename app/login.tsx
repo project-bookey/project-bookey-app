@@ -17,7 +17,9 @@ import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
 import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/hooks/useSocialTokens';
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
-import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
+import {
+  controlHeight, darkColors, ForceThemeMode, glassFace, hairline, pressedStyle, radius, sans, spacing, typeScale,
+} from '@/theme';
 import {
   consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type ConsentDraft,
 } from '@/components/legal/SignupConsentBox';
@@ -26,12 +28,9 @@ import {
   CODE_EXPIRED_MESSAGE, codeSendsOf, FieldError, isEmail, resendA11yLabel, ResendLabel, TimedCodeInput, type CodeSends,
 } from '@/components/auth/authFields';
 import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
-import { linkLabel } from '@/components/ui';
+import { Button, linkLabel } from '@/components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
-
-
-const BUTTON_HEIGHT = 48;
 
 /** 경고를 띄우는 자리 — 칸 하나에 걸리는 오류는 그 칸 밑에, 어느 칸에도 걸리지 않는 오류(로그인 실패·소셜 등)는 버튼 바로 위(form)에. */
 type FieldSpot = 'email' | 'code' | 'nickname' | 'password' | 'identity';
@@ -64,6 +63,15 @@ const SERVER_ERROR_SPOT: Record<string, FieldSpot> = {
  * 비밀번호를 잊은 사람은 비밀번호 칸 아래 링크로 /password-reset 에 간다(입력해 둔 이메일을 넘긴다).
  */
 export default function LoginScreen() {
+  // 다크 고정 화면 — 공용 Button 도 다크 색을 받게 감싼다.
+  return (
+    <ForceThemeMode mode="dark">
+      <LoginForm />
+    </ForceThemeMode>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const emailLogin = useAuth((s) => s.emailLogin);
   const emailSignup = useAuth((s) => s.emailSignup);
@@ -538,7 +546,8 @@ export default function LoginScreen() {
                     disabled={busy || codeLoading}
                     style={({ pressed }) => [
                       styles.codeButton,
-                      (pressed || busy || codeLoading) && styles.pressed,
+                      (busy || codeLoading) && styles.disabled,
+                      pressed && !busy && !codeLoading && styles.pressed,
                     ]}
                     accessibilityRole="button"
                     accessibilityLabel={codeSent ? resendA11yLabel('다시 받기', codeSends) : '코드 받기'}
@@ -557,26 +566,23 @@ export default function LoginScreen() {
                 </View>
                 <FieldError colors={darkColors} message={codeError} />
                 {codeSent ? (
-                  <>
-                    <Pressable
-                      onPress={verifyCode}
-                      disabled={busy || codeVerifyLoading || code.length !== 6 || codeVerified || codeExpired}
-                      style={({ pressed }) => [
-                        styles.identityButton,
-                        (pressed || busy || codeVerifyLoading || codeVerified || codeExpired) && styles.pressed,
-                      ]}
-                      accessibilityRole="button"
-                    >
-                      {codeVerifyLoading
-                        ? <ActivityIndicator color={darkColors.text} />
-                        : <Text style={[typeScale.label, { color: codeVerified ? darkColors.accent : darkColors.text }]}>
-                            {codeVerified ? '✓ 이메일 인증 완료' : '인증 코드 확인'}
-                          </Text>}
-                    </Pressable>
-                    {!codeVerified ? (
+                  codeVerified ? (
+                    // 인증을 마치면 버튼 자리에 상태를 둔다 — 흐린 비활성 버튼으로 두면 '완료'가 읽히지 않는다(본인인증 완료와 같은 모양).
+                    <View style={[styles.identityDone, { borderColor: darkColors.accent }]}>
+                      <Text style={[styles.doneLabel, { color: darkColors.accent }]}>✓ 이메일 인증 완료</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Button
+                        label="인증 코드 확인"
+                        variant="outline"
+                        onPress={verifyCode}
+                        loading={codeVerifyLoading}
+                        disabled={busy || code.length !== 6 || codeExpired}
+                      />
                       <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 {codeValidMinutes}분 안에 입력해 주세요.</Text>
-                    ) : null}
-                  </>
+                    </>
+                  )
                 ) : null}
               </View>
             ) : null}
@@ -637,24 +643,17 @@ export default function LoginScreen() {
                 <Text style={styles.fieldLabel}>휴대폰 본인인증</Text>
                 {identityId ? (
                   <View style={[styles.identityDone, { borderColor: darkColors.accent }]}>
-                    <Text style={[typeScale.label, { color: darkColors.accent }]}>✓ 본인인증 완료</Text>
+                    <Text style={[styles.doneLabel, { color: darkColors.accent }]}>✓ 본인인증 완료</Text>
                   </View>
                 ) : (
-                  <Pressable
+                  <Button
+                    label={signupConfig.data.identityDevStub
+                      ? '휴대폰 본인인증 (개발용 즉시 통과)'
+                      : '휴대폰 본인인증 하기'}
+                    variant="outline"
                     onPress={startIdentityVerification}
-                    accessibilityRole="button"
-                    style={({ pressed }) => [
-                      styles.identityButton,
-                      errors.identity ? styles.inputError : null,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={[typeScale.label, { color: darkColors.text }]}>
-                      {signupConfig.data.identityDevStub
-                        ? '휴대폰 본인인증 (개발용 즉시 통과)'
-                        : '휴대폰 본인인증 하기'}
-                    </Text>
-                  </Pressable>
+                    style={errors.identity ? styles.inputError : undefined}
+                  />
                 )}
                 <FieldError colors={darkColors} message={errors.identity} />
               </View>
@@ -664,20 +663,17 @@ export default function LoginScreen() {
             ) : null}
             {/* 어느 칸에도 걸리지 않는 실패(로그인 실패·소셜 등)는 누른 버튼 바로 위에 — 아래 '회원가입' 밑에 두면 눈이 닿지 않는다. */}
             <FieldError colors={darkColors} message={errors.form} />
-            <Pressable
+            <Button
+              label={isSignup ? '이메일로 회원가입' : '이메일로 로그인'}
               onPress={submitEmail}
+              loading={emailLoading}
               disabled={busy || (isSignup && (!signupConsentComplete || !signupVerificationComplete))}
-              style={({ pressed }) => [
-                styles.cta,
-                (pressed || busy || (isSignup && (!signupConsentComplete || !signupVerificationComplete))) && styles.ctaDisabled,
-              ]}
-              accessibilityRole="button"
-            >
-              {emailLoading
-                ? <ActivityIndicator color={darkColors.onAccent} />
-                : <Text style={styles.ctaLabel}>{isSignup ? '이메일로 회원가입' : '이메일로 로그인'}</Text>}
-            </Pressable>
-            <Pressable
+              style={styles.cta}
+            />
+            {/* 가입으로 가는 유일한 길 — 글자만 있던 때는 눈에 띄지 않아 보조 버튼으로 둔다(주요 버튼 아래). */}
+            <Button
+              label={isSignup ? '로그인으로 돌아가기' : '회원가입'}
+              variant="outline"
               onPress={() => {
                 setIsSignup(!isSignup);
                 setErrors({});
@@ -688,13 +684,7 @@ export default function LoginScreen() {
                 setIdentityId(null);
               }}
               disabled={busy}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-            >
-              <Text style={styles.ghostLabel}>
-                {isSignup ? '로그인으로 돌아가기' : '회원가입'}
-              </Text>
-            </Pressable>
+            />
           </View>
 
           <View style={styles.divider}>
@@ -708,15 +698,16 @@ export default function LoginScreen() {
               <Apple.AppleAuthenticationButton
                 buttonType={Apple.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={Apple.AppleAuthenticationButtonStyle.WHITE}
-                cornerRadius={BUTTON_HEIGHT / 2}
+                cornerRadius={radius.md}
                 style={styles.appleButton}
                 onPress={submitApple}
               />
             ) : null}
+            {/* 소셜 버튼은 공급자 색·글자를 지키고 모서리·높이·눌림·비활성만 앱 버튼과 맞춘다. */}
             <Pressable
               onPress={submitKakao}
               disabled={busy}
-              style={({ pressed }) => [styles.kakaoButton, (pressed || busy) && styles.pressed]}
+              style={({ pressed }) => [styles.kakaoButton, busy && styles.disabled, pressed && !busy && styles.pressed]}
               accessibilityRole="button"
             >
               {socialLoading === 'KAKAO'
@@ -726,7 +717,7 @@ export default function LoginScreen() {
             <Pressable
               onPress={submitGoogle}
               disabled={busy}
-              style={({ pressed }) => [styles.googleButton, (pressed || busy) && styles.pressed]}
+              style={({ pressed }) => [styles.googleButton, busy && styles.disabled, pressed && !busy && styles.pressed]}
               accessibilityRole="button"
             >
               {socialLoading === 'GOOGLE'
@@ -783,7 +774,7 @@ const styles = StyleSheet.create({
   field: { gap: spacing.xs },
   fieldLabel: { ...typeScale.label, color: darkColors.textMuted },
   input: {
-    minHeight: BUTTON_HEIGHT,
+    minHeight: controlHeight.md,
     borderRadius: radius.md,
     borderWidth: hairline,
     borderColor: darkColors.lineStrong,
@@ -794,79 +785,53 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   inputError: { borderColor: darkColors.danger },
-  cta: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
-    backgroundColor: darkColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
-  },
-  ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
-  ctaDisabled: { opacity: 0.45 },
-  // 가입으로 가는 유일한 길 — 글자만 있던 때는 눈에 띄지 않아 테두리 버튼으로 둔다(주요 버튼 아래 보조 버튼).
-  ghost: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ghostLabel: { ...typeScale.label, color: darkColors.text },
+  cta: { marginTop: spacing.xs },
   // 겉 높이 32 + 아래 hitSlop 12 = 44pt. 위는 비밀번호 칸과 겹치지 않게 넓히지 않는다.
   forgot: { alignSelf: 'flex-end', paddingVertical: spacing.sm },
   forgotLabel: { ...typeScale.caption, color: darkColors.textMuted },
   codeRow: { flexDirection: 'row', gap: spacing.sm },
+  // 코드 받기 — 받은 수/상한을 라벨에 붙여야 해서 직접 그리되 공용 Button(outline, md)과 같은 값을 쓴다.
   codeButton: {
-    minHeight: BUTTON_HEIGHT,
+    minHeight: controlHeight.md,
     borderRadius: radius.md,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
+    ...glassFace(darkColors, darkColors.tonal),
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
-  codeButtonLabel: { ...typeScale.label, color: darkColors.text },
+  codeButtonLabel: { ...typeScale.label, fontSize: 14, color: darkColors.text },
   codeHint: { ...typeScale.caption, color: darkColors.textFaint },
-  identityButton: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.md,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
-    backgroundColor: darkColors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   identityDone: {
-    minHeight: BUTTON_HEIGHT,
+    minHeight: controlHeight.md,
     borderRadius: radius.md,
     borderWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  doneLabel: { ...typeScale.label, fontSize: 14 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dividerRule: { flex: 1, height: hairline, backgroundColor: darkColors.lineStrong },
   dividerLabel: { ...typeScale.caption, color: darkColors.textFaint },
   social: { gap: spacing.sm },
-  appleButton: { height: BUTTON_HEIGHT, width: '100%' },
+  appleButton: { height: controlHeight.md, width: '100%' },
   kakaoButton: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
+    minHeight: controlHeight.md,
+    borderRadius: radius.md,
     backgroundColor: '#FEE500',
     alignItems: 'center',
     justifyContent: 'center',
   },
   kakaoLabel: { ...typeScale.bodyStrong, color: '#191919' },
   googleButton: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
+    minHeight: controlHeight.md,
+    borderRadius: radius.md,
     borderWidth: hairline,
     borderColor: darkColors.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
   googleLabel: { ...typeScale.bodyStrong, color: darkColors.text },
+  disabled: { opacity: 0.35 },
   pressed: pressedStyle,
   devInfo: { gap: spacing.sm },
   devRule: { height: hairline, backgroundColor: darkColors.line },

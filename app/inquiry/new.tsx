@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { inquiryApi } from '@/api/endpoints';
@@ -15,7 +15,7 @@ import {
 } from '@/components/inquiry/queries';
 import { PhotoStrip } from '@/components/post/PhotoStrip';
 import { usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { Button, Eyebrow, Field, linkLabel } from '@/components/ui';
+import { Button, Eyebrow, Field, TextLink } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { hairline, layout, spacing, typeScale, useTheme } from '@/theme';
 
@@ -95,16 +95,14 @@ export default function InquiryNewScreen() {
               {categories.isLoading ? (
                 <ActivityIndicator size="small" color={colors.accent} style={styles.chipsLoading} />
               ) : categories.isError ? (
-                <Pressable
+                <TextLink
+                  label="유형을 불러오지 못했어요 · 다시 시도"
+                  kind="action"
                   onPress={() => categories.refetch()}
-                  accessibilityRole="button"
                   accessibilityLabel="문의 유형 다시 불러오기"
+                  hitSlop={null}
                   style={styles.retry}
-                >
-                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>
-                    {`유형을 불러오지 못했어요 · ${linkLabel('다시 시도', 'action')}`}
-                  </Text>
-                </Pressable>
+                />
               ) : (
                 <View style={styles.chips}>
                   {options.map((option) => (
@@ -183,7 +181,8 @@ const styles = StyleSheet.create({
   // 줄바꿈되는 칩 — 칩 hitSlop(위아래 7) 끼리 겹치지 않게 줄 사이를 md 로 띄운다.
   chips: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.sm, rowGap: spacing.md },
   chipsLoading: { alignSelf: 'flex-start', minHeight: 44 },
-  retry: { minHeight: 44, justifyContent: 'center' },
+  // 칩 줄과 같은 높이(44)의 상자라 hitSlop 없이 손가락이 닿는다 — 불러오기 전후로 화면이 튀지 않는다.
+  retry: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   // 긴 글을 쓰는 칸 — 처음부터 여러 줄이 보이게 키운다. 글이 길어지면 칸이 따라 자란다.
   bodyInput: { minHeight: 160 },
   bottomBar: {
