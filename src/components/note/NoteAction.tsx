@@ -1,13 +1,13 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 동작 버튼 높이 — 선택 프레임이 요소 위로 띄울 거리를 잴 때도 쓴다. */
 export const NOTE_ACTION_HEIGHT = 44;
 
 /**
  * 캔버스 위에 뜨는 작은 동작 버튼 — 선택 프레임의 맨 앞으로·편집·삭제, 업로드 실패 사진의 다시·지우기.
- * 면은 공용 FootAction 과 같은 유리(회색 톤, 위험은 연한 빨강)에 control 모서리.
+ * 면은 공용 FootAction 과 같은 회색 톤(위험은 연한 빨강)에 control 모서리.
  */
 export function NoteAction({ label, onPress, tone = 'default' }: {
   label: string;
@@ -22,7 +22,7 @@ export function NoteAction({ label, onPress, tone = 'default' }: {
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.action,
-        glassFace(colors, tone === 'danger' ? colors.dangerSoft : colors.tonal),
+        controlFace(tone === 'danger' ? colors.dangerSoft : colors.tonal),
         pressed ? pressedStyle : null,
       ]}
     >

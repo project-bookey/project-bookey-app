@@ -5,7 +5,7 @@ import type { SharedValue } from 'react-native-reanimated';
 
 import type { ReadingRecord } from '@/api/types';
 import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
-import { glassFace, pressedStyle, useTheme } from '@/theme';
+import { controlFace, pressedStyle, useTheme } from '@/theme';
 import { controlHeight, radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
 import { playLabel } from '@/components/ui';
 
@@ -226,12 +226,12 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
           <Pressable
             onPress={() => onContinue(record)}
             // 공용 Button(primary, md)과 같은 면 — 접근성 이름('이어서 읽기')을 따로 주려고 직접 그린다.
-            style={({ pressed }) => [styles.cta, glassFace(colors, colors.accent), pressed && pressedStyle]}
+            style={({ pressed }) => [styles.cta, controlFace(colors.accent), pressed && pressedStyle]}
             accessibilityRole="button"
             accessibilityLabel="이어서 읽기"
           >
             {/* 시안 라벨 — '읽기'를 붙이면 스트릭 캡션이 메모 조각에 닿아 말줄임된다. */}
-            <Text style={[styles.ctaLabel, { color: colors.onAccentGlass }]}>{playLabel('이어서')}</Text>
+            <Text style={[styles.ctaLabel, { color: colors.onAccent }]}>{playLabel('이어서')}</Text>
           </Pressable>
           {streakLine ? (
             /* 좁은 폭(360)에선 메모 조각에 밀려 한 줄에 안 들어간다 — 말줄임 대신 가운뎃점에서 줄을 나눠 두 줄로 내린다. */

@@ -2,9 +2,9 @@ import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import type { MemberProgress } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
-import { glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
-/** 말풍선 화자 고르기 — 클럽 멤버 아바타 칩 가로 줄. 공용 Chip 과 같은 유리 면에 선택은 잉크 반전. */
+/** 말풍선 화자 고르기 — 클럽 멤버 아바타 칩 가로 줄. 공용 Chip 과 같은 면(회색 톤)에 선택은 잉크 반전. */
 export function MemberPickerRow({ members, selectedUserId, onPick }: {
   members: MemberProgress[];
   selectedUserId: number;
@@ -25,7 +25,7 @@ export function MemberPickerRow({ members, selectedUserId, onPick }: {
             hitSlop={CHIP_HIT_SLOP}
             style={({ pressed }) => [
               styles.chip,
-              glassFace(colors, selected ? colors.ink : colors.tonal),
+              controlFace(selected ? colors.ink : colors.tonal),
               pressed && !selected ? pressedStyle : null,
             ]}
           >

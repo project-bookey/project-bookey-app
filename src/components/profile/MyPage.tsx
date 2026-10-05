@@ -25,7 +25,7 @@ import {
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import {
-  controlHeight, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme,
+  controlHeight, controlFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme,
 } from '@/theme';
 import { rowOffsetY, sans, serif, tiltFor } from '@/theme/tokens';
 
@@ -276,7 +276,7 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               hitSlop={8}
               style={({ pressed }) => [
                 styles.settingsButton,
-                glassFace(colors, colors.tonal),
+                controlFace(colors.tonal),
                 pressed && styles.pressed,
               ]}
             >
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
   // 닉네임 옆 연필은 상자 없이 둔다(사용자 결정 2026-10-04 — 테두리 상자로 바꿨다가 되돌림).
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
-  // 겉모습은 Button sm(32pt · 회색 톤 유리 · control 모서리)과 같고 터치 상자는 hitSlop 으로 넓힌다.
+  // 겉모습은 Button sm(32pt · 회색 톤 · control 모서리)과 같고 터치 상자는 hitSlop 으로 넓힌다.
   settingsButton: {
     alignSelf: 'flex-end',
     height: controlHeight.sm,

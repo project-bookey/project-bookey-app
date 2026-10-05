@@ -131,7 +131,7 @@ export default function ClubInfoScreen() {
         right={
           isHost ? (
             <IconButton onPress={() => router.push(`/club/${clubId}/settings`)} accessibilityLabel="클럽 관리">
-              <Settings size={ICON_SIZE.plain} color={colors.text} {...iconStroke} />
+              <Settings size={ICON_SIZE} color={colors.text} {...iconStroke} />
             </IconButton>
           ) : undefined
         }

@@ -2,11 +2,11 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { useFollowToggle } from '@/hooks/useFollow';
 import { useAuth } from '@/store/auth';
-import { controlHeight, glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlHeight, controlFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 팔로우 버튼 (§14.3) — 한 방향, 한 번 누르면 바로 팔로우되고 다시 누르면 취소된다.
- * 아직 안 했으면 잉크로 찍은 '팔로우', 하고 있으면 회색 톤의 '팔로잉' — 둘 다 공용 버튼과 같은 유리 면(glassFace).
+ * 아직 안 했으면 잉크로 찍은 '팔로우', 하고 있으면 회색 톤의 '팔로잉' — 둘 다 공용 버튼과 같은 면(controlFace).
  * sm 은 Button sm(32pt, hitSlop 으로 44pt), md 는 Button md(48pt)와 겉모습을 맞춘다.
  * 상대가 나를 팔로우하면(`followsMe`) 라벨이 맞팔로우 여부까지 알린다 — 안 했으면 '맞팔로우',
  * 서로 하고 있으면 '맞팔로우 중'. 그래서 버튼 옆에 '나를 팔로우'·'맞팔로우' 글자를 따로 두지 않는다.
@@ -39,7 +39,7 @@ export function FollowButton({ userId, nickname, followsMe = false, size = 'sm' 
       style={({ pressed }) => [
         styles.base,
         size === 'md' && styles.md,
-        glassFace(colors, following ? colors.tonal : colors.ink),
+        controlFace(following ? colors.tonal : colors.ink),
         pressed && !pending && pressedStyle,
       ]}
     >

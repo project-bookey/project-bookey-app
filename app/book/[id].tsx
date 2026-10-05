@@ -36,7 +36,7 @@ import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
 import {
-  controlHeight, getLagStyle, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme,
+  controlHeight, getLagStyle, controlFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme,
 } from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
 
@@ -611,11 +611,11 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
           accessibilityRole="button"
           accessibilityLabel="읽고 싶은 책"
           accessibilityState={{ selected: wanted, disabled: busy }}
-          // 담기 토글 — 꺼짐은 보조 버튼(회색 톤), 담기면 잉크로 뒤집는다(선택 상태 규칙). 면은 공용 Button 과 같은 유리.
+          // 담기 토글 — 꺼짐은 보조 버튼(회색 톤), 담기면 잉크로 뒤집는다(선택 상태 규칙). 면은 공용 Button 과 같은 평평한 면.
           style={({ pressed }) => [
             styles.actionButton,
             styles.wantToggle,
-            glassFace(colors, wanted ? colors.ink : colors.tonal),
+            controlFace(wanted ? colors.ink : colors.tonal),
             busy && styles.actionBusy,
             pressed && !busy ? pressedStyle : null,
           ]}
@@ -633,12 +633,12 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
           style={({ pressed }) => [
             styles.actionButton,
             styles.actionPrimary,
-            glassFace(colors, colors.accent),
+            controlFace(colors.accent),
             busy && styles.actionBusy,
             pressed && !busy ? pressedStyle : null,
           ]}
         >
-          <Text style={[styles.actionLabel, { color: colors.onAccentGlass }]}>{playLabel('독서 시작')}</Text>
+          <Text style={[styles.actionLabel, { color: colors.onAccent }]}>{playLabel('독서 시작')}</Text>
         </Pressable>
       </View>
       {addFailed && add.variables ? (

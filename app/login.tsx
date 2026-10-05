@@ -18,7 +18,7 @@ import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
 import {
-  controlHeight, darkColors, ForceThemeMode, glassFace, hairline, pressedStyle, radius, sans, spacing, typeScale,
+  controlHeight, darkColors, ForceThemeMode, controlFace, hairline, pressedStyle, radius, sans, spacing, typeScale,
 } from '@/theme';
 import {
   consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type ConsentDraft,
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   codeButton: {
     minHeight: controlHeight.md,
     borderRadius: radius.md,
-    ...glassFace(darkColors, darkColors.tonal),
+    ...controlFace(darkColors.tonal),
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,

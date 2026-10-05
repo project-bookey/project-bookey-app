@@ -76,23 +76,12 @@ export type ColorTokens = {
   /** 노트 펜 파랑 — 팔레트에 파랑이 없어 노트 잉크 전용으로 둔다. 다크는 하늘, 라이트는 짙은 파랑. */
   penBlue: string;
   /**
-   * 회색 톤 바탕 — 보조 버튼·칩·카드 발치 버튼의 면(2026-10-05 '부드러운 네모'). 테두리 없이 면으로 '누를 수 있음'을
-   * 보이므로 surfaceRaised 보다 한 단계 진하다. 버튼에서는 glassFace 가 glassAlpha 로 비치게 깐다.
+   * 회색 톤 바탕 — 보조 버튼·칩·카드 발치 버튼·세그먼트 트랙의 면(2026-10-05 '부드러운 네모'). 테두리 없이 면으로
+   * '누를 수 있음'을 보이므로 surfaceRaised 보다 한 단계 진하다.
    */
   tonal: string;
-  /** 세그먼트의 고른 칸 — 트랙 위에 떠 있는 종이(라이트는 흰 종이, 다크는 한 단계 밝은 면). */
+  /** 세그먼트의 고른 칸 — 회색 톤 트랙 위의 종이(라이트는 흰 종이, 다크는 한 단계 밝은 면). */
   thumb: string;
-  /** 떠 있는 유리 면(머리 아이콘 원·트랙) — 블러가 없는 기기에서도 반투명으로 비친다. */
-  glass: string;
-  /** 유리 버튼의 가장자리 — 빛이 맺힌 얇은 선. */
-  glassEdge: string;
-  /** 유리 버튼 윗선의 하이라이트(안쪽 1px). */
-  glassHighlight: string;
-  /**
-   * 반투명 악센트 버튼 위 글자 — 악센트를 glassAlpha 로 비치게 깔면 라이트에서는 흰 글자 대비가 2.4:1 로 떨어져
-   * 잉크(짙은 글자)로 바꾼다. 다크는 onAccent 와 같다.
-   */
-  onAccentGlass: string;
 };
 
 export type ThemeMode = 'dark' | 'light';
@@ -137,10 +126,6 @@ export const darkColors: ColorTokens = {
   penBlue: '#6fb1ff',
   tonal: '#2a2f28',
   thumb: '#3a4037',
-  glass: 'rgba(40,44,38,0.42)',
-  glassEdge: 'rgba(255,255,255,0.22)',
-  glassHighlight: 'rgba(255,255,255,0.28)',
-  onAccentGlass: '#0c0e0d',
 };
 
 export const lightColors: ColorTokens = {
@@ -183,10 +168,6 @@ export const lightColors: ColorTokens = {
   penBlue: '#1f5fbf',
   tonal: '#ebe7dc',
   thumb: '#ffffff',
-  glass: 'rgba(255,255,255,0.5)',
-  glassEdge: 'rgba(255,255,255,0.85)',
-  glassHighlight: 'rgba(255,255,255,0.95)',
-  onAccentGlass: '#1a1c18',
 };
 
 /**

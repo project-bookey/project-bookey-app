@@ -4,7 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'rea
 import { Gesture, GestureDetector, type ComposedGesture, type PanGesture } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
-import { glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { ToolIcon } from './NoteIcons';
 import { CANVAS, canvasFor, type CanvasSize, type CanvasWindow, type NoteKind, type NoteRect } from './noteDoc';
 import type { Point } from './noteGeometry';
@@ -493,8 +493,8 @@ export function ZoomStage({ zoom, children, controls = true, style }: {
 export function ZoomControls({ zoom, style }: { zoom: NoteZoom; style?: ViewStyle }) {
   const { colors } = useTheme();
   if (!zoom.enabled) return null;
-  // 캔버스 위에 뜨는 보조 버튼 — 공용 보조 버튼과 같은 회색 톤 유리 면.
-  const box = glassFace(colors, colors.tonal);
+  // 캔버스 위에 뜨는 보조 버튼 — 공용 보조 버튼과 같은 회색 톤 면.
+  const box = controlFace(colors.tonal);
   const button = (key: string, label: string, onPress: () => void, disabled: boolean, content: ReactNode, wide = false) => (
     <Pressable
       key={key}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { controlHeight, glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlHeight, controlFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 2탭 확인 버튼 — 1탭에 질문 + [취소][확인]으로 전환되고(주요 버튼은 오른쪽), 확인 시 onConfirm을 실행한다.
@@ -33,8 +33,8 @@ export function ConfirmButton({ label, question, confirmLabel = '확인', tone =
   }, [pending, wasPending]);
 
   if (arming) {
-    // 위험 확인은 연한 빨강, 그 밖(완독 등)은 잉크 — 공용 Button 과 같은 유리 면(glassFace)에 색만 바꾼다.
-    const confirmFace = glassFace(colors, tone === 'danger' ? colors.dangerSoft : colors.ink);
+    // 위험 확인은 연한 빨강, 그 밖(완독 등)은 잉크 — 공용 Button 과 같은 면(controlFace)에 색만 바꾼다.
+    const confirmFace = controlFace(tone === 'danger' ? colors.dangerSoft : colors.ink);
     const confirmFg = tone === 'danger' ? colors.danger : colors.onInk;
     return (
       <View style={styles.row}>
@@ -44,7 +44,7 @@ export function ConfirmButton({ label, question, confirmLabel = '확인', tone =
           onPress={() => setArming(false)}
           accessibilityRole="button"
           accessibilityLabel="취소"
-          style={({ pressed }) => [styles.button, glassFace(colors, colors.tonal), pending && styles.pending, pressed && !pending && pressedStyle]}
+          style={({ pressed }) => [styles.button, controlFace(colors.tonal), pending && styles.pending, pressed && !pending && pressedStyle]}
         >
           <Text style={[styles.label, { color: colors.text }]}>취소</Text>
         </Pressable>
@@ -71,7 +71,7 @@ export function ConfirmButton({ label, question, confirmLabel = '확인', tone =
       style={({ pressed }) => [
         styles.button,
         styles.idle,
-        variant === 'outline' ? glassFace(colors, colors.tonal) : null,
+        variant === 'outline' ? controlFace(colors.tonal) : null,
         pressed && pressedStyle,
       ]}
     >
