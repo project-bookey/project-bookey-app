@@ -13,13 +13,14 @@ import type { ChatMessage } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { openSection } from '@/components/pager/sectionPager';
 import { KeyboardArea } from '@/components/keyboard';
+import { BookeyPackTabs } from '@/components/chat/BookeyPackTabs';
 import { BOOKEY_STICKER_PACKS, findBookeyChatSticker } from '@/components/chat/bookeyStickers';
 import {
   ChatBubble, ChatEmpty, ChatError, ChatInput, ChatInputBar, ChatSendButton, ChatTime, chatListContent,
 } from '@/components/chat/ChatParts';
 import { FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, iconStroke, pressedStyle, radius, sans, spacing, useTheme } from '@/theme';
+import { hairline, iconStroke, pressedStyle, radius, spacing, useTheme } from '@/theme';
 
 /** 새 메시지 폴링 주기(ms) — 실시간 인프라 없이 시작한다 (§13-11 결정). */
 const POLL_MS = 4000;
@@ -156,42 +157,7 @@ export default function ChatRoomScreen() {
 
         {stickersOpen ? (
           <View style={[styles.stickerPanel, { borderTopColor: colors.line, backgroundColor: colors.surface }]}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.stickerPackList}
-            >
-              {BOOKEY_STICKER_PACKS.map((pack) => {
-                const selected = pack.id === selectedStickerPack.id;
-                return (
-                  <Pressable
-                    key={pack.id}
-                    onPress={() => setSelectedStickerPackId(pack.id)}
-                    accessibilityRole="tab"
-                    accessibilityLabel={`${pack.name} 이모티콘`}
-                    accessibilityState={{ selected }}
-                    style={({ pressed }) => [
-                      styles.stickerPackTab,
-                      // 고른 묶음은 다른 선택 상태처럼 잉크로 뒤집는다.
-                      {
-                        borderColor: selected ? colors.ink : colors.control,
-                        backgroundColor: selected ? colors.ink : colors.bg,
-                      },
-                      pressed ? pressedStyle : null,
-                    ]}
-                  >
-                    <Image source={pack.thumbnail} style={styles.stickerPackThumb} resizeMode="contain" />
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.stickerPackName, { color: selected ? colors.onInk : colors.textMuted }]}
-                    >
-                      {pack.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            <BookeyPackTabs value={selectedStickerPack.id} onChange={setSelectedStickerPackId} />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -286,19 +252,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  stickerPackList: { gap: spacing.xs, paddingBottom: spacing.xs },
-  stickerPackTab: {
-    width: 64,
-    minHeight: 66,
-    borderWidth: hairline,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-  },
-  stickerPackThumb: { width: 42, height: 42 },
-  stickerPackName: { fontFamily: sans.regular, fontSize: 10, lineHeight: 13 },
   stickerList: { gap: spacing.sm, paddingVertical: spacing.sm },
   stickerCell: {
     width: 72,

@@ -53,7 +53,9 @@ export const DEFAULT_TEXT_W = 500;
 export const DEFAULT_SPEECH_W = 520;
 export const DEFAULT_PHOTO_W = 480;
 export const DEFAULT_QUOTE_W = 560;
-export const STICKER_W = { emoji: 140, pack: 180, card: 300 } as const;
+export const STICKER_W = { emoji: 140, pack: 180, card: 300, bookey: 240, book: 220 } as const;
+/** 책 스티커 표지 비율(세로/가로) — 책 스티커만 정사각형이 아니다. */
+export const BOOK_STICKER_RATIO = 1.5;
 /** 사진 종이 프레임(논리 단위) — 요소의 w·h 는 프레임 바깥 크기다. 사진 자체는 inset 만큼 안쪽, 아래는 폴라로이드 여백(lip). */
 export const PHOTO_FRAME = { inset: 6, lip: 18 } as const;
 /** 프레임 폭 w 에 사진 비율(imgW:imgH)을 맞춘 프레임 높이. 비율을 모르면 정사각형. */
@@ -95,9 +97,22 @@ export type ActivityCardSnapshot = {
   nickname: string;
   endedAt?: string;
 };
-export type StickerKind = 'emoji' | 'pack' | 'card';
-/** 스티커 — 정사각형(w×w). card 면 value 는 카드 id, card 에 스냅숏을 담는다. */
-export type StickerElement = Placed & { type: 'sticker'; w: number; kind: StickerKind; value: string; card?: ActivityCardSnapshot };
+/** 책 스티커 스냅숏 — 붙일 때의 표지·제목을 담아 두고 서버에 다시 묻지 않는다. */
+export type BookStickerSnapshot = { title: string; author?: string; coverUrl?: string };
+/** emoji · pack(그림) · card(기록 카드) · bookey(Bookey 이모티콘) · book(책 표지). */
+export type StickerKind = 'emoji' | 'pack' | 'card' | 'bookey' | 'book';
+/**
+ * 스티커 — 정사각형(w×w), 책만 표지 비율(w×w·BOOK_STICKER_RATIO).
+ * card 면 value 는 카드 id(스냅숏은 card), bookey 면 이모티콘 코드, book 이면 책 id(스냅숏은 book).
+ */
+export type StickerElement = Placed & {
+  type: 'sticker';
+  w: number;
+  kind: StickerKind;
+  value: string;
+  card?: ActivityCardSnapshot;
+  book?: BookStickerSnapshot;
+};
 export type PhotoElement = Placed & { type: 'photo'; w: number; h: number; imageId: number; url: string };
 export type SpeechElement = Placed & {
   type: 'speech';
@@ -150,6 +165,8 @@ export function nextZ(doc: NoteDoc): number {
 }
 
 export const isInk = (e: NoteElement): e is InkElement => e.type === 'ink';
+/** 스티커 논리 높이 — 책은 표지 비율, 나머지는 정사각형. */
+export const stickerHeight = (e: Pick<StickerElement, 'w' | 'kind'>) => (e.kind === 'book' ? e.w * BOOK_STICKER_RATIO : e.w);
 export const isPlaced = (e: NoteElement): e is PlacedElement => e.type !== 'ink';
 /** 편집 시트(더블탭·'편집')로 글을 고칠 수 있는 요소 — 텍스트·말풍선·문장 조각. */
 export const isTextual = (e: NoteElement): e is TextElement | SpeechElement | QuoteElement =>
@@ -214,7 +231,18 @@ function parseElement(raw: unknown): NoteElement | null {
         };
         return { ...p, type: 'sticker', w: raw.w, kind: 'card', value: raw.value, card };
       }
-      return { ...p, type: 'sticker', w: raw.w, kind: raw.kind === 'pack' ? 'pack' : 'emoji', value: raw.value };
+      if (raw.kind === 'book') {
+        const b = raw.book as Record<string, unknown> | undefined;
+        if (!b || !str(b.title)) return null;
+        const book: BookStickerSnapshot = {
+          title: b.title,
+          author: str(b.author) ? b.author : undefined,
+          coverUrl: str(b.coverUrl) ? b.coverUrl : undefined,
+        };
+        return { ...p, type: 'sticker', w: raw.w, kind: 'book', value: raw.value, book };
+      }
+      const kind = raw.kind === 'pack' || raw.kind === 'bookey' ? raw.kind : 'emoji';
+      return { ...p, type: 'sticker', w: raw.w, kind, value: raw.value };
     }
     case 'photo': {
       const p = placed(raw);
@@ -356,7 +384,7 @@ export type CanvasWindow = NoteRect;
 
 /**
  * 페이지에 올린 것들이 차지한 범위(논리 좌표) — 비었으면 null. 대형노트를 열 때 어디를 보여 줄지 정하는 데 쓴다.
- * 텍스트·말풍선·문장 조각은 높이를 저장하지 않으므로 폭의 절반으로(스티커는 정사각형으로) 어림한다(보여 줄 자리만 정하면 되니 충분하다).
+ * 텍스트·말풍선·문장 조각은 높이를 저장하지 않으므로 폭의 절반으로(스티커는 제 높이로) 어림한다(보여 줄 자리만 정하면 되니 충분하다).
  */
 export function contentBounds(doc: Pick<NoteDoc, 'elements'>): NoteRect | null {
   let minX = Infinity;
@@ -373,7 +401,7 @@ export function contentBounds(doc: Pick<NoteDoc, 'elements'>): NoteRect | null {
     if (e.type === 'ink') {
       for (const [x, y] of e.points) take(x, y, x, y);
     } else {
-      const h = e.type === 'photo' ? e.h : e.type === 'sticker' ? e.w : e.w / 2;
+      const h = e.type === 'photo' ? e.h : e.type === 'sticker' ? stickerHeight(e) : e.w / 2;
       take(e.x, e.y, e.x + e.w, e.y + h);
     }
   }
