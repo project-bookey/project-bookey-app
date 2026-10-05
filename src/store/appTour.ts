@@ -14,7 +14,7 @@ export type TourStep = {
   nav: boolean;
   /** 화면 속 핵심 요소의 TourTarget id. */
   target: string;
-  /** 헤더처럼 페이지 밖에 있는 요소 — 페이지 영역으로 자르지 않는다. */
+  /** 헤더·하단 바처럼 페이지 밖에 있는 요소 — 페이지 영역으로 자르지 않는다. */
   inHeader?: boolean;
   title: string;
   body: string;
@@ -34,7 +34,7 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
     target: 'plaza-compose',
     inHeader: true,
     title: '광장',
-    body: '다른 독자들의 독후감이 올라와요. 내 독후감은 왼쪽 위 연필을 눌러 써요.',
+    body: '다른 독자들의 독후감이 올라와요. 내 독후감은 오른쪽 아래 연필을 눌러 써요.',
   },
   {
     section: 'clubs',

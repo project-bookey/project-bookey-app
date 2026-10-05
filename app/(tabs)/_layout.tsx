@@ -1,4 +1,4 @@
-import { useIsFocused, usePathname } from 'expo-router';
+import { useIsFocused, usePathname, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import PagerView, { type PagerViewOnPageSelectedEvent } from '@/components/pager/PagerView';
@@ -31,6 +31,7 @@ const ACTIVE_BY_ROUTE: Record<string, SectionKey> = {
 };
 
 export default function MainTabsLayout() {
+  const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -142,8 +143,7 @@ export default function MainTabsLayout() {
         importantForAccessibility={hiddenForTour ? 'no-hide-descendants' : 'auto'}
       >
         <View style={{ paddingTop: insets.top }}>
-          {/* 독후감 쓰기 연필은 광장이 보이는 동안만 헤더 왼쪽에 선다. */}
-          <BrandHeader showCompose={ROUTES[activeIndex] === 'plaza'} />
+          <BrandHeader />
         </View>
         <View ref={pagesRef} collapsable={false} style={styles.pages} onLayout={() => setPagerReady(true)}>
           <AnimatedPagerView
@@ -171,6 +171,8 @@ export default function MainTabsLayout() {
           onSelect={selectRoute}
           pagerPosition={pagerPosition}
           pagerOffset={pagerOffset}
+          // 광장에서만 바 옆에 독후감 쓰기 단추가 선다 — 넘기는 손가락을 따라 바가 줄고 단추가 비친다.
+          onCompose={() => router.push('/post/new')}
         />
       </View>
       {/* 둘러보기는 이 화면 안에 그린다 — 비추는 요소들과 같은 화면 기준으로 재야 네이티브에서도 구멍이 제자리에 뚫린다. */}

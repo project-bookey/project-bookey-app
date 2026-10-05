@@ -7,7 +7,7 @@ import { PostFeed } from '@/components/post/PostFeed';
  *
  * 광장은 독후감만 보여 준다 — '완독 자랑' 탭은 걷어내고 홈 '오늘의 글'(HomeScraps)에서
  * 독후감과 번갈아 돌린다(사용자 결정 2026-10-05). 피드 위 제목·'+ 독후감' 줄도 걷어냈다 —
- * 독후감 쓰기는 광장이 보이는 동안 공통 헤더(BrandHeader) 왼쪽에 서는 연필이 맡는다(시안 C).
+ * 독후감 쓰기는 광장이 보이는 동안 하단 바 옆에 서는 연필 단추가 맡는다(SectionNav, B안).
  */
 export default function PlazaScreen() {
   return (
