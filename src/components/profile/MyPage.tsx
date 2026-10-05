@@ -1,17 +1,17 @@
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { Plus, Settings } from 'lucide-react-native';
+import { Mail, Plus, Settings } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { chatApi, libraryApi, postApi, profileApi, statsApi, walletApi } from '@/api/endpoints';
 import { MY_POSTS_LATEST_KEY } from '@/api/postCache';
 import type { Post, ReadingRecord } from '@/api/types';
 import {
-  ICON_SIZE, MemoScrap, NAV_CLEARANCE, PlusGlyph, StickyNote, TiltCover, useCoverEntrance,
+  BookmarkIcon, ICON_SIZE, MemoScrap, NAV_CLEARANCE, PlusGlyph, StampIcon, StickyNote, TiltCover, useCoverEntrance,
 } from '@/components/collage';
 import { PersonGlyph } from '@/components/Avatar';
 import { KeyboardScroll } from '@/components/keyboard';
@@ -19,6 +19,7 @@ import { AttendanceCard } from '@/components/home/AttendanceCard';
 import { LikeCount } from '@/components/post/LikeCount';
 import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
+import { freePostcardsTag } from '@/components/social/PostcardWalletLine';
 import { useTourTarget } from '@/components/tour/TourTarget';
 import {
   Button, Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
@@ -482,11 +483,21 @@ function MyWalletRow() {
             <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지갑</Text>
             <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>{linkLabel('교환·구독')}</Text>
           </View>
+          {/* 책갈피·엽서·우표는 아이콘 + 숫자, 무료 엽서는 엽서 칸 아래 '+n 무료'(2026-10-05 사용자 결정, A안). */}
           <View style={styles.walletRow}>
-            <WalletCell value={wallet.data?.bookmarkBalance ?? 0} label="책갈피" />
-            <WalletCell value={wallet.data?.postcardBalance ?? 0} label="엽서" />
-            <WalletCell value={wallet.data?.freePostcardsLeftToday ?? 0} label="무료 엽서" />
-            <WalletCell value={wallet.data?.stampBalance ?? 0} label="우표" />
+            <WalletCell
+              icon={<BookmarkIcon size={WALLET_ICON} color={colors.textMuted} />}
+              value={wallet.data?.bookmarkBalance ?? 0}
+            />
+            <WalletCell
+              icon={<Mail size={WALLET_ICON} color={colors.textMuted} {...iconStroke} />}
+              value={wallet.data?.postcardBalance ?? 0}
+              sub={freePostcardsTag(wallet.data?.freePostcardsLeftToday ?? 0)}
+            />
+            <WalletCell
+              icon={<StampIcon size={WALLET_ICON + 1} color={colors.textMuted} />}
+              value={wallet.data?.stampBalance ?? 0}
+            />
           </View>
         </MemoScrap>
       </Pressable>
@@ -738,13 +749,22 @@ function ShelfItem({ record, index, entranceScope, onPress }: {
   );
 }
 
-/** 지갑 메모의 숫자 한 칸 — 모노 숫자 위, 캡션 라벨 아래('기록' 카드의 StatCell 보다 한 치수 작다). */
-function WalletCell({ value, label }: { value: number; label: string }) {
+/** 지갑 메모 아이콘(px). */
+const WALLET_ICON = 14;
+
+/**
+ * 지갑 메모의 숫자 한 칸 — 아이콘 + 모노 숫자, 엽서만 아래에 '+n 무료'('기록' 카드의 StatCell 보다 한 치수 작다).
+ * 읽어 주는 말은 메모 전체의 라벨이 맡는다.
+ */
+function WalletCell({ icon, value, sub }: { icon: ReactNode; value: number; sub?: string | null }) {
   const { colors } = useTheme();
   return (
     <View style={styles.walletCell}>
-      <Text style={[typeScale.monoNumeral, styles.walletValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[typeScale.caption, styles.walletLabel, { color: colors.textFaint }]}>{label}</Text>
+      <View style={styles.walletTop}>
+        {icon}
+        <Text style={[typeScale.monoNumeral, styles.walletValue, { color: colors.text }]}>{value}</Text>
+      </View>
+      {sub ? <Text style={[typeScale.caption, styles.walletLabel, { color: colors.textFaint }]}>{sub}</Text> : null}
     </View>
   );
 }
@@ -898,6 +918,8 @@ const styles = StyleSheet.create({
   // 네 칸을 메모 폭에 고르게 편다 — 왼쪽에 몰리면 오른쪽이 빈 종이로 남는다.
   walletRow: { flexDirection: 'row', gap: spacing.sm },
   walletCell: { flex: 1, gap: 2 },
+  // 아이콘과 숫자는 한 덩어리 — 광학 보정 4px.
+  walletTop: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   walletValue: { fontSize: 17, lineHeight: 22 },
   walletLabel: { fontSize: 11 },
   visitNote: { width: 92, justifyContent: 'center', gap: spacing.xs, paddingHorizontal: spacing.sm },

@@ -8,6 +8,7 @@ import { ApiError } from '@/api/client';
 import { walletApi } from '@/api/endpoints';
 import { BookmarkIcon, PaperScreen, StampIcon, SubHeader } from '@/components/collage';
 import { Button, Card, Eyebrow, Tag, TextLink } from '@/components/ui';
+import { freePostcardsTag } from '@/components/social/PostcardWalletLine';
 import { iconStroke, layout, spacing, typeScale, useTheme } from '@/theme';
 
 /** 보유 칸 아이콘(px). */
@@ -75,7 +76,7 @@ export default function WalletScreen() {
                 <Balance
                   icon={<Mail size={BALANCE_ICON} color={colors.textMuted} {...iconStroke} />}
                   value={w?.postcardBalance ?? 0}
-                  sub={`오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`}
+                  sub={freePostcardsTag(w?.freePostcardsLeftToday ?? 0)}
                   accessibilityLabel={`엽서 ${w?.postcardBalance ?? 0}장, 오늘 무료 ${w?.freePostcardsLeftToday ?? 0}장`}
                 />
                 <Balance
@@ -140,11 +141,11 @@ export default function WalletScreen() {
   );
 }
 
-/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 아래에 오늘 무료 장수. */
+/** 보유 한 칸 — 아이콘 + 숫자, 엽서만 아래에 '+n 무료'(0장이면 없음). */
 function Balance({ icon, value, sub, accessibilityLabel }: {
   icon: ReactNode;
   value: number;
-  sub?: string;
+  sub?: string | null;
   accessibilityLabel: string;
 }) {
   const { colors } = useTheme();
