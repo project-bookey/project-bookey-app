@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
-import { clubApi, meetingNoteApi } from '@/api/endpoints';
+import { clubApi, clubCommunityApi, meetingNoteApi } from '@/api/endpoints';
 import type { MeetingNote } from '@/api/types';
 import { confirmAsync, notify } from '@/components/club';
 import {
@@ -25,7 +25,7 @@ import { NoteToolbar, type InsertKind, type NoteTool } from '@/components/note/N
 import { PageTapLayer } from '@/components/note/PageTapLayer';
 import { PendingPhotos } from '@/components/note/PendingPhotos';
 import { SelectionFrame } from '@/components/note/SelectionFrame';
-import { StickerSheet } from '@/components/note/StickerSheet';
+import { StickerSheet, type StickerBook } from '@/components/note/StickerSheet';
 import { TextEditorSheet } from '@/components/note/TextEditorSheet';
 import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Loading, linkLabel } from '@/components/ui';
@@ -133,6 +133,27 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
   const members = club.data?.members ?? [];
   const speaker: NoteSpeaker | undefined = members.find((m) => m.isMe)
     ?? (me ? { userId: me.id, nickname: me.nickname, avatarUrl: me.avatarUrl } : undefined);
+  // 책 스티커 — 이 모임의 책, 고르지 않은 모임이면 클럽이 지금 읽는 책(모임 상세와 같은 캐시 키).
+  const meeting = useQuery({
+    queryKey: ['clubMeeting', clubId, meetingId],
+    queryFn: () => clubCommunityApi.meeting(clubId, meetingId),
+    enabled: !readOnly,
+  });
+  const stickerBook = ((): StickerBook => {
+    if (meeting.data?.book) return { state: 'ready', book: meeting.data.book, label: '이 모임의 책' };
+    if (meeting.isLoading || club.isLoading) return { state: 'loading' };
+    if (meeting.isError || club.isError) {
+      return {
+        state: 'error',
+        retry: () => {
+          if (meeting.isError) void meeting.refetch();
+          if (club.isError) void club.refetch();
+        },
+      };
+    }
+    if (club.data?.book) return { state: 'ready', book: club.data.book, label: '클럽이 지금 읽는 책' };
+    return { state: 'none' };
+  })();
 
   const [stage, setStage] = useState<{ w: number; h: number } | null>(null);
   const [tool, setTool] = useState<NoteTool>('hand');
@@ -377,7 +398,9 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
       <TextEditorSheet element={inserts.editing} members={members} onPatch={inserts.patchEditing} onClose={inserts.closeEditor} />
       <StickerSheet
         visible={inserts.stickerOpen}
+        book={stickerBook}
         onPick={inserts.pickSticker}
+        onPickBook={inserts.pickBook}
         onPickCard={inserts.pickCard}
         onClose={inserts.closeSticker}
       />

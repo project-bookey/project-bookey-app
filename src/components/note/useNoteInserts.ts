@@ -1,18 +1,22 @@
 import { useCallback, useState } from 'react';
 
-import type { ActivityCard } from '@/api/types';
+import type { ActivityCard, BookSummary } from '@/api/types';
 import { tiltFor } from '@/theme/tokens';
 import { snapshotOf } from './elements/ActivityCardFace';
 import type { InsertKind, NoteTool } from './NoteToolbar';
 import type { EditorPatch } from './TextEditorSheet';
 import {
   DEFAULT_SPEECH_W, DEFAULT_TEXT_W, STICKER_W, addElement, canvasOf, isTextual, makeQuoteElement, newId, nextZ,
-  patchElement, removeElements, type NoteDoc, type NoteElement, type QuoteElement, type SpeechElement, type TextElement,
+  patchElement, removeElements, stickerHeight, type NoteDoc, type NoteElement, type QuoteElement, type SpeechElement,
+  type StickerElement, type TextElement,
 } from './noteDoc';
 import type { Point } from './noteGeometry';
 import type { NoteEditor } from './useNoteEditor';
 
 const editBatch = (id: string) => `edit:${id}`;
+
+/** 스티커가 고르는 값 — 자리·순서·기울기는 붙일 때 정한다. */
+type StickerPick = Omit<StickerElement, 'id' | 'z' | 'type' | 'x' | 'y' | 'rot'>;
 
 /** 말풍선에 박을 화자 — 클럽 멤버(MemberProgress)나 내 정보(Me) 어느 쪽이든 이 모양이면 된다. */
 export type NoteSpeaker = { userId: number; nickname: string; avatarUrl?: string | null };
@@ -75,13 +79,14 @@ export function useNoteInserts({ editor, me, setTool, select, pickPhoto, getAnch
     openEditor(id);
   }, [editor, me, pickPhoto, openEditor, getAnchor]);
 
-  const pickSticker = useCallback((kind: 'emoji' | 'pack', value: string) => {
+  /** 스티커 하나를 기준점 가운데에 살짝 기울여 붙이고, 시트를 닫은 뒤 바로 옮길 수 있게 고른다. */
+  const attach = useCallback((pick: StickerPick) => {
     const id = newId();
-    const w = STICKER_W[kind];
+    const h = stickerHeight(pick);
     editor.apply((d) => {
       const [cx, cy] = anchorOf(d, getAnchor);
       return addElement(d, {
-        id, z: nextZ(d), type: 'sticker', x: cx - w / 2, y: cy - w / 2, rot: tiltFor(d.elements.length), w, kind, value,
+        ...pick, id, z: nextZ(d), type: 'sticker', x: cx - pick.w / 2, y: cy - h / 2, rot: tiltFor(d.elements.length),
       });
     });
     setStickerOpen(false);
@@ -89,21 +94,22 @@ export function useNoteInserts({ editor, me, setTool, select, pickPhoto, getAnch
     select(id);
   }, [editor, setTool, select, getAnchor]);
 
+  const pickSticker = useCallback((kind: 'emoji' | 'pack' | 'bookey', value: string) => {
+    attach({ w: STICKER_W[kind], kind, value });
+  }, [attach]);
+
   /** 함께 독서 기록 카드 붙이기 — 카드 값을 스냅숏으로 담아 둔다(보는 사람이 클럽 멤버가 아니어도 그려지게). */
   const pickCard = useCallback((card: ActivityCard) => {
-    const id = newId();
-    const w = STICKER_W.card;
-    editor.apply((d) => {
-      const [cx, cy] = anchorOf(d, getAnchor);
-      return addElement(d, {
-        id, z: nextZ(d), type: 'sticker', x: cx - w / 2, y: cy - w / 2, rot: tiltFor(d.elements.length), w,
-        kind: 'card', value: String(card.id), card: snapshotOf(card),
-      });
+    attach({ w: STICKER_W.card, kind: 'card', value: String(card.id), card: snapshotOf(card) });
+  }, [attach]);
+
+  /** 책 표지 붙이기 — 표지·제목·저자를 스냅숏으로 담아 둔다(책 정보가 바뀌어도 붙인 모습 그대로). */
+  const pickBook = useCallback((book: BookSummary) => {
+    attach({
+      w: STICKER_W.book, kind: 'book', value: String(book.id),
+      book: { title: book.title, author: book.author, coverUrl: book.coverUrl },
     });
-    setStickerOpen(false);
-    setTool('select');
-    select(id);
-  }, [editor, setTool, select, getAnchor]);
+  }, [attach]);
 
   const editing = editingId
     ? (editor.doc.elements.find((e): e is TextElement | SpeechElement | QuoteElement =>
@@ -131,6 +137,6 @@ export function useNoteInserts({ editor, me, setTool, select, pickPhoto, getAnch
 
   return {
     insert, openEditor, editing, patchEditing, closeEditor,
-    stickerOpen, closeSticker: () => setStickerOpen(false), pickSticker, pickCard,
+    stickerOpen, closeSticker: () => setStickerOpen(false), pickSticker, pickCard, pickBook,
   };
 }
