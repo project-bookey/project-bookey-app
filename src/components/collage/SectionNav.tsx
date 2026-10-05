@@ -445,7 +445,8 @@ export function SectionNav({
         </Animated.View>
       </View>
       {menuShown ? (
-        // 메뉴가 열리면 화면 전체(하단 바 포함)를 덮개로 가라앉힌다 — 누르면 닫힌다.
+        // 메뉴가 열리면 화면을 덮개로 가라앉힌다 — 하단 바는 덮개 위에 남아 ×·알약과 같은 유리색으로 보인다
+        // (사용자 결정 2026-10-05). 덮개를 누르면 닫힌다.
         <Animated.View style={[styles.scrim, { backgroundColor: colors.scrimMenu, opacity: menuAnim }]}>
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -588,7 +589,7 @@ function DockButton({ label, expanded, onPress, pen, plus, turn }: {
 }
 
 /**
- * 클럽 메뉴의 유리 알약 하나 — 단추와 같은 유리에 회색 그림 + 이름(사용자 결정 2026-10-05, 시안 ① 유리 알약).
+ * 클럽 메뉴의 유리 알약 하나 — 단추와 같은 유리에 그림·이름 모두 옆 탭 아이콘과 같은 회색(사용자 결정 2026-10-05, 시안 ① 유리 알약).
  * range 는 메뉴가 열리는 진행(0~1) 중 이 알약이 나타나는 구간 — 아래 것이 먼저, 위 것이 조금 늦게 올라온다.
  */
 function MenuPill({ label, icon, anim, range, onPress }: {
@@ -629,7 +630,7 @@ function MenuPill({ label, icon, anim, range, onPress }: {
               </>
             )}
           </Svg>
-          <Text style={[typeScale.bodyStrong, styles.pillLabel, { color: colors.text }]}>{label}</Text>
+          <Text style={[typeScale.bodyStrong, styles.pillLabel, { color: colors.textMuted }]}>{label}</Text>
         </Pressable>
       </NavGlass>
     </Animated.View>
@@ -787,8 +788,8 @@ const styles = StyleSheet.create({
   dockPress: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   // 연필·＋ 를 한자리에 겹쳐 두고 불투명도로 바꾼다.
   dockIcon: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  // 메뉴 덮개 — 바(20)보다 위, 단추·메뉴(22)보다 아래. 하단 바까지 함께 가라앉는다.
-  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 21 },
+  // 메뉴 덮개 — 화면 내용보다 위, 바(20)·단추·메뉴(22)보다 아래. 바는 가라앉지 않고 ×·알약과 같은 유리색으로 남는다.
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 19 },
   // 메뉴 층 — 바와 같은 상자 폭, 알약은 오른쪽(단추 위)에 붙는다. 상자가 알약을 감싸야 안드로이드에서도 눌린다.
   menuLayer: {
     position: 'absolute',
