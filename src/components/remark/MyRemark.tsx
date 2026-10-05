@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { RemarkKind } from '@/api/types';
-import type { FinishedBook } from '@/components/review/FinishReviewSheet';
 import { Eyebrow, FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { spacing, typeScale, useTheme } from '@/theme';
 import { serif } from '@/theme/tokens';
 
+import type { FinishedBook } from './ClosingBookHead';
 import { RemarkSheet } from './RemarkSheet';
 import { useDeleteRemark, useMyRemark } from './queries';
 
