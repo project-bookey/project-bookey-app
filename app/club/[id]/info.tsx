@@ -10,7 +10,7 @@ import type { ClubHome, NudgeMessageKey } from '@/api/types';
 import { CopyCodeButton, MemberDetail, MemberStrip, StatStrip, confirmAsync, notify } from '@/components/club';
 import { meetingDay } from '@/components/club/meetingTime';
 import { clubLogKeys, mondayOf, todayKst } from '@/components/clubLog';
-import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
+import { ICON_SIZE, IconButton, PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { Button, EmptyState, Eyebrow, Loading, Rule, linkLabel, percent } from '@/components/ui';
 import { iconStroke, layout, pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
@@ -130,15 +130,9 @@ export default function ClubInfoScreen() {
         category="클럽 정보"
         right={
           isHost ? (
-            <Pressable
-              onPress={() => router.push(`/club/${clubId}/settings`)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="클럽 관리"
-              style={styles.menuButton}
-            >
-              <Settings size={22} color={colors.text} {...iconStroke} />
-            </Pressable>
+            <IconButton onPress={() => router.push(`/club/${clubId}/settings`)} accessibilityLabel="클럽 관리">
+              <Settings size={ICON_SIZE.plain} color={colors.text} {...iconStroke} />
+            </IconButton>
           ) : undefined
         }
       />
@@ -249,7 +243,6 @@ export default function ClubInfoScreen() {
 
 const styles = StyleSheet.create({
   container: { ...layout.content, padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xxl },
-  menuButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', gap: spacing.md },
   title: { ...typeScale.displaySerif, fontSize: 27, lineHeight: 34 },
   bookLine: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },

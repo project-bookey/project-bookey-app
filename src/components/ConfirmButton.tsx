@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlHeight, glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
- * 2탭 확인 버튼 — 1탭에 질문 + [확인][취소]로 전환되고, 확인 시 onConfirm을 실행한다.
+ * 2탭 확인 버튼 — 1탭에 질문 + [취소][확인]으로 전환되고(주요 버튼은 오른쪽), 확인 시 onConfirm을 실행한다.
  * pending이 true→false로 떨어지면(성공·실패 무관) 자동으로 원래 버튼으로 복귀한다.
  * 실패 안내 캡션은 호출부가 뮤테이션 상태로 표시한다.
  */
@@ -33,30 +33,31 @@ export function ConfirmButton({ label, question, confirmLabel = '확인', tone =
   }, [pending, wasPending]);
 
   if (arming) {
-    const confirmBg = tone === 'danger' ? colors.danger : colors.ink;
-    const confirmFg = tone === 'danger' ? colors.bg : colors.onInk;
+    // 위험 확인은 연한 빨강, 그 밖(완독 등)은 잉크 — 공용 Button 과 같은 유리 면(glassFace)에 색만 바꾼다.
+    const confirmFace = glassFace(colors, tone === 'danger' ? colors.dangerSoft : colors.ink);
+    const confirmFg = tone === 'danger' ? colors.danger : colors.onInk;
     return (
       <View style={styles.row}>
         <Text style={[typeScale.caption, { color: colors.textMuted, flex: 1 }]}>{question}</Text>
         <Pressable
           disabled={pending}
-          onPress={onConfirm}
-          accessibilityRole="button"
-          accessibilityLabel={confirmLabel}
-          style={({ pressed }) => [styles.button, { backgroundColor: confirmBg, opacity: pending ? 0.6 : 1 }, pressed && !pending && pressedStyle]}
-        >
-          <Text style={[typeScale.label, { color: confirmFg }]}>
-            {pending ? '처리 중…' : confirmLabel}
-          </Text>
-        </Pressable>
-        <Pressable
-          disabled={pending}
           onPress={() => setArming(false)}
           accessibilityRole="button"
           accessibilityLabel="취소"
-          style={({ pressed }) => [styles.button, { borderWidth: hairline, borderColor: colors.control }, pressed && !pending && pressedStyle]}
+          style={({ pressed }) => [styles.button, glassFace(colors, colors.tonal), pending && styles.pending, pressed && !pending && pressedStyle]}
         >
-          <Text style={[typeScale.label, { color: colors.textMuted }]}>취소</Text>
+          <Text style={[styles.label, { color: colors.text }]}>취소</Text>
+        </Pressable>
+        <Pressable
+          disabled={pending}
+          onPress={onConfirm}
+          accessibilityRole="button"
+          accessibilityLabel={confirmLabel}
+          style={({ pressed }) => [styles.button, confirmFace, pending && styles.pending, pressed && !pending && pressedStyle]}
+        >
+          <Text style={[styles.label, { color: confirmFg }]}>
+            {pending ? '처리 중…' : confirmLabel}
+          </Text>
         </Pressable>
       </View>
     );
@@ -70,11 +71,11 @@ export function ConfirmButton({ label, question, confirmLabel = '확인', tone =
       style={({ pressed }) => [
         styles.button,
         styles.idle,
-        variant === 'outline' ? { borderWidth: hairline, borderColor: colors.control } : null,
+        variant === 'outline' ? glassFace(colors, colors.tonal) : null,
         pressed && pressedStyle,
       ]}
     >
-      <Text style={[typeScale.label, { color: variant === 'ghost' ? colors.textMuted : colors.text }]}>
+      <Text style={[styles.label, { color: variant === 'ghost' ? colors.textMuted : colors.text }]}>
         {label}
       </Text>
     </Pressable>
@@ -84,11 +85,14 @@ export function ConfirmButton({ label, question, confirmLabel = '확인', tone =
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   button: {
-    minHeight: 44,
+    minHeight: controlHeight.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  label: { ...typeScale.label, fontSize: 14 },
   idle: { alignSelf: 'stretch' },
+  // 처리 중 — 공용 Button 의 비활성(0.35)과 같은 값.
+  pending: { opacity: 0.35 },
 });

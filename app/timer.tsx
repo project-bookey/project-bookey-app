@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     borderWidth: hairline,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     fontFamily: mono.semiBold,
     fontSize: 18,

@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { radius, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, pressedStyle } from '@/theme/tokens';
+import { glassFace, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /** 동작 버튼 높이 — 선택 프레임이 요소 위로 띄울 거리를 잴 때도 쓴다. */
 export const NOTE_ACTION_HEIGHT = 44;
 
-/** 캔버스 위에 뜨는 작은 동작 버튼 — 선택 프레임의 맨 앞으로·편집·삭제, 업로드 실패 사진의 다시·지우기. */
+/**
+ * 캔버스 위에 뜨는 작은 동작 버튼 — 선택 프레임의 맨 앞으로·편집·삭제, 업로드 실패 사진의 다시·지우기.
+ * 면은 공용 FootAction 과 같은 유리(회색 톤, 위험은 연한 빨강)에 control 모서리.
+ */
 export function NoteAction({ label, onPress, tone = 'default' }: {
   label: string;
   onPress: () => void;
@@ -20,11 +22,11 @@ export function NoteAction({ label, onPress, tone = 'default' }: {
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.action,
-        { backgroundColor: colors.surface, borderColor: colors.control },
+        glassFace(colors, tone === 'danger' ? colors.dangerSoft : colors.tonal),
         pressed ? pressedStyle : null,
       ]}
     >
-      <Text style={[typeScale.monoLabel, { color: tone === 'danger' ? colors.danger : colors.text }]}>{label}</Text>
+      <Text style={[styles.label, { color: tone === 'danger' ? colors.danger : colors.text }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -36,8 +38,8 @@ const styles = StyleSheet.create({
     minWidth: NOTE_ACTION_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: hairline,
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
     paddingHorizontal: spacing.md,
   },
+  label: { ...typeScale.label, fontSize: 12 },
 });

@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: hairline,
     paddingHorizontal: spacing.md,
   },

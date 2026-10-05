@@ -5,7 +5,7 @@ import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { faqApi } from '@/api/endpoints';
 import type { Faq } from '@/api/types';
-import { EmptyState, Eyebrow, linkLabel } from '@/components/ui';
+import { Button, EmptyState, Eyebrow } from '@/components/ui';
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 import { faqsKey } from './queries';
@@ -92,16 +92,7 @@ export function FaqList() {
           <EmptyState
             title="질문을 불러오지 못했어요"
             description="잠시 후 다시 시도해 주세요."
-            action={(
-              <Pressable
-                onPress={() => faqs.refetch()}
-                accessibilityRole="button"
-                accessibilityLabel="다시 시도"
-                style={styles.retry}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-              </Pressable>
-            )}
+            action={<Button label="다시 시도" variant="outline" onPress={() => faqs.refetch()} />}
           />
         ) : (
           <EmptyState
@@ -131,7 +122,6 @@ const styles = StyleSheet.create({
   chevronOpen: { transform: [{ rotate: '180deg' }] },
   answer: { paddingBottom: spacing.lg },
   skeletonList: { gap: spacing.sm },
-  skeleton: { height: 44, borderRadius: radius.sm },
-  // 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
+  // 질문 줄 자리 — 상자가 아니라 괘선으로 나뉜 글줄이라 작은 모서리(badge)만 준다.
+  skeleton: { height: 44, borderRadius: radius.badge },
 });

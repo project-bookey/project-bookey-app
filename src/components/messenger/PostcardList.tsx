@@ -248,8 +248,9 @@ const styles = StyleSheet.create({
   },
   body: { ...typeScale.quote, marginTop: spacing.sm },
   tagRow: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm },
+  // 엽서에 적힌 답장 — 종이 위 글이라 앱 카드(md)보다 각진 예전 모서리(4)를 지킨다.
   replyBox: {
-    borderWidth: hairline, borderRadius: radius.md,
+    borderWidth: hairline, borderRadius: radius.badge,
     padding: spacing.md, marginTop: spacing.sm, gap: 2,
   },
   input: {

@@ -6,7 +6,7 @@ import { libraryApi } from '@/api/endpoints';
 import type { BookSummary } from '@/api/types';
 import { TiltCover } from '@/components/collage';
 import { NoteSheet } from '@/components/note/NoteSheet';
-import { Button, Loading, linkLabel } from '@/components/ui';
+import { Button, Loading, RadioMark, linkLabel } from '@/components/ui';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { pressedStyle } from '@/theme/tokens';
 
@@ -69,13 +69,8 @@ export function MeetingBookPicker({ visible, selectedId, onSelect, onClose }: {
                     {book.author ? ` · ${book.author}` : ''}
                   </Text>
                 </View>
-                {/* 선택은 잉크로 반전(앱 공통 라디오) — 악센트는 CTA 몫. */}
-                <View
-                  style={[
-                    styles.radio,
-                    selected ? { backgroundColor: colors.ink, borderColor: colors.ink } : { borderColor: colors.textFaint },
-                  ]}
-                />
+                {/* 앱 공통 라디오 — 고르면 잉크 점. 악센트는 CTA 몫. */}
+                <RadioMark checked={selected} />
               </Pressable>
             );
           }}
@@ -115,7 +110,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
   },
   meta: { ...typeScale.caption, marginTop: 2 },
-  radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline },
   empty: { ...typeScale.caption, padding: spacing.lg },
   pending: { padding: spacing.lg },
   emptyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg },

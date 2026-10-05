@@ -1,10 +1,12 @@
 import { ReactNode, useMemo } from 'react';
 import {
-  ActivityIndicator, AccessibilityRole, Image, Insets, Pressable, StyleSheet, Text, TextInput, TextInputProps,
+  ActivityIndicator, AccessibilityRole, AccessibilityState, Image, Insets, Pressable, StyleSheet, Text, TextInput, TextInputProps,
   View, ViewStyle,
 } from 'react-native';
 
-import { hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import {
+  controlHeight, glassAlpha, glassFace, hairline, pressedStyle, radius, spacing, typeScale, useTheme, withAlpha,
+} from '@/theme';
 import type { ColorTokens, ThemeMode } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
@@ -45,22 +47,26 @@ export function playLabel(label: string, glyph: '▶' | '⏸' = '▶'): string {
   return `${glyph} ${label}`;
 }
 
-/** 글자 링크(12px 글자 상자 16pt)를 위아래로 넓혀 44pt 터치 상자로 만든다. */
+/** 글자 링크(13px 글자 상자 약 17pt)를 위아래로 넓혀 44pt 터치 상자로 만든다. */
 const LINK_HIT_SLOP = { top: 14, bottom: 14, left: 8, right: 8 };
 
 /**
- * 글자 링크 — 섹션 머리의 '전체보기 ›', 카드 끝의 '모임 노트 ›' 같은 화면 이동·제자리 링크. 12px 모노를 본문색으로 쓴다:
+ * 글자 링크 — 섹션 머리의 '전체보기 ›', 카드 끝의 '모임 노트 ›' 같은 화면 이동·제자리 링크. 13px 라벨을 본문색으로 쓴다:
  * 11px 회색이던 때는 메타 정보처럼 읽혀서 서재로 가는 유일한 길('전체보기')조차 눈에 띄지 않았다(2026-10-04).
+ * 12 → 13 은 2026-10-05 버튼 비교 페이지에서 사용자가 골랐다.
  * 악센트는 쓰지 않는다 — 화면의 CTA 하나만 강조한다(UX 철칙 Von Restorff). 라벨 글리프는 linkLabel 규칙을 따른다.
  */
 export function TextLink({
-  label, onPress, kind = 'nav', accessibilityLabel, accessibilityRole = 'button', numberOfLines, hitSlop = LINK_HIT_SLOP, style,
+  label, onPress, kind = 'nav', accessibilityLabel, accessibilityRole = 'button', accessibilityState, numberOfLines,
+  hitSlop = LINK_HIT_SLOP, style,
 }: {
   label: string;
   onPress: () => void;
   kind?: LinkKind;
   accessibilityLabel?: string;
   accessibilityRole?: AccessibilityRole;
+  /** 펼치기 링크 등 — 예: { expanded }. */
+  accessibilityState?: AccessibilityState;
   numberOfLines?: number;
   /** null — 상자(style)가 이미 44pt 라 넓히지 않는다. */
   hitSlop?: Insets | null;
@@ -73,6 +79,7 @@ export function TextLink({
       hitSlop={hitSlop ?? undefined}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={accessibilityState}
       style={({ pressed }) => [style, pressed && pressedStyle]}
     >
       <Text numberOfLines={numberOfLines} style={styles.textLink}>{linkLabel(label, kind)}</Text>
@@ -123,19 +130,21 @@ export function OrnamentDivider() {
 }
 
 /**
- * 버튼 터치 상자는 44pt 이상(UX 철칙 Fitts). sm 은 겉모습(34pt)을 지키고 위아래 hitSlop 으로,
+ * 버튼 터치 상자는 44pt 이상(UX 철칙 Fitts). sm 은 겉모습(32pt)을 지키고 위아래 hitSlop 으로,
  * ghost 는 글자뿐이라 상자 높이를 44 로 두고 좌우 hitSlop 으로 짧은 라벨('취소')의 폭을 채운다.
  * 웹은 hitSlop 을 무시하지만 웹은 확인용 미리보기라 네이티브 기준으로 맞춘다.
  */
-const SM_HIT_SLOP = { top: 5, bottom: 5 };
+const SM_HIT_SLOP = { top: (44 - controlHeight.sm) / 2, bottom: (44 - controlHeight.sm) / 2 };
 const GHOST_HIT_SLOP = { left: 10, right: 10 };
-/** FootAction xs(겉모습 28pt) — 위아래 8 로 44pt, 좌우 4 는 짧은 라벨의 폭을 거든다(이웃 버튼과 spacing.sm 띄우면 겹치지 않는다). */
-const XS_HIT_SLOP = { top: 8, bottom: 8, left: 4, right: 4 };
+/** FootAction xs(겉모습 26pt) — 위아래 9 로 44pt, 좌우 4 는 짧은 라벨의 폭을 거든다(이웃 버튼과 spacing.sm 띄우면 겹치지 않는다). */
+const XS_HIT_SLOP = { top: (44 - controlHeight.xs) / 2, bottom: (44 - controlHeight.xs) / 2, left: 4, right: 4 };
 
 export function Button({
-  label, onPress, variant = 'primary', disabled, loading, style, size = 'md',
+  label, onPress, variant = 'primary', disabled, loading, style, size = 'md', accessibilityLabel,
 }: {
   label: string;
+  /** 라벨과 다르게 읽혀야 할 때(예: '닫기' → '공지 닫기'). 없으면 라벨 그대로. */
+  accessibilityLabel?: string;
   onPress?: () => void;
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
   disabled?: boolean;
@@ -149,6 +158,8 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={isDisabled ? { disabled: true } : undefined}
       onPress={onPress}
       disabled={isDisabled}
       hitSlop={variant === 'ghost' ? GHOST_HIT_SLOP : size === 'sm' ? SM_HIT_SLOP : undefined}
@@ -167,7 +178,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' ? colors.onAccent : colors.text}
+          color={variant === 'primary' ? colors.onAccentGlass : colors.text}
         />
       ) : (
         <Text
@@ -175,6 +186,7 @@ export function Button({
             styles.buttonLabel,
             size === 'sm' && styles.buttonLabelSm,
             variant === 'primary' && styles.buttonLabelPrimary,
+            variant === 'ghost' && styles.buttonLabelGhost,
             variant === 'danger' && styles.buttonLabelDanger,
           ]}
         >
@@ -232,6 +244,10 @@ export function Field({ label, hint, error, style, ...props }: TextInputProps & 
   );
 }
 
+/**
+ * 세그먼트 — 오목한 트랙 위에 고른 칸이 떠 있는 모양(2026-10-05 '부드러운 네모'). 메신저·광장의 칸 바꾸기도
+ * 이것 하나를 쓴다(예전 CapsuleTabs 를 합쳤다). 트랙 높이 44pt 를 넘겨 칸 전체가 손가락 상자다.
+ */
 export function Segmented<T extends string>({ options, value, onChange }: {
   options: { value: T; label: string }[];
   value: T;
@@ -240,7 +256,7 @@ export function Segmented<T extends string>({ options, value, onChange }: {
   const { styles } = useStyles();
   return (
     <View style={styles.segmented}>
-      {options.map((option, index) => {
+      {options.map((option) => {
         const active = option.value === value;
         return (
           <Pressable
@@ -250,7 +266,6 @@ export function Segmented<T extends string>({ options, value, onChange }: {
             accessibilityState={{ selected: active }}
             style={({ pressed }) => [
               styles.segment,
-              index > 0 && styles.segmentDivider,
               active && styles.segmentActive,
               pressed && !active && pressedStyle,
             ]}
@@ -265,12 +280,25 @@ export function Segmented<T extends string>({ options, value, onChange }: {
   );
 }
 
-/** 라벨 없는 토글의 트랙(26pt)을 위아래로 넓혀 44pt 터치 상자로 만든다. */
-const TOGGLE_HIT_SLOP = { top: 9, bottom: 9 };
+/**
+ * 라디오 표시 — 20pt 링(2px) 안에 고르면 점 10pt. 꺼짐 테두리는 control(대비 3:1). 2026-10-05 설정 알림 말투(16 채움)·
+ * 공개 범위(20 링)로 갈려 있던 것을 하나로 맞췄다. 누르는 것은 이것을 품은 행이다(accessibilityRole="radio").
+ */
+export function RadioMark({ checked }: { checked: boolean }) {
+  const { styles } = useStyles();
+  return (
+    <View style={[styles.radio, checked && styles.radioOn]}>
+      {checked ? <View style={styles.radioDot} /> : null}
+    </View>
+  );
+}
+
+/** 라벨 없는 토글의 트랙(24pt)을 위아래로 넓혀 44pt 터치 상자로 만든다. */
+const TOGGLE_HIT_SLOP = { top: 10, bottom: 10 };
 
 /**
  * 직접 그린 토글. 플랫폼 기본 Switch 는 iOS/안드로이드/웹에서 색이 제각각이라
- * 디자인을 지키기 위해 직접 그린다. 라벨이 있으면 행 전체가 눌린다 — 트랙(46×26)만으로는 손가락이 빗나간다.
+ * 디자인을 지키기 위해 직접 그린다. 라벨이 있으면 행 전체가 눌린다 — 트랙(44×24)만으로는 손가락이 빗나간다.
  */
 export function Toggle({ value, onChange, label, description }: {
   value: boolean;
@@ -365,11 +393,11 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
 }
 
 /**
- * 카드 발치 액션 — 작은 테두리 버튼(Button outline sm 과 같은 겉모습: 34pt + 위아래 hitSlop 으로 44pt).
+ * 카드 발치 액션 — 작은 보조 버튼(Button outline sm 과 같은 겉모습: 32pt + 위아래 hitSlop 으로 44pt).
  * 독후감 고치기·삭제, 알림·엽서·채팅 삭제, 호스트 넘기기, 채팅 선물 등이 같이 쓴다. 예전엔 10px 회색 글자뿐이라
  * 버튼인 줄 몰랐다(2026-10-04) — 상자가 곧 '누를 수 있음'의 신호다. `onPress` 가 없으면(카운터) 상자 없이 글자만 둔다.
- * '삭제' → '한 번 더'(tone danger)는 테두리까지 빨갛게 바뀌어 상태가 넘어간 것이 보인다.
- * `size="xs"` 는 한 단 작은 겉모습(28pt, 11px) — 리뷰 머리 줄의 고치기·삭제처럼 글 옆에 붙는 자리용. 터치 상자는 hitSlop 으로 44pt.
+ * '삭제' → '한 번 더'(tone danger)는 바탕까지 연한 빨강으로 바뀌어 상태가 넘어간 것이 보인다.
+ * `size="xs"` 는 한 단 작은 겉모습(26pt, 11px) — 리뷰 머리 줄의 고치기·삭제처럼 글 옆에 붙는 자리용. 터치 상자는 hitSlop 으로 44pt.
  */
 export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, disabled, size = 'sm' }: {
   /** 버튼 라벨이라 글리프(›)를 붙이지 않는다 — Button 과 같은 규칙. */
@@ -459,7 +487,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       backgroundColor: colors.surface,
       borderWidth: hairline,
       borderColor: colors.line,
-      borderRadius: radius.lg,
+      borderRadius: radius.md,
       padding: spacing.lg,
       overflow: 'hidden',
       ...cardShadow,
@@ -476,37 +504,32 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       justifyContent: 'space-between',
       marginBottom: spacing.md,
     },
+    // 버튼 면 — 2026-10-05 버튼 비교 페이지 결정: 48pt · 14 · 부드러운 네모(md 12, 작은 것 control 8),
+    // 색은 역할 하나씩(주요 = 초록, 보조 = 회색 톤, 위험 = 연한 빨강)을 glassFace 로 55% 비치게 깐다.
     button: {
-      minHeight: 46,
-      borderRadius: radius.sm,
+      minHeight: controlHeight.md,
+      borderRadius: radius.md,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: spacing.lg,
     },
-    buttonSm: { minHeight: 34, paddingHorizontal: spacing.md },
-    buttonXs: { minHeight: 28, paddingHorizontal: spacing.sm },
-    buttonPrimary: { backgroundColor: colors.accent },
-    buttonOutline: {
-      backgroundColor: 'transparent',
-      borderWidth: hairline,
-      borderColor: colors.control,
-    },
+    buttonSm: { minHeight: controlHeight.sm, paddingHorizontal: spacing.md, borderRadius: radius.control },
+    buttonXs: { minHeight: controlHeight.xs, paddingHorizontal: spacing.sm, borderRadius: radius.control },
+    buttonPrimary: glassFace(colors, colors.accent),
+    buttonOutline: glassFace(colors, colors.tonal),
     buttonGhost: { backgroundColor: 'transparent', minHeight: 44, paddingHorizontal: 0 },
-    buttonDanger: {
-      backgroundColor: 'transparent',
-      borderWidth: hairline,
-      borderColor: colors.danger,
-    },
+    buttonDanger: glassFace(colors, colors.dangerSoft),
     buttonDisabled: { opacity: 0.35 },
-    buttonLabel: { ...typeScale.label, color: colors.text },
+    buttonLabel: { ...typeScale.label, fontSize: 14, color: colors.text },
     buttonLabelSm: { fontSize: 12 },
     buttonLabelXs: { fontSize: 11 },
-    buttonLabelPrimary: { color: colors.onAccent },
+    buttonLabelPrimary: { color: colors.onAccentGlass },
+    buttonLabelGhost: { color: colors.textMuted },
     buttonLabelDanger: { color: colors.danger },
     tag: {
       paddingHorizontal: spacing.sm,
       paddingVertical: 3,
-      borderRadius: radius.sm,
+      borderRadius: radius.badge,
       backgroundColor: colors.surfaceRaised,
       alignSelf: 'flex-start',
     },
@@ -534,38 +557,52 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       color: colors.text,
     },
     inputError: { borderColor: colors.danger },
+    // 오목한 트랙(회색 톤이 비치는 면) 위에 고른 칸(thumb)이 떠 있다 — 악센트는 CTA 몫. 트랙 높이 44pt 이상.
     segmented: {
       flexDirection: 'row',
+      padding: 3,
+      gap: 3,
       borderWidth: hairline,
-      borderColor: colors.control,
-      backgroundColor: colors.surface,
-      borderRadius: radius.sm,
-      overflow: 'hidden',
+      borderColor: colors.glassEdge,
+      backgroundColor: withAlpha(colors.tonal, glassAlpha),
+      borderRadius: radius.md,
+      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.08)',
     },
-    // 선택은 잉크로 뒤집는다 — 악센트는 CTA 몫. 높이는 손가락 기준 44pt.
-    segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    segmentDivider: { borderLeftWidth: hairline, borderLeftColor: colors.line },
-    segmentActive: { backgroundColor: colors.ink },
+    segment: { flex: 1, minHeight: 38, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+    segmentActive: glassFace(colors, colors.thumb),
     segmentLabel: { ...typeScale.label, fontSize: 12, color: colors.textMuted },
-    segmentLabelActive: { color: colors.onInk },
+    segmentLabelActive: { color: colors.text },
     toggleTrack: {
-      width: 46,
-      height: 26,
+      width: 44,
+      height: 24,
       borderWidth: hairline,
       borderColor: colors.control,
       backgroundColor: colors.surfaceRaised,
-      borderRadius: radius.sm,
+      borderRadius: radius.round,
       padding: 2,
       justifyContent: 'center',
+      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.12)',
     },
-    toggleTrackOn: { backgroundColor: colors.ink, borderColor: colors.ink },
+    toggleTrackOn: { backgroundColor: withAlpha(colors.ink, glassAlpha), borderColor: colors.ink },
     toggleKnob: {
-      width: 20,
-      height: 20,
-      borderRadius: radius.sm,
+      width: 18,
+      height: 18,
+      borderRadius: radius.round,
       backgroundColor: colors.textFaint,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
     },
     toggleKnobOn: { backgroundColor: colors.onInk, alignSelf: 'flex-end' },
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: radius.round,
+      borderWidth: 2,
+      borderColor: colors.control,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioOn: { borderColor: colors.ink },
+    radioDot: { width: 10, height: 10, borderRadius: radius.round, backgroundColor: colors.ink },
     toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 44 },
     toggleLabel: { ...typeScale.label, color: colors.text },
     toggleDescription: { ...typeScale.caption, color: colors.textFaint, lineHeight: 16 },
@@ -591,6 +628,6 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     keyValueLabel: { ...typeScale.caption, color: colors.textMuted },
     keyValueValue: { ...typeScale.monoNumeral, color: colors.text },
-    textLink: { ...typeScale.monoLabel, fontSize: 12, color: colors.text },
+    textLink: { ...typeScale.monoLabel, fontSize: 13, color: colors.text },
   });
 }

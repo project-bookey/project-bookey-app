@@ -157,7 +157,8 @@ const styles = StyleSheet.create({
     minHeight: 82,
     maxHeight: 120,
     borderWidth: hairline,
-    borderRadius: radius.sm,
+    // 한 줄평 칸(RemarkField · Field)과 같은 입력 모서리.
+    borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     fontFamily: serif.regular,

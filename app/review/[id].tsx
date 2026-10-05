@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { bookApi, reviewApi } from '@/api/endpoints';
@@ -12,7 +12,7 @@ import { KeyboardScroll } from '@/components/keyboard';
 import { ReviewCard } from '@/components/review/ReviewCard';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import { reviewMutationError, useRemoveReview, useUpdateReview } from '@/components/review/useReviewMutations';
-import { EmptyState, linkLabel } from '@/components/ui';
+import { Button, EmptyState } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
 import { radius, spacing, typeScale, useTheme } from '@/theme';
@@ -132,11 +132,7 @@ export default function ReviewDetailScreen() {
       <EmptyState
         title="리뷰를 불러오지 못했어요"
         description="잠시 후 다시 시도해 주세요."
-        action={
-          <Pressable onPress={() => review.refetch()} accessibilityRole="button" accessibilityLabel="다시 시도">
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-          </Pressable>
-        }
+        action={<Button label="다시 시도" variant="outline" onPress={() => review.refetch()} />}
       />
     )
   ) : null;

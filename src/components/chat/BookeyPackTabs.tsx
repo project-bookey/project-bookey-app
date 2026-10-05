@@ -1,12 +1,11 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { radius, sans, spacing, useTheme } from '@/theme';
-import { hairline, pressedStyle } from '@/theme/tokens';
+import { glassFace, pressedStyle, radius, sans, spacing, useTheme } from '@/theme';
 import { BOOKEY_STICKER_PACKS } from './bookeyStickers';
 
 /**
  * 이모티콘 묶음 고르기 — 캐릭터 썸네일과 이름을 단 가로 줄. 1:1 채팅과 노트 스티커가 같이 쓴다.
- * 고른 묶음은 다른 선택 상태처럼 잉크로 뒤집는다.
+ * 칸은 공용 칩과 같은 유리 면 — 꺼짐은 회색 톤, 고른 묶음은 다른 선택 상태처럼 잉크로 뒤집는다.
  */
 export function BookeyPackTabs({ value, onChange }: { value: string; onChange: (packId: string) => void }) {
   const { colors } = useTheme();
@@ -28,10 +27,7 @@ export function BookeyPackTabs({ value, onChange }: { value: string; onChange: (
             accessibilityState={{ selected }}
             style={({ pressed }) => [
               styles.tab,
-              {
-                borderColor: selected ? colors.ink : colors.control,
-                backgroundColor: selected ? colors.ink : colors.bg,
-              },
+              glassFace(colors, selected ? colors.ink : colors.tonal),
               pressed ? pressedStyle : null,
             ]}
           >
@@ -51,8 +47,7 @@ const styles = StyleSheet.create({
   tab: {
     width: 64,
     minHeight: 66,
-    borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xs,

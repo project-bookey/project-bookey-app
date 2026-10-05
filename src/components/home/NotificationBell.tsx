@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { notificationApi } from '@/api/endpoints';
-import { iconStroke, radius, sans, useTheme } from '@/theme';
+import { iconStroke, pressedStyle, radius, sans, useTheme } from '@/theme';
 
 /** 헤더 우측 종 — 미열람 수 배지, 누르면 알림 화면. */
 export function NotificationBell() {
@@ -19,6 +19,7 @@ export function NotificationBell() {
       hitSlop={BELL_HIT_SLOP}
       accessibilityRole="button"
       accessibilityLabel="알림"
+      style={({ pressed }) => (pressed ? pressedStyle : null)}
     >
       <BellGlyph color={colors.text} />
       {unread > 0 ? (
@@ -32,13 +33,16 @@ export function NotificationBell() {
   );
 }
 
-/** 종 글리프(22)를 사방 11pt 넓혀 44pt 터치 상자로 만든다 — 왼쪽 잔액 칩과는 spacing.md 로 떨어져 겹치지 않는다. */
-const BELL_HIT_SLOP = 11;
+/**
+ * 종 글리프(24)를 사방 10pt 넓혀 44pt 터치 상자로 만든다 — 왼쪽 잔액 칩과는 spacing.md 로 떨어져 겹치지 않는다.
+ * 다른 아이콘 버튼(IconButton)처럼 44 상자를 쓰지 않는 건, 가운데 워드마크 옆 자리(118)에 잔액 칩과 함께 들어가야 해서다.
+ */
+const BELL_HIT_SLOP = 10;
 
-/** 종 — 구역 네비의 로고 마크(22)와 같은 크기. 래스터 PNG 였던 것을 다른 아이콘과 같은 각진 획으로 그린다. */
+/** 종 — 아이콘 버튼 크기(24, 2026-10-05). 래스터 PNG 였던 것을 다른 아이콘과 같은 각진 획으로 그린다. */
 function BellGlyph({ color }: { color: string }) {
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden>
       <Path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z" stroke={color} {...iconStroke} />
       <Path d="M10 21h4" stroke={color} {...iconStroke} />
     </Svg>
@@ -52,7 +56,7 @@ const styles = StyleSheet.create({
     right: -8,
     minWidth: 16,
     height: 16,
-    borderRadius: radius.sm,
+    borderRadius: radius.badge,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,

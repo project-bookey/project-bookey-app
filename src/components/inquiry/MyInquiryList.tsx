@@ -5,7 +5,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 
 import { inquiryApi } from '@/api/endpoints';
 import type { InquirySummary } from '@/api/types';
-import { EmptyState, FootAction, formatRelative, linkLabel } from '@/components/ui';
+import { Button, EmptyState, FootAction, formatRelative } from '@/components/ui';
 import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 import { InquiryStatusTag } from './InquiryStatusTag';
@@ -74,16 +74,7 @@ export function MyInquiryList() {
           <EmptyState
             title="문의를 불러오지 못했어요"
             description="잠시 후 다시 시도해 주세요."
-            action={(
-              <Pressable
-                onPress={() => query.refetch()}
-                accessibilityRole="button"
-                accessibilityLabel="다시 시도"
-                style={styles.retry}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-              </Pressable>
-            )}
+            action={<Button label="다시 시도" variant="outline" onPress={() => query.refetch()} />}
           />
         ) : (
           <EmptyState
@@ -102,7 +93,6 @@ export function MyInquiryList() {
             <FootAction
               label="더 불러오지 못했어요 · 다시 시도"
               onPress={() => (query.hasNextPage ? query.fetchNextPage() : query.refetch())}
-              tone="accent"
               accessibilityLabel="문의 더 불러오기"
             />
           </View>
@@ -119,7 +109,7 @@ const styles = StyleSheet.create({
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rowMeta: { flex: 1 },
   skeletonList: { gap: spacing.md, paddingTop: spacing.sm },
-  skeleton: { height: 64, borderRadius: radius.sm },
+  // 문의 줄 자리 — 상자가 아니라 괘선으로 나뉜 줄이라 작은 모서리(badge)만 준다.
+  skeleton: { height: 64, borderRadius: radius.badge },
   footer: { paddingVertical: spacing.lg, alignItems: 'center' },
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

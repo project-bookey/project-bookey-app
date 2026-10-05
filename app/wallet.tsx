@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { walletApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader } from '@/components/collage';
-import { Button, Card, Eyebrow, KeyValue, Rule, Tag, linkLabel } from '@/components/ui';
+import { Button, Card, Eyebrow, KeyValue, Rule, Tag, TextLink } from '@/components/ui';
 import { layout, spacing, typeScale, useTheme } from '@/theme';
 
 /**
@@ -48,14 +48,13 @@ export default function WalletScreen() {
             {wallet.isError ? (
               <View style={styles.errorRow}>
                 <Text style={[typeScale.body, { color: colors.textMuted }]}>지갑을 불러오지 못했어요.</Text>
-                <Pressable
+                <TextLink
+                  label="다시 시도"
+                  kind="action"
                   onPress={() => wallet.refetch()}
-                  accessibilityRole="button"
                   accessibilityLabel="지갑 다시 불러오기"
                   style={styles.retry}
-                >
-                  <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-                </Pressable>
+                />
               </View>
             ) : (
               <View style={{ marginTop: spacing.sm }}>
@@ -132,6 +131,5 @@ const styles = StyleSheet.create({
   hint: { marginTop: spacing.sm },
   copy: { marginTop: spacing.sm },
   errorRow: { marginTop: spacing.sm, gap: spacing.xs },
-  // 웹은 hitSlop 을 무시하므로 여백으로 36px 상자를 만든다.
-  retry: { minHeight: 36, justifyContent: 'center', alignSelf: 'flex-start' },
+  retry: { alignSelf: 'flex-start' },
 });

@@ -8,7 +8,7 @@ import type { NotifyTone } from '@/api/types';
 import { confirmAsync, notify } from '@/components/club';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import {
-  Button, Card, Eyebrow, KeyValue, Rule, Segmented, Toggle,
+  Button, Card, Eyebrow, KeyValue, RadioMark, Rule, Segmented, Toggle,
 } from '@/components/ui';
 import { useSocialTokens, type SocialProvider } from '@/hooks/useSocialTokens';
 import { openLegal } from '@/legal/links';
@@ -115,14 +115,7 @@ export default function SettingsScreen() {
                     ]}
                     onPress={() => updateSettings.mutate({ notifyTone: tone.value })}
                   >
-                    <View
-                      style={[
-                        styles.radio,
-                        selected
-                          ? { backgroundColor: colors.ink, borderColor: colors.ink }
-                          : { borderColor: colors.textFaint },
-                      ]}
-                    />
+                    <RadioMark checked={selected} />
                     <View style={{ flex: 1 }}>
                       <Text style={[typeScale.label, { color: colors.text }]}>{tone.label}</Text>
                       <Text style={[typeScale.caption, styles.toneSample, { color: colors.textMuted }]}>
@@ -374,7 +367,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
     borderLeftWidth: 2,
   },
-  radio: { width: 16, height: 16, borderRadius: radius.round, borderWidth: hairline, marginTop: 2 },
   toneSample: { marginTop: 3, lineHeight: 16 },
   switchRow: { paddingVertical: spacing.sm },
   consentNote: { marginTop: spacing.xs },

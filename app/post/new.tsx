@@ -29,14 +29,16 @@ import { insertBlock, pageSource, postBodyOf, quoteBlock } from '@/components/po
 import { useQuoteDraft } from '@/components/post/QuoteDraftFields';
 import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
-import { Button, Card, EmptyState, Eyebrow, FootAction, linkLabel } from '@/components/ui';
-import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { Button, Card, EmptyState, Eyebrow, FootAction, RadioMark } from '@/components/ui';
+import {
+  controlHeight, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme,
+} from '@/theme';
 import { serif } from '@/theme/tokens';
 
 /** 제목 길이 상한 — 서버 계약과 같은 값. */
 const TITLE_MAX = POST_TITLE_MAX;
-/** 공개 범위 칩(겉모습 34pt)의 위아래 터치 확장 — Button sm 과 같은 몫. */
-const CHIP_HIT_SLOP = { top: 6, bottom: 6, left: 4, right: 4 };
+/** 공개 범위 칩(겉모습 32pt)의 위아래 터치 확장 — Button sm 과 같은 몫으로 44pt 를 채운다. */
+const CHIP_HIT_SLOP = { top: (44 - controlHeight.sm) / 2, bottom: (44 - controlHeight.sm) / 2, left: 4, right: 4 };
 /** 종이 괘선 간격 = 본문 줄 높이. 글줄이 괘선 위에 앉는다. */
 const BODY_LINE = 26;
 /** 글이 짧아도 종이는 이만큼의 줄을 편다 — 빈 종이가 '여기 쓰면 된다'를 말한다. */
@@ -102,16 +104,7 @@ export default function PostEditorScreen() {
           <EmptyState
             title="독후감을 불러오지 못했어요"
             description="잠시 후 다시 시도해 주세요."
-            action={(
-              <Pressable
-                onPress={() => post.refetch()}
-                accessibilityRole="button"
-                accessibilityLabel="다시 시도"
-                style={styles.retry}
-              >
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-              </Pressable>
-            )}
+            action={<Button label="다시 시도" variant="outline" onPress={() => post.refetch()} />}
           />
         )}
       </Shell>
@@ -443,7 +436,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 hitSlop={CHIP_HIT_SLOP}
                 accessibilityRole="button"
                 accessibilityLabel={`공개 범위, ${visibilityLabel}`}
-                style={({ pressed }) => [styles.visibilityChip, { borderColor: colors.control }, pressed ? pressedStyle : null]}
+                style={({ pressed }) => [styles.visibilityChip, glassFace(colors, colors.tonal), pressed ? pressedStyle : null]}
               >
                 <Text style={[typeScale.label, { color: colors.text }]}>{visibilityLabel}</Text>
                 <ChevronDown size={14} color={colors.textMuted} {...iconStroke} />
@@ -496,9 +489,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 accessibilityLabel={option.label}
                 style={({ pressed }) => [styles.option, pressed ? pressedStyle : null]}
               >
-                <View style={[styles.radio, { borderColor: on ? colors.ink : colors.lineStrong }]}>
-                  {on ? <View style={[styles.radioDot, { backgroundColor: colors.ink }]} /> : null}
-                </View>
+                <RadioMark checked={on} />
                 <View style={styles.optionText}>
                   <Text style={[typeScale.bodyStrong, { color: colors.text }]}>{option.label}</Text>
                   <Text style={[typeScale.caption, { color: colors.textFaint }]}>{visibilityCaption(option.value, inClub)}</Text>
@@ -617,15 +608,14 @@ const styles = StyleSheet.create({
   bottomRow: { flexDirection: 'row', alignItems: 'center' },
   // 공개 범위 칩 + 제출 — 띠 오른쪽 끝에 붙인다. 칩과 버튼은 함께 쓰는 동작이라 붙여 둔다.
   submitGroup: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  // 칩 — 겉모습 34pt(Button sm 과 같다), 위아래 hitSlop 으로 44pt 이상 눌린다.
+  // 칩 — 겉모습은 Button sm 과 같다(32pt · 회색 톤 유리 면), 위아래 hitSlop 으로 44pt 이상 눌린다.
   visibilityChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    height: 34,
+    height: controlHeight.sm,
     paddingHorizontal: spacing.sm + 2,
-    borderWidth: hairline,
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
   },
   // 커서 자리에 넣는 도구 둘 — 작은 테두리 버튼(FootAction). 터치 상자는 위아래로만 넓어지니 sm 간격이면 떨어진다.
   tools: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -635,11 +625,7 @@ const styles = StyleSheet.create({
   unpick: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
   // 공개 범위 한 줄 — 라디오 · 이름 · 설명. 줄 전체가 눌린다.
   option: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 52 },
-  radio: { width: 20, height: 20, borderRadius: radius.round, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  radioDot: { width: 10, height: 10, borderRadius: radius.round },
   optionText: { flex: 1, gap: 2 },
-  // 빈 상태 액션 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
   skeleton: { ...layout.content, padding: spacing.lg },
   skeletonBlock: { height: 240, borderRadius: radius.md },
 });

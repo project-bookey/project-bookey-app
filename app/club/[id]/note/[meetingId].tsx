@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Undo2 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
@@ -12,7 +12,7 @@ import { confirmAsync, notify } from '@/components/club';
 import {
   meetingNoteKey, meetingNotesKey, useMeetingNoteSync, type MeetingNotePeer, type MeetingNoteSyncStatus,
 } from '@/components/club/useMeetingNoteSync';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { ICON_SIZE, IconButton, PaperScreen, SubHeader } from '@/components/collage';
 import {
   NoteCanvas, ZoomControls, ZoomStage, applyPreview, canvasFor, contentBounds, parseMeetingNoteDoc, useInkGesture,
   useNoteEditor, useNoteInserts, useNotePhotos, useNoteSelection, useNoteZoom,
@@ -28,10 +28,10 @@ import { SelectionFrame } from '@/components/note/SelectionFrame';
 import { StickerSheet, type StickerBook } from '@/components/note/StickerSheet';
 import { TextEditorSheet } from '@/components/note/TextEditorSheet';
 import { Avatar } from '@/components/Avatar';
-import { Button, EmptyState, Loading, linkLabel } from '@/components/ui';
+import { Button, EmptyState, Loading } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { layout, radius, serif, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, pressedStyle } from '@/theme/tokens';
+import { hairline } from '@/theme/tokens';
 
 /** 모임 노트 도구 줄의 삽입 — 텍스트·스티커·사진·말풍선. */
 const MEETING_NOTE_INSERTS: readonly InsertKind[] = ['text', 'sticker', 'photo', 'speech'];
@@ -59,7 +59,6 @@ export default function MeetingNoteScreen() {
   const { id, meetingId } = useLocalSearchParams<{ id: string; meetingId: string }>();
   const clubId = Number(id);
   const mid = Number(meetingId);
-  const { colors } = useTheme();
   const note = useQuery({
     queryKey: meetingNoteKey(clubId, mid),
     queryFn: () => meetingNoteApi.get(clubId, mid),
@@ -78,14 +77,7 @@ export default function MeetingNoteScreen() {
           title="모임 노트를 열지 못했어요"
           description={note.error instanceof ApiError ? note.error.message : '잠시 후 다시 시도해 주세요.'}
           action={gone ? undefined : (
-            <Pressable
-              onPress={() => note.refetch()}
-              accessibilityRole="button"
-              accessibilityLabel="다시 시도"
-              style={({ pressed }) => [styles.retry, pressed ? pressedStyle : null]}
-            >
-              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-            </Pressable>
+            <Button label="다시 시도" variant="outline" onPress={() => note.refetch()} />
           )}
         />
       </Shell>
@@ -284,17 +276,9 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
       <SubHeader
         category="모임 노트"
         right={readOnly ? undefined : (
-          <Pressable
-            onPress={editor.undo}
-            disabled={!editor.canUndo}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="되돌리기"
-            accessibilityState={{ disabled: !editor.canUndo }}
-            style={({ pressed }) => [styles.iconButton, !editor.canUndo ? styles.iconDisabled : null, pressed ? pressedStyle : null]}
-          >
-            <ToolIcon icon={Undo2} color={colors.text} />
-          </Pressable>
+          <IconButton onPress={editor.undo} disabled={!editor.canUndo} accessibilityLabel="되돌리기">
+            <ToolIcon icon={Undo2} size={ICON_SIZE.plain} color={colors.text} />
+          </IconButton>
         )}
       />
 
@@ -465,8 +449,6 @@ function PeerTags({ peers, scale }: { peers: MeetingNotePeer[]; scale: number })
 }
 
 const styles = StyleSheet.create({
-  iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  iconDisabled: { opacity: 0.35 },
   info: {
     ...layout.content,
     flexDirection: 'row',
@@ -510,9 +492,8 @@ const styles = StyleSheet.create({
     maxWidth: 120,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: radius.sm,
+    borderRadius: radius.badge,
     borderWidth: hairline,
   },
   tagText: { fontSize: 10 },
-  retry: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.md },
 });

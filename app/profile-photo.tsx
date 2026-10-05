@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '@/api/client';
 import { authApi } from '@/api/endpoints';
@@ -213,22 +213,7 @@ export default function ProfilePhotoScreen() {
           ) : null}
         </View>
 
-        <Pressable
-          onPress={upload}
-          disabled={!canSubmit || uploading}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.cta, {
-            backgroundColor: canSubmit ? colors.accent : colors.surface,
-          }, pressed && styles.pressed]}
-        >
-          {uploading ? (
-            <ActivityIndicator color={colors.onAccent} />
-          ) : (
-            <Text style={[typeScale.bodyStrong, { color: canSubmit ? colors.onAccent : colors.textFaint }]}>
-              {submitLabel}
-            </Text>
-          )}
-        </Pressable>
+        <Button label={submitLabel} onPress={upload} loading={uploading} disabled={!canSubmit} />
       </View>
       <LegalDocumentSheet
         docKey={optionalDocOpen ? 'profile-optional' : null}
@@ -265,13 +250,6 @@ const styles = StyleSheet.create({
   field: { gap: spacing.sm },
   optionalNote: { gap: spacing.xs },
   optionalLink: { alignSelf: 'flex-start' },
-  input: {
-    minHeight: 48,
-    borderRadius: radius.md,
-    borderWidth: hairline,
-    paddingHorizontal: spacing.md,
-    fontSize: 16,
-  },
   avatarWrap: { alignSelf: 'center', marginTop: spacing.lg },
   avatar: { width: 160, height: 160, borderRadius: radius.round },
   avatarEmpty: {
@@ -280,13 +258,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
-  // 회색 글자뿐이라 지나치던 보조 동작 — 앱 공용 ghost 버튼(본문색, 44pt)으로 가운데에 둔다.
+  // 회색 글자뿐이라 지나치던 보조 동작 — 앱 공용 ghost 버튼(44pt 상자)으로 가운데에 둔다.
   ghost: { alignSelf: 'center', paddingHorizontal: spacing.md },
-  cta: {
-    minHeight: 48,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   pressed: pressedStyle,
 });

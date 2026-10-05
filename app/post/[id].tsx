@@ -17,7 +17,7 @@ import { photoIdsIn, type PhotoRef } from '@/components/post/postPhotos';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
+import { Button, EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -109,16 +109,7 @@ export default function PostDetailScreen() {
       <EmptyState
         title="독후감을 불러오지 못했어요"
         description="잠시 후 다시 시도해 주세요."
-        action={
-          <Pressable
-            onPress={() => post.refetch()}
-            accessibilityRole="button"
-            accessibilityLabel="다시 시도"
-            style={({ pressed }) => [styles.retry, pressed ? pressedStyle : null]}
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-          </Pressable>
-        }
+        action={<Button label="다시 시도" variant="outline" onPress={() => post.refetch()} />}
       />
     )
   ) : null;
@@ -311,6 +302,4 @@ const styles = StyleSheet.create({
   // 이 책으로 나도 쓰기 — 액션 줄과는 섹션 사이 간격(article 의 lg + sm = xl)만큼 띄운다.
   writeOwn: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
   writeOwnText: { flex: 1, gap: 2 },
-  // 오류 상태의 다시 시도 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });
