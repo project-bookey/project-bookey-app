@@ -20,7 +20,7 @@ import {
 } from '@/components/chat/ChatParts';
 import { FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { hairline, iconStroke, pressedStyle, radius, spacing, useTheme } from '@/theme';
+import { controlHeight, glassFace, hairline, iconStroke, pressedStyle, radius, spacing, useTheme } from '@/theme';
 
 /** 새 메시지 폴링 주기(ms) — 실시간 인프라 없이 시작한다 (§13-11 결정). */
 const POLL_MS = 4000;
@@ -192,11 +192,8 @@ export default function ChatRoomScreen() {
             accessibilityState={{ expanded: stickersOpen }}
             style={({ pressed }) => [
               styles.stickerButton,
-              // 열린 동안은 토글 선택 상태처럼 잉크로 뒤집는다.
-              {
-                borderColor: stickersOpen ? colors.ink : colors.control,
-                backgroundColor: stickersOpen ? colors.ink : colors.surface,
-              },
+              // 닫힌 동안은 보조 버튼(회색 톤), 열린 동안은 토글 선택 상태처럼 잉크로 뒤집는다 — 면은 공용 버튼과 같은 유리.
+              glassFace(colors, stickersOpen ? colors.ink : colors.tonal),
               pressed ? pressedStyle : null,
             ]}
           >
@@ -205,7 +202,7 @@ export default function ChatRoomScreen() {
               height={20}
               viewBox="0 0 24 24"
               fill="none"
-              stroke={stickersOpen ? colors.onInk : colors.textMuted}
+              stroke={stickersOpen ? colors.onInk : colors.text}
             >
               <Circle cx={12} cy={12} r={9} {...iconStroke} />
               <Path d="M9 9.5v1M15 9.5v1M8.5 14.5c1.9 2.2 5.1 2.2 7 0" {...iconStroke} />
@@ -253,21 +250,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   stickerList: { gap: spacing.sm, paddingVertical: spacing.sm },
+  // 그림 고르는 칸 — 버튼 면 대신 얇은 선만 두는 격자(노트 스티커 시트와 같은 칸).
   stickerCell: {
     width: 72,
     height: 72,
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stickerThumb: { width: 66, height: 66 },
   // 보내기와 같은 48pt 네모 — 입력 줄 양 끝이 같은 크기로 맞선다.
   stickerButton: {
-    width: 48,
-    height: 48,
-    borderWidth: hairline,
-    borderRadius: radius.sm,
+    width: controlHeight.md,
+    height: controlHeight.md,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },

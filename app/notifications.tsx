@@ -9,7 +9,7 @@ import { PaperScreen, SubHeader } from '@/components/collage';
 import { FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { notificationTarget, openNotificationTarget } from '@/lib/notificationTarget';
-import { hairline, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 알림 목록 — 항목을 누르면 열람 처리하고, 알림이 가리키는 화면으로 간다.
@@ -91,7 +91,7 @@ export default function NotificationsScreen() {
                       pressed ? pressedStyle : null,
                     ]}
                   >
-                    <Trash2 size={27} strokeWidth={2.2} color="#fff" />
+                    <Trash2 size={27} color={colors.bg} {...iconStroke} />
                   </Pressable>
                 </View>
               )}

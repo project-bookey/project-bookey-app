@@ -6,7 +6,7 @@ import { bookApi, libraryApi } from '@/api/endpoints';
 import { TiltCover } from '@/components/collage';
 import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
 import { sans } from '@/theme/tokens';
-import { linkLabel } from '@/components/ui';
+import { TextLink } from '@/components/ui';
 
 /** 책 검색 — 탐색 화면과 같은 디바운스·최소 글자 수. */
 const SEARCH_DEBOUNCE_MS = 400;
@@ -191,14 +191,15 @@ export function BookPicker({ picker, autoFocus }: {
       {hint ? <Text style={[typeScale.caption, { color: colors.textFaint }]}>{hint}</Text> : null}
       {/* 못 불러온 것과 정말 없는 것은 다른 이야기다 — 실패는 실패라고 말하고 다시 시도를 준다. */}
       {searchError ? (
-        <Pressable onPress={retrySearch} accessibilityRole="button" style={styles.retry}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>검색에 실패했어요 · {linkLabel('다시 시도', 'action')}</Text>
-        </Pressable>
+        <TextLink label="검색에 실패했어요 · 다시 시도" kind="action" onPress={retrySearch} style={styles.retry} />
       ) : null}
       {readingError ? (
-        <Pressable onPress={retryReading} accessibilityRole="button" style={styles.retry}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>내 서재의 책을 불러오지 못했어요 · {linkLabel('다시 시도', 'action')}</Text>
-        </Pressable>
+        <TextLink
+          label="내 서재의 책을 불러오지 못했어요 · 다시 시도"
+          kind="action"
+          onPress={retryReading}
+          style={styles.retry}
+        />
       ) : null}
 
       {selected ? (
@@ -213,16 +214,16 @@ export function BookPicker({ picker, autoFocus }: {
 const styles = StyleSheet.create({
   pickRow: { gap: spacing.sm, paddingVertical: 2 },
   pick: { borderWidth: 2, borderRadius: radius.sm, padding: 2 },
-  // 책 검색 입력 — 쪽수 입력과 같은 재질, 네모.
+  // 책 검색 입력 — 공용 입력(Field)과 같은 모서리.
   searchInput: {
     borderWidth: hairline,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     fontFamily: sans.regular,
     fontSize: 14,
   },
   pickedLine: { marginTop: -spacing.xs },
-  // 11px 모노 한 줄이라 글자 상자로는 손가락이 닿지 않는다 — 웹은 hitSlop 을 무시하므로 44pt 상자로 키운다.
-  retry: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
+  // 글자 링크(TextLink)는 hitSlop 으로 44pt 를 채운다 — 줄 폭만큼만 눌리게 왼쪽에 붙인다.
+  retry: { alignSelf: 'flex-start' },
 });

@@ -29,11 +29,15 @@ import { useMyRemark } from '@/components/remark/queries';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import { ReviewScrap } from '@/components/review/ReviewScrap';
 import { reviewMutationError, useRemoveReview, useUpdateReview } from '@/components/review/useReviewMutations';
-import { Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, formatDuration, formatRelative, linkLabel, percent, playLabel } from '@/components/ui';
+import {
+  Button, Card, Eyebrow, FootAction, KeyValue, SectionHeader, Tag, TextLink, formatDuration, formatRelative, linkLabel, percent, playLabel,
+} from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
-import { getLagStyle, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import {
+  controlHeight, getLagStyle, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme,
+} from '@/theme';
 import { mono, serif, statusLabel } from '@/theme/tokens';
 
 /** 시안 2c(390px) 기준 히어로 지오메트리 — 세로·표지 폭만 실제 폭에 비례 환산한다. */
@@ -599,19 +603,17 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
           accessibilityRole="button"
           accessibilityLabel="읽고 싶은 책"
           accessibilityState={{ selected: wanted, disabled: busy }}
+          // 담기 토글 — 꺼짐은 보조 버튼(회색 톤), 담기면 잉크로 뒤집는다(선택 상태 규칙). 면은 공용 Button 과 같은 유리.
           style={({ pressed }) => [
             styles.actionButton,
-            styles.actionOutline,
             styles.wantToggle,
-            wanted
-              ? { backgroundColor: colors.ink, borderColor: colors.ink }
-              : { borderColor: colors.control },
-            { opacity: busy ? 0.6 : 1 },
+            glassFace(colors, wanted ? colors.ink : colors.tonal),
+            busy && styles.actionBusy,
             pressed && !busy ? pressedStyle : null,
           ]}
         >
           <ToggleIcon size={16} color={toggleColor} {...iconStroke} />
-          <Text style={[typeScale.label, { color: toggleColor }]}>읽고 싶은 책</Text>
+          <Text style={[styles.actionLabel, { color: toggleColor }]}>읽고 싶은 책</Text>
         </Pressable>
         <Pressable
           disabled={busy}
@@ -623,11 +625,12 @@ function ActionBar({ bookId, rid, status, colors, onAdded, onRemoved }: {
           style={({ pressed }) => [
             styles.actionButton,
             styles.actionPrimary,
-            { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 },
+            glassFace(colors, colors.accent),
+            busy && styles.actionBusy,
             pressed && !busy ? pressedStyle : null,
           ]}
         >
-          <Text style={[typeScale.label, { color: colors.onAccent }]}>{playLabel('독서 시작')}</Text>
+          <Text style={[styles.actionLabel, { color: colors.onAccentGlass }]}>{playLabel('독서 시작')}</Text>
         </Pressable>
       </View>
       {addFailed && add.variables ? (
@@ -687,11 +690,7 @@ function Description({ text, colors }: { text: string; colors: ColorTokens }) {
       <Text numberOfLines={expanded ? undefined : 4} style={[typeScale.quote, { color: colors.textMuted }]}>
         {text}
       </Text>
-      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" style={styles.moreLink}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
-          {expanded ? '접기' : '더 보기'}
-        </Text>
-      </Pressable>
+      <TextLink label={expanded ? '접기' : '더 보기'} kind="action" onPress={() => setExpanded((v) => !v)} hitSlop={null} style={styles.moreLink} />
     </View>
   );
 }
@@ -709,11 +708,7 @@ function TableOfContents({ text, colors }: { text: string; colors: ColorTokens }
       <Text numberOfLines={expanded ? undefined : 8} style={[typeScale.caption, { color: colors.textMuted, lineHeight: 20 }]}>
         {cleaned}
       </Text>
-      <Pressable onPress={() => setExpanded((v) => !v)} accessibilityRole="button" style={styles.moreLink}>
-        <Text style={[typeScale.monoEyebrow, { color: colors.textMuted }]}>
-          {expanded ? '접기' : '더 보기'}
-        </Text>
-      </Pressable>
+      <TextLink label={expanded ? '접기' : '더 보기'} kind="action" onPress={() => setExpanded((v) => !v)} hitSlop={null} style={styles.moreLink} />
     </View>
   );
 }
@@ -1156,7 +1151,7 @@ const styles = StyleSheet.create({
   listCard: { paddingVertical: 0 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   kvBlock: { gap: 0 },
-  // 10px 글자만으로는 손가락이 닿지 않는다 — 44pt 상자를 주고, 늘어난 높이만큼 위 여백은 뺀다.
+  // 글자만으로는 손가락이 닿지 않는다 — 44pt 상자를 주고, 늘어난 높이만큼 위 여백은 뺀다.
   moreLink: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', marginTop: -spacing.sm },
   dangerGap: { marginTop: spacing.md },
   retryLine: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
@@ -1172,14 +1167,17 @@ const styles = StyleSheet.create({
 
   actionBarWrap: { gap: spacing.sm },
   actionBar: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  // 공용 Button(md)과 같은 값 — 아이콘을 품고 접근성 상태(selected)를 내야 해서 직접 그린다.
   actionButton: {
-    height: 46,
-    borderRadius: radius.sm,
+    minHeight: controlHeight.md,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
-  actionOutline: { borderWidth: hairline },
+  actionLabel: { ...typeScale.label, fontSize: 14 },
+  // 담거나 빼는 중 — 공용 Button 의 비활성과 같은 값.
+  actionBusy: { opacity: 0.35 },
   wantToggle: { flexDirection: 'row', gap: spacing.xs },
   actionPrimary: { flex: 1 },
   commitmentBackdrop: {

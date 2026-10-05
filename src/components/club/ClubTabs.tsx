@@ -71,6 +71,7 @@ export function ClubTabs({ clubId, active, onSelect }: {
             accessibilityRole="tab"
             accessibilityLabel={t.label}
             accessibilityState={{ selected: on }}
+            hitSlop={TAB_HIT_SLOP}
             style={({ pressed }) => [styles.tab, pressed && !on ? pressedStyle : null]}
           >
             <Text style={[styles.label, { color: on ? colors.ink : colors.textMuted }]}>{t.label}</Text>
@@ -81,6 +82,9 @@ export function ClubTabs({ clubId, active, onSelect }: {
     </View>
   );
 }
+
+/** 탭 겉모습(약 34pt)은 그대로 두고(2026-10-05 사용자 결정) 위아래로 넓혀 44pt 터치 상자로 만든다. */
+const TAB_HIT_SLOP = { top: 5, bottom: 5 };
 
 const styles = StyleSheet.create({
   bar: {

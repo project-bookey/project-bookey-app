@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { kstTime } from '@/components/clubLog';
 import { useBottomBarPadding } from '@/components/keyboard';
 import { EmptyState } from '@/components/ui';
-import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlHeight, glassFace, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
 
 /**
@@ -116,8 +116,8 @@ export function ChatInput({ style, ...props }: TextInputProps) {
 }
 
 /**
- * 보내기 — 48pt 잉크 네모에 위 화살표 선 아이콘. 쓸 말이 없으면 가라앉고,
- * 보내는 중에는 잉크를 유지한 채 스피너를 돌린다(중복 전송은 막는다).
+ * 보내기 — 48pt 잉크 유리 네모(공용 버튼과 같은 glassFace·md 모서리)에 위 화살표 선 아이콘. 쓸 말이 없으면
+ * 공용 버튼의 비활성처럼 흐려지고(0.35), 보내는 중에는 잉크를 유지한 채 스피너를 돌린다(중복 전송은 막는다).
  */
 export function ChatSendButton({ onPress, disabled = false, loading = false }: {
   onPress: () => void;
@@ -125,7 +125,7 @@ export function ChatSendButton({ onPress, disabled = false, loading = false }: {
   loading?: boolean;
 }) {
   const { colors } = useTheme();
-  const filled = !disabled || loading;
+  const dimmed = disabled && !loading;
   return (
     <Pressable
       onPress={onPress}
@@ -135,14 +135,15 @@ export function ChatSendButton({ onPress, disabled = false, loading = false }: {
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={({ pressed }) => [
         styles.send,
-        { backgroundColor: filled ? colors.ink : colors.surfaceRaised },
+        glassFace(colors, colors.ink),
+        dimmed ? styles.dimmed : null,
         pressed ? pressedStyle : null,
       ]}
     >
       {loading ? (
         <ActivityIndicator size="small" color={colors.onInk} />
       ) : (
-        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={filled ? colors.onInk : colors.textFaint}>
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={colors.onInk}>
           <Path d="M12 19V5M6 11l6-6 6 6" {...iconStroke} />
         </Svg>
       )}
@@ -180,7 +181,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderWidth: hairline,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
   },
-  send: { width: 48, height: 48, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  send: { width: controlHeight.md, height: controlHeight.md, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  dimmed: { opacity: 0.35 },
 });

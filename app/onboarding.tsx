@@ -11,7 +11,9 @@ import { markOnboardingSeen } from '@/lib/onboarding';
 import { useOnboarding } from '@/store/onboarding';
 import Svg, { Path } from 'react-native-svg';
 
-import { darkColors, hairline, iconStroke, pressedStyle, radius, spacing, typeScale } from '@/theme';
+import { Chip } from '@/components/collage';
+import { Button } from '@/components/ui';
+import { darkColors, ForceThemeMode, hairline, iconStroke, pressedStyle, radius, spacing, typeScale } from '@/theme';
 import { serif } from '@/theme/tokens';
 
 /** 온보딩 책 선택 개수 — "5권 고르기". */
@@ -38,6 +40,15 @@ const GUIDE_STEPS: { eyebrow: string; title: string; body: string }[] = [
  * 기기당 1회. 여기서 고른 것은 가입 성공 직후 서버에 반영된다(login.tsx).
  */
 export default function OnboardingScreen() {
+  // 다크 고정 화면 — 공용 Button·Chip 도 다크 색을 받게 감싼다.
+  return (
+    <ForceThemeMode mode="dark">
+      <OnboardingFlow />
+    </ForceThemeMode>
+  );
+}
+
+function OnboardingFlow() {
   const router = useRouter();
   /** 0..2 가이드, 3 카테고리, 4 책 고르기. */
   const [step, setStep] = useState(0);
@@ -120,7 +131,12 @@ export default function OnboardingScreen() {
     <View style={styles.screen}>
       <View style={styles.top}>
         <Text style={styles.wordmark}>bookey</Text>
-        <Pressable onPress={() => finish(false)} accessibilityRole="button" hitSlop={10}>
+        <Pressable
+          onPress={() => finish(false)}
+          accessibilityRole="button"
+          hitSlop={10}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
           <Text style={[typeScale.monoLabel, { color: darkColors.textMuted }]}>
             건너뛰기
           </Text>
@@ -147,23 +163,9 @@ export default function OnboardingScreen() {
             <View style={styles.categoryGrid}>
               {categoryItems.map((category) => {
                 const selected = categories.includes(category);
+                // 탐색 분야·문의 분류와 같은 공용 칩 — 고르면 잉크로 뒤집힌다.
                 return (
-                  <Pressable
-                    key={category}
-                    onPress={() => toggleCategory(category)}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: selected }}
-                    style={[styles.categoryChip, {
-                      borderColor: selected ? darkColors.ink : darkColors.control,
-                      backgroundColor: selected ? darkColors.ink : darkColors.surface,
-                    }]}
-                  >
-                    <Text style={[typeScale.label, {
-                      color: selected ? darkColors.onInk : darkColors.textMuted,
-                    }]}>
-                      {category}
-                    </Text>
-                  </Pressable>
+                  <Chip key={category} label={category} active={selected} onPress={() => toggleCategory(category)} />
                 );
               })}
             </View>
@@ -238,27 +240,13 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <Pressable
+        <Button
+          label={step === BOOK_STEP && bookItems.length === 0 ? '가입하러 가기' : ctaLabel}
           onPress={pressCta}
           disabled={!canProceed}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.cta, {
-            backgroundColor: canProceed ? darkColors.accent : darkColors.surface,
-          }, pressed && styles.pressed]}
-        >
-          <Text style={[typeScale.bodyStrong, {
-            color: canProceed ? darkColors.onAccent : darkColors.textFaint,
-          }]}>
-            {step === BOOK_STEP && bookItems.length === 0 ? '가입하러 가기' : ctaLabel}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => finish(false)}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-        >
-          <Text style={[typeScale.label, { color: darkColors.text }]}>이미 계정이 있어요</Text>
-        </Pressable>
+        />
+        {/* 기존 회원이 빠져나가는 길 — 글자만 있던 때는 눈에 띄지 않아 주요 버튼 아래 보조 버튼으로 둔다. */}
+        <Button label="이미 계정이 있어요" variant="outline" onPress={() => finish(false)} />
       </View>
     </View>
   );
@@ -303,12 +291,6 @@ const styles = StyleSheet.create({
   copy: { ...typeScale.body, color: darkColors.textMuted, lineHeight: 24 },
   pickerStep: { flex: 1, gap: spacing.md, paddingTop: spacing.xl },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
-  categoryChip: {
-    borderWidth: hairline,
-    borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
   booksLoading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bookScroll: { flex: 1, marginTop: spacing.sm },
   bookGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingBottom: spacing.lg },
@@ -321,26 +303,11 @@ const styles = StyleSheet.create({
   bookFallback: { padding: spacing.sm, textAlign: 'center' },
   bookCheck: {
     position: 'absolute', top: 6, right: 6,
-    width: 20, height: 20, borderRadius: radius.sm,
+    width: 20, height: 20, borderRadius: radius.badge,
     alignItems: 'center', justifyContent: 'center',
   },
   bottom: { gap: spacing.sm },
   dots: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md },
   dot: { height: 6, borderRadius: radius.none },
-  cta: {
-    minHeight: 48,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // 기존 회원이 빠져나가는 길 — 글자만 있던 때는 눈에 띄지 않아 주요 버튼 아래 테두리 버튼으로 둔다.
-  ghost: {
-    minHeight: 48,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   pressed: pressedStyle,
 });

@@ -63,5 +63,6 @@ export function NoteCanvas({ doc, width, window, live, captureRef, underlay, ren
 }
 
 const styles = StyleSheet.create({
-  page: { borderWidth: hairline, borderRadius: radius.md, overflow: 'hidden' },
+  // 노트 한 장 — 종이라 앱의 카드(md)보다 각진 예전 모서리(4)를 지킨다.
+  page: { borderWidth: hairline, borderRadius: radius.badge, overflow: 'hidden' },
 });

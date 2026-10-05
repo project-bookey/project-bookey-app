@@ -5,7 +5,7 @@ import { Avatar } from '@/components/Avatar';
 import {
   Button, Card, ProgressBar, Tag, formatDuration, formatRelative, percent,
 } from '@/components/ui';
-import { getPaceStyle, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { getPaceStyle, hairline, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 const AVATAR = 44;
@@ -49,11 +49,12 @@ export function MemberStrip({ members, readingNowIds, logCounts, selectedUserId,
             accessibilityRole="button"
             accessibilityState={{ selected }}
             accessibilityLabel={`${member.nickname}${member.isMe ? ' (나)' : ''} ${status}${live ? ', 지금 읽는 중' : ''}${count > 0 ? `, 메모 ${count}개` : ''}`}
-            style={[
+            style={({ pressed }) => [
               styles.chip,
               // 선택·나·읽는 중 표시는 상태라 잉크로 — 악센트는 진척 막대(진행) 몫이다.
               { borderColor: selected ? colors.ink : 'transparent' },
               selected && { backgroundColor: colors.surfaceRaised },
+              pressed && !selected && pressedStyle,
             ]}
           >
             <View>
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     gap: 3,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
-    borderRadius: radius.md,
+    borderRadius: radius.control,
     borderWidth: hairline,
   },
   avatarRing: { borderWidth: 2, borderRadius: radius.round, padding: 1 },

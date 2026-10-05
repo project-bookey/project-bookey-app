@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: hairline,
   },
   container: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.lg },
-  form: { marginTop: spacing.lg, borderWidth: hairline, borderRadius: radius.sm, padding: spacing.lg, gap: spacing.md },
+  form: { marginTop: spacing.lg, borderWidth: hairline, borderRadius: radius.md, padding: spacing.lg, gap: spacing.md },
   // 입력들과 떼어 둔다 — 폼 간격(md)에 md 를 더해 xl.
   submit: { marginTop: spacing.md },
   row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: hairline },

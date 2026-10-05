@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
@@ -10,12 +11,15 @@ import { authApi } from '@/api/endpoints';
 import {
   CODE_EXPIRED_MESSAGE, codeSendsOf, FieldError, isEmail, resendA11yLabel, ResendLabel, TimedCodeInput, type CodeSends,
 } from '@/components/auth/authFields';
+import { ICON_SIZE, IconButton } from '@/components/collage';
 import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
+import { Button } from '@/components/ui';
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
-import { darkColors, hairline, pressedStyle, radius, sans, spacing, typeScale } from '@/theme';
+import {
+  controlHeight, darkColors, ForceThemeMode, glassFace, hairline, iconStroke, pressedStyle, radius, sans, spacing, typeScale,
+} from '@/theme';
 
-const BUTTON_HEIGHT = 48;
 const MIN_PASSWORD = 8;
 
 /** 경고를 띄우는 자리 — 칸에 걸린 오류는 그 칸 밑에, 어느 칸에도 걸리지 않는 오류는 버튼 바로 위(form)에. 가입 화면과 같다. */
@@ -39,6 +43,15 @@ const SERVER_ERROR_SPOT: Record<string, ErrorSpot> = {
  * 다시 받기는 기다림 없이 바로 된다 — 남용은 서버가 1시간 횟수 상한으로 막는다.
  */
 export default function PasswordResetScreen() {
+  // 다크 고정 화면 — 공용 Button 도 다크 색을 받게 감싼다.
+  return (
+    <ForceThemeMode mode="dark">
+      <PasswordResetForm />
+    </ForceThemeMode>
+  );
+}
+
+function PasswordResetForm() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const resetPassword = useAuth((s) => s.resetPassword);
@@ -160,15 +173,12 @@ export default function PasswordResetScreen() {
     <View style={styles.screen}>
       <KeyboardArea>
         <View style={[styles.header, { paddingTop: insets.top }]}>
-          <Pressable
-            onPress={goBack}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="뒤로"
-            style={({ pressed }) => [styles.back, pressed && styles.pressed]}
-          >
-            <Text style={styles.backGlyph}>←</Text>
-          </Pressable>
+          {/* SubHeader 의 뒤로와 같은 아이콘 버튼 — 화살표가 본문 왼쪽 끝과 맞게 상자 여백만큼 당긴다. */}
+          <View style={styles.back}>
+            <IconButton onPress={goBack} accessibilityLabel="뒤로">
+              <ArrowLeft size={ICON_SIZE.plain} color={darkColors.text} {...iconStroke} />
+            </IconButton>
+          </View>
         </View>
         <ScrollView
           ref={scrollRef}
@@ -210,7 +220,7 @@ export default function PasswordResetScreen() {
                   <Pressable
                     onPress={sendCode}
                     disabled={busy}
-                    style={({ pressed }) => [styles.codeButton, (pressed || busy) && styles.pressed]}
+                    style={({ pressed }) => [styles.codeButton, busy && styles.disabled, pressed && !busy && styles.pressed]}
                     accessibilityRole="button"
                     accessibilityLabel={resendA11yLabel('다시 받기', sends)}
                   >
@@ -251,25 +261,12 @@ export default function PasswordResetScreen() {
               </View>
               {/* 어느 칸에도 걸리지 않는 실패는 누른 버튼 바로 위에 — 가입 화면과 같은 자리(Proximity). */}
               <FieldError colors={darkColors} message={errors.form} />
-              <Pressable
-                ref={submitRef}
-                onPress={submit}
-                disabled={busy}
-                style={({ pressed }) => [styles.cta, (pressed || busy) && styles.ctaDisabled]}
-                accessibilityRole="button"
-              >
-                {saving
-                  ? <ActivityIndicator color={darkColors.onAccent} />
-                  : <Text style={styles.ctaLabel}>비밀번호 바꾸기</Text>}
-              </Pressable>
-              <Pressable
-                onPress={changeEmail}
-                disabled={busy}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-              >
-                <Text style={styles.ghostLabel}>이메일 다시 입력하기</Text>
-              </Pressable>
+              {/* 키보드 위로 올릴 기준(submitRef)이라 버튼을 상자로 감싼다. */}
+              <View ref={submitRef} style={styles.cta}>
+                <Button label="비밀번호 바꾸기" onPress={submit} loading={saving} disabled={busy} />
+              </View>
+              {/* 로그인 화면의 '회원가입'과 같은 보조 버튼 — 주요 버튼 아래. */}
+              <Button label="이메일 다시 입력하기" variant="outline" onPress={changeEmail} disabled={busy} />
             </View>
           ) : (
             <View style={styles.form}>
@@ -298,16 +295,7 @@ export default function PasswordResetScreen() {
                 <FieldError colors={darkColors} message={errors.email} />
               </View>
               <FieldError colors={darkColors} message={errors.form} />
-              <Pressable
-                onPress={sendCode}
-                disabled={busy}
-                style={({ pressed }) => [styles.cta, (pressed || busy) && styles.ctaDisabled]}
-                accessibilityRole="button"
-              >
-                {sending
-                  ? <ActivityIndicator color={darkColors.onAccent} />
-                  : <Text style={styles.ctaLabel}>코드 받기</Text>}
-              </Pressable>
+              <Button label="코드 받기" onPress={sendCode} loading={sending} disabled={busy} style={styles.cta} />
             </View>
           )}
         </ScrollView>
@@ -324,8 +312,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  back: { width: 44, height: 44, justifyContent: 'center' },
-  backGlyph: { fontSize: 22, color: darkColors.text },
+  back: { alignSelf: 'flex-start', marginLeft: -(44 - ICON_SIZE.plain) / 2 },
   container: {
     padding: spacing.xl,
     paddingTop: spacing.lg,
@@ -342,7 +329,7 @@ const styles = StyleSheet.create({
   field: { gap: spacing.xs },
   fieldLabel: { ...typeScale.label, color: darkColors.textMuted },
   input: {
-    minHeight: BUTTON_HEIGHT,
+    minHeight: controlHeight.md,
     borderRadius: radius.md,
     borderWidth: hairline,
     borderColor: darkColors.lineStrong,
@@ -354,36 +341,18 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: darkColors.danger },
   codeRow: { flexDirection: 'row', gap: spacing.sm },
+  // 다시 받기 — 받은 수/상한을 라벨에 붙여야 해서 직접 그리되 공용 Button(outline, md)과 같은 값을 쓴다.
   codeButton: {
-    minHeight: BUTTON_HEIGHT,
+    minHeight: controlHeight.md,
     borderRadius: radius.md,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
+    ...glassFace(darkColors, darkColors.tonal),
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
-  codeButtonLabel: { ...typeScale.label, color: darkColors.text },
+  codeButtonLabel: { ...typeScale.label, fontSize: 14, color: darkColors.text },
   hint: { ...typeScale.caption, color: darkColors.textFaint },
-  cta: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
-    backgroundColor: darkColors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
-  },
-  ctaLabel: { ...typeScale.bodyStrong, color: darkColors.onAccent },
-  ctaDisabled: { opacity: 0.45 },
-  // 로그인 화면의 '회원가입'과 같은 보조 버튼 — 주요 버튼 아래 테두리 버튼.
-  ghost: {
-    minHeight: BUTTON_HEIGHT,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderColor: darkColors.control,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ghostLabel: { ...typeScale.label, color: darkColors.text },
+  cta: { marginTop: spacing.xs },
+  disabled: { opacity: 0.35 },
   pressed: pressedStyle,
 });

@@ -29,7 +29,8 @@ export function SpeechElement({ element, scale }: { element: SpeechEl; scale: nu
           backgroundColor: colors.surface,
           borderWidth: hairline,
           borderColor: colors.lineStrong,
-          borderRadius: radius.md,
+          // 노트 위 말풍선 — 앱의 카드(md)가 둥글어져도 노트 요소는 예전 모서리(4)를 지킨다.
+          borderRadius: radius.badge,
           padding: pad,
           gap: 6 * scale,
         }}

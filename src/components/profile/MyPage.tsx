@@ -20,11 +20,13 @@ import { FollowButton } from '@/components/social/FollowButton';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
 import { useTourTarget } from '@/components/tour/TourTarget';
 import {
-  Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
+  Button, Card, EmptyState, Eyebrow, KeyValue, Rule, TextLink, formatDuration, formatRelative, linkLabel,
 } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import type { ColorTokens } from '@/theme';
-import { hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme } from '@/theme';
+import {
+  controlHeight, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, statusLabel, typeScale, useTheme,
+} from '@/theme';
 import { rowOffsetY, sans, serif, tiltFor } from '@/theme/tokens';
 
 /** 아바타 지름(px) — 시안 A. 글줄 가운데에 앉히므로 이름·핸들·팔로우 세 줄 높이보다 조금 크다. */
@@ -277,12 +279,12 @@ export function MyPage({ userId, mine }: { userId: number | undefined; mine: boo
               hitSlop={8}
               style={({ pressed }) => [
                 styles.settingsButton,
-                { borderColor: colors.control, backgroundColor: colors.surface },
+                glassFace(colors, colors.tonal),
                 pressed && styles.pressed,
               ]}
             >
               <GearLine size={14} color={colors.text} />
-              <Text style={[typeScale.monoLabel, { color: colors.text }]}>설정</Text>
+              <Text style={[styles.settingsLabel, { color: colors.text }]}>설정</Text>
             </Pressable>
           ) : userId != null ? (
             // 팔로우는 앱에서 이 자리에서만 한다 — '나' 화면 설정 버튼과 같은 자리(프로필 줄 오른쪽 위).
@@ -525,12 +527,7 @@ function PublicPosts({ userId }: { userId: number }) {
       ) : posts.isError ? (
         <EmptyState
           title="독후감을 불러오지 못했어요"
-          action={
-            <Pressable onPress={() => posts.refetch()} hitSlop={8} accessibilityRole="button"
-              style={({ pressed }) => pressed && styles.pressed}>
-              <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-            </Pressable>
-          }
+          action={<Button label="다시 시도" variant="outline" onPress={() => posts.refetch()} />}
         />
       ) : items.length === 0 ? (
         <EmptyState title="아직 공개한 독후감이 없어요" />
@@ -566,18 +563,13 @@ function PublicPosts({ userId }: { userId: number }) {
             </Pressable>
           ))}
           {posts.hasNextPage ? (
-            <Pressable
-              onPress={() => posts.fetchNextPage()}
-              disabled={posts.isFetchingNextPage}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.more, pressed && styles.pressed]}
-            >
+            <View style={styles.more}>
               {posts.isFetchingNextPage ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('더 보기', 'action')}</Text>
+                <TextLink label="더 보기" kind="action" onPress={() => posts.fetchNextPage()} />
               )}
-            </Pressable>
+            </View>
           ) : null}
         </>
       )}
@@ -885,16 +877,17 @@ const styles = StyleSheet.create({
   // 닉네임 옆 연필은 상자 없이 둔다(사용자 결정 2026-10-04 — 테두리 상자로 바꿨다가 되돌림).
   editButton: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   // alignSelf 로 행의 가운데 정렬에서 빠져나와 팔로워·팔로잉 줄에 밑선을 맞춘다.
+  // 겉모습은 Button sm(32pt · 회색 톤 유리 · control 모서리)과 같고 터치 상자는 hitSlop 으로 넓힌다.
   settingsButton: {
     alignSelf: 'flex-end',
-    height: 30,
-    paddingHorizontal: spacing.sm + 2,
-    borderRadius: radius.sm,
-    borderWidth: hairline,
+    height: controlHeight.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.control,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
   },
+  settingsLabel: { ...typeScale.label, fontSize: 12 },
   profileMeta: { letterSpacing: 0.4 },
   // 팔로워·팔로잉 줄 — 캡션(12)으로는 작아 눌러 볼 곳으로 읽히지 않아 본문 크기(15)로 키웠다(2026-10-04).
   socialText: { fontFamily: sans.regular, fontSize: 16, lineHeight: 24 },

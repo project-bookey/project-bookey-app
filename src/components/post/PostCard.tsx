@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.sm,
     top: spacing.sm,
-    borderRadius: radius.sm,
+    borderRadius: radius.badge,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },

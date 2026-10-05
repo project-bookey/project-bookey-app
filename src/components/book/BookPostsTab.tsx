@@ -1,12 +1,12 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { postApi } from '@/api/endpoints';
 import { bookPostsKey, flattenPosts } from '@/api/postCache';
 import { PostScrap } from '@/components/post/PostScrap';
-import { Card, linkLabel } from '@/components/ui';
+import { Card, TextLink } from '@/components/ui';
 import { spacing, typeScale, useTheme } from '@/theme';
 
 /** 한 번에 받는 독후감 수 — 섹션 안에 붙는 조각이라 적게. */
@@ -45,10 +45,8 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
     return (
       <Card>
         <Text style={[typeScale.body, { color: colors.textMuted }]}>독후감을 불러오지 못했어요.</Text>
-        <Pressable onPress={() => posts.refetch()} hitSlop={8} accessibilityRole="button"
-          accessibilityLabel="독후감 다시 불러오기" style={styles.action}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-        </Pressable>
+        <TextLink label="다시 시도" kind="action" onPress={() => posts.refetch()}
+          accessibilityLabel="독후감 다시 불러오기" style={styles.retry} />
       </Card>
     );
   }
@@ -76,17 +74,11 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
         </View>
       ) : posts.isError ? (
         // 다음 쪽을 못 받아도 이미 펼쳐 둔 조각은 그대로 둔다 — '더 보기' 자리에 다시 시도만 놓는다.
-        <Pressable
+        <TextLink label="불러오지 못했어요 · 다시 시도" kind="action"
           onPress={() => (posts.hasNextPage ? posts.fetchNextPage() : posts.refetch())}
-          accessibilityRole="button" accessibilityLabel="독후감 다시 불러오기" hitSlop={8}
-          style={[styles.center, styles.action]}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>불러오지 못했어요 · 다시 시도</Text>
-        </Pressable>
+          accessibilityLabel="독후감 다시 불러오기" style={styles.more} />
       ) : posts.hasNextPage ? (
-        <Pressable onPress={() => posts.fetchNextPage()} accessibilityRole="button" hitSlop={8}
-          style={[styles.center, styles.action]}>
-          <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('독후감 더 보기', 'action')}</Text>
-        </Pressable>
+        <TextLink label="독후감 더 보기" kind="action" onPress={() => posts.fetchNextPage()} style={styles.more} />
       ) : null}
     </View>
   );
@@ -95,7 +87,7 @@ export function BookPostsTab({ bookId }: { bookId: number }) {
 const styles = StyleSheet.create({
   list: { gap: spacing.md },
   center: { paddingVertical: spacing.md, alignItems: 'center' },
-  // 웹은 hitSlop 을 무시한다 — 목록 액션은 여백으로 36px 상자를 만든다(책 상세 탭 액션과 같은 값).
-  // 늘린 좌우 여백만큼 음수 마진으로 되돌린다 — '다시 시도 →'는 위 본문과 왼쪽 끝이 맞아야 한다.
-  action: { minHeight: 36, justifyContent: 'center', paddingHorizontal: spacing.sm, marginHorizontal: -spacing.sm },
+  // 글자 링크(TextLink)는 hitSlop 으로 44pt 를 채운다 — '다시 시도'는 위 본문과 왼쪽 끝을 맞춘다.
+  retry: { alignSelf: 'flex-start', marginTop: spacing.sm },
+  more: { alignSelf: 'center', marginVertical: spacing.md },
 });

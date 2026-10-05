@@ -17,7 +17,7 @@ import { photoIdsIn, type PhotoRef } from '@/components/post/postPhotos';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
+import { Button, EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -109,16 +109,7 @@ export default function PostDetailScreen() {
       <EmptyState
         title="독후감을 불러오지 못했어요"
         description="잠시 후 다시 시도해 주세요."
-        action={
-          <Pressable
-            onPress={() => post.refetch()}
-            accessibilityRole="button"
-            accessibilityLabel="다시 시도"
-            style={({ pressed }) => [styles.retry, pressed ? pressedStyle : null]}
-          >
-            <Text style={[typeScale.monoLabel, { color: colors.accent }]}>{linkLabel('다시 시도', 'action')}</Text>
-          </Pressable>
-        }
+        action={<Button label="다시 시도" variant="outline" onPress={() => post.refetch()} />}
       />
     )
   ) : null;
@@ -291,6 +282,4 @@ const styles = StyleSheet.create({
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   // 고치기·삭제 — 둘 다 내 글을 다루는 동작이라 한자리에. 테두리 버튼(FootAction)은 옆으로 넓어지지 않아 sm 간격이면 떨어진다.
   footRight: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  // 오류 상태의 다시 시도 — 웹은 hitSlop 을 무시하므로 여백으로 44pt 상자를 만든다.
-  retry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md },
 });
