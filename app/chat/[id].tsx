@@ -20,7 +20,7 @@ import {
 } from '@/components/chat/ChatParts';
 import { FootAction } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { controlHeight, glassFace, hairline, iconStroke, pressedStyle, radius, spacing, useTheme } from '@/theme';
+import { controlHeight, controlFace, hairline, iconStroke, pressedStyle, radius, spacing, useTheme } from '@/theme';
 
 /** 새 메시지 폴링 주기(ms) — 실시간 인프라 없이 시작한다 (§13-11 결정). */
 const POLL_MS = 4000;
@@ -192,8 +192,8 @@ export default function ChatRoomScreen() {
             accessibilityState={{ expanded: stickersOpen }}
             style={({ pressed }) => [
               styles.stickerButton,
-              // 닫힌 동안은 보조 버튼(회색 톤), 열린 동안은 토글 선택 상태처럼 잉크로 뒤집는다 — 면은 공용 버튼과 같은 유리.
-              glassFace(colors, stickersOpen ? colors.ink : colors.tonal),
+              // 닫힌 동안은 보조 버튼(회색 톤), 열린 동안은 토글 선택 상태처럼 잉크로 뒤집는다 — 면은 공용 버튼과 같은 평평한 면.
+              controlFace(stickersOpen ? colors.ink : colors.tonal),
               pressed ? pressedStyle : null,
             ]}
           >

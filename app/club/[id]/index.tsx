@@ -205,23 +205,20 @@ export default function ClubHomeScreen() {
           locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
         />
-        {/* 배경 사진 위에 떠 있는 머리 — 뒤로·채팅·⋯ 는 유리 원(2026-10-05 버튼 비교 페이지 15-F). */}
         <SubHeader
           category="클럽"
-          floating
           right={
-            // 두 원은 터치 상자(44)가 겹치지 않게 sm 만큼 떼어 둔다(오터치 방지).
+            // 두 아이콘은 44pt 터치 상자를 sm 만큼 떼어 둔다(오터치 방지).
             <View style={styles.headerActions}>
               <IconButton
-                glass
                 badge={unreadChat}
                 onPress={() => router.push(`/club/${clubId}/chat`)}
                 accessibilityLabel={unreadChat > 0 ? `클럽 채팅, 안 읽은 메시지 ${unreadChat}개` : "클럽 채팅"}
               >
-                <MessageSquare size={ICON_SIZE.glass} color={colors.text} {...iconStroke} />
+                <MessageSquare size={ICON_SIZE} color={colors.text} {...iconStroke} />
               </IconButton>
-              <IconButton glass onPress={() => router.push(`/club/${clubId}/info`)} accessibilityLabel="클럽 정보">
-                <Ellipsis size={ICON_SIZE.glass} color={colors.text} {...iconStroke} />
+              <IconButton onPress={() => router.push(`/club/${clubId}/info`)} accessibilityLabel="클럽 정보">
+                <Ellipsis size={ICON_SIZE} color={colors.text} {...iconStroke} />
               </IconButton>
             </View>
           }

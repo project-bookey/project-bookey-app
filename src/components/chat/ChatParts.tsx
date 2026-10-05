@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { kstTime } from '@/components/clubLog';
 import { useBottomBarPadding } from '@/components/keyboard';
 import { EmptyState } from '@/components/ui';
-import { controlHeight, glassFace, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlHeight, controlFace, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
 
 /**
@@ -116,7 +116,7 @@ export function ChatInput({ style, ...props }: TextInputProps) {
 }
 
 /**
- * 보내기 — 48pt 잉크 유리 네모(공용 버튼과 같은 glassFace·md 모서리)에 위 화살표 선 아이콘. 쓸 말이 없으면
+ * 보내기 — 48pt 잉크 네모(공용 버튼과 같은 controlFace·md 모서리)에 위 화살표 선 아이콘. 쓸 말이 없으면
  * 공용 버튼의 비활성처럼 흐려지고(0.35), 보내는 중에는 잉크를 유지한 채 스피너를 돌린다(중복 전송은 막는다).
  */
 export function ChatSendButton({ onPress, disabled = false, loading = false }: {
@@ -135,7 +135,7 @@ export function ChatSendButton({ onPress, disabled = false, loading = false }: {
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={({ pressed }) => [
         styles.send,
-        glassFace(colors, colors.ink),
+        controlFace(colors.ink),
         dimmed ? styles.dimmed : null,
         pressed ? pressedStyle : null,
       ]}

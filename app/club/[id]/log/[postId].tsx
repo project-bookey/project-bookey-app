@@ -14,7 +14,7 @@ import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboa
 import { LOG_REACTIONS, clubLogKeys, kstTime } from '@/components/clubLog';
 import { Button, FootAction, Loading, Rule, Toggle, formatRelative, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
-import { glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
 
 /** 한 줄 길이 — 서버의 조각 본문 상한과 같은 값. */
@@ -239,7 +239,7 @@ export default function ClubLogScrapScreen() {
                     accessibilityState={{ selected: on }}
                     style={({ pressed }) => [
                       styles.reaction,
-                      glassFace(colors, on && !heart ? colors.ink : colors.tonal),
+                      controlFace(on && !heart ? colors.ink : colors.tonal),
                       pressed && pressedStyle,
                     ]}
                   >
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   pageField: { gap: spacing.xs },
   pageInput: { borderBottomWidth: hairline, paddingVertical: spacing.xs, fontFamily: mono.regular, fontSize: 15 },
   editActions: { flexDirection: 'row', gap: spacing.sm },
-  // 반응 칩은 44pt 터치 상자, 칩 사이는 sm 이상 띄워 오터치를 막는다(UX 철칙 Fitts). 면은 공용 칩과 같은 유리(glassFace).
+  // 반응 칩은 44pt 터치 상자, 칩 사이는 sm 이상 띄워 오터치를 막는다(UX 철칙 Fitts). 면은 공용 칩과 같은 평평한 면(controlFace).
   reactions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   reaction: {
     minHeight: 44,

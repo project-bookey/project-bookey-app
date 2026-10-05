@@ -6,7 +6,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
-import { glassFace, layout, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { hairline, pressedStyle } from '@/theme/tokens';
 import { ToolIcon } from './NoteIcons';
 import { NoteSheet } from './NoteSheet';
@@ -43,7 +43,7 @@ const SHEET_HANDOFF_MS = 500;
  * 하단 도구 줄 — 왼쪽 네 개는 모드(보기·선택·펜·지우개), 오른쪽은 '+ 삽입' 하나. 삽입 종류는 inserts 로 고른다
  * (모임 노트는 텍스트·스티커·사진·말풍선). 버튼마다 44pt 를 지키면 종류를 한 줄에 다 늘어놓을 수 없어
  * '+ 삽입'이 종류 목록 시트를 연다. 종류가 하나뿐이면 그 버튼을 바로 둔다.
- * 활성 모드는 잉크로 찍은 도장처럼 반전한다(공용 버튼과 같은 유리 면). 펜·지우개일 땐 위에 펜 줄(색·굵기)이 하나 더 뜬다.
+ * 활성 모드는 잉크로 찍은 도장처럼 반전한다(공용 버튼과 같은 면). 펜·지우개일 땐 위에 펜 줄(색·굵기)이 하나 더 뜬다.
  */
 export function NoteToolbar({ tool, onTool, pen, onPen, onInsert, photoDisabled = false, inserts = DEFAULT_INSERTS }: {
   tool: NoteTool;
@@ -144,7 +144,7 @@ function ToolButton({ icon, label, active = false, disabled = false, onPress }: 
       accessibilityState={{ selected: active, disabled }}
       style={({ pressed }) => [
         styles.btn,
-        active ? glassFace(colors, colors.ink) : null,
+        active ? controlFace(colors.ink) : null,
         disabled ? styles.disabled : null,
         pressed && !active && !disabled ? pressedStyle : null,
       ]}
@@ -183,7 +183,7 @@ function PenBar({ tool, pen, onPen }: { tool: 'pen' | 'eraser'; pen: PenState; o
               hitSlop={WIDTH_HIT_SLOP}
               style={({ pressed }) => [
                 styles.widthBtn,
-                selected ? glassFace(colors, colors.ink) : null,
+                selected ? controlFace(colors.ink) : null,
                 pressed && !selected ? pressedStyle : null,
               ]}
             >

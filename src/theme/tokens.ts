@@ -133,9 +133,6 @@ export const pressedStyle = { opacity: 0.72 } as const;
  */
 export const controlHeight = { md: 48, sm: 32, xs: 26 } as const;
 
-/** 버튼 바탕 투명도 — 유리처럼 비치는 버튼 면(glassFace)의 색 농도. 2026-10-05 사용자 결정(55%). */
-export const glassAlpha = 0.55;
-
 /**
  * 선 아이콘 공통 획 — 끝(cap)과 모서리(join)를 각지게. 둥근 캡은 범용 아이콘 세트
  * 느낌이 나서 쓰지 않는다. react-native-svg 의 Path/Circle 에 그대로 펼친다.

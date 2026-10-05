@@ -7,7 +7,7 @@ import { walletApi } from '@/api/endpoints';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
 import { useTourTarget } from '@/components/tour/TourTarget';
-import { glassFace, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlFace, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 /**
  * 구역 화면 공통 헤더 — 가운데 워드마크, 오른쪽에 책갈피 잔액·알림 종.
@@ -61,7 +61,7 @@ function BookmarkBalance() {
       accessibilityLabel={`책갈피 ${balance}개, 구매하기`}
       style={({ pressed }) => [
         styles.bookmarkBadge,
-        glassFace(colors, colors.tonal),
+        controlFace(colors.tonal),
         pressed && styles.pressed,
       ]}
     >

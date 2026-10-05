@@ -17,7 +17,7 @@ import { Button } from '@/components/ui';
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
 import { useAuth } from '@/store/auth';
 import {
-  controlHeight, darkColors, ForceThemeMode, glassFace, hairline, iconStroke, pressedStyle, radius, sans, spacing, typeScale,
+  controlHeight, darkColors, ForceThemeMode, controlFace, hairline, iconStroke, pressedStyle, radius, sans, spacing, typeScale,
 } from '@/theme';
 
 const MIN_PASSWORD = 8;
@@ -176,7 +176,7 @@ function PasswordResetForm() {
           {/* SubHeader 의 뒤로와 같은 아이콘 버튼 — 화살표가 본문 왼쪽 끝과 맞게 상자 여백만큼 당긴다. */}
           <View style={styles.back}>
             <IconButton onPress={goBack} accessibilityLabel="뒤로">
-              <ArrowLeft size={ICON_SIZE.plain} color={darkColors.text} {...iconStroke} />
+              <ArrowLeft size={ICON_SIZE} color={darkColors.text} {...iconStroke} />
             </IconButton>
           </View>
         </View>
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  back: { alignSelf: 'flex-start', marginLeft: -(44 - ICON_SIZE.plain) / 2 },
+  back: { alignSelf: 'flex-start', marginLeft: -(44 - ICON_SIZE) / 2 },
   container: {
     padding: spacing.xl,
     paddingTop: spacing.lg,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   codeButton: {
     minHeight: controlHeight.md,
     borderRadius: radius.md,
-    ...glassFace(darkColors, darkColors.tonal),
+    ...controlFace(darkColors.tonal),
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,

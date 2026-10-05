@@ -277,7 +277,7 @@ function MeetingNoteEditor({ clubId, meetingId, note }: { clubId: number; meetin
         category="모임 노트"
         right={readOnly ? undefined : (
           <IconButton onPress={editor.undo} disabled={!editor.canUndo} accessibilityLabel="되돌리기">
-            <ToolIcon icon={Undo2} size={ICON_SIZE.plain} color={colors.text} />
+            <ToolIcon icon={Undo2} size={ICON_SIZE} color={colors.text} />
           </IconButton>
         )}
       />

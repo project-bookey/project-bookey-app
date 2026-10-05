@@ -31,7 +31,7 @@ import { QuoteInsertSheet } from '@/components/post/QuoteInsertSheet';
 import { POST_IMAGE_MAX, usePhotoUploads } from '@/components/post/usePhotoUploads';
 import { Button, Card, EmptyState, Eyebrow, FootAction, RadioMark } from '@/components/ui';
 import {
-  controlHeight, glassFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme,
+  controlHeight, controlFace, hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme,
 } from '@/theme';
 import { serif } from '@/theme/tokens';
 
@@ -436,7 +436,7 @@ function PostForm({ post, initialBook, clubId }: { post?: Post; initialBook?: Pi
                 hitSlop={CHIP_HIT_SLOP}
                 accessibilityRole="button"
                 accessibilityLabel={`공개 범위, ${visibilityLabel}`}
-                style={({ pressed }) => [styles.visibilityChip, glassFace(colors, colors.tonal), pressed ? pressedStyle : null]}
+                style={({ pressed }) => [styles.visibilityChip, controlFace(colors.tonal), pressed ? pressedStyle : null]}
               >
                 <Text style={[typeScale.label, { color: colors.text }]}>{visibilityLabel}</Text>
                 <ChevronDown size={14} color={colors.textMuted} {...iconStroke} />
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   bottomRow: { flexDirection: 'row', alignItems: 'center' },
   // 공개 범위 칩 + 제출 — 띠 오른쪽 끝에 붙인다. 칩과 버튼은 함께 쓰는 동작이라 붙여 둔다.
   submitGroup: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  // 칩 — 겉모습은 Button sm 과 같다(32pt · 회색 톤 유리 면), 위아래 hitSlop 으로 44pt 이상 눌린다.
+  // 칩 — 겉모습은 Button sm 과 같다(32pt · 회색 톤 면), 위아래 hitSlop 으로 44pt 이상 눌린다.
   visibilityChip: {
     flexDirection: 'row',
     alignItems: 'center',

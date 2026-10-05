@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 
 import {
-  controlHeight, glassAlpha, glassFace, hairline, pressedStyle, radius, spacing, typeScale, useTheme, withAlpha,
+  controlFace, controlHeight, hairline, pressedStyle, radius, spacing, typeScale, useTheme,
 } from '@/theme';
 import type { ColorTokens, ThemeMode } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -178,7 +178,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' ? colors.onAccentGlass : colors.text}
+          color={variant === 'primary' ? colors.onAccent : colors.text}
         />
       ) : (
         <Text
@@ -245,7 +245,7 @@ export function Field({ label, hint, error, style, ...props }: TextInputProps & 
 }
 
 /**
- * 세그먼트 — 오목한 트랙 위에 고른 칸이 떠 있는 모양(2026-10-05 '부드러운 네모'). 메신저·광장의 칸 바꾸기도
+ * 세그먼트 — 회색 톤 트랙 안에 고른 칸을 종이색으로 까는 모양(2026-10-05 '부드러운 네모'). 메신저·광장의 칸 바꾸기도
  * 이것 하나를 쓴다(예전 CapsuleTabs 를 합쳤다). 트랙 높이 44pt 를 넘겨 칸 전체가 손가락 상자다.
  */
 export function Segmented<T extends string>({ options, value, onChange }: {
@@ -505,7 +505,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       marginBottom: spacing.md,
     },
     // 버튼 면 — 2026-10-05 버튼 비교 페이지 결정: 48pt · 14 · 부드러운 네모(md 12, 작은 것 control 8),
-    // 색은 역할 하나씩(주요 = 초록, 보조 = 회색 톤, 위험 = 연한 빨강)을 glassFace 로 55% 비치게 깐다.
+    // 색은 역할 하나씩(주요 = 초록, 보조 = 회색 톤, 위험 = 연한 빨강)을 평평한 면(controlFace)으로 깐다 — 테두리·그림자 없음.
     button: {
       minHeight: controlHeight.md,
       borderRadius: radius.md,
@@ -515,15 +515,15 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     buttonSm: { minHeight: controlHeight.sm, paddingHorizontal: spacing.md, borderRadius: radius.control },
     buttonXs: { minHeight: controlHeight.xs, paddingHorizontal: spacing.sm, borderRadius: radius.control },
-    buttonPrimary: glassFace(colors, colors.accent),
-    buttonOutline: glassFace(colors, colors.tonal),
+    buttonPrimary: controlFace(colors.accent),
+    buttonOutline: controlFace(colors.tonal),
     buttonGhost: { backgroundColor: 'transparent', minHeight: 44, paddingHorizontal: 0 },
-    buttonDanger: glassFace(colors, colors.dangerSoft),
+    buttonDanger: controlFace(colors.dangerSoft),
     buttonDisabled: { opacity: 0.35 },
     buttonLabel: { ...typeScale.label, fontSize: 14, color: colors.text },
     buttonLabelSm: { fontSize: 12 },
     buttonLabelXs: { fontSize: 11 },
-    buttonLabelPrimary: { color: colors.onAccentGlass },
+    buttonLabelPrimary: { color: colors.onAccent },
     buttonLabelGhost: { color: colors.textMuted },
     buttonLabelDanger: { color: colors.danger },
     tag: {
@@ -557,19 +557,16 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       color: colors.text,
     },
     inputError: { borderColor: colors.danger },
-    // 오목한 트랙(회색 톤이 비치는 면) 위에 고른 칸(thumb)이 떠 있다 — 악센트는 CTA 몫. 트랙 높이 44pt 이상.
+    // 회색 톤 트랙 안에 고른 칸(thumb)을 종이색으로 깐다 — 악센트는 CTA 몫. 트랙 높이 44pt 이상.
     segmented: {
       flexDirection: 'row',
       padding: 3,
       gap: 3,
-      borderWidth: hairline,
-      borderColor: colors.glassEdge,
-      backgroundColor: withAlpha(colors.tonal, glassAlpha),
+      backgroundColor: colors.tonal,
       borderRadius: radius.md,
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.08)',
     },
     segment: { flex: 1, minHeight: 38, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
-    segmentActive: glassFace(colors, colors.thumb),
+    segmentActive: controlFace(colors.thumb),
     segmentLabel: { ...typeScale.label, fontSize: 12, color: colors.textMuted },
     segmentLabelActive: { color: colors.text },
     toggleTrack: {
@@ -581,15 +578,13 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       borderRadius: radius.round,
       padding: 2,
       justifyContent: 'center',
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.12)',
     },
-    toggleTrackOn: { backgroundColor: withAlpha(colors.ink, glassAlpha), borderColor: colors.ink },
+    toggleTrackOn: { backgroundColor: colors.ink, borderColor: colors.ink },
     toggleKnob: {
       width: 18,
       height: 18,
       borderRadius: radius.round,
       backgroundColor: colors.textFaint,
-      boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
     },
     toggleKnobOn: { backgroundColor: colors.onInk, alignSelf: 'flex-end' },
     radio: {
