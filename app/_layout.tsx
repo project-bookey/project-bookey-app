@@ -95,6 +95,7 @@ export default function RootLayout() {
             <Stack.Screen name="post/new" options={{ title: '독후감 쓰기' }} />
             <Stack.Screen name="post/[id]" options={{ title: '독후감' }} />
             <Stack.Screen name="post/mine" options={{ title: '내 독후감' }} />
+            <Stack.Screen name="finish-cards" options={{ title: '완독 카드' }} />
           </Stack>
           <PushNotifications />
         </SafeAreaProvider>

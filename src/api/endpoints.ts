@@ -217,9 +217,10 @@ export const bookApi = {
 };
 
 export const libraryApi = {
-  list: (status?: ReadingStatus) =>
+  /** 서재 목록 — 최근에 읽은 순(서버: lastReadAt, 없으면 담은 때). 첫 쪽만 쓰는 화면은 page·size 를 넘기지 않는다. */
+  list: (status?: ReadingStatus, page = 0, size = 50) =>
     api<Page<ReadingRecord>>("/api/v1/library", {
-      query: { status, size: 50 },
+      query: { status, page, size },
     }),
   summary: () => api<LibrarySummary>("/api/v1/library/summary"),
   detail: (recordId: number) =>

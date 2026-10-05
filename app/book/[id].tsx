@@ -115,6 +115,8 @@ export default function BookDetailScreen() {
   const [reviewComposing, setReviewComposing] = useState(false);
   // 목록에서 내 리뷰를 고치는 중 — 쓰는 칸이 열려 있으니 하단 CTA 를 숨긴다(쓰기와 같은 까닭).
   const [reviewEditing, setReviewEditing] = useState(false);
+  // '내 진도'의 완독 카드 안에서 한 줄평을 적는 중 — 이것도 하단 CTA 를 숨긴다(초록 버튼은 '저장' 하나).
+  const [remarkEditing, setRemarkEditing] = useState(false);
   // 한 마디 시트 — 하차한 그 순간에 올라오고, 내 진척 카드의 '한 마디 남기기'·'고치기'도 같은 시트를 연다.
   const [remarkSheetOpen, setRemarkSheetOpen] = useState(false);
 
@@ -288,6 +290,7 @@ export default function BookDetailScreen() {
                   finishedAt={record.data.finishedAt}
                   sheetOpen={remarkSheetOpen}
                   onSheetOpenChange={setRemarkSheetOpen}
+                  onEditingChange={setRemarkEditing}
                 />
               ) : null}
 
@@ -375,7 +378,7 @@ export default function BookDetailScreen() {
         </View>
       </KeyboardScroll>
 
-      {hasStartCta && !keyboardOpen && !reviewComposing && !reviewEditing ? (
+      {hasStartCta && !keyboardOpen && !reviewComposing && !reviewEditing && !remarkEditing ? (
         // 종이가 CTA 뒤로 흐려지며 사라지게 — 클럽 홈 '메모 남기기'와 같은 만듦새.
         <LinearGradient
           colors={[`${colors.bg}00`, colors.bg]}
