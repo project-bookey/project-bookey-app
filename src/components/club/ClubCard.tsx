@@ -11,7 +11,7 @@ import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/th
 import { mono } from '@/theme/tokens';
 
 const AVATAR = 24;
-/** 제목 앞에 보이는 프로필 사진 수 — 더 많으면 뒤에 '…'를 붙인다(2026-10-05 사용자 결정). */
+/** 제목 줄 오른쪽 끝에 보이는 프로필 사진 수 — 더 많으면 뒤에 '…'를 붙인다(2026-10-05 사용자 결정). */
 const MAX_AVATARS = 3;
 /** 그림 띠 높이 — 96에서 144로 늘렸다(2026-10-05 사용자 결정). */
 const BAND_H = 144;
@@ -23,7 +23,7 @@ const MANAGE_ROOM = 44;
 /**
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
  * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 내가 참여한 가장 가까운 모임의 스티키,
- * 아래 본문은 제목 줄(함께하는 사람의 프로필 사진 + 이름) · 한 줄 소개. 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
+ * 아래 본문은 제목 줄(이름 + 오른쪽 끝에 함께하는 사람의 프로필 사진) · 한 줄 소개. 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
  * 카드 본문은 누르면 클럽 홈으로. 호스트에게만 붙는 관리 톱니(IconButton — 클럽 정보의 톱니와 같은 아이콘·같은 설정 화면,
  * 2026-10-05 사용자 결정으로 '관리' 글자 대신)는 제목 줄 오른쪽 끝에 얹는다 —
  * 버튼 혼자 한 줄을 차지하지 않게. 본문 Pressable 의 형제로 둬 웹에서 button 안에 button 이 들어가지 않게 한다.
@@ -67,12 +67,12 @@ export function ClubCard({ club, onPress, onManage }: {
         </View>
 
         <View style={styles.body}>
-          {/* 제목 줄 — 함께하는 사람의 프로필 사진을 이름 앞에. 톱니가 얹히면 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
+          {/* 제목 줄 — 함께하는 사람의 프로필 사진을 줄 오른쪽 끝에. 톱니가 얹히면 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
           <View style={[styles.titleRow, onManage ? styles.titleRowWithManage : null]}>
-            <MemberAvatars members={club.members ?? []} />
             <Text numberOfLines={1} style={[styles.name, styles.flex, { color: colors.text }]}>
               {club.name}
             </Text>
+            <MemberAvatars members={club.members ?? []} />
           </View>
           {club.description ? (
             <Text numberOfLines={2} style={[styles.intro, { color: colors.textMuted }]}>{club.description}</Text>
