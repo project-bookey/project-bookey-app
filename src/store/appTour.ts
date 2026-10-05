@@ -31,9 +31,10 @@ export const APP_TOUR_STEPS: readonly TourStep[] = [
   {
     section: 'plaza',
     nav: true,
-    target: 'plaza-actions',
+    target: 'plaza-compose',
+    inHeader: true,
     title: '광장',
-    body: "다른 독자들의 독후감이 올라와요. 내 독후감은 '+ 독후감'으로 올려요.",
+    body: '다른 독자들의 독후감이 올라와요. 내 독후감은 왼쪽 위 연필을 눌러 써요.',
   },
   {
     section: 'clubs',

@@ -33,11 +33,11 @@ export type PostListQuery = {
  * 두 화면에 그대로 복사돼 있던 것을 한 곳으로 모았다.
  *
  * 쿼리는 화면이 소유하고(캐시 키가 다르다) 목록은 프리젠테이션만 맡는다.
- * 화면마다 다른 것은 프롭으로만 갈린다 — 헤더(광장의 제목·쓰기 줄), 공개 범위(내 글에서만),
+ * 화면마다 다른 것은 프롭으로만 갈린다 — 헤더, 공개 범위(내 글에서만),
  * 빈 상태 문구·버튼, 오류 제목.
  *
  * 상단 여백은 헤더 유무로 갈린다 — 헤더가 있는 화면은 헤더가 제 여백을 갖고,
- * 없는 화면(SubHeader 바로 아래로 카드가 붙는다)은 목록이 숨 쉴 자리를 만든다.
+ * 없는 화면(SubHeader·BrandHeader 바로 아래로 카드가 붙는다)은 목록이 숨 쉴 자리를 만든다.
  */
 export function PostList({
   query,
@@ -49,7 +49,7 @@ export function PostList({
   errorTitle,
 }: {
   query: PostListQuery;
-  /** 목록 위에 얹을 헤더(광장의 제목·쓰기 줄). 없으면 목록이 위 여백을 갖는다. */
+  /** 목록 위에 얹을 헤더. 없으면 목록이 위 여백을 갖는다. */
   ListHeaderComponent?: ReactElement;
   /** 공개 범위를 밝힐지 — 내 글 목록에서만 켠다(남에게 보이는 목록은 공개 글뿐이다). */
   showVisibility?: boolean;
@@ -139,7 +139,7 @@ export function PostList({
 
 const styles = StyleSheet.create({
   list: { ...layout.content, paddingBottom: NAV_CLEARANCE, gap: spacing.lg },
-  // 헤더가 없는 화면은 SubHeader 바로 밑이라 첫 카드가 붙어 보인다 — 한 칸 띄운다.
+  // 헤더가 없는 화면은 SubHeader·BrandHeader 바로 밑이라 첫 카드가 붙어 보인다 — 한 칸 띄운다.
   listTop: { paddingTop: spacing.md },
   cardWrap: { marginHorizontal: spacing.lg },
   skeletonList: { paddingHorizontal: spacing.lg, gap: spacing.lg },
