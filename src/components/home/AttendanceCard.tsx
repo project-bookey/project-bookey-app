@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   doneBox: {
     minHeight: controlHeight.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.button,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
