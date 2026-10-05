@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Crown, Ellipsis, Globe, Lock, MapPin, MessageSquare, Pencil, Users } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
@@ -191,14 +190,8 @@ export default function ClubHomeScreen() {
 
   return (
     <PaperScreen>
-      {/* 머리 — 배경(호스트가 올린 사진, 없으면 기본 배경)을 헤더 줄까지 깔고, 글씨가 읽히도록 아래로 갈수록 종이색으로 덮는다 */}
+      {/* 사진은 별도의 커버에, 이름과 소개는 종이 배경에 두어 둘 다 선명하게 보인다. */}
       <View>
-        <ClubBackdrop uri={data.backgroundUrl} seed={data.id} />
-        <LinearGradient
-          colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
-          locations={[0, 0.55, 1]}
-          style={StyleSheet.absoluteFill}
-        />
         <SubHeader
           category="클럽"
           right={
@@ -217,6 +210,11 @@ export default function ClubHomeScreen() {
             </View>
           }
         />
+        <View style={styles.coverFrame}>
+          <View style={styles.cover}>
+            <ClubBackdrop uri={data.backgroundUrl} seed={data.id} resizeMode="contain" />
+          </View>
+        </View>
         {/* 명조 이름 · 모노 한 줄 · 한 줄 소개 · 함께하는 사람. 소개가 없으면 호스트에게만 적으러 가는 링크 */}
         <View style={styles.top}>
           <View style={{ gap: spacing.xs }}>
@@ -583,7 +581,7 @@ function UpcomingMeeting({ meeting: m, ended, joining, onOpen, onJoin }: {
 }
 
 /**
- * 추천 클럽 미리보기(비멤버) — 머리는 클럽 홈과 같은 얼굴이다: 배경(호스트가 올린 사진, 없으면 기본 배경) 위에
+ * 추천 클럽 미리보기(비멤버) — 클럽 홈처럼 사진 커버 아래에
  * 이름 · 한 줄 정보(호스트 · 멤버 수) · 한 줄 소개. 클럽은 책 한 권에 묶이지 않으므로 책 표지 · 읽는 책은 보이지 않는다.
  */
 /**
@@ -650,13 +648,12 @@ function PublicClubPreview({
   return (
     <PaperScreen>
       <View>
-        <ClubBackdrop uri={club.backgroundUrl} seed={club.id} />
-        <LinearGradient
-          colors={[`${colors.bg}40`, `${colors.bg}D9`, colors.bg]}
-          locations={[0, 0.55, 1]}
-          style={StyleSheet.absoluteFill}
-        />
         <SubHeader category="추천 클럽" onBack={() => router.back()} />
+        <View style={styles.coverFrame}>
+          <View style={styles.cover}>
+            <ClubBackdrop uri={club.backgroundUrl} seed={club.id} resizeMode="contain" />
+          </View>
+        </View>
         <View style={styles.top}>
           <View style={{ gap: spacing.xs }}>
             <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
@@ -708,6 +705,8 @@ function PublicClubPreview({
 }
 
 const styles = StyleSheet.create({
+  coverFrame: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  cover: { width: "100%", aspectRatio: 3 / 2, borderRadius: radius.lg, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   // 머리 — 이름 묶음 · 소개 · 함께하는 사람 사이는 md, 그룹 안은 xs.
   top: {

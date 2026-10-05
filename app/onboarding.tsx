@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 
 import { onboardingApi } from '@/api/endpoints';
+import { BrandWordmark } from '@/components/BrandWordmark';
 import type { BookSummary } from '@/api/types';
 import { markOnboardingSeen } from '@/lib/onboarding';
 import { useOnboarding } from '@/store/onboarding';
@@ -131,7 +132,7 @@ function OnboardingFlow() {
   return (
     <View style={styles.screen}>
       <View style={styles.top}>
-        <Text style={styles.wordmark}>bookey</Text>
+        <BrandWordmark width={76} mode="dark" />
         <Pressable
           onPress={() => finish(false)}
           accessibilityRole="button"
@@ -273,12 +274,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  wordmark: {
-    fontFamily: serif.extraBold,
-    fontSize: 20,
-    color: darkColors.text,
-    letterSpacing: 0.5,
-  },
   body: { flex: 1, justifyContent: 'center' },
   guide: { gap: spacing.md },
   markWrap: {

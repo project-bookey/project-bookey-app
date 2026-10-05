@@ -4,6 +4,7 @@ import type { ViewStyle } from 'react-native';
 
 import type { ClubLogWeek, ClubPost } from '@/api/types';
 import { DotGridBackground } from '@/components/collage';
+import { BrandWordmark } from '@/components/BrandWordmark';
 import { formatDuration } from '@/components/ui';
 import { useTheme } from '@/theme';
 import { hairline, mono, radius, serif } from '@/theme/tokens';
@@ -37,7 +38,7 @@ function range(start: string, end: string): string {
  * 서버가 보는 사람에게 가려진 조각·문장을 빼고 내려주므로 여기서는 받은 그대로 배치한다.
  */
 export const WeekCard = forwardRef<View, { week: ClubLogWeek; width: number }>(function WeekCard({ week, width }, ref) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const u = width / WEEK_CARD_BASE_WIDTH;
   const s = (n: number) => n * u;
   const highlights = (week.highlights ?? []).slice(0, SLOTS.length);
@@ -128,7 +129,7 @@ export const WeekCard = forwardRef<View, { week: ClubLogWeek; width: number }>(f
       </View>
 
       <View style={[styles.footer, { borderTopColor: colors.line, paddingTop: s(12) }]}>
-        <Text style={{ fontFamily: mono.semiBold, fontSize: s(11), letterSpacing: s(1.2), color: colors.text }}>bookey</Text>
+        <BrandWordmark width={s(42)} mode={mode} />
         <Text style={{ fontFamily: mono.regular, fontSize: s(10), letterSpacing: s(0.6), color: colors.textFaint }}>
           {range(week.weekStart, week.weekEnd)}
         </Text>

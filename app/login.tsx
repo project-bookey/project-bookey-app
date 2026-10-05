@@ -10,6 +10,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 
 import { API_BASE_URL, ApiError } from '@/api/client';
+import { BrandWordmark } from '@/components/BrandWordmark';
 import type { SignupConsent } from '@/api/types';
 import { authApi, libraryApi } from '@/api/endpoints';
 import { useOnboarding } from '@/store/onboarding';
@@ -486,8 +487,7 @@ function LoginForm() {
           scrollEventThrottle={16}
         >
           <View>
-            <Text style={styles.wordmark}>bookey</Text>
-            <View style={styles.wordmarkRule} />
+            <BrandWordmark width={150} mode="dark" />
           </View>
 
           <View style={styles.form} onLayout={(e) => { formY.current = e.nativeEvent.layout.y; }}>
@@ -766,13 +766,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  wordmark: {
-    fontFamily: sans.extraBold,
-    fontSize: 40,
-    color: darkColors.text,
-    letterSpacing: 0.5,
-  },
-  wordmarkRule: { width: 40, height: 3, backgroundColor: darkColors.text, marginTop: spacing.md },
   form: { gap: spacing.md },
   field: { gap: spacing.xs },
   fieldLabel: { ...typeScale.label, color: darkColors.textMuted },

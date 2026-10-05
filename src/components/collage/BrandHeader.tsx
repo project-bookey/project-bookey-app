@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { chatApi, walletApi } from '@/api/endpoints';
+import { BrandWordmark } from '@/components/BrandWordmark';
 import { ICON_SIZE, IconButton } from '@/components/collage/IconButton';
 import { PlusGlyph } from '@/components/collage/PlusGlyph';
 import { NotificationBell } from '@/components/home/NotificationBell';
@@ -17,17 +18,12 @@ import { controlFace, iconStroke, pressedStyle, radius, spacing, typeScale, useT
  * 광장 독후감 쓰기는 헤더가 아니라 하단 바 옆 단추다(SectionNav 의 dock).
  */
 export function BrandHeader() {
-  const { colors } = useTheme();
-
   return (
     <View style={styles.wrap}>
       <ChatButton />
-      <Text
-        pointerEvents="none"
-        style={[typeScale.display, styles.wordmark, { color: colors.text }]}
-      >
-        BOOKEY
-      </Text>
+      <View pointerEvents="none" style={styles.wordmarkOverlay}>
+        <BrandWordmark width={104} />
+      </View>
       <View style={[styles.side, styles.right]}>
         <BookmarkBalance />
         <NotificationBell />
@@ -148,14 +144,14 @@ const styles = StyleSheet.create({
   bookmarkCount: { ...typeScale.monoLabel, flex: 1, textAlign: 'right', fontSize: 11, lineHeight: 14 },
   plusButton: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   pressed: pressedStyle,
-  wordmark: {
+  wordmarkOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
+    top: 0,
+    bottom: 0,
     zIndex: 1,
-    textAlign: 'center',
-    fontSize: 26,
-    lineHeight: 34,
-    letterSpacing: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
