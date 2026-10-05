@@ -165,10 +165,12 @@ const styles = StyleSheet.create({
   metaText: { fontFamily: mono.regular, fontSize: 11, letterSpacing: 0.3 },
   metaHost: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 1, minWidth: 0 },
   metaHostName: { flexShrink: 1 },
+  // 왼쪽으로 기울인 왕관은 밑변이 동그라미 왼쪽 위 곡선(가운데에서 기운 각도만큼 왼쪽)에 닿아야 딱 얹힌다 —
+  // 가운데 자리에서 왼쪽으로 3.5, 아래로 0.5 옮긴 광학 보정.
   crown: {
     position: 'absolute',
-    top: 1 - HOST_CROWN,
-    left: (HOST_AVATAR - HOST_CROWN) / 2,
+    top: 0.5 - (HOST_CROWN - 1),
+    left: (HOST_AVATAR - HOST_CROWN) / 2 - 3.5,
     transform: [{ rotate: '-12deg' }],
   },
   liveLine: { flexDirection: 'row', alignItems: 'center', gap: 5 },
