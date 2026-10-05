@@ -30,8 +30,9 @@ const PLACE_DEBOUNCE_MS = 400;
 
 /**
  * 장소 찾기 — 새 모임 폼의 장소 칸을 누르면 바로 뜨는 전체 화면 검색. 탐색 화면처럼 검색바 · '취소'를 맨 위에 두고,
- * 적는 대로 장소 이름(카페·서점 …)과 주소를 함께 찾아, 결과를 번호 핀으로 지도에 찍고 그 아래 같은 번호로 늘어놓는다
- * (주소는 '주소로 찾은 곳'으로 이름 결과 뒤에). 결과를 누르면 그 장소를 고르고 닫힌다.
+ * 적는 대로 장소 이름(카페·서점 …)과 주소를 함께 찾아, 결과를 번호 핀으로 지도에 찍고 그 아래 같은 번호로 늘어놓는다.
+ * 주소를 적었으면(번지·도로명까지 맞는 주소가 나오면) 그 주소가 1번이고 지도도 그 자리를 비춘다 — 같은 주소의 가게
+ * 이름들에 묻히지 않게. 결과를 누르면 그 장소를 고르고 닫힌다.
  */
 export function PlaceSearchModal({ clubId, visible, onClose, onSelect }: {
   clubId: number;
@@ -85,35 +86,48 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
 
   const loading = searching && search.isPending;
   const found = searching ? search.data : undefined;
-  const rows: Row[] = [
-    ...(found?.places ?? []).map((p) => ({
-      key: `place-${p.id}`,
-      kind: 'place' as const,
-      title: p.name,
-      sub: p.roadAddress || p.address,
-      value: {
-        placeName: p.name,
-        address: p.roadAddress || p.address,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        mapUrl: p.mapUrl || undefined,
-      },
-    })),
-    ...(found?.addresses ?? []).map((a, i) => ({
-      key: `address-${a.latitude}-${a.longitude}-${i}`,
-      kind: 'address' as const,
-      // 건물 이름이 있으면 이름 · 도로명, 없으면 도로명 · 지번.
-      title: a.buildingName || a.roadAddress || a.address,
-      sub: a.buildingName ? a.roadAddress || a.address : a.address,
-      value: {
-        placeName: a.buildingName,
-        address: a.roadAddress || a.address,
-        latitude: a.latitude,
-        longitude: a.longitude,
-      },
-    })),
-  ].map((row, i) => ({ ...row, no: i + 1 }));
-  const firstAddress = rows.findIndex((row) => row.kind === 'address');
+  const placeRows = (found?.places ?? []).map((p) => ({
+    key: `place-${p.id}`,
+    kind: 'place' as const,
+    title: p.name,
+    sub: p.roadAddress || p.address,
+    value: {
+      placeName: p.name,
+      address: p.roadAddress || p.address,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      mapUrl: p.mapUrl || undefined,
+    },
+  }));
+  const addressRows = (found?.addresses ?? []).map((a, i) => ({
+    key: `address-${a.latitude}-${a.longitude}-${i}`,
+    kind: 'address' as const,
+    // 건물 이름이 있으면 이름 · 도로명, 없으면 도로명 · 지번.
+    title: a.buildingName || a.roadAddress || a.address,
+    sub: a.buildingName ? a.roadAddress || a.address : a.address,
+    value: {
+      placeName: a.buildingName,
+      address: a.roadAddress || a.address,
+      latitude: a.latitude,
+      longitude: a.longitude,
+    },
+  }));
+  // 주소를 적었다 — 도로명이나 번지까지 맞는 주소가 나왔다. '합정동'처럼 동네 이름만 맞은 것은 아니다(그땐 가게 이름이 먼저).
+  const addressFirst = (found?.addresses ?? []).some((a) => a.roadAddress || /\d/.test(a.address));
+  const rows: Row[] = (addressFirst ? [...addressRows, ...placeRows] : [...placeRows, ...addressRows])
+    .map((row, i) => ({ ...row, no: i + 1 }));
+  /** 묶음 이름은 주소와 장소가 함께 나올 때만 — 각 묶음의 첫 줄 위에. */
+  const groupHead = (index: number) => {
+    if (addressRows.length === 0 || placeRows.length === 0) return null;
+    if (index === 0 || rows[index - 1].kind !== rows[index].kind) return rows[index].kind === 'address' ? '주소' : '장소';
+    return null;
+  };
+  const pins = rows.map((row) => ({
+    key: row.key,
+    latitude: row.value.latitude,
+    longitude: row.value.longitude,
+    label: String(row.no),
+  }));
 
   // 결과가 없을 때 — 검색 전 안내 / 오류(다시 시도) / 빈 결과.
   const empty = () => {
@@ -182,14 +196,11 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
           ListHeaderComponent={
             rows.length > 0 ? (
               <View style={styles.map}>
+                {/* 주소를 적었으면 그 주소에 맞춰 당긴다 — 멀리 있는 같은 이름 가게는 지도 밖으로 빠진다. */}
                 <PinMap
                   height={180}
-                  pins={rows.map((row) => ({
-                    key: row.key,
-                    latitude: row.value.latitude,
-                    longitude: row.value.longitude,
-                    label: String(row.no),
-                  }))}
+                  pins={pins}
+                  fitTo={addressFirst ? pins.slice(0, addressRows.length) : undefined}
                 />
               </View>
             ) : null
@@ -197,8 +208,10 @@ function PlaceSearchBody({ clubId, onClose, onSelect }: {
           ListEmptyComponent={empty()}
           renderItem={({ item, index }) => (
             <>
-              {index === firstAddress ? (
-                <Text style={[typeScale.monoLabel, styles.listHead, { color: colors.textFaint }]}>주소로 찾은 곳</Text>
+              {groupHead(index) ? (
+                <Text style={[typeScale.monoLabel, styles.listHead, index > 0 && styles.listHeadGap, { color: colors.textFaint }]}>
+                  {groupHead(index)}
+                </Text>
               ) : null}
               <Pressable
                 onPress={() => onSelect(item.value)}
@@ -245,7 +258,8 @@ const styles = StyleSheet.create({
   cancel: { minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' },
   list: { ...layout.content, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   map: { paddingBottom: spacing.sm },
-  listHead: { paddingTop: spacing.lg, paddingBottom: spacing.xs },
+  listHead: { paddingTop: spacing.xs, paddingBottom: spacing.xs },
+  listHeadGap: { paddingTop: spacing.lg },
   // 번호 · 이름/주소 한 줄 — 번호는 지도 핀과 짝을 맞추는 표시라 작게.
   row: { flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: hairline },
   no: { width: 20, paddingTop: 2, fontFamily: mono.semiBold, fontSize: 12, textAlign: 'center' },
