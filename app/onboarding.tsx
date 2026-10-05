@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   bookFallback: { padding: spacing.sm, textAlign: 'center' },
   bookCheck: {
     position: 'absolute', top: 6, right: 6,
-    width: 20, height: 20, borderRadius: radius.badge,
+    width: 20, height: 20, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
   bottom: { gap: spacing.sm },

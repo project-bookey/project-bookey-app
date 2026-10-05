@@ -123,5 +123,5 @@ const styles = StyleSheet.create({
   answer: { paddingBottom: spacing.lg },
   skeletonList: { gap: spacing.sm },
   // 질문 줄 자리 — 상자가 아니라 괘선으로 나뉜 글줄이라 작은 모서리(badge)만 준다.
-  skeleton: { height: 44, borderRadius: radius.badge },
+  skeleton: { height: 44, borderRadius: radius.sm },
 });

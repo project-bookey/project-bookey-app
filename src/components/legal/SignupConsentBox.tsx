@@ -172,7 +172,7 @@ function makeStyles(colors: ColorTokens) {
     check: {
       width: 20,
       height: 20,
-      borderRadius: radius.badge,
+      borderRadius: radius.sm,
       borderWidth: hairline,
       borderColor: colors.control,
       alignItems: 'center',

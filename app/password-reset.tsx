@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   // 다시 받기 — 받은 수/상한을 라벨에 붙여야 해서 직접 그리되 공용 Button(outline, md)과 같은 값을 쓴다.
   codeButton: {
     minHeight: controlHeight.md,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     ...controlFace(darkColors.tonal),
     alignItems: 'center',
     justifyContent: 'center',

@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     right: -8,
     minWidth: 16,
     height: 16,
-    borderRadius: radius.badge,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,

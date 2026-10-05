@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   // 프로필 머리의 버튼 줄(Button md)과 키를 맞춘다.
-  md: { minHeight: controlHeight.md, borderRadius: radius.md, paddingHorizontal: spacing.lg },
+  md: { minHeight: controlHeight.md, borderRadius: radius.button, paddingHorizontal: spacing.lg },
   label: { ...typeScale.label, fontSize: 12 },
   labelMd: { fontSize: 14 },
 });

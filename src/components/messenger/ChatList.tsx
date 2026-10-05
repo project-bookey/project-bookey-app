@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   metaStack: { alignItems: 'flex-end', gap: spacing.xs },
   badge: {
-    minWidth: 20, height: 20, borderRadius: radius.badge, paddingHorizontal: 6,
+    minWidth: 20, height: 20, borderRadius: radius.sm, paddingHorizontal: 6,
     alignItems: 'center', justifyContent: 'center',
   },
 });

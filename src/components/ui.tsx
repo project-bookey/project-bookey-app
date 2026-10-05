@@ -487,7 +487,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       backgroundColor: colors.surface,
       borderWidth: hairline,
       borderColor: colors.line,
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       padding: spacing.lg,
       overflow: 'hidden',
       ...cardShadow,
@@ -508,7 +508,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     // 색은 역할 하나씩(주요 = 초록, 보조 = 회색 톤, 위험 = 연한 빨강)을 평평한 면(controlFace)으로 깐다 — 테두리·그림자 없음.
     button: {
       minHeight: controlHeight.md,
-      borderRadius: radius.md,
+      borderRadius: radius.button,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: spacing.lg,
@@ -529,7 +529,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     tag: {
       paddingHorizontal: spacing.sm,
       paddingVertical: 3,
-      borderRadius: radius.badge,
+      borderRadius: radius.sm,
       backgroundColor: colors.surfaceRaised,
       alignSelf: 'flex-start',
     },
@@ -563,7 +563,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       padding: 3,
       gap: 3,
       backgroundColor: colors.tonal,
-      borderRadius: radius.md,
+      borderRadius: radius.button,
     },
     segment: { flex: 1, minHeight: 38, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
     segmentActive: controlFace(colors.thumb),
@@ -575,7 +575,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       borderWidth: hairline,
       borderColor: colors.control,
       backgroundColor: colors.surfaceRaised,
-      borderRadius: radius.round,
+      borderRadius: radius.control,
       padding: 2,
       justifyContent: 'center',
     },
@@ -583,7 +583,7 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     toggleKnob: {
       width: 18,
       height: 18,
-      borderRadius: radius.round,
+      borderRadius: radius.sm,
       backgroundColor: colors.textFaint,
     },
     toggleKnobOn: { backgroundColor: colors.onInk, alignSelf: 'flex-end' },

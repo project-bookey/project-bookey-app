@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     maxWidth: 120,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: radius.badge,
+    borderRadius: radius.sm,
     borderWidth: hairline,
   },
   tagText: { fontSize: 10 },

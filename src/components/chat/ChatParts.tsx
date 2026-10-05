@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
   },
-  send: { width: controlHeight.md, height: controlHeight.md, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  send: { width: controlHeight.md, height: controlHeight.md, borderRadius: radius.button, alignItems: 'center', justifyContent: 'center' },
   dimmed: { opacity: 0.35 },
 });

@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   button: {
     minHeight: controlHeight.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     minHeight: controlHeight.md,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     paddingHorizontal: spacing.lg,
   },
   ctaLabel: { ...typeScale.label, fontSize: 14 },

@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.lg,
     borderWidth: hairline,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.lg,
     flexDirection: 'row', flexWrap: 'wrap',
     alignItems: 'center',
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   doneBox: {
     minHeight: controlHeight.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   day: {
     width: 28,
     height: 28,
-    borderRadius: radius.badge,
+    borderRadius: radius.sm,
     borderWidth: hairline,
     alignItems: 'center',
     justifyContent: 'center',

@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     left: 0,
     paddingHorizontal: 6,
     paddingVertical: 3,
-    borderBottomRightRadius: radius.badge,
+    borderBottomRightRadius: radius.sm,
   },
   roundBadge: {
     position: 'absolute',
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 6,
     paddingVertical: 3,
-    borderBottomLeftRadius: radius.badge,
+    borderBottomLeftRadius: radius.sm,
   },
   track: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3 },
   fill: { height: 3 },

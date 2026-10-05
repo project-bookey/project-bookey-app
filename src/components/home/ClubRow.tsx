@@ -124,5 +124,5 @@ const styles = StyleSheet.create({
     minHeight: 150,
   },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.badge },
+  badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
 });
