@@ -5,6 +5,7 @@ import {
   AppState, InputAccessoryView, Keyboard, Platform,
   Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
@@ -30,6 +31,7 @@ export default function TimerScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { recordId, autoStart } = useLocalSearchParams<{ recordId: string; autoStart?: string }>();
   const id = Number(recordId);
 
@@ -246,7 +248,7 @@ export default function TimerScreen() {
   if (record.isLoading || current.isLoading) {
     return (
       <PaperScreen>
-        <SubHeader category="타이머" />
+        <SubHeader category="타이머" sheet />
         <Loading />
       </PaperScreen>
     );
@@ -276,13 +278,15 @@ export default function TimerScreen() {
 
   return (
     <PaperScreen>
-      <SubHeader category="타이머" />
+      <SubHeader category="타이머" sheet />
 
       {/* 시트로 뜨는 화면(iOS)이라 화면 맨 위에서 시작하지 않는다 — KeyboardArea 가 창 기준으로 재서 맞춘다. */}
       <KeyboardArea>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}
+        // 한 화면에 들어오면 끌어도 출렁이지 않게(iOS) — 키보드가 떠서 넘칠 때만 스크롤된다.
+        alwaysBounceVertical={false}
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         keyboardShouldPersistTaps="handled"
         onTouchStart={() => { interactions.current += 1; }}
@@ -295,15 +299,21 @@ export default function TimerScreen() {
             tilt={0}
             entering={false}
           />
-          <View style={{ flex: 1 }}>
+          <View style={styles.bookInfo}>
             <Text numberOfLines={2} style={[styles.bookTitle, { color: colors.text }]}>
               {record.data?.book?.title}
             </Text>
+            {/* 진도는 이 줄 하나로 — 쪽수를 적는 대로 숫자와 막대가 같이 바뀐다. */}
             <Text style={[styles.bookMeta, { color: colors.textMuted }]}>
               {displayPage}
               {totalPages > 0 ? ` / ${totalPages}쪽` : '쪽'}
               {displayRate != null ? ` · ${percent(displayRate)}` : ''}
             </Text>
+            {displayRate != null ? (
+              <View style={styles.bookProgress}>
+                <ProgressBar value={displayRate} height={4} />
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -328,16 +338,6 @@ export default function TimerScreen() {
           {pauseError ? (
             <Text style={[styles.error, styles.pauseError, { color: colors.danger }]}>{pauseError}</Text>
           ) : null}
-        </View>
-
-        <View style={styles.progressBlock}>
-          <View style={styles.progressHead}>
-            <Text style={[typeScale.monoEyebrow, { color: colors.textFaint }]}>지금 진도</Text>
-            <Text style={[styles.progressPercent, { color: colors.accent }]}>
-              {displayRate != null ? percent(displayRate) : '총쪽수 미등록'}
-            </Text>
-          </View>
-          <ProgressBar value={displayRate} height={6} />
         </View>
 
         {progress && totalPages === 0 ? (
@@ -466,13 +466,14 @@ export default function TimerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.content, flexGrow: 1, padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl },
+  // 묶음 사이는 최소 lg — 남는 자리는 시계 둘레가 가져가 큰 화면에서는 더 벌어진다.
+  // 아래 여백은 홈 인디케이터·내비게이션 바만큼(화면에서 준다).
+  container: { ...layout.content, flexGrow: 1, padding: spacing.lg, gap: spacing.lg },
   bookRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
+  bookInfo: { flex: 1 },
   bookTitle: { ...typeScale.titleSerif, fontSize: 17, lineHeight: 23 },
   bookMeta: { ...typeScale.caption, marginTop: 3 },
-  progressBlock: { gap: spacing.sm },
-  progressHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  progressPercent: { ...typeScale.monoNumeral, fontSize: 16 },
+  bookProgress: { marginTop: spacing.sm },
   totalPagesCard: { borderWidth: hairline, borderRadius: radius.md, padding: spacing.md, gap: spacing.md },
   totalPagesCopy: { gap: spacing.xs },
   totalPagesRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
@@ -485,7 +486,9 @@ const styles = StyleSheet.create({
     fontFamily: mono.semiBold,
     fontSize: 18,
   },
-  clockBox: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  // 시계는 남는 자리의 가운데 — 책 줄은 위에, 마치기·시작은 엄지가 닿는 아래에 붙고, 빈 곳은 시계 둘레로 모인다.
+  // 자리가 모자라면(작은 화면·키보드) 먼저 이 둘레가 줄고, 그래도 넘칠 때만 스크롤된다.
+  clockBox: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm },
   // 경과 시간 — 화면의 주인공. 모노 숫자를 크게 앉힌다.
   clock: { fontFamily: mono.semiBold, fontSize: 58, letterSpacing: 2 },
   // 라벨이 '잠깐 쉬기'↔'이어서 읽기'로 바뀌어도 폭이 흔들리지 않게 긴 쪽에 맞춘 최소 폭.
@@ -505,7 +508,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontFamily: mono.semiBold,
     fontSize: 34,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   pageSuffix: { fontFamily: mono.regular, fontSize: 15, flexShrink: 0 },
   pageError: { ...typeScale.caption, lineHeight: 18 },
