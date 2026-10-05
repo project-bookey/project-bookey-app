@@ -760,8 +760,9 @@ export const clubCommunityApi = {
         roadAddress: string;
         buildingName: string;
         zonecode: string;
-        latitude: number;
-        longitude: number;
+        /** 서버가 좌표를 못 붙였으면 null — 고를 때 geocodePlace 로 다시 묻는다. */
+        latitude?: number | null;
+        longitude?: number | null;
       }>
     >(`/api/v1/clubs/${clubId}/places/address-search`, { query: { query } }),
   createMeeting: (clubId: number, body: ClubMeetingInput) =>
