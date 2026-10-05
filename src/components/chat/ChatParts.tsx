@@ -5,6 +5,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 
 import { addDays, kstTime, todayKst } from '@/components/clubLog';
+import { NavGlass } from '@/components/collage';
 import { useBottomBarPadding } from '@/components/keyboard';
 import { EmptyState } from '@/components/ui';
 import { controlHeight, controlFace, layout, radius, spacing, typeScale, useTheme } from '@/theme';
@@ -13,14 +14,17 @@ import { hairline, iconStroke, mono, pressedStyle } from '@/theme/tokens';
 /**
  * 채팅 공용 부품 — 클럽 채팅과 1:1 대화방이 같은 말풍선·같은 입력 줄을 쓰도록 모은다.
  * 상대 말은 종이(surface)에 헤어라인, 내 말은 잉크 반전. 민트(accent)는 쓰지 않는다 —
- * 보내기도 잉크 네모에 선 아이콘이다. 이름·시각은 모노.
+ * 보내기도 잉크 면에 선 아이콘이다(클럽 채팅은 네모, 1:1 유리 입력 상자 안은 동그라미). 이름·시각은 모노.
  */
 
 /** 대화 목록 안쪽 여백 — 두 채팅이 같은 폭·같은 간격으로 말풍선을 놓는다. */
 export const chatListContent = { ...layout.content, padding: spacing.lg, gap: spacing.md } as const;
 
-/** 입력 상자 안 단추(이모티콘·보내기) 한 변 — 상자 높이 48 에서 위아래 4씩 남는다. */
+/** 입력 상자 안 단추(이모티콘·보내기) 한 변 — 상자 높이 56 에서 테두리 안쪽 위아래 7씩 남는다. */
 export const COMPOSER_KEY = 40;
+/** 1:1 유리 입력 상자 한 줄 높이 — 모서리는 그 절반이라 한 줄일 때 캡슐이 된다. */
+export const COMPOSER_HEIGHT = 56;
+const COMPOSER_PAD = (COMPOSER_HEIGHT - COMPOSER_KEY - hairline * 2) / 2;
 /** 40pt 단추를 44pt 터치 상자로. */
 export const COMPOSER_SLOP = { top: 2, bottom: 2, left: 2, right: 2 } as const;
 
@@ -192,13 +196,35 @@ export function ChatInput({ style, ...props }: TextInputProps) {
 }
 
 /**
- * 1:1 대화방 입력 상자(2026-10-05 시안 A) — 이모티콘 · 입력 · 보내기를 테두리 하나에 묶는다.
- * ChatInputBar 안에 두고, 안에 넣는 입력창은 테두리 없이(composerInput) 쓴다.
+ * 1:1 대화방의 떠 있는 입력 줄 — 위 선·바탕 띠 없이 화면 아래에 떠서 메시지가 유리 밑으로 지나간다
+ * (2026-10-05 둥근 시안 1, 사용자 결정). KeyboardArea 안에 두면 키보드 위로 같이 올라간다.
+ * 목록이 끝까지 가려지지 않게 onHeight 로 제 높이를 알리고, 쓰는 화면이 그만큼 목록 아래를 비운다.
+ * 클럽 채팅은 ChatInputBar 그대로다.
+ */
+export function ChatFloatingBar({ onHeight, children }: { onHeight: (height: number) => void; children: ReactNode }) {
+  const paddingBottom = useBottomBarPadding(spacing.md);
+  return (
+    // 상자 둘 다 box-none — 입력 상자 옆·아래 빈 곳을 끌어도 뒤의 목록이 스크롤된다.
+    <View
+      pointerEvents="box-none"
+      onLayout={(event) => onHeight(event.nativeEvent.layout.height)}
+      style={styles.floatingBar}
+    >
+      <View pointerEvents="box-none" style={[styles.floatingInner, { paddingBottom }]}>{children}</View>
+    </View>
+  );
+}
+
+/**
+ * 1:1 대화방 입력 상자 — 이모티콘 · 입력 · 보내기를 유리 캡슐 하나에 묶는다. 하단 탭 바와 같은 유리(NavGlass)·
+ * 그림자로, 버튼 캡슐·그림자 금지의 예외다(하단 바와 같은 사용자 결정). 여러 줄로 자라면 모서리는 그대로 두고
+ * 둥근 네모가 된다. ChatFloatingBar 안에 두고, 안에 넣는 입력창은 테두리 없이(composerInput) 쓴다.
  */
 export function ChatComposer({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
   return (
-    <View style={[styles.composer, { borderColor: colors.control, backgroundColor: colors.surface }]}>{children}</View>
+    <View style={styles.composerShadow}>
+      <NavGlass style={styles.composer}>{children}</NavGlass>
+    </View>
   );
 }
 
@@ -207,14 +233,15 @@ export const composerInputStyle = {
   borderWidth: 0,
   backgroundColor: 'transparent',
   minHeight: COMPOSER_KEY,
-  paddingVertical: spacing.sm + 2,
+  // 한 줄(줄 높이 22) + 위아래 9 = 단추와 같은 40 — 넘치면 캡슐이 2pt 더 높아져 반원이 깨진다.
+  paddingVertical: (COMPOSER_KEY - typeScale.body.lineHeight) / 2,
   paddingHorizontal: spacing.xs,
 } as const;
 
 /**
  * 보내기 — 48pt 잉크 네모(공용 버튼과 같은 controlFace·md 모서리)에 위 화살표 선 아이콘. 쓸 말이 없으면
  * 공용 버튼의 비활성처럼 흐려지고(0.35), 보내는 중에는 잉크를 유지한 채 스피너를 돌린다(중복 전송은 막는다).
- * compact 는 ChatComposer 안의 40pt(위아래 hitSlop 으로 44).
+ * compact 는 유리 캡슐(ChatComposer) 안의 40pt 동그라미(사방 hitSlop 으로 44).
  */
 export function ChatSendButton({ onPress, disabled = false, loading = false, compact = false, accessibilityLabel = '보내기' }: {
   onPress: () => void;
@@ -260,16 +287,28 @@ const styles = StyleSheet.create({
   outTime: { fontFamily: mono.regular, fontSize: 10, letterSpacing: 0.3, paddingBottom: 2 },
   dayRow: { alignItems: 'center', paddingVertical: spacing.sm },
   dayChip: { paddingHorizontal: spacing.sm + 2, paddingVertical: 3, borderRadius: radius.control, overflow: 'hidden' },
+  floatingBar: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
+  floatingInner: { ...layout.content, paddingHorizontal: spacing.lg },
+  // 하단 바(SectionNav)와 같은 그림자 — 웹은 상자 모서리로 그림자를 그리므로 유리와 같은 모서리를 준다.
+  composerShadow: {
+    borderRadius: COMPOSER_HEIGHT / 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    elevation: 14,
+  },
   composer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.xs,
-    padding: spacing.xs,
+    minHeight: COMPOSER_HEIGHT,
+    padding: COMPOSER_PAD,
     borderWidth: hairline,
-    borderRadius: radius.button,
+    borderRadius: COMPOSER_HEIGHT / 2,
+    overflow: 'hidden',
   },
-  sendCompact: { width: COMPOSER_KEY, height: COMPOSER_KEY, borderRadius: radius.control },
+  sendCompact: { width: COMPOSER_KEY, height: COMPOSER_KEY, borderRadius: COMPOSER_KEY / 2 },
   rowMine: { justifyContent: 'flex-end' },
   bubble: {
     maxWidth: '78%',

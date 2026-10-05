@@ -502,8 +502,11 @@ export function SectionNav({
   );
 }
 
-/** 바와 쓰기 단추가 함께 쓰는 유리 — iOS 26 은 네이티브 Liquid Glass, 그 밖은 BlurView + 반투명 면. */
-function NavGlass({ style, interactive = false, children }: {
+/**
+ * 바와 쓰기 단추가 함께 쓰는 유리 — iOS 26 은 네이티브 Liquid Glass, 그 밖은 BlurView + 반투명 면.
+ * 1:1 대화방의 떠 있는 입력 상자(ChatComposer)도 이 유리를 쓴다.
+ */
+export function NavGlass({ style, interactive = false, children }: {
   style: StyleProp<ViewStyle>;
   interactive?: boolean;
   children: ReactNode;

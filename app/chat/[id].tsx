@@ -17,8 +17,8 @@ import { KeyboardArea } from '@/components/keyboard';
 import { BookeyPackTabs } from '@/components/chat/BookeyPackTabs';
 import { BOOKEY_STICKER_PACKS, findBookeyChatSticker } from '@/components/chat/bookeyStickers';
 import {
-  COMPOSER_KEY, COMPOSER_SLOP, ChatComposer, ChatDaySeparator, ChatEmpty, ChatError, ChatInput, ChatInputBar,
-  ChatSendButton, ChatSideTime, DirectBubble, chatDayKey, chatListContent, composerInputStyle,
+  COMPOSER_HEIGHT, COMPOSER_KEY, COMPOSER_SLOP, ChatComposer, ChatDaySeparator, ChatEmpty, ChatError, ChatFloatingBar,
+  ChatInput, ChatSendButton, ChatSideTime, DirectBubble, chatDayKey, chatListContent, composerInputStyle,
 } from '@/components/chat/ChatParts';
 import { kstTime } from '@/components/clubLog';
 import { useBlockUser } from '@/components/messenger/useBlockUser';
@@ -38,6 +38,8 @@ const HEAD_AVATAR = 28;
  * 2026-10-05 시안 A(사용자 결정): 머리 가운데에 상대 사진·이름(누르면 프로필), 오른쪽 ⋯ 메뉴에 프로필 보기 ·
  * 차단 · 채팅 삭제 — 구석에 서 있던 '삭제'를 메뉴 안으로 넣었다. 날짜가 바뀌면 날짜 줄, 같은 사람이 같은 분에
  * 이어 보낸 말은 묶어 시각을 한 번만, 입력줄은 이모티콘·입력·보내기를 한 상자로. 클럽 채팅은 예전 부품 그대로다.
+ * 같은 날 둥근 시안 1(사용자 결정): 그 상자는 하단 탭 바와 같은 유리 캡슐로 화면 아래에 떠 있고, 위 선·바탕 띠가
+ * 없어 메시지가 그 밑으로 지나간다.
  */
 export default function ChatRoomScreen() {
   const router = useRouter();
@@ -49,6 +51,10 @@ export default function ChatRoomScreen() {
   const [stickersOpen, setStickersOpen] = useState(false);
   const [selectedStickerPackId, setSelectedStickerPackId] = useState(BOOKEY_STICKER_PACKS[0].id);
   const [error, setError] = useState<string | null>(null);
+  // 떠 있는 입력 줄 높이 — 재기 전에는 한 줄 상자 + 최소 아래 여백으로 잡아 둔다.
+  const [barHeight, setBarHeight] = useState(COMPOSER_HEIGHT + spacing.md);
+  // 오류·이모티콘 판이 열리면 목록과 입력 줄 사이에 제자리를 잡는다.
+  const trayOpen = error != null || stickersOpen;
   const { confirm, arm, disarm } = useDeleteConfirm<'chat'>();
   const confirmingDelete = confirm === 'chat';
   const [menuOpen, setMenuOpen] = useState(false);
@@ -242,7 +248,12 @@ export default function ChatRoomScreen() {
           inverted
           keyExtractor={(message) => String(message.id)}
           // 간격은 칸마다 정한다(묶음 안은 좁게, 묶음 사이는 넓게) — 목록 공용 gap 은 끈다.
-          contentContainerStyle={[chatListContent, styles.messages]}
+          // 맨 아래(inverted 라 paddingTop)는 떠 있는 입력 줄만큼 비운다 — 오류·이모티콘 판이 열리면 판이 그 자리를 비운다.
+          contentContainerStyle={[
+            chatListContent,
+            styles.messages,
+            { paddingTop: trayOpen ? spacing.lg : barHeight + spacing.lg },
+          ]}
           onEndReachedThreshold={0.4}
           onEndReached={() => {
             if (messages.hasNextPage && !messages.isFetchingNextPage) messages.fetchNextPage();
@@ -260,38 +271,47 @@ export default function ChatRoomScreen() {
           }
         />
 
-        {error ? <ChatError message={error} /> : null}
-
-        {stickersOpen ? (
-          <View style={[styles.stickerPanel, { borderTopColor: colors.line, backgroundColor: colors.surface }]}>
-            <BookeyPackTabs value={selectedStickerPack.id} onChange={setSelectedStickerPackId} />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.stickerList}
-            >
-              {selectedStickerPack.stickers.map((sticker) => (
-                <Pressable
-                  key={sticker.code}
-                  onPress={() => sendSticker(sticker.code)}
-                  disabled={send.isPending}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${sticker.label} 이모티콘 보내기`}
-                  style={({ pressed }) => [
-                    styles.stickerCell,
-                    { borderColor: colors.line },
-                    pressed ? pressedStyle : null,
-                  ]}
+        {trayOpen ? (
+          // 오류·이모티콘 판은 목록 아래 제자리에 — 판 면은 화면 끝까지 깔고, 떠 있는 입력 줄 높이만큼 아래를 비운다.
+          <View
+            style={[
+              stickersOpen ? [styles.stickerTray, { borderTopColor: colors.line, backgroundColor: colors.surface }] : null,
+              { paddingBottom: barHeight + spacing.md },
+            ]}
+          >
+            {error ? <ChatError message={error} /> : null}
+            {stickersOpen ? (
+              <View style={styles.stickerPanel}>
+                <BookeyPackTabs value={selectedStickerPack.id} onChange={setSelectedStickerPackId} />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={styles.stickerList}
                 >
-                  <Image source={sticker.source} style={styles.stickerThumb} resizeMode="contain" />
-                </Pressable>
-              ))}
-            </ScrollView>
+                  {selectedStickerPack.stickers.map((sticker) => (
+                    <Pressable
+                      key={sticker.code}
+                      onPress={() => sendSticker(sticker.code)}
+                      disabled={send.isPending}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${sticker.label} 이모티콘 보내기`}
+                      style={({ pressed }) => [
+                        styles.stickerCell,
+                        { borderColor: colors.line },
+                        pressed ? pressedStyle : null,
+                      ]}
+                    >
+                      <Image source={sticker.source} style={styles.stickerThumb} resizeMode="contain" />
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
           </View>
         ) : null}
 
-        <ChatInputBar>
+        <ChatFloatingBar onHeight={setBarHeight}>
           <ChatComposer>
             <Pressable
               onPress={() => setStickersOpen((open) => !open)}
@@ -320,6 +340,8 @@ export default function ChatRoomScreen() {
             <ChatInput
               value={draft}
               onChangeText={(next) => { setDraft(next); setError(null); }}
+              // 유리 위에서는 textFaint 안내 글자가 흐려 한 단계 진하게 둔다.
+              placeholderTextColor={colors.textMuted}
               style={composerInputStyle}
             />
             <ChatSendButton
@@ -329,7 +351,7 @@ export default function ChatRoomScreen() {
               loading={send.isPending}
             />
           </ChatComposer>
-        </ChatInputBar>
+        </ChatFloatingBar>
       </KeyboardArea>
       {menuOpen ? (
         <Pressable
@@ -410,8 +432,8 @@ const styles = StyleSheet.create({
   loading: { padding: spacing.md, alignItems: 'center' },
   stickerRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-end', gap: spacing.xs + 2 },
   stickerRowMine: { justifyContent: 'flex-end' },
+  stickerTray: { borderTopWidth: hairline },
   stickerPanel: {
-    borderTopWidth: hairline,
     paddingTop: spacing.sm,
     paddingHorizontal: spacing.md,
   },
@@ -426,11 +448,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stickerThumb: { width: 66, height: 66 },
-  // 입력 상자 안 보내기와 같은 40pt 네모 — 상자 양 끝이 같은 크기로 맞선다.
+  // 입력 상자 안 보내기와 같은 40pt 동그라미 — 캡슐 양 끝이 같은 크기로 맞선다.
   stickerButton: {
     width: COMPOSER_KEY,
     height: COMPOSER_KEY,
-    borderRadius: radius.control,
+    borderRadius: COMPOSER_KEY / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
