@@ -8,6 +8,7 @@ export { BookmarkIcon } from './BookmarkIcon';
 export { BrandHeader } from './BrandHeader';
 export { Chip } from './Chip';
 export { DotGridBackground } from './DotGridBackground';
+export { EnvelopeIcon } from './EnvelopeIcon';
 export { ICON_SIZE, IconButton } from './IconButton';
 export { MemoScrap } from './MemoScrap';
 export { PaperScreen } from './PaperScreen';

@@ -41,9 +41,9 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CLUB_NUDGE': return club('/club/[id]');
     case 'POST_LIKED':
     case 'POST_COMMENTED': return one('/post/[id]', 'postId');
-    // 받은·보낸 엽서는 엽서 구역의 한 목록에 섞여 있다.
+    // 엽서 알림은 그 엽서 화면으로 — 받은 엽서는 거기서 봉투를 연다. id 가 없는 옛 알림은 엽서 구역으로.
     case 'POSTCARD_RECEIVED':
-    case 'POSTCARD_REPLIED': return { section: 'messenger' };
+    case 'POSTCARD_REPLIED': return one('/postcard/[id]', 'postcardId') ?? { section: 'messenger' };
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
     // 고객문의 답변 — 그 문의 화면에서 답을 읽는다.
     case 'INQUIRY_ANSWERED': return one('/inquiry/[id]', 'inquiryId');
