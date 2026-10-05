@@ -22,7 +22,7 @@ import {
   consentComplete, EMPTY_CONSENT, SignupConsentBox, toSignupConsent, type ConsentDraft,
 } from '@/components/legal/SignupConsentBox';
 import { SocialConsentSheet } from '@/components/legal/SocialConsentSheet';
-import { CODE_EXPIRED_MESSAGE, FieldError, isEmail, TimedCodeInput } from '@/components/auth/authFields';
+import { CODE_EXPIRED_MESSAGE, FieldError, isEmail, withResendsLeft, TimedCodeInput } from '@/components/auth/authFields';
 import { KeyboardArea, useScrollReveal } from '@/components/keyboard';
 import { linkLabel } from '@/components/ui';
 
@@ -77,6 +77,8 @@ export default function LoginScreen() {
   /** 보낸 코드를 입력할 수 있는 마지막 시각(ms) — 서버가 알려 준 시간으로 센다. */
   const [codeExpiresAt, setCodeExpiresAt] = useState<number | null>(null);
   const [codeValidMinutes, setCodeValidMinutes] = useState(3);
+  /** 지금 이메일로 1시간 안에 더 받을 수 있는 코드 수 — 서버가 알려 주지 않으면 null(안내에서 뺀다). */
+  const [codeResendsLeft, setCodeResendsLeft] = useState<number | null>(null);
   const codeLeft = useSecondsLeft(codeExpiresAt);
   /** 온보딩의 "가입하고 시작하기"는 signup=1 로 들어와 곧장 가입 폼을 연다. */
   const { signup: signupParam } = useLocalSearchParams<{ signup?: string }>();
@@ -207,6 +209,7 @@ export default function LoginScreen() {
       setCodeSent(true);
       setCodeExpiresAt(requestedAt + result.expiresInSec * 1000);
       setCodeValidMinutes(Math.max(1, Math.round(result.expiresInSec / 60)));
+      setCodeResendsLeft(result.resendsLeft ?? null);
       // 새 코드가 앞 코드를 대신하므로 칸을 비운다. 로컬 서버는 devCode 를 동봉한다 — 개발 편의로 자동 입력.
       setCode(result.devCode ?? '');
     } catch (e) {
@@ -561,7 +564,9 @@ export default function LoginScreen() {
                           </Text>}
                     </Pressable>
                     {!codeVerified ? (
-                      <Text style={styles.codeHint}>이메일로 보낸 6자리 코드를 {codeValidMinutes}분 안에 입력해 주세요.</Text>
+                      <Text style={styles.codeHint}>
+                        {withResendsLeft(`이메일로 보낸 6자리 코드를 ${codeValidMinutes}분 안에 입력해 주세요.`, codeResendsLeft)}
+                      </Text>
                     ) : null}
                   </>
                 ) : null}
