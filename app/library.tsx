@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   FlatList, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { Pause, Plus } from 'lucide-react-native';
 
 import { libraryApi } from '@/api/endpoints';
 import type { ReadingRecord, ReadingStatus } from '@/api/types';
@@ -25,7 +25,7 @@ const FILTERS: { value: ReadingStatus; label: string }[] = [
   { value: 'ABANDONED', label: '하차' },
 ];
 
-/** 그리드 항목 — 첫 셀은 항상 '+ 책 추가' 타일, 로딩 중엔 스켈레톤. */
+/** 그리드 항목 — 첫 셀은 항상 책 추가(+) 타일, 로딩 중엔 스켈레톤. */
 type GridItem =
   | { kind: 'add' }
   | { kind: 'skeleton'; key: number }
@@ -164,9 +164,14 @@ function GridTile({ record, colors, mode, onPress }: {
             )}
           </View>
 
+          {/* 쉬는 중은 일시정지 표시만(2026-10-05 사용자 결정 — 아이콘만 봐도 알 만한 것은 글자를 뺀다). */}
           {record.status === 'PAUSED' ? (
-            <View style={[styles.stateTag, { backgroundColor: colors.warnSoft }]}>
-              <Text style={[typeScale.monoLabel, styles.tagText, { color: colors.warn }]}>쉬는 중</Text>
+            <View
+              accessible
+              accessibilityLabel="쉬는 중"
+              style={[styles.stateTag, styles.iconTag, { backgroundColor: colors.warnSoft }]}
+            >
+              <Pause size={10} color={colors.warn} fill={colors.warn} {...iconStroke} />
             </View>
           ) : null}
           {abandoned ? (
@@ -272,6 +277,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderBottomRightRadius: radius.sm,
   },
+  // 아이콘만 든 태그 — 글자 태그와 같은 높이가 되게 위아래를 조금 더 둔다.
+  iconTag: { paddingVertical: 4 },
   roundBadge: {
     position: 'absolute',
     top: 0,

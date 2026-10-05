@@ -1,17 +1,24 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Globe, Link, Lock, Users, type LucideIcon } from 'lucide-react-native';
 
 import type { Post } from '@/api/types';
 import { Avatar } from '@/components/Avatar';
 import { ViewCount } from '@/components/post/ViewCount';
-import { formatRelative } from '@/components/ui';
+import { IconMeta, formatRelative } from '@/components/ui';
 import { pressedStyle, spacing, typeScale, useTheme } from '@/theme';
 
-/** 공개 범위 라벨 — 공개는 굳이 말하지 않으므로 여기 없다. */
-export const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '클럽만' } as const;
+/** 공개 범위 라벨 — 읽어 줄 말(VisibilityMark). 공개는 메타에 굳이 밝히지 않는다. */
+const VISIBILITY_LABEL = { PRIVATE: '비공개', LINK: '링크', CLUB: '클럽만' } as const;
 
-/** 공개 범위를 밝힐 글이면 그 라벨, 아니면 null — 카드 발치와 상세 바이라인이 같이 쓴다. */
-export function visibilityLabelOf(post: Pick<Post, 'visibility'>, show?: boolean): string | null {
-  return show && post.visibility !== 'PUBLIC' ? VISIBILITY_LABEL[post.visibility] : null;
+/**
+ * 공개 범위 아이콘 — 메타 줄에는 글자 대신 이 아이콘만 둔다(2026-10-05 사용자 결정). 공개 = 지구, 비공개 = 자물쇠,
+ * 링크 = 고리, 클럽만 = 사람들. 스크린 리더는 '비공개'처럼 원래 말로 읽는다.
+ */
+const VISIBILITY_ICON: Record<Post['visibility'], LucideIcon> = { PUBLIC: Globe, PRIVATE: Lock, LINK: Link, CLUB: Users };
+
+export function VisibilityMark({ visibility, color }: { visibility: Post['visibility']; color: string }) {
+  const label = visibility === 'PUBLIC' ? '공개' : VISIBILITY_LABEL[visibility];
+  return <IconMeta icon={VISIBILITY_ICON[visibility]} color={color} accessibilityLabel={`공개 범위 ${label}`} />;
 }
 
 /**
@@ -29,7 +36,7 @@ export function PostByline({ post, showVisibility, showViews, onPress }: {
 }) {
   const { colors } = useTheme();
   const when = formatRelative(post.publishedAt ?? post.createdAt);
-  const visibility = visibilityLabelOf(post, showVisibility);
+  const showMark = showVisibility && post.visibility !== 'PUBLIC';
   const metaText = [typeScale.monoLabel, styles.meta, { color: colors.textFaint }];
 
   return (
@@ -54,7 +61,12 @@ export function PostByline({ post, showVisibility, showViews, onPress }: {
               <ViewCount count={post.viewCount} textStyle={metaText} />
             </>
           ) : null}
-          {visibility ? <Text style={metaText}> · {visibility}</Text> : null}
+          {showMark ? (
+            <>
+              <Text style={metaText}> · </Text>
+              <VisibilityMark visibility={post.visibility} color={colors.textFaint} />
+            </>
+          ) : null}
         </View>
       </View>
     </Pressable>

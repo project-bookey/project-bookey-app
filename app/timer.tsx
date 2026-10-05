@@ -6,13 +6,15 @@ import {
   Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 
+import { Pause, Play } from 'lucide-react-native';
+
 import { ApiError } from '@/api/client';
 import { libraryApi, sessionApi } from '@/api/endpoints';
 import { PaperScreen, SubHeader, TiltCover } from '@/components/collage';
 import { KeyboardArea, KeyboardDock, useScrollReveal } from '@/components/keyboard';
 import { FinishSessionSheet } from '@/components/timer/FinishSessionSheet';
 import {
-  Button, Loading, ProgressBar, formatClock, formatDuration, percent, playLabel,
+  Button, Loading, ProgressBar, formatClock, formatDuration, percent,
 } from '@/components/ui';
 import { hairline, layout, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
@@ -404,8 +406,11 @@ export default function TimerScreen() {
                   }}
                   disabled={pauseToggle.isPending}
                 />
+                {/* 쉬기·이어 읽기는 일시정지·재생 아이콘만(2026-10-05 사용자 결정) — 이름은 접근성 라벨. */}
                 <Button
-                  label={paused ? playLabel('이어서 읽기') : playLabel('잠깐 쉬기', '⏸')}
+                  icon={paused ? Play : Pause}
+                  iconFill
+                  accessibilityLabel={paused ? '이어서 읽기' : '잠깐 쉬기'}
                   variant="outline"
                   onPress={() => pauseToggle.mutate({ sessionId: session.id, action: paused ? 'resume' : 'pause' })}
                   loading={pauseToggle.isPending}
@@ -414,7 +419,9 @@ export default function TimerScreen() {
               </View>
             ) : (
               <Button
-                label={playLabel('독서 시작')}
+                label="독서 시작"
+                icon={Play}
+                iconFill
                 onPress={() => {
                   setEndError(null);
                   start.mutate();

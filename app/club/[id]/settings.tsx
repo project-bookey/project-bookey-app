@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { type ReactNode, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshCw } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { clubApi } from '@/api/endpoints';
@@ -293,10 +294,11 @@ function SettingsForm({ club }: { club: ClubHome }) {
               <Text style={[typeScale.caption, { color: colors.textFaint }]}>초대 코드</Text>
               <Text style={[styles.code, { color: colors.text }]} selectable>{club.joinCode}</Text>
             </View>
-            {/* 주요 버튼(복사)이 오른쪽 — [새로 만들기][복사] */}
+            {/* 주요 버튼(복사)이 오른쪽 — [새로 만들기][복사]. 둘 다 아이콘만(2026-10-05 사용자 결정). */}
             <View style={styles.codeActions}>
               <Button
-                label="새로 만들기"
+                icon={RefreshCw}
+                accessibilityLabel="초대 코드 새로 만들기"
                 size="sm"
                 variant="outline"
                 loading={rotate.isPending}

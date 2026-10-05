@@ -11,7 +11,7 @@ import type { Inquiry, InquiryImage, InquirySummary, Page } from '@/api/types';
 import { PaperScreen, SubHeader } from '@/components/collage';
 import { InquiryStatusTag } from '@/components/inquiry/InquiryStatusTag';
 import { inquiriesKey, inquiryKey } from '@/components/inquiry/queries';
-import { Button, EmptyState, Eyebrow, FootAction } from '@/components/ui';
+import { Button, DeleteAction, EmptyState, Eyebrow } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { hairline, iconStroke, layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -209,15 +209,10 @@ function InquiryArticle({ inquiry, onOpenPhoto, confirming, deleteError, onDelet
         )}
       </View>
 
-      {/* 파괴적 동작은 맨 아래, 내용과 떨어뜨린다 — '삭제' → '한 번 더'(앱 전체 같은 규칙). */}
+      {/* 파괴적 동작은 맨 아래, 내용과 떨어뜨린다 — 휴지통 → '한 번 더'(앱 전체 같은 규칙). */}
       <View style={styles.foot}>
         {deleteError ? <Text style={[typeScale.caption, { color: colors.danger }]}>{deleteError}</Text> : null}
-        <FootAction
-          label={confirming ? '한 번 더' : '삭제'}
-          onPress={onDelete}
-          tone={confirming ? 'danger' : 'faint'}
-          accessibilityLabel={confirming ? '문의 삭제 확인' : '문의 삭제'}
-        />
+        <DeleteAction target="문의" confirming={confirming} onPress={onDelete} />
       </View>
     </>
   );

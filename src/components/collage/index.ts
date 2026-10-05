@@ -14,6 +14,7 @@ export { PlusGlyph } from './PlusGlyph';
 export { SearchGlyph } from './SearchGlyph';
 export { NAV_BAR_HEIGHT, NAV_CLEARANCE, SectionNav } from './SectionNav';
 export type { SectionKey } from './SectionNav';
+export { StampIcon } from './StampIcon';
 export { StickyNote } from './StickyNote';
 export { SubHeader } from './SubHeader';
 export { TiltCover, useCoverEntrance } from './TiltCover';

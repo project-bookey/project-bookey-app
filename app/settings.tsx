@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Moon, Smartphone, Sun, type LucideIcon } from 'lucide-react-native';
 
 import { API_BASE_URL } from '@/api/client';
 import { authApi, notificationApi } from '@/api/endpoints';
@@ -33,10 +34,11 @@ const SOCIAL_PROVIDERS: { value: SocialProvider; label: string }[] = [
   { value: 'GOOGLE', label: 'Google' },
 ];
 
-const THEMES: { value: ThemePreference; label: string }[] = [
-  { value: 'system', label: '기기 설정' },
-  { value: 'light', label: '밝게' },
-  { value: 'dark', label: '어둡게' },
+/** 화면 테마 — 휴대폰 · 해 · 달 아이콘만(2026-10-05 사용자 결정). label 은 읽어 줄 말. */
+const THEMES: { value: ThemePreference; label: string; icon: LucideIcon }[] = [
+  { value: 'system', label: '기기 설정', icon: Smartphone },
+  { value: 'light', label: '밝게', icon: Sun },
+  { value: 'dark', label: '어둡게', icon: Moon },
 ];
 
 /** 광고성 정보 수신 동의를 마지막으로 바꾼 날 — '2026년 10월 4일'. 처리 결과 안내(정보통신망법 제50조 ⑧)에 쓴다. */
@@ -175,7 +177,7 @@ export default function SettingsScreen() {
               <Segmented options={THEMES} value={preference} onChange={setPreference} />
             </View>
             <Text style={[typeScale.caption, { color: colors.textFaint, marginTop: spacing.sm }]}>
-              기기 설정을 고르면 휴대폰의 화면 모드를 따라가요.
+              휴대폰을 고르면 기기의 화면 모드를 따라가요.
             </Text>
           </Card>
 

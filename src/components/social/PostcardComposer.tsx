@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { X } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { postcardApi, walletApi } from '@/api/endpoints';
 import { useKeyboardReveal } from '@/components/keyboard';
 import { countGraphemes } from '@/lib/graphemes';
+import { ICON_SIZE, IconButton } from '@/components/collage';
 import { Button, Card, Toggle } from '@/components/ui';
-import { hairline, radius, sans, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 
 /** 엽서 본문 최대 글자 수 — 서버 정책과 같은 값 (§14.9: 한글 완성형 글자 기준). */
 const MAX_GRAPHEMES = 16;
@@ -52,9 +54,14 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
   if (sentMessage) {
     return (
       <Card>
-        <Text style={[typeScale.body, { color: colors.text }]}>{sentMessage}</Text>
-        <View style={{ marginTop: spacing.md }}>
-          <Button label="닫기" variant="ghost" onPress={onDone} />
+        {/* 보낸 뒤 알림 — 닫기는 오른쪽 위 ×(2026-10-05 사용자 결정, 글자 버튼 대신). */}
+        <View style={styles.sentRow}>
+          <Text style={[typeScale.body, styles.sentText, { color: colors.text }]}>{sentMessage}</Text>
+          <View style={styles.sentClose}>
+            <IconButton onPress={onDone} accessibilityLabel="닫기">
+              <X size={ICON_SIZE} color={colors.text} {...iconStroke} />
+            </IconButton>
+          </View>
         </View>
       </Card>
     );
@@ -124,6 +131,10 @@ export function PostcardComposer({ toUserId, toNickname, postId, postTitle, onDo
 }
 
 const styles = StyleSheet.create({
+  sentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  sentText: { flex: 1 },
+  // × 상자(44pt) 여백만큼 위·오른쪽으로 내밀어 카드 모서리 안쪽 선에 맞춘다.
+  sentClose: { marginTop: -10, marginRight: -10 },
   input: {
     minHeight: 72,
     maxHeight: 160, // 길어지면 칸 안에서 스크롤 — '엽서 보내기'가 키보드 밑으로 밀려나지 않게

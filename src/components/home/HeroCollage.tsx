@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Clock, Flame, Play } from 'lucide-react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 
 import type { ReadingRecord } from '@/api/types';
 import { MemoScrap, StickyNote, TiltCover } from '@/components/collage';
-import { controlFace, pressedStyle, useTheme } from '@/theme';
+import { controlFace, iconStroke, pressedStyle, useTheme } from '@/theme';
 import { controlHeight, radius, serif, spacing, statusLabel, typeScale } from '@/theme/tokens';
-import { playLabel } from '@/components/ui';
+import { IconMeta } from '@/components/ui';
 
 /**
  * 시안(390px) 기준 지오메트리 — 실제 폭에 비례 환산한다.
@@ -90,12 +91,12 @@ function parallaxOffset(y: number) {
  * 표지 스택과 스티키 노트는 판에 고정이고, 종이(표제·CTA·메모) 레이어만 스크롤 오프셋에 계수를 곱해
  * 살짝 밀린다(패럴랙스). 읽는 중 기록이 없으면 렌더하지 않는다 — 검색 진입은 상단 검색 바가 담당.
  */
-export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, onContinue, onDetail }: {
+export function HeroCollage({ record, synopsis, streak, loading, scrollY, onContinue, onDetail }: {
   record: ReadingRecord | null;
   /** 책 소개(줄거리) — 뒤에 끼운 메모장에 적힌다. 없으면 빈 괘선 메모장. */
   synopsis?: string;
-  /** `N일 연속 · 오늘 M분` — CTA 옆 모노 캡션 */
-  streakLine?: string;
+  /** 연속 독서 일수와 오늘 읽은 시간 — CTA 옆에 불꽃·시계 아이콘 + 값으로 적는다. */
+  streak?: { days: number; today: string };
   loading?: boolean;
   /** 홈 스크롤 오프셋(px) */
   scrollY: SharedValue<number>;
@@ -230,17 +231,30 @@ export function HeroCollage({ record, synopsis, streakLine, loading, scrollY, on
             accessibilityRole="button"
             accessibilityLabel="이어서 읽기"
           >
-            {/* 시안 라벨 — '읽기'를 붙이면 스트릭 캡션이 메모 조각에 닿아 말줄임된다. */}
-            <Text style={[styles.ctaLabel, { color: colors.onAccent }]}>{playLabel('이어서')}</Text>
+            {/* 시안 라벨 — '읽기'를 붙이면 연속 독서 캡션이 메모 조각에 닿아 말줄임된다. */}
+            <Play size={16} color={colors.onAccent} fill={colors.onAccent} {...iconStroke} />
+            <Text style={[styles.ctaLabel, { color: colors.onAccent }]}>이어서</Text>
           </Pressable>
-          {streakLine ? (
-            /* 좁은 폭(360)에선 메모 조각에 밀려 한 줄에 안 들어간다 — 말줄임 대신 가운뎃점에서 줄을 나눠 두 줄로 내린다. */
-            <Text
-              numberOfLines={2}
-              style={[typeScale.monoEyebrow, styles.streak, { color: colors.textMuted }]}
-            >
-              {W < 376 ? streakLine.replace(' · ', '\n') : streakLine}
-            </Text>
+          {streak ? (
+            // 연속 독서 = 불꽃, 오늘 읽은 시간 = 시계(2026-10-05 사용자 결정). 좁은 폭에선 두 덩어리가 줄을 나눠 내려간다.
+            <View style={styles.streak}>
+              <IconMeta
+                icon={Flame}
+                color={colors.textMuted}
+                textStyle={typeScale.monoEyebrow}
+                accessibilityLabel={`연속 독서 ${streak.days}일`}
+              >
+                {`${streak.days}일`}
+              </IconMeta>
+              <IconMeta
+                icon={Clock}
+                color={colors.textMuted}
+                textStyle={typeScale.monoEyebrow}
+                accessibilityLabel={`오늘 ${streak.today}`}
+              >
+                {streak.today}
+              </IconMeta>
+            </View>
           ) : null}
         </View>
 
@@ -280,8 +294,10 @@ const styles = StyleSheet.create({
   },
   cta: {
     minHeight: controlHeight.md,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 6,
     borderRadius: radius.button,
     paddingHorizontal: spacing.lg,
   },
@@ -291,8 +307,11 @@ const styles = StyleSheet.create({
   // 시안 23px 세리프 두 줄 — 노트 표제(21)보다 한 단 크게, 자간은 살짝 조인다.
   shelfTitle: { fontFamily: serif.extraBold, fontSize: 23, lineHeight: 26, marginTop: 5, letterSpacing: -0.2 },
   shelfRule: { width: 26, height: 2, marginTop: spacing.sm },
-  // 한글이 섞이는 캡션이라 모노 아이브로우의 넓은 자간은 덜어낸다.
-  streak: { flexShrink: 1, letterSpacing: 0.3, lineHeight: 14, transform: [{ rotate: '-3deg' }] },
+  // 메모처럼 살짝 기운 두 덩어리 — 좁으면 줄을 나눠 내려간다.
+  streak: {
+    flexShrink: 1, flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.sm, rowGap: 2,
+    transform: [{ rotate: '-3deg' }],
+  },
   memo: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
   memoQuote: { fontFamily: serif.regular, fontSize: 12, lineHeight: 18 },
   memoSign: { fontSize: 8, letterSpacing: 0.5, marginTop: 5 },

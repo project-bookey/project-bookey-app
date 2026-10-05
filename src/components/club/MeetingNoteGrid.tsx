@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { PencilLine } from 'lucide-react-native';
 
 import { ApiError } from '@/api/client';
 import { meetingNoteApi } from '@/api/endpoints';
@@ -11,7 +12,7 @@ import { NoteDocThumb } from '@/components/note/NoteDocThumb';
 import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { layout, radius, spacing, typeScale, useTheme } from '@/theme';
-import { hairline, pressedStyle } from '@/theme/tokens';
+import { hairline, iconStroke, pressedStyle } from '@/theme/tokens';
 import { meetingDay, meetingWeekday } from './meetingTime';
 import { meetingNotesKey } from './useMeetingNoteSync';
 
@@ -24,7 +25,7 @@ const CONTRIBUTOR_MAX = 3;
 /**
  * 클럽 모임 노트 — 클럽 홈 '노트' 탭. 인스타 프로필처럼 3열 정사각 격자, 칸 하나가 모임 하나의 공유 노트.
  * 칸에는 대형노트에서 쓴 구역을 정사각으로 잘라 보이고, 왼쪽 위에 모임 날짜, 왼쪽 아래에 함께 쓴 멤버,
- * 아직 마무리하지 않은 노트는 오른쪽 위에 '작성 중'을 얹는다(마무리는 모임을 연 사람이 노트 화면에서 한다).
+ * 아직 마무리하지 않은 노트는 오른쪽 위에 연필(작성 중)을 얹는다(마무리는 모임을 연 사람이 노트 화면에서 한다).
  * 칸을 누르면 그 노트를 연다. 노트는 모임 상세(또는 함께 독서 종료)에서 처음 생긴다 — 여기엔 새로 만들기 버튼이 없다.
  */
 export function MeetingNoteGrid({ clubId, onOpenMeetings }: { clubId: number; onOpenMeetings?: () => void }) {
@@ -114,8 +115,9 @@ export function MeetingNoteCell({ note, size, onPress }: { note: MeetingNote; si
         </View>
       ) : null}
       {note.closedAt ? null : (
-        <View pointerEvents="none" style={[styles.draft, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-          <Text style={[typeScale.monoLabel, styles.dateText, { color: colors.textMuted }]}>작성 중</Text>
+        // 작성 중은 연필 하나로(2026-10-05 사용자 결정) — 칸의 읽어 주는 말에 '작성 중'이 들어 있다.
+        <View pointerEvents="none" style={[styles.draft, styles.draftIcon, { backgroundColor: colors.surface, borderColor: colors.line }]}>
+          <PencilLine size={12} color={colors.textMuted} {...iconStroke} />
         </View>
       )}
       {contributors.length > 0 ? (
@@ -163,6 +165,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: hairline,
   },
+  // 연필만 든 칩 — 날짜 칩과 같은 높이가 되게 위아래를 조금 더 둔다.
+  draftIcon: { paddingVertical: 2 },
   people: { position: 'absolute', left: spacing.xs, bottom: spacing.xs, flexDirection: 'row' },
   avatar: { borderWidth: 1.5, borderRadius: radius.round },
   more: { paddingVertical: spacing.md },

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { Plus, Users } from 'lucide-react-native';
 
 import { clubApi } from '@/api/endpoints';
 import type { ClubPreview } from '@/api/types';
@@ -9,7 +9,7 @@ import { controlFace, iconStroke, pressedStyle, radius, spacing, typeScale, useT
 import { mono } from '@/theme/tokens';
 import { ClubBackdrop } from '@/components/club';
 import { ICON_SIZE } from '@/components/collage';
-import { TextLink } from '@/components/ui';
+import { IconMeta, TextLink } from '@/components/ui';
 
 /**
  * 홈 추천 클럽 행 — 공개 클럽 카드 + 맨 끝 '+ 클럽 만들기' 타일.
@@ -82,12 +82,15 @@ export function ClubRow() {
               <Text numberOfLines={1} style={[typeScale.caption, { color: colors.textMuted }]}>{item.description}</Text>
             ) : null}
             <View style={styles.metaRow}>
-              <Text style={[typeScale.caption, { color: colors.textMuted }]}>
-                인원{' '}
-                <Text style={styles.count}>
-                  {item.memberCount}/{item.memberLimit}
-                </Text>
-              </Text>
+              {/* 인원은 사람 아이콘 + 숫자(2026-10-05 사용자 결정) — 스크린 리더는 '인원 4/10'. */}
+              <IconMeta
+                icon={Users}
+                color={colors.textMuted}
+                textStyle={styles.count}
+                accessibilityLabel={`인원 ${item.memberCount}/${item.memberLimit}`}
+              >
+                {`${item.memberCount}/${item.memberLimit}`}
+              </IconMeta>
               <View style={[styles.badge, {
                 backgroundColor: item.status === 'RECRUITING' ? colors.ink : colors.surfaceRaised,
               }]}>

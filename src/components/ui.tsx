@@ -1,11 +1,12 @@
 import { ReactNode, useMemo } from 'react';
 import {
   ActivityIndicator, AccessibilityRole, AccessibilityState, Image, Insets, Pressable, StyleSheet, Text, TextInput, TextInputProps,
-  View, ViewStyle,
+  View, ViewStyle, type StyleProp, type TextStyle,
 } from 'react-native';
+import { Pencil, Trash2, type LucideIcon } from 'lucide-react-native';
 
 import {
-  controlFace, controlHeight, hairline, pressedStyle, radius, spacing, typeScale, useTheme,
+  controlFace, controlHeight, hairline, iconSize, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme,
 } from '@/theme';
 import type { ColorTokens, ThemeMode } from '@/theme';
 import { mono, serif } from '@/theme/tokens';
@@ -40,11 +41,6 @@ export type LinkKind = 'nav' | 'action';
  */
 export function linkLabel(label: string, kind: LinkKind = 'nav'): string {
   return kind === 'nav' ? `${label} ›` : label;
-}
-
-/** 재생·일시정지 CTA 의 ▶/⏸ — 읽기를 시작·재개하는 버튼에만 붙인다. 상태 표시("진행 중")에는 쓰지 않는다. */
-export function playLabel(label: string, glyph: '▶' | '⏸' = '▶'): string {
-  return `${glyph} ${label}`;
 }
 
 /** 글자 링크(13px 글자 상자 약 17pt)를 위아래로 넓혀 44pt 터치 상자로 만든다. */
@@ -139,12 +135,19 @@ const GHOST_HIT_SLOP = { left: 10, right: 10 };
 /** FootAction xs(겉모습 26pt) — 위아래 9 로 44pt, 좌우 4 는 짧은 라벨의 폭을 거든다(이웃 버튼과 spacing.sm 띄우면 겹치지 않는다). */
 const XS_HIT_SLOP = { top: (44 - controlHeight.xs) / 2, bottom: (44 - controlHeight.xs) / 2, left: 4, right: 4 };
 
+/**
+ * 버튼·카드 발치 버튼의 내용 — 글자, 아이콘 + 글자, 또는 아이콘만(2026-10-05 사용자 결정 — 아이콘만 봐도 알 만한 것은 글자를 뺀다).
+ * 아이콘만이면 읽어 줄 말(accessibilityLabel)이 꼭 있어야 한다.
+ */
+type ControlContent =
+  | { label: string; icon?: LucideIcon; accessibilityLabel?: string }
+  | { label?: undefined; icon: LucideIcon; accessibilityLabel: string };
+
 export function Button({
-  label, onPress, variant = 'primary', disabled, loading, style, size = 'md', accessibilityLabel,
-}: {
-  label: string;
-  /** 라벨과 다르게 읽혀야 할 때(예: '닫기' → '공지 닫기'). 없으면 라벨 그대로. */
-  accessibilityLabel?: string;
+  label, icon: Icon, iconFill = false, onPress, variant = 'primary', disabled, loading, style, size = 'md', accessibilityLabel,
+}: ControlContent & {
+  /** 재생·일시정지처럼 채운 모양이 더 잘 읽히는 아이콘 — 획과 같은 색으로 속을 채운다. */
+  iconFill?: boolean;
   onPress?: () => void;
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
   disabled?: boolean;
@@ -154,6 +157,12 @@ export function Button({
 }) {
   const { styles, colors } = useStyles();
   const isDisabled = disabled || loading;
+  const fg = variant === 'primary' ? colors.onAccent
+    : variant === 'ghost' ? colors.textMuted
+      : variant === 'danger' ? colors.danger
+        : colors.text;
+  // 아이콘만이면 한 단 크게 — 글자가 하던 몫을 아이콘 혼자 한다.
+  const iconPx = label ? (size === 'sm' ? 14 : iconSize.inline) : (size === 'sm' ? iconSize.inline : 22);
   // 눌림 — 앱의 다른 글자·아이콘 버튼과 같은 규칙으로 흐려진다(pressedStyle). 비활성은 반응하지 않는다.
   return (
     <Pressable
@@ -170,6 +179,7 @@ export function Button({
         variant === 'outline' && styles.buttonOutline,
         variant === 'ghost' && styles.buttonGhost,
         variant === 'danger' && styles.buttonDanger,
+        !label && size === 'sm' && styles.buttonIconOnlySm,
         isDisabled && styles.buttonDisabled,
         style,
         pressed && !isDisabled && pressedStyle,
@@ -181,27 +191,66 @@ export function Button({
           color={variant === 'primary' ? colors.onAccent : colors.text}
         />
       ) : (
-        <Text
-          style={[
-            styles.buttonLabel,
-            size === 'sm' && styles.buttonLabelSm,
-            variant === 'primary' && styles.buttonLabelPrimary,
-            variant === 'ghost' && styles.buttonLabelGhost,
-            variant === 'danger' && styles.buttonLabelDanger,
-          ]}
-        >
-          {label}
-        </Text>
+        <>
+          {Icon ? <Icon size={iconPx} color={fg} fill={iconFill ? fg : 'none'} {...iconStroke} /> : null}
+          {label ? (
+            <Text
+              style={[
+                styles.buttonLabel,
+                size === 'sm' && styles.buttonLabelSm,
+                variant === 'primary' && styles.buttonLabelPrimary,
+                variant === 'ghost' && styles.buttonLabelGhost,
+                variant === 'danger' && styles.buttonLabelDanger,
+              ]}
+            >
+              {label}
+            </Text>
+          ) : null}
+        </>
       )}
     </Pressable>
   );
 }
 
-export function Tag({ label, fg, bg }: { label: string; fg?: string; bg?: string }) {
-  const { styles } = useStyles();
+export function Tag({ label, icon: Icon, fg, bg }: { label: string; icon?: LucideIcon; fg?: string; bg?: string }) {
+  const { styles, colors } = useStyles();
   return (
-    <View style={[styles.tag, bg ? { backgroundColor: bg } : null]}>
+    <View style={[styles.tag, Icon && styles.tagWithIcon, bg ? { backgroundColor: bg } : null]}>
+      {Icon ? <Icon size={11} color={fg ?? colors.textMuted} {...iconStroke} /> : null}
       <Text style={[styles.tagText, fg ? { color: fg } : null]}>{label}</Text>
+    </View>
+  );
+}
+
+/**
+ * 메타 줄의 아이콘 + 값 — '멤버 4/10'·'장소 ○○'·'오늘 25분'처럼 단어 + 값이던 자리를 아이콘 + 값으로 줄인다
+ * (2026-10-05 사용자 결정, 조회 눈·좋아요 하트와 같은 방식). 같은 뜻은 앱 어디서나 같은 아이콘: 사람 = Users, 장소 = MapPin,
+ * 시간 = Clock, 날짜 = CalendarDays, 비공개 = Lock. 누를 수 없는 정보라 버튼이 아니다 — 스크린 리더는 원래 말(accessibilityLabel)로 읽는다.
+ * 값이 없으면 아이콘만(예: 공개 범위 자물쇠). 긴 값(장소 이름)은 한 줄 말줄임.
+ */
+export function IconMeta({
+  icon: Icon, children, accessibilityLabel, textStyle, color, size = iconSize.meta, filled = false, style,
+}: {
+  icon: LucideIcon;
+  children?: ReactNode;
+  accessibilityLabel: string;
+  /** 옆 메타 글자와 같은 조판 — 값이 메타와 같은 크기로 읽힌다. 색은 color 가 정한다. */
+  textStyle?: StyleProp<TextStyle>;
+  /** 아이콘·값 색. 없으면 메타 기본색(textFaint). */
+  color?: string;
+  size?: number;
+  /** 별점 별처럼 속을 채운 아이콘. */
+  filled?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { styles, colors } = useStyles();
+  const tint = color ?? colors.textFaint;
+  return (
+    <View accessible accessibilityLabel={accessibilityLabel} style={[styles.iconMeta, style]}>
+      <Icon size={size} color={tint} fill={filled ? tint : 'none'} {...iconStroke} />
+      {children != null && children !== '' ? (
+        <Text numberOfLines={1} style={[styles.iconMetaText, textStyle, { color: tint }]}>{children}</Text>
+      ) : null}
     </View>
   );
 }
@@ -247,22 +296,25 @@ export function Field({ label, hint, error, style, ...props }: TextInputProps & 
 /**
  * 세그먼트 — 회색 톤 트랙 안에 고른 칸을 종이색으로 까는 모양(2026-10-05 '부드러운 네모'). 팔로우·고객문의의 칸 바꾸기도
  * 이것 하나를 쓴다(예전 CapsuleTabs 를 합쳤다). 트랙 높이 44pt 를 넘겨 칸 전체가 손가락 상자다.
+ * 칸에 icon 을 주면 아이콘만 그리고 label 은 읽어 줄 말이 된다(화면 테마 해·달처럼 아이콘만 봐도 알 만한 칸).
  */
 export function Segmented<T extends string>({ options, value, onChange }: {
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; icon?: LucideIcon }[];
   value: T;
   onChange: (value: T) => void;
 }) {
-  const { styles } = useStyles();
+  const { styles, colors } = useStyles();
   return (
     <View style={styles.segmented}>
       {options.map((option) => {
         const active = option.value === value;
+        const Icon = option.icon;
         return (
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
             accessibilityRole="button"
+            accessibilityLabel={Icon ? option.label : undefined}
             accessibilityState={{ selected: active }}
             style={({ pressed }) => [
               styles.segment,
@@ -270,9 +322,13 @@ export function Segmented<T extends string>({ options, value, onChange }: {
               pressed && !active && pressedStyle,
             ]}
           >
-            <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
-              {option.label}
-            </Text>
+            {Icon ? (
+              <Icon size={18} color={active ? colors.text : colors.textMuted} {...iconStroke} />
+            ) : (
+              <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
+                {option.label}
+              </Text>
+            )}
           </Pressable>
         );
       })}
@@ -398,21 +454,22 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
  * 버튼인 줄 몰랐다(2026-10-04) — 상자가 곧 '누를 수 있음'의 신호다. `onPress` 가 없으면(카운터) 상자 없이 글자만 둔다.
  * '삭제' → '한 번 더'(tone danger)는 바탕까지 연한 빨강으로 바뀌어 상태가 넘어간 것이 보인다.
  * `size="xs"` 는 한 단 작은 겉모습(26pt, 11px) — 리뷰 머리 줄의 고치기·삭제처럼 글 옆에 붙는 자리용. 터치 상자는 hitSlop 으로 44pt.
+ * 고치기·삭제는 아이콘만(연필 Pencil · 휴지통 Trash2, 정사각 상자)이고, 한 번 누른 삭제만 '한 번 더' 글자로 바뀐다
+ * (2026-10-05 사용자 결정 — 두 번째도 아이콘이면 '한 번 더 누르면 지워진다'가 색으로만 전해진다).
  */
-export function FootAction({ label, onPress, selected, tone = 'muted', accessibilityLabel, disabled, size = 'sm' }: {
-  /** 버튼 라벨이라 글리프(›)를 붙이지 않는다 — Button 과 같은 규칙. */
-  label: string;
+export function FootAction({
+  label, icon: Icon, onPress, selected, tone = 'muted', accessibilityLabel, disabled, size = 'sm',
+}: ControlContent & {
   onPress?: () => void;
   disabled?: boolean;
   /** 켜짐(예: 좋아요) — 라벨이 악센트로, accessibilityState.selected 를 낸다. */
   selected?: boolean;
   tone?: 'accent' | 'muted' | 'faint' | 'danger';
-  /** 라벨과 다르게 읽혀야 할 때(예: '책 보기' 는 '{제목} 상세'). 없으면 라벨 그대로. */
-  accessibilityLabel?: string;
   size?: 'sm' | 'xs';
 }) {
   const { styles, colors } = useStyles();
   const xs = size === 'xs';
+  const iconOnly = !label;
   // faint(삭제 대기)도 textMuted 까지는 올린다 — textFaint 는 작은 글자 대비 기준(4.5:1)에 못 미친다.
   const color = selected || tone === 'accent'
     ? colors.accent
@@ -434,6 +491,7 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
         xs && styles.buttonXs,
         styles.buttonOutline,
         tone === 'danger' && styles.buttonDanger,
+        iconOnly && (xs ? styles.buttonIconOnlyXs : styles.buttonIconOnlySm),
         disabled && styles.buttonDisabled,
         pressed && !disabled && pressedStyle,
       ]}
@@ -441,8 +499,55 @@ export function FootAction({ label, onPress, selected, tone = 'muted', accessibi
       accessibilityState={selected === undefined && !disabled ? undefined : { selected, disabled }}
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Text style={[styles.buttonLabel, styles.buttonLabelSm, xs && styles.buttonLabelXs, { color }]}>{label}</Text>
+      {Icon ? <Icon size={xs ? 14 : iconSize.inline} color={color} {...iconStroke} /> : null}
+      {label ? (
+        <Text style={[styles.buttonLabel, styles.buttonLabelSm, xs && styles.buttonLabelXs, { color }]}>{label}</Text>
+      ) : null}
     </Pressable>
+  );
+}
+
+/**
+ * 내가 쓴 것의 고치기 — 연필 아이콘만 든 카드 발치 버튼(2026-10-05 사용자 결정). target 은 읽어 줄 말('독후감' → '독후감 고치기').
+ */
+export function EditAction({ target, onPress, size = 'sm', disabled }: {
+  target: string;
+  onPress: () => void;
+  size?: 'sm' | 'xs';
+  disabled?: boolean;
+}) {
+  return <FootAction icon={Pencil} size={size} onPress={onPress} disabled={disabled} accessibilityLabel={`${target} 고치기`} />;
+}
+
+/**
+ * 내가 쓴 것의 삭제(두 번 누르기, useDeleteConfirm) — 처음엔 휴지통 아이콘, 한 번 누른 뒤엔 연한 빨강 '한 번 더' 글자
+ * (2026-10-05 사용자 결정 — 두 번째까지 아이콘이면 '한 번 더 누르면 지워진다'가 색으로만 전해진다). 앱 어디서나 이것 하나를 쓴다.
+ */
+export function DeleteAction({ target, confirming, onPress, size = 'sm', disabled }: {
+  target: string;
+  confirming: boolean;
+  onPress: () => void;
+  size?: 'sm' | 'xs';
+  disabled?: boolean;
+}) {
+  return confirming ? (
+    <FootAction
+      label="한 번 더"
+      tone="danger"
+      size={size}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityLabel={`${target} 삭제 확인`}
+    />
+  ) : (
+    <FootAction
+      icon={Trash2}
+      tone="faint"
+      size={size}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityLabel={`${target} 삭제`}
+    />
   );
 }
 
@@ -506,15 +611,21 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
     },
     // 버튼 면 — 2026-10-05 버튼 비교 페이지 결정: 48pt · 14 · 부드러운 네모(md 12, 작은 것 control 8),
     // 색은 역할 하나씩(주요 = 초록, 보조 = 회색 톤, 위험 = 연한 빨강)을 평평한 면(controlFace)으로 깐다 — 테두리·그림자 없음.
+    // 아이콘 + 글자는 한 줄 — 둘 사이는 광학 보정 6.
     button: {
       minHeight: controlHeight.md,
       borderRadius: radius.button,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 6,
       paddingHorizontal: spacing.lg,
     },
-    buttonSm: { minHeight: controlHeight.sm, paddingHorizontal: spacing.md, borderRadius: radius.control },
-    buttonXs: { minHeight: controlHeight.xs, paddingHorizontal: spacing.sm, borderRadius: radius.control },
+    buttonSm: { minHeight: controlHeight.sm, paddingHorizontal: spacing.md, borderRadius: radius.control, gap: spacing.xs },
+    buttonXs: { minHeight: controlHeight.xs, paddingHorizontal: spacing.sm, borderRadius: radius.control, gap: spacing.xs },
+    // 아이콘만 든 작은 버튼은 정사각 — 겉모습 높이와 같은 폭.
+    buttonIconOnlySm: { width: controlHeight.sm, paddingHorizontal: 0 },
+    buttonIconOnlyXs: { width: controlHeight.xs, paddingHorizontal: 0 },
     buttonPrimary: controlFace(colors.accent),
     buttonOutline: controlFace(colors.tonal),
     buttonGhost: { backgroundColor: 'transparent', minHeight: 44, paddingHorizontal: 0 },
@@ -533,7 +644,11 @@ function makeStyles(colors: ColorTokens, cardShadow: ViewStyle) {
       backgroundColor: colors.surfaceRaised,
       alignSelf: 'flex-start',
     },
+    tagWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 3 },
     tagText: { fontFamily: mono.medium, fontSize: 10.5, letterSpacing: 0.6, color: colors.textMuted },
+    // 아이콘과 값은 한 덩어리 — 광학 보정 3px. 긴 값(장소)만 줄어들며 말줄임된다.
+    iconMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, minWidth: 0 },
+    iconMetaText: { ...typeScale.monoLabel, flexShrink: 1 },
     track: {
       backgroundColor: colors.surfaceRaised,
       width: '100%',

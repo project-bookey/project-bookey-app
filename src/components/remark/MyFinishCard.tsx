@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
 import type { Remark } from '@/api/types';
 import { useKeyboardReveal } from '@/components/keyboard';
-import { Button, Eyebrow, FootAction, formatRelative } from '@/components/ui';
+import { Button, DeleteAction, EditAction, Eyebrow, FootAction, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { spacing, typeScale, useTheme } from '@/theme';
 
@@ -144,16 +144,15 @@ export function RemarkActions({ rid, bookId, onEdit, inCard = false }: {
   return (
     <>
       <View style={inCard ? styles.inCardActions : styles.actions}>
-        <FootAction size={size} label="고치기" onPress={() => { disarm(); onEdit(); }} accessibilityLabel="한 줄평 고치기" />
-        <FootAction
+        <EditAction size={size} target="한 줄평" onPress={() => { disarm(); onEdit(); }} />
+        <DeleteAction
           size={size}
-          label={confirm ? '한 번 더' : '삭제'}
-          tone={confirm ? 'danger' : 'faint'}
+          target="한 줄평"
+          confirming={!!confirm}
           disabled={remove.isPending}
           onPress={() => {
             if (confirm) { disarm(); remove.mutate(); } else arm(true);
           }}
-          accessibilityLabel={confirm ? '한 줄평 삭제 확인' : '한 줄평 삭제'}
         />
       </View>
       {remove.isError && !remove.isPending ? (

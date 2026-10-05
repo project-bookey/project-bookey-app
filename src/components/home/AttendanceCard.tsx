@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Mail } from 'lucide-react-native';
 
 import { attendanceApi } from '@/api/endpoints';
+import { StampIcon } from '@/components/collage';
 import { Button, TextLink } from '@/components/ui';
-import { controlHeight, hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { controlHeight, hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
 
 export function AttendanceCard() {
   const { colors } = useTheme();
@@ -93,11 +95,15 @@ export function AttendanceCard() {
             {Array.from({ length: 7 }).map((_, index) => {
               const day = week * 7 + index + 1;
               const filled = day <= data.monthlyAttendanceDays;
-              // 보상 날짜는 숫자 대신 품목 이름을 적는다 — 이모지는 플랫폼마다 그림이 달라 쓰지 않는다.
-              const reward = day === 7 || day === 21 ? '엽서' : day === 14 || day === 28 ? '우표' : null;
+              // 보상 날짜는 숫자 대신 품목 아이콘(엽서 = 봉투, 우표 = 톱니 네모)을 그린다(2026-10-05 사용자 결정).
+              // 이모지는 플랫폼마다 그림이 달라 쓰지 않는다.
+              const reward = day === 7 || day === 21 ? 'postcard' : day === 14 || day === 28 ? 'stamp' : null;
+              const ink = filled ? colors.onInk : colors.textFaint;
               return (
                 <View
                   key={day}
+                  accessible={reward != null}
+                  accessibilityLabel={reward ? `${day}일 ${reward === 'postcard' ? '엽서' : '우표'}` : undefined}
                   style={[
                     styles.day,
                     // 채운 날은 도장처럼 잉크로 — 악센트는 출석하기 버튼 몫이다.
@@ -105,20 +111,36 @@ export function AttendanceCard() {
                     filled && { backgroundColor: colors.ink },
                   ]}
                 >
-                  <Text style={[styles.dayText, { color: filled ? colors.onInk : colors.textFaint }]}>
-                    {reward ?? day}
-                  </Text>
+                  {reward === 'postcard' ? (
+                    <Mail size={REWARD_ICON} color={ink} {...iconStroke} />
+                  ) : reward === 'stamp' ? (
+                    <StampIcon size={REWARD_ICON + 1} color={ink} />
+                  ) : (
+                    <Text style={[styles.dayText, { color: ink }]}>{day}</Text>
+                  )}
                 </View>
               );
             })}
           </View>
         ))}
-        <Text style={[typeScale.caption, { color: colors.textMuted }]}>7일·21일 엽서 · 14일·28일 우표</Text>
+        <View style={styles.legend} accessible accessibilityLabel="7일·21일 엽서, 14일·28일 우표">
+          <View style={styles.legendItem}>
+            <Mail size={13} color={colors.textMuted} {...iconStroke} />
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>7일·21일</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <StampIcon size={14} color={colors.textMuted} />
+            <Text style={[typeScale.caption, { color: colors.textMuted }]}>14일·28일</Text>
+          </View>
+        </View>
       </View>
       ) : null}
     </View>
   );
 }
+
+/** 출석 칸 보상 아이콘(px) — 칸 안에 숫자 대신 들어간다. */
+const REWARD_ICON = 13;
 
 const styles = StyleSheet.create({
   card: {
@@ -166,4 +188,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayText: { fontSize: 10, lineHeight: 12, letterSpacing: -0.3 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 });

@@ -17,7 +17,7 @@ import { photoIdsIn, type PhotoRef } from '@/components/post/postPhotos';
 import { postBodyOf } from '@/components/post/postQuotes';
 import { useLikePost } from '@/components/post/useLikePost';
 import { PostcardComposer } from '@/components/social/PostcardComposer';
-import { Button, EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
+import { Button, DeleteAction, EditAction, EmptyState, FootAction, TextLink, linkLabel } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { layout, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
@@ -236,17 +236,10 @@ function PostArticle({ post, confirming, error, onLike, onDelete, onEdit, postca
         {onDelete || onEdit ? (
           <View style={styles.footRight}>
             {onEdit ? (
-              <FootAction label="고치기" onPress={onEdit} accessibilityLabel="독후감 고치기" />
+              <EditAction target="독후감" onPress={onEdit} />
             ) : null}
-            {/* 삭제는 앱 어디서나 같은 말·같은 모양 — '삭제' → '한 번 더'(엽서·채팅·알림과 같은 FootAction). */}
-            {onDelete ? (
-              <FootAction
-                label={confirming ? '한 번 더' : '삭제'}
-                onPress={onDelete}
-                tone={confirming ? 'danger' : 'faint'}
-                accessibilityLabel={confirming ? '독후감 삭제 확인' : '독후감 삭제'}
-              />
-            ) : null}
+            {/* 삭제는 앱 어디서나 같은 모양 — 휴지통 → '한 번 더'(DeleteAction, 엽서·채팅·알림과 같다). */}
+            {onDelete ? <DeleteAction target="독후감" confirming={confirming} onPress={onDelete} /> : null}
           </View>
         ) : null}
       </View>

@@ -1,6 +1,8 @@
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ImagePlus, RotateCw, X } from 'lucide-react-native';
 
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { ICON_SIZE } from '@/components/collage';
+import { controlFace, hairline, iconStroke, pressedStyle, radius, spacing, typeScale, useTheme } from '@/theme';
 
 import type { PhotoUpload } from './usePhotoUploads';
 
@@ -18,9 +20,9 @@ const REMOVE_HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 };
 
 /**
  * 사진 띠 — 고른 사진이 인화지처럼 늘어서고, 타일마다 올라가는 상태·다시·떼기를 보인다.
- * `onPick` 을 넘기면 맨 앞에 점선 고스트 `+ 사진`(프로필 서가의 빈 칸과 같은 꼴)을 둔다 — 독후감 작성은 사진을
- * 본문 커서 자리에 넣으므로 하단 띠의 '+ 사진'이 입구이고, 여기는 붙은 사진을 다루는 자리라 고스트를 두지 않는다.
- * 타일 위 버튼(다시·×)은 타일(View)의 자식이라 웹에서 버튼이 겹치지 않는다.
+ * `onPick` 을 넘기면 맨 앞에 사진 추가 타일(홈 책 추가 칸과 같은 회색 면 + 아이콘만, 이름은 접근성 라벨)을 둔다 — 독후감 작성은
+ * 사진을 본문 커서 자리에 넣으므로 하단 바의 사진 버튼이 입구이고, 여기는 붙은 사진을 다루는 자리라 타일을 두지 않는다.
+ * 타일 위 버튼(다시·떼기)은 아이콘만(2026-10-05 사용자 결정)이고 타일(View)의 자식이라 웹에서 버튼이 겹치지 않는다.
  */
 export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, retryable = true, notice }: {
   photos: PhotoUpload[];
@@ -49,13 +51,13 @@ export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, r
             accessibilityRole="button"
             accessibilityLabel="사진 추가"
             accessibilityState={{ disabled: !!disabled }}
-            style={[styles.tile, styles.ghost, {
-              borderColor: colors.control,
-              opacity: disabled ? 0.35 : 1,
-            }]}
+            style={({ pressed }) => [
+              styles.tile, styles.addTile, controlFace(colors.tonal),
+              disabled ? styles.disabled : null,
+              pressed && !disabled && pressedStyle,
+            ]}
           >
-            <Text style={[typeScale.titleSerif, { color: colors.text }]}>+</Text>
-            <Text style={[typeScale.monoLabel, { color: colors.textMuted }]}>사진</Text>
+            <ImagePlus size={ICON_SIZE} color={colors.text} {...iconStroke} />
           </Pressable>
         ) : null}
 
@@ -81,7 +83,7 @@ export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, r
                   accessibilityLabel={`사진 ${i + 1} 다시 올리기`}
                   style={[styles.overlay, { backgroundColor: colors.bg }]}
                 >
-                  <Text style={[typeScale.monoLabel, { color: colors.warn }]}>다시</Text>
+                  <RotateCw size={20} color={colors.warn} {...iconStroke} />
                 </Pressable>
               ) : (
                 <View style={[styles.overlay, { backgroundColor: colors.bg }]}>
@@ -99,7 +101,7 @@ export function PhotoStrip({ photos, onPick, onRetry, onRemove, max, disabled, r
                 style={styles.removeHit}
               >
                 <View style={[styles.remove, { backgroundColor: colors.surface, borderColor: colors.line }]}>
-                  <Text style={[styles.removeMark, { color: colors.text }]}>×</Text>
+                  <X size={14} color={colors.text} {...iconStroke} />
                 </View>
               </Pressable>
             ) : null}
@@ -117,14 +119,8 @@ const styles = StyleSheet.create({
   // 기울인 타일 모서리와 × 터치 상자(원 밖으로 REMOVE_PAD 만큼 더 나간다)가 잘리지 않게 사방으로 숨을 둔다.
   row: { gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.sm },
   tile: { width: TILE, height: TILE },
-  ghost: {
-    borderRadius: radius.sm,
-    borderWidth: hairline,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
+  addTile: { borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  disabled: { opacity: 0.35 },
   image: { width: TILE, height: TILE, borderRadius: radius.sm, borderWidth: hairline },
   overlay: {
     position: 'absolute',
@@ -155,5 +151,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeMark: { fontSize: 14, lineHeight: 16 },
 });

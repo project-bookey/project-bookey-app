@@ -1,13 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { PencilLine } from 'lucide-react-native';
 
 import { postApi } from '@/api/endpoints';
 import { myPostsKey } from '@/api/postCache';
-import { PaperScreen, SubHeader } from '@/components/collage';
+import { ICON_SIZE, IconButton, PaperScreen, SubHeader } from '@/components/collage';
 import { PostList } from '@/components/post/PostList';
 import { Button } from '@/components/ui';
-import { spacing, typeScale, useTheme } from '@/theme';
+import { iconStroke, useTheme } from '@/theme';
 
 /** 한 번에 받아오는 건수 — 내 글은 훑어 내리는 목록이라 광장 피드(10)보다 크게 잡는다. */
 const PAGE_SIZE = 20;
@@ -33,17 +33,13 @@ export default function MyPostsScreen() {
     getNextPageParam: (last, all) => (last.hasNext ? (last.page ?? all.length - 1) + 1 : undefined),
   });
 
-  // 비어 있으면 빈 상태의 '첫 독후감 쓰기'가 같은 곳으로 간다 — 헤더의 '+ 쓰기'는 그때 숨겨 입구를 하나로(Hick).
+  // 비어 있으면 빈 상태의 '첫 독후감 쓰기'가 같은 곳으로 간다 — 헤더의 연필은 그때 숨겨 입구를 하나로(Hick).
+  // '+ 쓰기' 글자 대신 연필 아이콘(2026-10-05 사용자 결정) — 머리의 다른 버튼처럼 IconButton.
   const empty = mine.isSuccess && mine.data.pages.every((p) => p.content.length === 0);
   const writeAction = empty ? undefined : (
-    <Pressable
-      onPress={() => router.push('/post/new')}
-      accessibilityRole="button"
-      accessibilityLabel="독후감 쓰기"
-      style={styles.write}
-    >
-      <Text style={[typeScale.monoLabel, { color: colors.accent }]}>+ 쓰기</Text>
-    </Pressable>
+    <IconButton onPress={() => router.push('/post/new')} accessibilityLabel="독후감 쓰기">
+      <PencilLine size={ICON_SIZE} color={colors.text} {...iconStroke} />
+    </IconButton>
   );
 
   return (
@@ -61,8 +57,3 @@ export default function MyPostsScreen() {
     </PaperScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  // 헤더 우측 슬롯 — 웹은 hitSlop 을 무시하므로 여백으로 44px 상자를 만든다.
-  write: { minHeight: 44, justifyContent: 'center', paddingLeft: spacing.md },
-});

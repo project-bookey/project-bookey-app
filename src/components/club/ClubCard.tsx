@@ -1,28 +1,29 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { CalendarDays, Settings } from 'lucide-react-native';
 
 import type { ClubMemberBrief, ClubSummary } from '@/api/types';
-import { StickyNote } from '@/components/collage';
+import { ICON_SIZE, IconButton, StickyNote } from '@/components/collage';
 import { Avatar } from '@/components/Avatar';
-import { FootAction } from '@/components/ui';
 import { ClubBackdrop } from './ClubBackdrop';
 import { meetingDay } from './meetingTime';
-import { hairline, radius, spacing, typeScale, useTheme } from '@/theme';
+import { hairline, iconStroke, radius, spacing, typeScale, useTheme } from '@/theme';
 import { mono } from '@/theme/tokens';
 
 const AVATAR = 24;
 const MAX_AVATARS = 4;
 const BAND_H = 96;
-/** FootAction(sm 버튼) 높이 — '관리'를 얹는 함께하는 사람 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
-const MANAGE_H = 34;
-/** 함께하는 사람 줄 오른쪽에 '관리' 버튼 몫으로 비워 두는 폭(버튼 폭 + 간격). */
-const MANAGE_ROOM = 64;
+/** 아이콘 버튼(44pt) 높이 — 톱니를 얹는 함께하는 사람 줄을 이만큼 세워 버튼과 가운데를 맞춘다. */
+const MANAGE_H = 44;
+/** 함께하는 사람 줄 오른쪽에 톱니 몫으로 비워 두는 폭 — 상자 여백(10)을 카드 여백 쪽으로 민 만큼 뺀다. */
+const MANAGE_ROOM = 44;
 
 /**
  * 내 클럽 카드 — 클럽은 책 한 권에 묶이지 않으므로 책 대신 클럽의 얼굴로 그린다.
  * 위 띠는 호스트가 올린 배경 사진(없으면 기본 배경 — ClubBackdrop)과 내가 참여한 가장 가까운 모임의 스티키,
  * 아래 본문은 이름 · 한 줄 소개 · 함께하는 사람. 모임은 스티키 날짜로만 알리고 글 줄로는 쓰지 않는다.
- * 카드 본문은 누르면 클럽 홈으로. 호스트에게만 붙는 '관리'(FootAction)는 함께하는 사람 줄 오른쪽에 얹는다 —
+ * 카드 본문은 누르면 클럽 홈으로. 호스트에게만 붙는 관리 톱니(IconButton — 클럽 정보의 톱니와 같은 아이콘·같은 설정 화면,
+ * 2026-10-05 사용자 결정으로 '관리' 글자 대신)는 함께하는 사람 줄 오른쪽에 얹는다 —
  * 버튼 혼자 한 줄을 차지하지 않게. 본문 Pressable 의 형제로 둬 웹에서 button 안에 button 이 들어가지 않게 한다.
  */
 export function ClubCard({ club, onPress, onManage }: {
@@ -33,7 +34,8 @@ export function ClubCard({ club, onPress, onManage }: {
   const { colors, cardShadow } = useTheme();
   const ended = club.status === 'ENDED' || club.status === 'ARCHIVED';
   // 스티키 날짜는 내가 참여한 모임 중 가장 가까운 것 — 참여한 모임이 없으면 붙이지 않는다.
-  const note = ended ? '종료' : club.myNextMeetingAt ? `모임 ${meetingDay(club.myNextMeetingAt)}` : null;
+  // '모임' 글자 대신 달력 아이콘 + 날짜(2026-10-05 사용자 결정). 끝난 클럽은 '종료' 글자만.
+  const meetingDate = !ended && club.myNextMeetingAt ? meetingDay(club.myNextMeetingAt) : null;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line }, cardShadow]}>
@@ -46,10 +48,17 @@ export function ClubCard({ club, onPress, onManage }: {
             locations={[0.35, 1]}
             style={StyleSheet.absoluteFill}
           />
-          {note ? (
+          {ended || meetingDate ? (
             <View style={styles.bandNote}>
               <StickyNote rotate={4} style={styles.note}>
-                <Text style={[styles.noteText, { color: colors.onNote }]}>{note}</Text>
+                <View
+                  accessible
+                  accessibilityLabel={ended ? '종료' : `참여할 모임 ${meetingDate}`}
+                  style={styles.noteRow}
+                >
+                  {ended ? null : <CalendarDays size={13} color={colors.onNote} {...iconStroke} />}
+                  <Text style={[styles.noteText, { color: colors.onNote }]}>{ended ? '종료' : meetingDate}</Text>
+                </View>
               </StickyNote>
             </View>
           ) : null}
@@ -62,7 +71,7 @@ export function ClubCard({ club, onPress, onManage }: {
           {club.description ? (
             <Text numberOfLines={2} style={[styles.intro, { color: colors.textMuted }]}>{club.description}</Text>
           ) : null}
-          {/* '관리'가 얹히는 줄 — 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
+          {/* 톱니가 얹히는 줄 — 버튼 높이만큼 세우고 오른쪽을 비워 둔다. */}
           <View style={onManage ? styles.membersWithManage : undefined}>
             <MembersLine members={club.members ?? []} />
           </View>
@@ -71,7 +80,9 @@ export function ClubCard({ club, onPress, onManage }: {
 
       {onManage ? (
         <View style={styles.manage}>
-          <FootAction label="관리" onPress={onManage} accessibilityLabel={`${club.name} 관리`} />
+          <IconButton onPress={onManage} accessibilityLabel={`${club.name} 관리`}>
+            <Settings size={ICON_SIZE} color={colors.text} {...iconStroke} />
+          </IconButton>
         </View>
       ) : null}
     </View>
@@ -122,10 +133,12 @@ const styles = StyleSheet.create({
   bandNote: { position: 'absolute', right: spacing.lg, top: spacing.md },
   note: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   noteText: { fontFamily: mono.semiBold, fontSize: 13, letterSpacing: 1 },
+  noteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   body: { padding: spacing.lg, paddingTop: spacing.md, gap: spacing.xs },
   membersWithManage: { minHeight: MANAGE_H, justifyContent: 'center', paddingRight: MANAGE_ROOM },
-  // 본문 아래 여백(lg)에 맞춰 함께하는 사람 줄과 같은 높이에 선다.
-  manage: { position: 'absolute', right: spacing.lg, bottom: spacing.lg },
+  // 본문 아래 여백(lg)에 맞춰 함께하는 사람 줄과 같은 높이에 선다. 44pt 상자 여백(10)만큼 오른쪽으로 내밀어
+  // 톱니 아이콘이 카드 안쪽 선(lg)에 맞는다.
+  manage: { position: 'absolute', right: spacing.lg - 10, bottom: spacing.lg },
   name: { ...typeScale.titleSerif, fontSize: 18, lineHeight: 24 },
   intro: { ...typeScale.caption, lineHeight: 18 },
   membersLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },

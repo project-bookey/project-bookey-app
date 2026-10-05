@@ -12,7 +12,7 @@ import type { Page, PostcardView } from '@/api/types';
 import { AVATAR_SIZE, PersonGlyph } from '@/components/Avatar';
 import { NAV_CLEARANCE } from '@/components/collage';
 import { KeyboardArea, KeyboardRevealProvider, useKeyboardReveal } from '@/components/keyboard';
-import { Button, Card, EmptyState, FootAction, Tag, TextLink, formatRelative } from '@/components/ui';
+import { Button, Card, DeleteAction, EmptyState, Tag, TextLink, formatRelative } from '@/components/ui';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { countGraphemes } from '@/lib/graphemes';
 import { hairline, iconStroke, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
@@ -193,12 +193,7 @@ function PostcardRow({ card }: { card: PostcardView }) {
           <Text style={[typeScale.monoLabel, { color: colors.textFaint }]}>
             {formatRelative(card.createdAt)}
           </Text>
-          <FootAction
-            label={confirmingDelete ? '한 번 더' : '삭제'}
-            onPress={pressDelete}
-            tone={confirmingDelete ? 'danger' : 'faint'}
-            accessibilityLabel={confirmingDelete ? '엽서 삭제 확인' : '엽서 삭제'}
-          />
+          <DeleteAction target="엽서" confirming={confirmingDelete} onPress={pressDelete} />
         </View>
       </View>
 

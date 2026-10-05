@@ -4,7 +4,7 @@
  * 설계 문서: docs/superpowers/specs/2026-08-31-design-tokens-design.md
  */
 export {
-  spacing, radius, sans, serif, typeScale, motion, layout, hairline, iconStroke, pressedStyle, statusLabel, controlHeight,
+  spacing, radius, sans, serif, typeScale, motion, layout, hairline, iconSize, iconStroke, pressedStyle, statusLabel, controlHeight,
 } from './tokens';
 export { controlFace } from './control';
 export { darkColors, lightColors, cardShadow, getLagStyle, getPaceStyle } from './palette';
