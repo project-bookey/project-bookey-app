@@ -5,6 +5,54 @@
  */
 
 export interface paths {
+    "/api/v1/novels/{id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["draft"];
+        put: operations["save"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["cover"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/applications/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["decide"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/consents/{kind}": {
         parameters: {
             query?: never;
@@ -522,6 +570,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/novels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feed"];
+        put?: never;
+        post: operations["create_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["start_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/chapters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["chapters"];
+        put?: never;
+        post: operations["publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["join"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/covers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["upload_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}/open": {
         parameters: {
             query?: never;
@@ -670,7 +830,7 @@ export interface paths {
         get: operations["listMine_1"];
         put?: never;
         /** 문의 남기기 */
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -687,7 +847,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 문의 사진 업로드 — 문의에 붙이기 전 임시 저장, 24시간 안에 안 붙이면 삭제 */
-        post: operations["upload_1"];
+        post: operations["upload_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -723,7 +883,7 @@ export interface paths {
         get: operations["myClubs"];
         put?: never;
         /** 모임 만들기 — 초대 코드 자동 발급 */
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -789,10 +949,10 @@ export interface paths {
             cookie?: never;
         };
         /** 토론 목록 — onlyMyRange=true 면 내 진도까지만 노출 */
-        get: operations["feed"];
+        get: operations["feed_1"];
         put?: never;
         /** 글 · 댓글 작성 */
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -978,7 +1138,7 @@ export interface paths {
         get: operations["day"];
         put?: never;
         /** 조각 남기기 — 사진 한 장(선택) + 한 줄, 쪽에 붙이면 그 쪽까지 읽은 멤버에게만 보인다 */
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1144,7 +1304,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 코드로 참가 — 도서 자동 등록 + 진척 공유 동의 */
-        post: operations["join"];
+        post: operations["join_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1593,7 +1753,7 @@ export interface paths {
         get: operations["list_4"];
         put?: never;
         /** 캠페인 만들기 — scheduledAt 을 비우면 1분 안에 보내기 시작한다 */
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1714,7 +1874,7 @@ export interface paths {
         get: operations["list_5"];
         put?: never;
         /** FAQ 추가 — 맨 뒤에 붙는다 */
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1732,7 +1892,7 @@ export interface paths {
         get: operations["list_6"];
         put?: never;
         /** 에디터 픽 추가 */
-        post: operations["create_10"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1870,7 +2030,7 @@ export interface paths {
         get: operations["list_7"];
         put?: never;
         /** 배너 생성 */
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1956,7 +2116,7 @@ export interface paths {
         get: operations["admins"];
         put?: never;
         /** 관리자 계정 생성 (SUPER_ADMIN) */
-        post: operations["create_12"];
+        post: operations["create_13"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2798,7 +2958,7 @@ export interface paths {
             cookie?: never;
         };
         /** 광장 독후감 피드 — HOT(좋아요·시간 감쇠) 또는 NEW(최신순) */
-        get: operations["feed_1"];
+        get: operations["feed_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2866,7 +3026,71 @@ export interface paths {
             cookie?: never;
         };
         /** 광장 피드 — 완독 자랑(FINISH). 밑줄(QUOTE)은 걷어내 늘 빈 페이지 */
-        get: operations["feed_2"];
+        get: operations["feed_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/{id}/chapters/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["chapter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/my-turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["myTurns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/novels/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2917,7 +3141,7 @@ export interface paths {
             cookie?: never;
         };
         /** 독서 기록 상세 — 진척도 포함 */
-        get: operations["detail_3"];
+        get: operations["detail_4"];
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
@@ -3321,7 +3545,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서 상세 — 검증 평점과 전체 평점을 분리해 제공 */
-        get: operations["detail_4"];
+        get: operations["detail_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3763,7 +3987,7 @@ export interface paths {
             cookie?: never;
         };
         /** 고객문의 상세 — 열람 로그가 남는다 */
-        get: operations["detail_5"];
+        get: operations["detail_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4062,6 +4286,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/novels/{id}/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["leave"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}": {
         parameters: {
             query?: never;
@@ -4090,7 +4330,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** 모임 나가기 */
-        delete: operations["leave"];
+        delete: operations["leave_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4168,6 +4408,81 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        NovelWriteRequest: {
+            /** Format: int64 */
+            turnNumber: number;
+            title: string;
+            body: string;
+        };
+        NovelDraftView: {
+            /** Format: int64 */
+            turnNumber: number;
+            title: string;
+            body: string;
+            /** Format: date-time */
+            savedAt?: string;
+        };
+        NovelCoverRequest: {
+            /** Format: int64 */
+            coverId?: number;
+        };
+        NovelDetail: {
+            novel: components["schemas"]["NovelSummary"];
+            members: components["schemas"]["NovelMemberView"][];
+            applications: components["schemas"]["NovelMemberView"][];
+            myMembership: string;
+            canApply: boolean;
+            canWrite: boolean;
+            canStart: boolean;
+            canComplete: boolean;
+            /** Format: int64 */
+            turnNumber: number;
+            currentWriterNickname?: string;
+            /** @description 개설자와 승인된 참가자에게만 표시 */
+            inviteCode?: string;
+            /** Format: int64 */
+            coverId?: number;
+        };
+        NovelMemberView: {
+            /** Format: int64 */
+            userId: number;
+            nickname: string;
+            avatarUrl?: string;
+            status: string;
+            owner: boolean;
+            currentWriter: boolean;
+        };
+        NovelSummary: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            kind: "SOLO" | "RELAY";
+            /** @enum {string} */
+            status: "RECRUITING" | "ONGOING" | "COMPLETED";
+            title: string;
+            description: string;
+            genre: string;
+            coverUrl?: string;
+            ownerNickname: string;
+            /** Format: int32 */
+            memberCount: number;
+            /** Format: int32 */
+            memberLimit: number;
+            /** Format: int32 */
+            chapterCount: number;
+            /** Format: int32 */
+            chapterLimit: number;
+            isPublic: boolean;
+            mine: boolean;
+            myTurn: boolean;
+            /** Format: date-time */
+            turnDueAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NovelMemberDecision: {
+            approved: boolean;
+        };
         ConsentUpdateRequest: {
             agreed: boolean;
         };
@@ -4835,6 +5150,47 @@ export interface components {
         };
         ReplyPostcardRequest: {
             body: string;
+        };
+        CreateNovelRequest: {
+            /** @enum {string} */
+            kind: "SOLO" | "RELAY";
+            title: string;
+            description?: string;
+            genre: string;
+            isPublic: boolean;
+            /** Format: int32 */
+            memberLimit?: number;
+            /** Format: int32 */
+            chapterLimit?: number;
+            /** Format: int32 */
+            turnHours?: number;
+            /** Format: int64 */
+            coverId?: number;
+        };
+        NovelChapterView: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            novelId: number;
+            /** Format: int32 */
+            chapterNumber: number;
+            title: string;
+            body: string;
+            authorNickname: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NovelJoinRequest: {
+            inviteCode: string;
+        };
+        NovelCoverView: {
+            /** Format: int64 */
+            id: number;
+            url: string;
+            /** Format: int32 */
+            width?: number;
+            /** Format: int32 */
+            height?: number;
         };
         DeviceRegisterRequest: {
             /** @enum {string} */
@@ -5983,6 +6339,41 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PageResponseNovelSummary: {
+            content?: components["schemas"]["NovelSummary"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        NovelChapterSummary: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int32 */
+            chapterNumber: number;
+            title: string;
+            authorNickname: string;
+            excerpt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PageResponseNovelChapterSummary: {
+            content?: components["schemas"]["NovelChapterSummary"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         NotificationView: {
             /** Format: int64 */
             id: number;
@@ -7033,6 +7424,13 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaNovelWriteRequest = components['schemas']['NovelWriteRequest'];
+export type SchemaNovelDraftView = components['schemas']['NovelDraftView'];
+export type SchemaNovelCoverRequest = components['schemas']['NovelCoverRequest'];
+export type SchemaNovelDetail = components['schemas']['NovelDetail'];
+export type SchemaNovelMemberView = components['schemas']['NovelMemberView'];
+export type SchemaNovelSummary = components['schemas']['NovelSummary'];
+export type SchemaNovelMemberDecision = components['schemas']['NovelMemberDecision'];
 export type SchemaConsentUpdateRequest = components['schemas']['ConsentUpdateRequest'];
 export type SchemaConsentStateView = components['schemas']['ConsentStateView'];
 export type SchemaMeResponse = components['schemas']['MeResponse'];
@@ -7085,6 +7483,10 @@ export type SchemaPostCommentView = components['schemas']['PostCommentView'];
 export type SchemaSendPostcardRequest = components['schemas']['SendPostcardRequest'];
 export type SchemaPostcardView = components['schemas']['PostcardView'];
 export type SchemaReplyPostcardRequest = components['schemas']['ReplyPostcardRequest'];
+export type SchemaCreateNovelRequest = components['schemas']['CreateNovelRequest'];
+export type SchemaNovelChapterView = components['schemas']['NovelChapterView'];
+export type SchemaNovelJoinRequest = components['schemas']['NovelJoinRequest'];
+export type SchemaNovelCoverView = components['schemas']['NovelCoverView'];
 export type SchemaDeviceRegisterRequest = components['schemas']['DeviceRegisterRequest'];
 export type SchemaAddBookRequest = components['schemas']['AddBookRequest'];
 export type SchemaProgressView = components['schemas']['ProgressView'];
@@ -7204,6 +7606,9 @@ export type SchemaLikerView = components['schemas']['LikerView'];
 export type SchemaPageResponseLikerView = components['schemas']['PageResponseLikerView'];
 export type SchemaPageResponsePostCommentView = components['schemas']['PageResponsePostCommentView'];
 export type SchemaPageResponsePostcardView = components['schemas']['PageResponsePostcardView'];
+export type SchemaPageResponseNovelSummary = components['schemas']['PageResponseNovelSummary'];
+export type SchemaNovelChapterSummary = components['schemas']['NovelChapterSummary'];
+export type SchemaPageResponseNovelChapterSummary = components['schemas']['PageResponseNovelChapterSummary'];
 export type SchemaNotificationView = components['schemas']['NotificationView'];
 export type SchemaPageResponseNotificationView = components['schemas']['PageResponseNotificationView'];
 export type SchemaPageResponseVisitorView = components['schemas']['PageResponseVisitorView'];
@@ -7285,6 +7690,107 @@ export type SchemaPageResponseAbuseReportRow = components['schemas']['PageRespon
 export type SchemaRemovedCountView = components['schemas']['RemovedCountView'];
 export type $defs = Record<string, never>;
 export interface operations {
+    draft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDraftView"];
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovelWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDraftView"];
+                };
+            };
+        };
+    };
+    cover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovelCoverRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    decide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovelMemberDecision"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
     setConsent: {
         parameters: {
             query?: never;
@@ -8272,6 +8778,221 @@ export interface operations {
             };
         };
     };
+    feed: {
+        parameters: {
+            query?: {
+                kind?: "SOLO" | "RELAY";
+                status?: "RECRUITING" | "ONGOING" | "COMPLETED";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseNovelSummary"];
+                };
+            };
+        };
+    };
+    create_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNovelRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    start_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    chapters: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseNovelChapterSummary"];
+                };
+            };
+        };
+    };
+    publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovelWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelChapterView"];
+                };
+            };
+        };
+    };
+    apply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    join: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NovelJoinRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    upload_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelCoverView"];
+                };
+            };
+        };
+    };
     open: {
         parameters: {
             query?: never;
@@ -8508,7 +9229,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -8532,7 +9253,7 @@ export interface operations {
             };
         };
     };
-    upload_1: {
+    upload_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -8624,7 +9345,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -8722,7 +9443,7 @@ export interface operations {
             };
         };
     };
-    feed: {
+    feed_1: {
         parameters: {
             query?: {
                 onlyMyRange?: boolean;
@@ -8748,7 +9469,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -9096,7 +9817,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: {
                 body?: string;
@@ -9395,7 +10116,7 @@ export interface operations {
             };
         };
     };
-    join: {
+    join_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -10162,7 +10883,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -10373,7 +11094,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -10417,7 +11138,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -10663,7 +11384,7 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -10802,7 +11523,7 @@ export interface operations {
             };
         };
     };
-    create_12: {
+    create_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -12188,7 +12909,7 @@ export interface operations {
             };
         };
     };
-    feed_1: {
+    feed_2: {
         parameters: {
             query?: {
                 sort?: "HOT" | "NEW";
@@ -12283,7 +13004,7 @@ export interface operations {
             };
         };
     };
-    feed_2: {
+    feed_3: {
         parameters: {
             query?: {
                 type?: "QUOTE" | "FINISH";
@@ -12303,6 +13024,94 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponsePlazaItemView"];
+                };
+            };
+        };
+    };
+    detail_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelDetail"];
+                };
+            };
+        };
+    };
+    chapter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelChapterView"];
+                };
+            };
+        };
+    };
+    myTurns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NovelSummary"][];
+                };
+            };
+        };
+    };
+    mine_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                kind?: "SOLO" | "RELAY";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseNovelSummary"];
                 };
             };
         };
@@ -12353,7 +13162,7 @@ export interface operations {
             };
         };
     };
-    detail_3: {
+    detail_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -12929,7 +13738,7 @@ export interface operations {
             };
         };
     };
-    detail_4: {
+    detail_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -13532,7 +14341,7 @@ export interface operations {
             };
         };
     };
-    detail_5: {
+    detail_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -13969,6 +14778,26 @@ export interface operations {
             };
         };
     };
+    leave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     delete_13: {
         parameters: {
             query?: never;
@@ -13989,7 +14818,7 @@ export interface operations {
             };
         };
     };
-    leave: {
+    leave_1: {
         parameters: {
             query?: never;
             header?: never;

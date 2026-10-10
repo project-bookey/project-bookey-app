@@ -14,15 +14,17 @@ import ClubsScreen from './clubs';
 import HomeScreen from './home';
 import MessengerScreen from './messenger';
 import PlazaScreen from './plaza';
+import NovelsScreen from './novels';
 import ProfileScreen from './profile';
 
 // 서가가 가운데 — SectionNav의 SECTIONS 순서와 같아야 한다.
-const ROUTES: readonly SectionRoute[] = ['plaza', 'clubs', 'home', 'messenger', 'profile'];
+const ROUTES: readonly SectionRoute[] = ['plaza', 'novels', 'clubs', 'home', 'messenger', 'profile'];
 const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
 let lastMainIndex: number | null = null;
 
 const ACTIVE_BY_ROUTE: Record<string, SectionKey> = {
   plaza: 'plaza',
+  novels: 'novels',
   home: 'shelf',
   clubs: 'clubs',
   messenger: 'messenger',
@@ -43,7 +45,7 @@ export default function MainTabsLayout() {
   const pendingIndex = useRef<number | null>(null);
   const returningFromDetail = useRef(routeIndex < 0);
   const [activeIndex, setActiveIndex] = useState(initialRouteIndex);
-  // 처음부터 보이지 않는 다섯 탭의 요청을 한꺼번에 보내지 않는다. 한 번 연 탭은 상태를 유지한다.
+  // 처음부터 보이지 않는 여섯 탭의 요청을 한꺼번에 보내지 않는다. 한 번 연 탭은 상태를 유지한다.
   const [visited, setVisited] = useState<ReadonlySet<number>>(() => new Set([initialRouteIndex]));
   const visit = (index: number) => setVisited((previous) => {
     if (previous.has(index)) return previous;
@@ -170,10 +172,11 @@ export default function MainTabsLayout() {
             onPageSelected={(event: PagerViewOnPageSelectedEvent) => selectPage(event.nativeEvent.position)}
           >
             <View key="plaza" collapsable={false}>{visited.has(0) ? <PlazaScreen /> : null}</View>
-            <View key="clubs" collapsable={false}>{visited.has(1) ? <ClubsScreen /> : null}</View>
-            <View key="home" collapsable={false}>{visited.has(2) ? <HomeScreen /> : null}</View>
-            <View key="messenger" collapsable={false}>{visited.has(3) ? <MessengerScreen /> : null}</View>
-            <View key="profile" collapsable={false}>{visited.has(4) ? <ProfileScreen /> : null}</View>
+            <View key="novels" collapsable={false}>{visited.has(1) ? <NovelsScreen /> : null}</View>
+            <View key="clubs" collapsable={false}>{visited.has(2) ? <ClubsScreen /> : null}</View>
+            <View key="home" collapsable={false}>{visited.has(3) ? <HomeScreen /> : null}</View>
+            <View key="messenger" collapsable={false}>{visited.has(4) ? <MessengerScreen /> : null}</View>
+            <View key="profile" collapsable={false}>{visited.has(5) ? <ProfileScreen /> : null}</View>
           </AnimatedPagerView>
         </View>
         <SectionNav

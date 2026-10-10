@@ -14,18 +14,19 @@ import { useTourTarget } from '@/components/tour/TourTarget';
 import { useTheme } from '@/theme';
 import { hairline, iconStroke, motion, pressedStyle, spacing, typeScale } from '@/theme/tokens';
 
-export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'clubs' | 'messenger' | 'me';
+export type SectionKey = 'shelf' | 'explore' | 'plaza' | 'novels' | 'clubs' | 'messenger' | 'me';
 
 /**
  * 하단 구역 네비. 탐색은 홈의 검색 진입점이라 탭으로 두지 않는다.
  * 경로는 한 곳에서만 정의한다.
- * 홈(내 책 · key shelf)은 가운데에 두고 집 아이콘을 쓴다(광장은 펼친 책).
+ * 홈(내 책 · key shelf)은 집 아이콘을 쓴다(광장은 펼친 책). 소설은 별도 하단 탭이다.
  * 엽서(키 messenger, 편지지 아이콘)는 받은·보낸 엽서를 한 목록으로 모은 구역 — 채팅은 구역이 아니라
  * 헤더 왼쪽 말풍선(BrandHeader)으로 어디서든 연다(2026-10-05, 사용자 결정).
  * 설정은 탭이 아니라 '나' 화면 프로필 행의 톱니로 들어가는 서브 화면이다(2026-09-08).
  */
 const SECTIONS: { key: SectionKey; label: string; path: string; route: string }[] = [
   { key: 'plaza', label: '광장', path: '/plaza', route: 'plaza' },
+  { key: 'novels', label: '소설', path: '/novels', route: 'novels' },
   { key: 'clubs', label: '클럽', path: '/clubs', route: 'clubs' },
   { key: 'shelf', label: '홈', path: '/home', route: 'home' },
   { key: 'messenger', label: '엽서', path: '/messenger', route: 'messenger' },
@@ -696,6 +697,12 @@ function SectionIcon({ name, color }: { name: SectionKey; color: string }) {
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
           <Path d="M5 6.5h5.5A2.5 2.5 0 0 1 13 9v9.5a2.5 2.5 0 0 0-2.5-2.5H5z" {...stroke} />
           <Path d="M19 6.5h-3.5A2.5 2.5 0 0 0 13 9v9.5a2.5 2.5 0 0 1 2.5-2.5H19z" {...stroke} />
+        </Svg>
+      );
+    case 'novels':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M5 4h10v16H5zM8 8h4M8 11h3M16 13l4-4 2 2-4 4-3 1z" {...stroke} />
         </Svg>
       );
     case 'shelf':

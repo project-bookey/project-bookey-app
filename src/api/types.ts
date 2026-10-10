@@ -149,3 +149,15 @@ export type InquiryCategoryOption = Schemas['InquiryCategoryView'];
 export type InquiryImage = Schemas['InquiryImageView'];
 export type CreateInquiry = Schemas['CreateInquiryRequest'];
 export type Faq = Schemas['FaqView'];
+
+// ── 소설 · 릴레이노벨 ───────────────────────────────────
+export type NovelSummary = Schemas['NovelSummary'];
+export type NovelDetail = Schemas['NovelDetail'];
+export type NovelKind = NovelSummary['kind'];
+export type NovelStatus = NovelSummary['status'];
+export type CreateNovel = Schemas['CreateNovelRequest'];
+export type NovelChapterSummary = Schemas['NovelChapterSummary'];
+export type NovelChapter = Schemas['NovelChapterView'];
+export type NovelDraft = Schemas['NovelDraftView'];
+export type NovelWrite = Schemas['NovelWriteRequest'];
+export type NovelCover = Schemas['NovelCoverView'];

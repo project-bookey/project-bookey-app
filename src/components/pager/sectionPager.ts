@@ -1,8 +1,8 @@
 import { router } from '@/navigation';
 import { create } from 'zustand';
 
-/** 메인 탭(PagerView) 다섯 구역 — `app/(tabs)/_layout.tsx` 의 페이지 순서와 같은 이름. */
-export type SectionRoute = 'plaza' | 'clubs' | 'home' | 'messenger' | 'profile';
+/** 메인 탭(PagerView) 여섯 구역 — `app/(tabs)/_layout.tsx` 의 페이지 순서와 같은 이름. */
+export type SectionRoute = 'plaza' | 'novels' | 'clubs' | 'home' | 'messenger' | 'profile';
 
 type SectionPagerState = {
   /** 포커스된 메인 탭 화면이 지금 보여 주는 구역. 하위 화면(설정·상세 등)이 위에 있으면 null. */

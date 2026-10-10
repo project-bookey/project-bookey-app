@@ -1,3 +1,4 @@
+import type { NovelSummary, NovelDetail, NovelKind, NovelStatus, CreateNovel, NovelChapterSummary, NovelChapter, NovelDraft, NovelWrite, NovelCover } from "./types";
 import { api } from "./client";
 import type {
   ActivityCard,
@@ -998,4 +999,26 @@ export const inquiryApi = {
 /** 자주 묻는 질문 — 노출 중인 것만 정렬 순으로. 어드민에서 고친다. */
 export const faqApi = {
   list: () => api<Faq[]>("/api/v1/faqs"),
+};
+
+// ── 소설 · 릴레이노벨 ───────────────────────────────────
+export const novelApi = {
+  feed: (kind: NovelKind, status?: NovelStatus, page = 0) => api<Page<NovelSummary>>('/api/v1/novels', { query: { kind, status, page } }),
+  mine: (page = 0, kind: NovelKind = 'SOLO') => api<Page<NovelSummary>>('/api/v1/novels/mine', { query: { page, kind } }),
+  myTurns: () => api<NovelSummary[]>('/api/v1/novels/my-turns'),
+  get: (id: number) => api<NovelDetail>(`/api/v1/novels/${id}`),
+  create: (body: CreateNovel) => api<NovelDetail>('/api/v1/novels', { method: 'POST', body }),
+  uploadCover: (body: FormData) => api<NovelCover>('/api/v1/novels/covers', { method: 'POST', body }),
+  changeCover: (id: number, coverId?: number) => api<NovelDetail>(`/api/v1/novels/${id}/cover`, { method: 'PUT', body: { coverId: coverId ?? null } }),
+  apply: (id: number) => api<NovelDetail>(`/api/v1/novels/${id}/applications`, { method: 'POST' }),
+  join: (inviteCode: string) => api<NovelDetail>('/api/v1/novels/join', { method: 'POST', body: { inviteCode } }),
+  decide: (id: number, userId: number, approved: boolean) => api<NovelDetail>(`/api/v1/novels/${id}/applications/${userId}`, { method: 'PUT', body: { approved } }),
+  start: (id: number) => api<NovelDetail>(`/api/v1/novels/${id}/start`, { method: 'POST' }),
+  complete: (id: number) => api<NovelDetail>(`/api/v1/novels/${id}/complete`, { method: 'POST' }),
+  leave: (id: number) => api<void>(`/api/v1/novels/${id}/membership`, { method: 'DELETE' }),
+  chapters: (id: number, page = 0) => api<Page<NovelChapterSummary>>(`/api/v1/novels/${id}/chapters`, { query: { page } }),
+  chapter: (id: number, number: number) => api<NovelChapter>(`/api/v1/novels/${id}/chapters/${number}`),
+  draft: (id: number) => api<NovelDraft>(`/api/v1/novels/${id}/draft`),
+  saveDraft: (id: number, body: NovelWrite) => api<NovelDraft>(`/api/v1/novels/${id}/draft`, { method: 'PUT', body }),
+  publish: (id: number, body: NovelWrite) => api<NovelChapter>(`/api/v1/novels/${id}/chapters`, { method: 'POST', body }),
 };
