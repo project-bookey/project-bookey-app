@@ -181,7 +181,7 @@ export default function HomeScreen() {
           <ClubRow />
         </HomeSection>
       </Animated.ScrollView>
-      <NoticePopup notice={notices.data?.[0]} />
+      <NoticePopup notices={notices.data} />
     </PaperScreen>
   );
 }
