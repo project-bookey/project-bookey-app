@@ -19,6 +19,8 @@ export type Me = Schemas['MeResponse'];
 export type TokenResponse = Schemas['TokenResponse'];
 export type EmailCodeResponse = Schemas['EmailCodeResponse'];
 export type SignupConfig = Schemas['SignupConfigResponse'];
+/** 카카오 교환 코드로 받은 카카오 accessToken — socialLogin·linkSocial(KAKAO)의 token 으로 보낸다. */
+export type KakaoToken = Schemas['KakaoTokenResponse'];
 
 // ── 앱 설정 ─────────────────────────────────────────────
 /** 앱을 켤 때 읽는 설정 — 강제·권장 업데이트와 점검 안내(관리자 '앱 버전 · 점검'). */

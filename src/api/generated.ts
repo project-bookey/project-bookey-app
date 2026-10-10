@@ -1427,6 +1427,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/kakao/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 카카오 교환 코드 → 카카오 액세스 토큰 — 받은 토큰으로 /auth/social(KAKAO)을 부른다 */
+        post: operations["token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/email/code": {
         parameters: {
             query?: never;
@@ -3483,6 +3500,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/kakao/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 카카오 로그인 콜백 — 카카오 콘솔에 등록하는 리다이렉트 URI. 코드를 토큰으로 바꿔 앱으로 돌려보낸다 (302) */
+        get: operations["callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/kakao/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 카카오 로그인 시작 — 앱이 연 로그인 창을 카카오 로그인 화면으로 보낸다 (302) */
+        get: operations["authorize"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/users": {
         parameters: {
             query?: never;
@@ -5374,6 +5425,13 @@ export interface components {
             email: string;
             password: string;
         };
+        KakaoTokenRequest: {
+            code: string;
+            codeVerifier: string;
+        };
+        KakaoTokenResponse: {
+            accessToken: string;
+        };
         EmailCodeVerifyRequest: {
             /** Format: email */
             email: string;
@@ -7082,6 +7140,8 @@ export type SchemaPasswordResetRequest = components['schemas']['PasswordResetReq
 export type SchemaEmailCodeRequest = components['schemas']['EmailCodeRequest'];
 export type SchemaEmailCodeResponse = components['schemas']['EmailCodeResponse'];
 export type SchemaEmailLoginRequest = components['schemas']['EmailLoginRequest'];
+export type SchemaKakaoTokenRequest = components['schemas']['KakaoTokenRequest'];
+export type SchemaKakaoTokenResponse = components['schemas']['KakaoTokenResponse'];
 export type SchemaEmailCodeVerifyRequest = components['schemas']['EmailCodeVerifyRequest'];
 export type SchemaAttendanceView = components['schemas']['AttendanceView'];
 export type SchemaWalletAdjustRequest = components['schemas']['WalletAdjustRequest'];
@@ -9823,6 +9883,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TokenResponse"];
+                };
+            };
+        };
+    };
+    token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KakaoTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KakaoTokenResponse"];
                 };
             };
         };
@@ -13093,6 +13177,51 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["SignupConfigResponse"];
                 };
+            };
+        };
+    };
+    callback: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    authorize: {
+        parameters: {
+            query: {
+                redirect_uri: string;
+                state: string;
+                code_challenge: string;
+                code_challenge_method?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

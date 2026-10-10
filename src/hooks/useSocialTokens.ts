@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
+import { kakaoLogin } from '@/lib/kakaoLogin';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,7 +37,6 @@ export const hasGoogleClient = Boolean(
  * 설정의 '소셜 계정 연동'이 쓴다. 사용자가 창을 닫으면 null, 설정이 없거나 실패하면 던진다.
  */
 export function useSocialTokens() {
-  const kakao = useKakaoLogin();
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [googleRequest, , promptGoogle] = Google.useIdTokenAuthRequest({
     ...googleClientIds,
@@ -62,10 +61,7 @@ export function useSocialTokens() {
         throw e;
       }
     }
-    if (provider === 'KAKAO') {
-      if (!hasKakaoClient) throw new Error('지금은 카카오 로그인을 쓸 수 없어요.');
-      return kakao.login();
-    }
+    if (provider === 'KAKAO') return kakaoLogin();
     if (!hasGoogleClient || !googleRequest) throw new Error('지금은 Google 로그인을 쓸 수 없어요.');
     const result = await promptGoogle();
     if (result.type === 'success') return result.params.id_token ?? null;

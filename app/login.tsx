@@ -14,7 +14,7 @@ import { BrandWordmark } from '@/components/BrandWordmark';
 import type { SignupConsent } from '@/api/types';
 import { authApi, libraryApi } from '@/api/endpoints';
 import { useOnboarding } from '@/store/onboarding';
-import { hasKakaoClient, useKakaoLogin } from '@/hooks/useKakaoLogin';
+import { kakaoLogin } from '@/lib/kakaoLogin';
 // 공급자 설정(애플 모듈·구글 클라이언트 ID)은 설정의 '소셜 계정 연동'과 한 곳에서 나눠 쓴다.
 import { Apple, googleClientIds, hasGoogleClient, type SocialProvider } from '@/hooks/useSocialTokens';
 import { useSecondsLeft } from '@/hooks/useSecondsLeft';
@@ -112,8 +112,6 @@ function LoginForm() {
   const [pendingSocial, setPendingSocial] = useState<{ provider: SocialProvider; token: string } | null>(null);
   const [socialConsentBusy, setSocialConsentBusy] = useState(false);
   const [socialConsentError, setSocialConsentError] = useState<string | null>(null);
-
-  const kakao = useKakaoLogin();
 
   const scrollRef = useRef<ScrollView>(null);
   // 인증 코드는 숫자 키패드라 iOS 에선 닫는 키가 없다 — 칸을 누르면 바로 밑 '인증 코드 확인'까지 키보드 위로 올린다.
@@ -432,16 +430,10 @@ function LoginForm() {
   };
 
   const submitKakao = async () => {
-    if (!hasKakaoClient) {
-      setFormError(__DEV__
-        ? '카카오 로그인 키가 아직 설정되지 않았어요. (.env.local의 EXPO_PUBLIC_KAKAO_REST_KEY)'
-        : '지금은 카카오 로그인을 쓸 수 없어요.');
-      return;
-    }
     setSocialLoading('KAKAO');
     setFormError(null);
     try {
-      const accessToken = await kakao.login();
+      const accessToken = await kakaoLogin();
       if (!accessToken) return; // 사용자가 취소
       await runSocial('KAKAO', accessToken);
     } catch (e) {
@@ -732,9 +724,6 @@ function LoginForm() {
           {__DEV__ ? (
             <View style={styles.devInfo}>
               <View style={styles.devRule} />
-              {!hasKakaoClient ? (
-                <Text style={styles.devLine}>카카오 미설정 — EXPO_PUBLIC_KAKAO_REST_KEY</Text>
-              ) : null}
               {!hasGoogleClient ? (
                 <Text style={styles.devLine}>구글 미설정 — EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID</Text>
               ) : null}

@@ -63,6 +63,7 @@ import type {
   SignupConsent,
   StatsSummary,
   TokenResponse,
+  KakaoToken,
   UpdatePost,
   UpdateReview,
   UserProfileView,
@@ -81,6 +82,13 @@ export const authApi = {
       method: "POST",
       auth: false,
       body: { provider, token, consent },
+    }),
+  /** 카카오 로그인 창이 돌려준 교환 코드 + code_verifier → 카카오 accessToken (src/lib/kakaoLogin.ts). */
+  kakaoToken: (code: string, codeVerifier: string) =>
+    api<KakaoToken>("/api/v1/auth/kakao/token", {
+      method: "POST",
+      auth: false,
+      body: { code, codeVerifier },
     }),
   linkSocial: (provider: "GOOGLE" | "APPLE" | "KAKAO", token: string) =>
     api<Me>("/api/v1/auth/social/link", {
