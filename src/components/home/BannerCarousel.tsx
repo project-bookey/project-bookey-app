@@ -1,8 +1,8 @@
-import { useRouter } from '@/navigation';
 import { useState } from 'react';
-import { FlatList, Image, Linking, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import type { Banner } from '@/api/types';
+import { openLink } from '@/lib/linkTarget';
 import { darkColors, hairline, layout, radius, sans, spacing, typeScale, useTheme } from '@/theme';
 import { InlineMarkdownText } from './InlineMarkdownText';
 
@@ -14,7 +14,6 @@ const CARD_H = 108;
  * 배너가 없으면 같은 높이의 '이벤트 준비 중' 스트립으로 자리를 지킨다(홈 빈 섹션 스펙).
  */
 export function BannerCarousel({ banners }: { banners: Banner[] }) {
-  const router = useRouter();
   const { colors } = useTheme();
   const [page, setPage] = useState(0);
   // 카드 폭은 창 폭에서 바로 계산한다(홈 본문 최대 폭 − 좌우 여백). 웹에서 onLayout 이 첫 폭을
@@ -32,12 +31,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   }
 
   const open = (banner: Banner) => {
-    if (!banner.linkUrl) return;
-    if (/^https?:\/\//.test(banner.linkUrl)) {
-      Linking.openURL(banner.linkUrl).catch(() => {});
-    } else {
-      router.push(banner.linkUrl as never);
-    }
+    openLink(banner.linkUrl);
   };
 
   return (
