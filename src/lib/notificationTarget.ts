@@ -1,12 +1,13 @@
-import { router, type Href } from '@/navigation';
+import type { Href } from '@/navigation';
 
 import type { Notification } from '@/api/types';
-import { openSection, type SectionRoute } from '@/components/pager/sectionPager';
+import { linkTarget, openLinkTarget, type LinkTarget } from './linkTarget';
 
-/** 알림이 가리키는 곳 — 하위 화면(href)이거나, 메인 탭의 한 구역(section, 그 화면이 읽는 주소 값 params). */
-export type NotificationTarget =
-  | { href: Href; section?: undefined }
-  | { section: SectionRoute; params?: Record<string, string> };
+/**
+ * 알림이 가리키는 곳 — 하위 화면(href), 메인 탭의 한 구역(section, 그 화면이 읽는 주소 값 params),
+ * 또는 웹 주소(url, 관리자 전체 푸시의 링크).
+ */
+export type NotificationTarget = LinkTarget;
 
 function numberOf(payload: Notification['payload'], key: string): number | null {
   const raw = payload?.[key];
@@ -47,6 +48,8 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
     case 'CHAT_MESSAGE': return one('/chat/[id]', 'chatId');
     // 고객문의 답변 — 그 문의 화면에서 답을 읽는다.
     case 'INQUIRY_ANSWERED': return one('/inquiry/[id]', 'inquiryId');
+    // 관리자 전체 푸시 — 관리자가 넣은 링크(https 주소나 앱 화면 경로)로. 링크가 없으면 갈 곳이 없다.
+    case 'ANNOUNCEMENT': return linkTarget(item.payload?.link);
     // 광고성 정보 수신 동의·철회 처리 결과 — 그 토글이 있는 설정으로.
     case 'CONSENT_RESULT': return { href: '/settings' };
     case 'FOLLOWED':
@@ -67,6 +70,5 @@ export function notificationTarget(item: Notification): NotificationTarget | nul
  * 메인 탭 구역은 openSection 으로 연다: 경로로 navigate 하면 알림 화면 위에 메인 탭이 한 벌 더 쌓인다.
  */
 export function openNotificationTarget(target: NotificationTarget) {
-  if (target.section) openSection(target.section, target.params);
-  else router.push(target.href);
+  openLinkTarget(target);
 }

@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, Linking, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused, useRouter } from '@/navigation';
+import { useIsFocused } from '@/navigation';
 
 import type { Banner } from '@/api/types';
 import { CachedImage } from '@/components/CachedImage';
 import { todayKst } from '@/components/clubLog/dates';
+import { linkTarget, openLink } from '@/lib/linkTarget';
 import { useAppConfigGate } from '@/store/appConfigGate';
 import { useAppTour } from '@/store/appTour';
 import {
@@ -35,7 +36,6 @@ const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
  * 아래 '오늘 하루 보지 않기 | 닫기' 한 줄은 지금 장이 아니라 팝업 전체에 적용된다.
  */
 export function NoticePopup({ notices }: { notices?: Banner[] }) {
-  const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
@@ -87,13 +87,9 @@ export function NoticePopup({ notices }: { notices?: Banner[] }) {
   };
 
   const open = (notice: Banner) => {
-    if (!notice.linkUrl) return;
+    if (!linkTarget(notice.linkUrl)) return;
     closeAll();
-    if (/^https?:\/\//.test(notice.linkUrl)) {
-      Linking.openURL(notice.linkUrl).catch(() => {});
-    } else {
-      router.push(notice.linkUrl as never);
-    }
+    openLink(notice.linkUrl);
   };
 
   const goTo = (index: number) => {
