@@ -31,6 +31,8 @@ import type {
   InquiryCategoryOption,
   LegalDocument,
   LegalDocumentKey,
+  AppConfig,
+  AppPlatform,
   InquiryImage,
   InquirySummary,
   LibrarySummary,
@@ -166,6 +168,12 @@ export const authApi = {
    */
   setConsent: (kind: "MARKETING" | "PROFILE_OPTIONAL", agreed: boolean) =>
     api<Me>(`/api/v1/me/consents/${kind}`, { method: "PUT", body: { agreed } }),
+};
+
+/** 앱 설정 — 로그인 전에도 읽는다. 버전을 보내면 서버가 강제·권장 업데이트 여부를 판정한다(1분 캐시). */
+export const appConfigApi = {
+  get: (platform: AppPlatform, version?: string) =>
+    api<AppConfig>("/api/v1/public/app-config", { auth: false, query: { platform, version } }),
 };
 
 /** 약관·정책 원문 — 로그인 전에도 읽는다. 서버가 버전을 쥐고 있어 문구를 고쳐도 앱 출시가 필요 없다. */

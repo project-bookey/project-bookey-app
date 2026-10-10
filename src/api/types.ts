@@ -20,6 +20,13 @@ export type TokenResponse = Schemas['TokenResponse'];
 export type EmailCodeResponse = Schemas['EmailCodeResponse'];
 export type SignupConfig = Schemas['SignupConfigResponse'];
 
+// ── 앱 설정 ─────────────────────────────────────────────
+/** 앱을 켤 때 읽는 설정 — 강제·권장 업데이트와 점검 안내(관리자 '앱 버전 · 점검'). */
+export type AppConfig = Schemas['AppConfigView'];
+/** 끝나지 않은 가장 가까운 점검 — active 면 지금 점검 중, 아니면 예고. */
+export type MaintenanceNotice = Schemas['MaintenanceView'];
+export type AppPlatform = 'IOS' | 'ANDROID';
+
 // ── 약관·동의 ────────────────────────────────────────────
 /** 약관·정책 원문 — 서버가 단일 원천이다(앱 가입 화면과 웹 정책 페이지가 같은 글을 쓴다). */
 export type LegalDocument = Schemas['LegalDocumentView'];

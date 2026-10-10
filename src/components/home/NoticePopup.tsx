@@ -8,6 +8,7 @@ import { useIsFocused, useRouter } from '@/navigation';
 import type { Banner } from '@/api/types';
 import { CachedImage } from '@/components/CachedImage';
 import { todayKst } from '@/components/clubLog/dates';
+import { useAppConfigGate } from '@/store/appConfigGate';
 import { useAppTour } from '@/store/appTour';
 import {
   ForceThemeMode, hairline, iconSize, iconStroke, pressedStyle, radius, sans, serif, spacing, typeScale, useTheme,
@@ -41,6 +42,8 @@ export function NoticePopup({ notices }: { notices?: Banner[] }) {
   // 앱 둘러보기와 겹치지 않게 — 둘러보기를 띄울지 확인이 끝나고 둘러보기가 꺼진 뒤에만 띄운다.
   // 메인 탭이 두 벌 떠 있을 때(프로필 사진 변경 뒤 등) 가려진 쪽은 띄우지 않는다.
   const tourBusy = useAppTour((s) => !s.checked || s.active);
+  // 업데이트·점검 안내와도 겹치지 않게 — 앱 설정 확인과 그 안내가 끝난 뒤에만 띄운다.
+  const configBusy = useAppConfigGate((s) => !s.settled || s.blocked);
   const isFocused = useIsFocused();
   const listRef = useRef<FlatList<Banner>>(null);
   const [hiddenToday, setHiddenToday] = useState<boolean | null>(null); // null = 아직 확인 중
@@ -70,7 +73,7 @@ export function NoticePopup({ notices }: { notices?: Banner[] }) {
   const pageWidth = cardWidth - hairline * 2;
   const pageHeight = Math.round(pageWidth / PHOTO_ASPECT);
 
-  const visible = hiddenToday === false && pending.length > 0 && !tourBusy && isFocused;
+  const visible = hiddenToday === false && pending.length > 0 && !tourBusy && !configBusy && isFocused;
 
   const closeAll = () => {
     pending.forEach((n) => closedThisRun.add(n.id));
