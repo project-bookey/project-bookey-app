@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppConfigGate } from '@/components/appConfig/AppConfigGate';
 import { Loading } from '@/components/ui';
 import { PushNotifications } from '@/components/notifications/PushNotifications';
 import { useAuth } from '@/store/auth';
@@ -107,6 +108,8 @@ export default function RootLayout() {
             <Stack.Screen name="finish-cards" options={{ title: '완독 카드' }} />
           </Stack>
           <PushNotifications />
+          {/* 강제 업데이트·점검 중이면 앱 전체를 덮는다 — 로그인 전에도 묻는다. */}
+          <AppConfigGate />
         </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

@@ -57,6 +57,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/push-campaigns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 캠페인 상세 — 발송·대기·열람 수 */
+        get: operations["detail"];
+        /** 예약 캠페인 고치기 — 보내기 시작하면 고칠 수 없다 */
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/maintenance-windows/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 점검 일정 수정 (SUPER_ADMIN) — 끝났거나 취소한 점검은 고칠 수 없다 */
+        put: operations["updateMaintenance"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/inquiries/{inquiryId}/answer": {
         parameters: {
             query?: never;
@@ -84,7 +119,7 @@ export interface paths {
         };
         get?: never;
         /** FAQ 수정 · 숨기기 — 전체 필드 교체 */
-        put: operations["update"];
+        put: operations["update_1"];
         post?: never;
         /** FAQ 삭제 */
         delete: operations["delete_1"];
@@ -119,10 +154,44 @@ export interface paths {
         };
         get?: never;
         /** 배너 수정 — 전체 필드 교체 */
-        put: operations["update_1"];
+        put: operations["update_2"];
         post?: never;
         /** 배너 삭제 */
         delete: operations["delete_2"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/auth/admins/{adminId}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 관리자 비밀번호 재설정 (SUPER_ADMIN) — 그 관리자의 기존 로그인은 끊긴다 */
+        put: operations["resetPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/app-config/{platform}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 앱 버전 안내 변경 (SUPER_ADMIN) — 최소 지원 버전을 올리면 그보다 낮은 앱은 업데이트 전까지 막힌다 */
+        put: operations["updateRelease"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1300,7 +1369,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** 비밀번호 재설정 — 코드가 맞으면 새 비밀번호로 바꾸고 다른 기기는 로그아웃한 뒤 로그인시킨다 */
-        post: operations["resetPassword"];
+        post: operations["resetPassword_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1445,6 +1514,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/users/{userId}/sessions/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 회원 로그인 모두 끊기 — 기기 분실·도용 신고 대응. 사유 필수 */
+        post: operations["revokeSessions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/users/{userId}/sanctions": {
         parameters: {
             query?: never;
@@ -1473,6 +1559,58 @@ export interface paths {
         put?: never;
         /** 검증 등급 수동 조정 — 사유 필수, 감사 로그 대상 */
         post: operations["overrideVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/push-campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 캠페인 목록 — 최근 순 */
+        get: operations["list_4"];
+        put?: never;
+        /** 캠페인 만들기 — scheduledAt 을 비우면 1분 안에 보내기 시작한다 */
+        post: operations["create_8"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/push-campaigns/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 캠페인 취소 — 아직 안 나간 알림은 지운다 */
+        post: operations["cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/push-campaigns/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 테스트 발송 — 지정한 회원(최대 5명)에게 [테스트] 를 붙여 바로 보낸다 */
+        post: operations["test"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1513,6 +1651,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/maintenance-windows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 점검 일정 — 최근 시작 순 */
+        get: operations["maintenanceWindows"];
+        put?: never;
+        /** 점검 예고 (SUPER_ADMIN) */
+        post: operations["createMaintenance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/maintenance-windows/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 점검 취소 (SUPER_ADMIN) */
+        post: operations["cancelMaintenance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/faqs": {
         parameters: {
             query?: never;
@@ -1521,10 +1694,10 @@ export interface paths {
             cookie?: never;
         };
         /** FAQ 전체 목록 — 숨긴 것 포함, 정렬 순 */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /** FAQ 추가 — 맨 뒤에 붙는다 */
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1539,10 +1712,27 @@ export interface paths {
             cookie?: never;
         };
         /** 에디터 픽 목록 */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         /** 에디터 픽 추가 */
-        post: operations["create_9"];
+        post: operations["create_10"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/contents/{type}/{id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 콘텐츠 조치 — 숨김·복구·삭제. 사유 필수, 열린 신고도 함께 처리한다 */
+        post: operations["act"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1583,6 +1773,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/clubs/{clubId}/members/{userId}/kick": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 모임 멤버 내보내기 — 사유 필수. 호스트는 먼저 넘긴 뒤에 */
+        post: operations["kick_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/clubs/{clubId}/force-end": {
         parameters: {
             query?: never;
@@ -1600,6 +1807,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 도서 검색 */
+        get: operations["books"];
+        put?: never;
+        /** 도서 직접 등록 — 외부 검색에 없는 책. ISBN 이 이미 있으면 409 */
+        post: operations["createBook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/books/{bookId}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 도서 병합 (SUPER_ADMIN) — 원본을 가리키던 모든 기록을 대상으로 옮기고 원본을 지운다. 되돌릴 수 없다 */
+        post: operations["merge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/banners": {
         parameters: {
             query?: never;
@@ -1608,10 +1850,27 @@ export interface paths {
             cookie?: never;
         };
         /** 배너/공지 전체 목록 — 비활성·기간 외 포함 */
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         /** 배너 생성 */
-        post: operations["create_10"];
+        post: operations["create_11"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/banners/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 배너·공지 이미지 업로드 — 돌려준 url 을 배너의 imageUrl 로 쓴다. 저장소가 꺼져 있으면 503 */
+        post: operations["uploadImage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1627,8 +1886,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 2FA 시크릿 발급 */
-        post: operations["issueTotp"];
+        /** 2FA 등록 1단계 — 시크릿 발급(아직 켜지지 않음). 이미 켜져 있으면 409 */
+        post: operations["prepareTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/auth/totp/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 2FA 등록 2단계 — 인증 앱 코드를 확인하고 켠다 */
+        post: operations["confirmTotp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1659,10 +1935,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 관리자 목록 (SUPER_ADMIN) */
+        get: operations["admins"];
         put?: never;
         /** 관리자 계정 생성 (SUPER_ADMIN) */
-        post: operations["create_11"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1677,7 +1954,7 @@ export interface paths {
             cookie?: never;
         };
         /** 리뷰 단건 조회 */
-        get: operations["detail"];
+        get: operations["detail_1"];
         put?: never;
         post?: never;
         /** 리뷰 삭제 */
@@ -1685,7 +1962,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** 리뷰 수정 — 등급은 재산정하지 않는다 */
-        patch: operations["update_2"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/v1/posts/{postId}": {
@@ -1704,7 +1981,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** 독후감 수정 · 공개 범위 변경 */
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/api/v1/notifications/settings": {
@@ -1740,7 +2017,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** 프로필 수정 */
-        patch: operations["update_4"];
+        patch: operations["update_5"];
         trace?: never;
     };
     "/api/v1/library/{recordId}/progress": {
@@ -1792,7 +2069,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** 모임 정보 수정 (호스트) */
-        patch: operations["update_5"];
+        patch: operations["update_6"];
         trace?: never;
     };
     "/api/v1/clubs/{clubId}/sharing": {
@@ -1820,7 +2097,7 @@ export interface paths {
             cookie?: never;
         };
         /** 토론 상세 — 댓글 포함 */
-        get: operations["detail_1"];
+        get: operations["detail_2"];
         put?: never;
         post?: never;
         /** 삭제 (작성자 또는 운영자) */
@@ -1828,7 +2105,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** 글 · 조각 수정 — 작성자만, 한 줄과 쪽을 보낸 값으로 바꾼다 */
-        patch: operations["update_6"];
+        patch: operations["update_7"];
         trace?: never;
     };
     "/admin/v1/ops-flags/{key}": {
@@ -1863,10 +2140,28 @@ export interface paths {
         options?: never;
         head?: never;
         /** 에디터 픽 수정 — 정렬·메모 */
-        patch: operations["update_7"];
+        patch: operations["update_8"];
         trace?: never;
     };
     "/admin/v1/books/{bookId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 도서 상세 — 독서 기록·리뷰·독후감 등 이 책을 쓰는 곳의 수 */
+        get: operations["book"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 도서 메타 수정 — 페이지 수 보정 등 */
+        patch: operations["updateBook"];
+        trace?: never;
+    };
+    "/admin/v1/auth/me/password": {
         parameters: {
             query?: never;
             header?: never;
@@ -1879,8 +2174,25 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** 도서 메타 수정 — 페이지 수 보정 등 */
-        patch: operations["updateBook"];
+        /** 내 비밀번호 변경 — 바꾸면 지금 로그인도 끊겨 다시 로그인한다 */
+        patch: operations["changeOwnPassword"];
+        trace?: never;
+    };
+    "/admin/v1/auth/admins/{adminId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 관리자 정지 · 재활성화 (SUPER_ADMIN) — 자기 자신·마지막 최고 관리자는 불가 */
+        patch: operations["changeStatus"];
         trace?: never;
     };
     "/admin/v1/auth/admins/{adminId}/role": {
@@ -2027,7 +2339,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서별 세션 목록 */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2104,6 +2416,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/users/{userId}/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 공개 프로필 (비회원) — 닉네임·사진·숫자만, 방문 기록은 남기지 않는다 */
+        get: operations["publicProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/users/{userId}/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 사용자의 공개 독후감 (비회원) — 없는·탈퇴한 사람은 404 */
+        get: operations["publicUserPosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/reviews/{reviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 리뷰 한 건 (비회원) */
+        get: operations["publicReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 독후감 한 건 (비회원) — PUBLIC·LINK 글만. 같은 IP 는 1시간에 한 번만 조회수를 올리고, 봇은 세지 않는다 */
+        get: operations["publicPost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/posts/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 광장 독후감 피드 (비회원) — HOT(좋아요·시간 감쇠) 또는 NEW(최신순) */
+        get: operations["publicFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/plaza/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 광장 완독 자랑 피드 (비회원) */
+        get: operations["publicPlazaFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/onboarding/categories": {
         parameters: {
             query?: never;
@@ -2155,6 +2569,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 도서 검색 (비회원) — 외부 검색 API 를 타므로 같은 IP 는 분당 30회까지 */
+        get: operations["publicSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/books/{bookId}": {
         parameters: {
             query?: never;
@@ -2162,8 +2593,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 도서 공개 정보 — 검증 평점 포함 */
-        get: operations["book"];
+        /** 도서 공개 정보 — 평점·좋아요 수 포함, liked 는 늘 false */
+        get: operations["publicBook"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2179,8 +2610,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 도서의 검증 리뷰 */
-        get: operations["reviews"];
+        /** 도서의 리뷰 (비회원) — 기본은 모든 리뷰, verifiedOnly=true 면 완독 확인된 리뷰만 */
+        get: operations["publicReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/books/{bookId}/remarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 도서의 한 줄평 (비회원) — 최근에 쓴 순 */
+        get: operations["publicRemarks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2196,8 +2644,59 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 도서에 달린 공개 독후감 */
-        get: operations["bookPosts"];
+        /** 도서에 달린 공개 독후감 (비회원) */
+        get: operations["publicBookPosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/books/recommended": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 추천 도서 (비회원) — 에디터 픽 → 기본 카테고리 → 최신 책 → YES24 베스트셀러 */
+        get: operations["publicRecommended"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/books/popular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 인기 도서 (비회원) — 서재에 담긴 수 순 */
+        get: operations["publicPopular"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/books/curation/yes24": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** YES24 큐레이션 (비회원) — 베스트셀러·신간 */
+        get: operations["publicYes24Curation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2213,7 +2712,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 사용자 공개 블로그 — bookey.app/@{handle} */
+        /** 사용자 공개 블로그 — @{handle} 의 공개 독후감 */
         get: operations["blogPosts"];
         put?: never;
         post?: never;
@@ -2230,8 +2729,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 공개 독후감 상세 */
+        /** 공개 독후감 상세 — @{handle}/{slug} */
         get: operations["blogPost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/app-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 앱 설정 — 플랫폼·버전을 보내면 강제/권장 업데이트 여부와 점검 안내를 돌려준다(1분 캐시) */
+        get: operations["appConfig"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2350,7 +2866,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내 알림 목록 */
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2384,7 +2900,7 @@ export interface paths {
             cookie?: never;
         };
         /** 독서 기록 상세 — 진척도 포함 */
-        get: operations["detail_2"];
+        get: operations["detail_3"];
         put?: never;
         post?: never;
         /** 서재에서 삭제 */
@@ -2505,7 +3021,7 @@ export interface paths {
             cookie?: never;
         };
         /** FAQ 목록 — 노출 중인 것만, 정렬 순 */
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2788,7 +3304,7 @@ export interface paths {
             cookie?: never;
         };
         /** 도서 상세 — 검증 평점과 전체 평점을 분리해 제공 */
-        get: operations["detail_3"];
+        get: operations["detail_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2924,7 +3440,7 @@ export interface paths {
             cookie?: never;
         };
         /** 내가 차단한 사람 — 최근에 막은 순 */
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2941,7 +3457,7 @@ export interface paths {
             cookie?: never;
         };
         /** 활성 배너/공지 목록 — 기간 내, 정렬 순 */
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3001,6 +3517,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/users/{userId}/wallet-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 지갑 원장 — 최근 순. 결제 열람 권한 필요, 첫 쪽 조회는 열람 기록이 남는다 */
+        get: operations["walletTransactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/users/{userId}/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 구독 이력 — 최근 순. 결제 열람 권한 필요 */
+        get: operations["subscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/users/{userId}/bookmark-purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 회원의 책갈피 구매 내역 — 최근 순. 결제 열람 권한 필요 */
+        get: operations["userPurchases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/reviews": {
         parameters: {
             query?: never;
@@ -3008,8 +3575,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 리뷰 목록 — 검증 등급 필터 */
-        get: operations["reviews_1"];
+        /** 리뷰 목록 — 숨김·삭제 포함, 최근 순. 도서·회원·상태·검증 등급·신고 여부로 거른다 */
+        get: operations["reviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/push-campaigns/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 대상자 수 미리보기 — 광고는 수신 동의자만 */
+        get: operations["audience"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/page-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 페이지 수 제안이 모인 책 — onlyConflicts 면 지금 값과 최다 득표가 다른 책만 */
+        get: operations["pageSuggestions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3069,6 +3670,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/moderation/{ticketId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 신고 상세 — 신고자·사유·원문·작성자 제재 이력. 열람 기록이 남는다 */
+        get: operations["moderationDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/inquiries": {
         parameters: {
             query?: never;
@@ -3077,7 +3695,7 @@ export interface paths {
             cookie?: never;
         };
         /** 고객문의 목록 — 답변 대기만 보면 오래 기다린 순, 그 밖에는 최신순 */
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3094,7 +3712,7 @@ export interface paths {
             cookie?: never;
         };
         /** 고객문의 상세 — 열람 로그가 남는다 */
-        get: operations["detail_4"];
+        get: operations["detail_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3120,6 +3738,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/contents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 콘텐츠 목록 — 종류(type)는 POST·REVIEW·CLUB_POST·POST_COMMENT·REVIEW_COMMENT·BOOK_REMARK, 최근 순 */
+        get: operations["contents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/contents/{type}/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 콘텐츠 원문 — 열람 기록이 남는다. 비공개 독후감은 신고 처리 권한 필요 */
+        get: operations["content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/v1/clubs": {
         parameters: {
             query?: never;
@@ -3137,15 +3789,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/v1/books": {
+    "/admin/v1/clubs/{clubId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 도서 검색 */
-        get: operations["books"];
+        /** 모임 상세 */
+        get: operations["club"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/clubs/{clubId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 모임 멤버 — 나간·내보내진 멤버까지. status 로 거른다 */
+        get: operations["members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/books/{bookId}/page-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 한 책의 페이지 수 제안 집계 — 많이 나온 순 */
+        get: operations["tally"];
+        put?: never;
+        post?: never;
+        /** 페이지 수 제안 비우기 — 사유 필수 */
+        delete: operations["clearSuggestions"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/books/{bookId}/merge-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 도서 병합 미리보기 (SUPER_ADMIN) — 겹침과 막는 이유 */
+        get: operations["mergePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/bookmark-purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 책갈피 구매 검색 — 주문번호(앞부분 일치)·상태·결제 수단 */
+        get: operations["purchases"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3178,8 +3899,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 감사 로그 — 모든 관리자 행위 기록 */
+        /** 감사 로그 — 모든 관리자 행위 기록. from 이상 to 미만, 최신순 */
         get: operations["auditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/app-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 플랫폼별 앱 버전 안내 */
+        get: operations["releases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/v1/abuse-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 한 회원이 신고한 내역 — 신고 남발 확인용 */
+        get: operations["reportsBy"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3341,6 +4096,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/v1/auth/admins/{adminId}/totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 관리자 2FA 초기화 (SUPER_ADMIN) — 휴대폰 분실 대응 */
+        delete: operations["resetTotp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3474,6 +4246,66 @@ export interface components {
             /** Format: int32 */
             maxAttendees?: number;
         };
+        PushCampaignRequest: {
+            /** @enum {string} */
+            kind: "NOTICE" | "MARKETING";
+            title: string;
+            body: string;
+            linkUrl?: string;
+            /** Format: date-time */
+            scheduledAt?: string;
+            reason: string;
+        };
+        PushCampaignRow: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            kind: "NOTICE" | "MARKETING";
+            title: string;
+            body: string;
+            linkUrl?: string;
+            /** @enum {string} */
+            status: "SCHEDULED" | "SENDING" | "DONE" | "CANCELLED";
+            /** Format: date-time */
+            scheduledAt: string;
+            /** Format: date-time */
+            startedAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            /** Format: int32 */
+            targetCount: number;
+            /** Format: int64 */
+            createdBy: number;
+            createdByName?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MaintenanceWindowRequest: {
+            title: string;
+            message: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            reason: string;
+        };
+        MaintenanceWindowRow: {
+            /** Format: int64 */
+            id: number;
+            title: string;
+            message: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** Format: date-time */
+            cancelledAt?: string;
+            /** Format: int64 */
+            createdBy: number;
+            /** Format: date-time */
+            createdAt: string;
+            status: string;
+        };
         InquiryAnswerRequest: {
             answer: string;
         };
@@ -3573,6 +4405,30 @@ export interface components {
             startsAt: string;
             /** Format: date-time */
             endsAt: string;
+        };
+        AdminPasswordResetRequest: {
+            newPassword: string;
+            reason: string;
+        };
+        AppReleaseConfigRequest: {
+            minSupportedVersion: string;
+            latestVersion: string;
+            storeUrl?: string;
+            updateMessage?: string;
+            reason: string;
+        };
+        AppReleaseConfigView: {
+            /** @enum {string} */
+            platform: "IOS" | "ANDROID";
+            minSupportedVersion: string;
+            latestVersion: string;
+            storeUrl?: string;
+            updateMessage?: string;
+            /** Format: int64 */
+            updatedBy?: number;
+            updatedByName?: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         PubSubEnvelope: {
             message?: components["schemas"]["PubSubMessage"];
@@ -4559,6 +5415,9 @@ export interface components {
             months: number;
             reason: string;
         };
+        AdminReasonRequest: {
+            reason: string;
+        };
         SanctionRequest: {
             /** @enum {string} */
             type: "WARN" | "WRITE_BAN" | "SUSPEND" | "TERMINATE";
@@ -4570,6 +5429,18 @@ export interface components {
             /** @enum {string} */
             level: "VERIFIED_FULL" | "VERIFIED_PARTIAL" | "UNVERIFIED" | "FLAGGED";
             reason: string;
+        };
+        PushTestRequest: {
+            /** @enum {string} */
+            kind: "NOTICE" | "MARKETING";
+            title: string;
+            body: string;
+            linkUrl?: string;
+            userIds: number[];
+        };
+        PushTestResult: {
+            /** Format: int32 */
+            delivered: number;
         };
         ResolveRequest: {
             /** @enum {string} */
@@ -4592,14 +5463,88 @@ export interface components {
             sortOrder: number;
             note?: string;
         };
+        ContentActionRequest: {
+            /** @enum {string} */
+            action: "HIDE" | "RESTORE" | "DELETE";
+            reason: string;
+        };
         ClubActionRequest: {
             reason: string;
         };
-        LoginRequest: {
-            /** Format: email */
-            email: string;
-            password: string;
-            totpCode?: string;
+        ClubCodeView: {
+            joinCode: string;
+        };
+        AdminBookCreateRequest: {
+            isbn13?: string;
+            title: string;
+            author?: string;
+            publisher?: string;
+            /** Format: int32 */
+            totalPages?: number;
+            coverUrl?: string;
+            category?: string;
+            reason: string;
+        };
+        BookRow: {
+            /** Format: int64 */
+            id: number;
+            isbn13?: string;
+            title: string;
+            author?: string;
+            publisher?: string;
+            /** Format: int32 */
+            totalPages?: number;
+            source: string;
+            userCreated: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            coverUrl?: string;
+            category?: string;
+        };
+        BookMergeRequest: {
+            /** Format: int64 */
+            targetId: number;
+            reason: string;
+        };
+        BookMergeResult: {
+            /** Format: int64 */
+            targetId: number;
+            moved: components["schemas"]["BookUsage"];
+        };
+        BookUsage: {
+            /** Format: int64 */
+            readingRecords: number;
+            /** Format: int64 */
+            reviews: number;
+            /** Format: int64 */
+            posts: number;
+            /** Format: int64 */
+            remarks: number;
+            /** Format: int64 */
+            likes: number;
+            /** Format: int64 */
+            clubBooks: number;
+            /** Format: int64 */
+            meetings: number;
+            /** Format: int64 */
+            pageSuggestions: number;
+            /** Format: int64 */
+            shareCards: number;
+            editorPick: boolean;
+        };
+        BannerImageView: {
+            url: string;
+            /** Format: int32 */
+            width?: number;
+            /** Format: int32 */
+            height?: number;
+        };
+        TotpSecretView: {
+            secret: string;
+            otpauthUri: string;
+        };
+        TotpConfirmRequest: {
+            code: string;
         };
         AdminProfile: {
             /** Format: int64 */
@@ -4611,6 +5556,13 @@ export interface components {
             totpEnabled: boolean;
             /** Format: date-time */
             lastLoginAt?: string;
+            capabilities: ("MODERATE" | "SANCTION" | "WARN" | "HANDLE_SUPPORT" | "EDIT_BOOK" | "MERGE_BOOKS" | "MANAGE_CONTENT" | "MANAGE_OPS" | "MANAGE_ADMINS" | "BROADCAST" | "VIEW_PAYMENTS" | "VIEW_PII")[];
+        };
+        LoginRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+            totpCode?: string;
         };
         LoginResponse: {
             accessToken?: string;
@@ -4720,6 +5672,15 @@ export interface components {
             totalPages?: number;
             coverUrl?: string;
             category?: string;
+            reason: string;
+        };
+        AdminPasswordChangeRequest: {
+            currentPassword: string;
+            newPassword: string;
+        };
+        AdminStatusRequest: {
+            /** @enum {string} */
+            status: "ACTIVE" | "SUSPENDED";
             reason: string;
         };
         DailyStat: {
@@ -4838,6 +5799,33 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
+        PageResponsePlazaItemView: {
+            content?: components["schemas"]["PlazaItemView"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        PlazaItemView: {
+            /** @enum {string} */
+            type: "QUOTE" | "FINISH";
+            /** Format: int64 */
+            authorId: number;
+            authorNickname: string;
+            authorAvatarUrl?: string;
+            /** Format: int64 */
+            bookId: number;
+            bookTitle: string;
+            bookCoverUrl?: string;
+            /** Format: date-time */
+            occurredAt: string;
+            remark?: string;
+        };
         LegalDocumentView: {
             key: string;
             title: string;
@@ -4867,6 +5855,31 @@ export interface components {
             average?: number;
             /** Format: int64 */
             count: number;
+        };
+        PopularBookView: {
+            book: components["schemas"]["BookSummary"];
+            /** Format: int64 */
+            savedCount: number;
+        };
+        AppConfigView: {
+            updateRequired: boolean;
+            updateRecommended: boolean;
+            minSupportedVersion: string;
+            latestVersion: string;
+            storeUrl?: string;
+            updateMessage?: string;
+            maintenance?: components["schemas"]["MaintenanceView"];
+        };
+        MaintenanceView: {
+            /** Format: int64 */
+            id: number;
+            title: string;
+            message: string;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            active: boolean;
         };
         LikerView: {
             /** Format: int64 */
@@ -4912,38 +5925,11 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
-        PageResponsePlazaItemView: {
-            content?: components["schemas"]["PlazaItemView"][];
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            totalPages?: number;
-            hasNext?: boolean;
-        };
-        PlazaItemView: {
-            /** @enum {string} */
-            type: "QUOTE" | "FINISH";
-            /** Format: int64 */
-            authorId: number;
-            authorNickname: string;
-            authorAvatarUrl?: string;
-            /** Format: int64 */
-            bookId: number;
-            bookTitle: string;
-            bookCoverUrl?: string;
-            /** Format: date-time */
-            occurredAt: string;
-            remark?: string;
-        };
         NotificationView: {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "INQUIRY_ANSWERED" | "CONSENT_RESULT" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
+            type: "HABIT" | "LAG" | "MICRO_MISSION" | "STREAK" | "ALMOST_DONE" | "ACHIEVEMENT" | "CLEANUP" | "POSTCARD_RECEIVED" | "POSTCARD_REPLIED" | "FOLLOWED" | "FOLLOW_CONNECTED" | "CHAT_MESSAGE" | "POST_LIKED" | "POST_COMMENTED" | "INQUIRY_ANSWERED" | "CONSENT_RESULT" | "SANCTION_NOTICE" | "ANNOUNCEMENT" | "CLUB_CHECKPOINT_DUE" | "CLUB_CHECKPOINT_RESULT" | "CLUB_OVERTAKEN" | "CLUB_FALLBEHIND" | "CLUB_NEW_POST" | "CLUB_NUDGE" | "CLUB_ENDED" | "CLUB_NOTE_PAGE" | "CLUB_WEEKLY_LOG";
             /** Format: int32 */
             lagLevel?: number;
             /** Format: int64 */
@@ -5286,11 +6272,6 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
-        PopularBookView: {
-            book: components["schemas"]["BookSummary"];
-            /** Format: int64 */
-            savedCount: number;
-        };
         PageResponseBlockedUserView: {
             content?: components["schemas"]["BlockedUserView"][];
             /** Format: int32 */
@@ -5349,6 +6330,53 @@ export interface components {
             /** Format: int64 */
             booksFinished: number;
         };
+        AdminConsentRow: {
+            /** @enum {string} */
+            kind: "TERMS" | "PRIVACY" | "AGE_14" | "PROFILE_OPTIONAL" | "MARKETING" | "THIRD_PARTY_YES24";
+            agreed: boolean;
+            version?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+        };
+        AdminDeviceRow: {
+            /** @enum {string} */
+            platform: "IOS" | "ANDROID";
+            pushEnabled: boolean;
+            tokenTail?: string;
+            /** Format: date-time */
+            lastSeenAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        AdminIdentityRow: {
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "KAKAO";
+            /** Format: date-time */
+            linkedAt?: string;
+        };
+        AdminSubscriptionRow: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            store: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            productId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "EXPIRED" | "CANCELLED";
+            /** Format: date-time */
+            currentPeriodStart: string;
+            /** Format: date-time */
+            currentPeriodEnd: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminWalletSummary: {
+            /** Format: int32 */
+            bookmarks: number;
+            /** Format: int32 */
+            postcards: number;
+            /** Format: int32 */
+            stamps: number;
+        };
         SanctionRow: {
             /** Format: int64 */
             id: number;
@@ -5383,6 +6411,84 @@ export interface components {
             /** Format: int64 */
             clubCount: number;
             sanctions: components["schemas"]["SanctionRow"][];
+            /** Format: date-time */
+            deletionRequestedAt?: string;
+            /** Format: date-time */
+            emailVerifiedAt?: string;
+            /** Format: date-time */
+            identityVerifiedAt?: string;
+            hasPassword: boolean;
+            /** Format: date-time */
+            lastSeenAt?: string;
+            wallet?: components["schemas"]["AdminWalletSummary"];
+            subscription?: components["schemas"]["AdminSubscriptionRow"];
+            devices: components["schemas"]["AdminDeviceRow"][];
+            identities: components["schemas"]["AdminIdentityRow"][];
+            consents: components["schemas"]["AdminConsentRow"][];
+        };
+        AdminWalletTransactionRow: {
+            /** Format: int64 */
+            id: number;
+            /** @enum {string} */
+            kind: "PURCHASE" | "SUBSCRIPTION_GRANT" | "AFFILIATE" | "EXCHANGE_POSTCARD" | "EXCHANGE_STAMP" | "SEND_POSTCARD_FREE" | "SEND_POSTCARD" | "ATTACH_STAMP" | "REPLY_STAMP" | "CLUB_SEAT" | "CLUB_CHAT_UNLOCK" | "ATTENDANCE" | "ADMIN_ADJUST";
+            /** Format: int32 */
+            bookmarkDelta: number;
+            /** Format: int32 */
+            postcardDelta: number;
+            /** Format: int32 */
+            stampDelta: number;
+            refType?: string;
+            /** Format: int64 */
+            refId?: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PageResponseAdminWalletTransactionRow: {
+            content?: components["schemas"]["AdminWalletTransactionRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        AdminBookmarkPurchaseRow: {
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            userId: number;
+            userNickname?: string;
+            /** @enum {string} */
+            provider: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
+            productId: string;
+            orderId: string;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int32 */
+            bonusQuantity: number;
+            /** Format: int32 */
+            amountKrw: number;
+            /** @enum {string} */
+            status: "PENDING" | "PAID" | "CANCELLED";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        PageResponseAdminBookmarkPurchaseRow: {
+            content?: components["schemas"]["AdminBookmarkPurchaseRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
         };
         PageResponseReviewRow: {
             content?: components["schemas"]["ReviewRow"][];
@@ -5419,6 +6525,62 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        PageResponsePushCampaignRow: {
+            content?: components["schemas"]["PushCampaignRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        PushCampaignView: {
+            campaign: components["schemas"]["PushCampaignRow"];
+            finalTitle: string;
+            finalBody: string;
+            /** Format: int64 */
+            sentCount: number;
+            /** Format: int64 */
+            pendingCount: number;
+            /** Format: int64 */
+            openedCount: number;
+        };
+        PushAudienceView: {
+            /** Format: int64 */
+            eligibleUsers: number;
+            /** Format: int64 */
+            withPushDevice: number;
+        };
+        PageResponsePageSuggestionRow: {
+            content?: components["schemas"]["PageSuggestionRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        PageSuggestionRow: {
+            /** Format: int64 */
+            bookId: number;
+            title: string;
+            /** Format: int32 */
+            currentPages?: number;
+            /** Format: int32 */
+            topPages: number;
+            /** Format: int64 */
+            topVotes: number;
+            /** Format: int64 */
+            totalVotes: number;
+            /** Format: date-time */
+            lastSuggestedAt: string;
+        };
         OpsFlagRow: {
             key: string;
             enabled: boolean;
@@ -5439,7 +6601,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             /** @enum {string} */
-            sourceType: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER";
+            sourceType: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER" | "POST_COMMENT" | "REVIEW_COMMENT" | "BOOK_REMARK";
             /** Format: int64 */
             sourceId: number;
             reason: string;
@@ -5458,9 +6620,84 @@ export interface components {
             /** Format: int64 */
             authorId?: number;
             authorNickname?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @enum {string} */
+            resolution?: "KEEP" | "HIDE" | "DELETE" | "SANCTION";
+            resolutionNote?: string;
+            /** Format: date-time */
+            resolvedAt?: string;
+            assignedAdminName?: string;
         };
         PageResponseModerationRow: {
             content?: components["schemas"]["ModerationRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        AbuseReportRow: {
+            /** Format: int64 */
+            id: number;
+            targetType: string;
+            /** Format: int64 */
+            targetId: number;
+            /** Format: int64 */
+            reporterId: number;
+            reporterNickname?: string;
+            reason: string;
+            detail?: string;
+            status: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminContentDetail: {
+            content: components["schemas"]["AdminContentRow"];
+            body: string;
+            imageUrl?: string;
+            /** Format: int64 */
+            ticketId?: number;
+        };
+        AdminContentRow: {
+            /** @enum {string} */
+            type: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER" | "POST_COMMENT" | "REVIEW_COMMENT" | "BOOK_REMARK";
+            /** Format: int64 */
+            id: number;
+            /** Format: int64 */
+            authorId?: number;
+            authorNickname?: string;
+            /** @enum {string} */
+            authorStatus?: "ACTIVE" | "WRITE_BANNED" | "SUSPENDED" | "TERMINATED";
+            title?: string;
+            preview: string;
+            status: string;
+            visibility?: string;
+            /** Format: int64 */
+            reportCount: number;
+            contextLabel?: string;
+            /** Format: int64 */
+            bookId?: number;
+            /** Format: int64 */
+            clubId?: number;
+            /** Format: int64 */
+            parentId?: number;
+            /** Format: date-time */
+            createdAt: string;
+            supportedActions: ("HIDE" | "RESTORE" | "DELETE")[];
+        };
+        ModerationDetailView: {
+            ticket: components["schemas"]["ModerationRow"];
+            content?: components["schemas"]["AdminContentDetail"];
+            reports: components["schemas"]["AbuseReportRow"][];
+            authorSanctions: components["schemas"]["SanctionRow"][];
+        };
+        PageResponseMaintenanceWindowRow: {
+            content?: components["schemas"]["MaintenanceWindowRow"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -5524,6 +6761,18 @@ export interface components {
             /** Format: int64 */
             waitingInquiries: number;
         };
+        PageResponseAdminContentRow: {
+            content?: components["schemas"]["AdminContentRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         ClubRow: {
             /** Format: int64 */
             id: number;
@@ -5559,19 +6808,51 @@ export interface components {
             totalPages?: number;
             hasNext?: boolean;
         };
-        BookRow: {
+        AdminClubView: {
             /** Format: int64 */
             id: number;
-            isbn13?: string;
-            title: string;
-            author?: string;
-            publisher?: string;
+            name: string;
+            description?: string;
+            /** @enum {string} */
+            visibility: "CODE_ONLY" | "LINK" | "PUBLIC";
+            /** @enum {string} */
+            status: "RECRUITING" | "ACTIVE" | "ENDED" | "ARCHIVED";
+            joinCode: string;
             /** Format: int32 */
-            totalPages?: number;
-            source: string;
-            userCreated: boolean;
+            memberCount: number;
+            /** Format: int32 */
+            memberLimit: number;
+            /** Format: int64 */
+            ownerId: number;
+            ownerNickname?: string;
+            /** Format: date */
+            startsAt: string;
+            /** Format: date */
+            endsAt?: string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: int64 */
+            postCount: number;
+            /** Format: int64 */
+            meetingCount: number;
+            bookTitles: string[];
+        };
+        AdminClubMemberRow: {
+            /** Format: int64 */
+            userId: number;
+            nickname?: string;
+            handle?: string;
+            /** @enum {string} */
+            userStatus?: "ACTIVE" | "WRITE_BANNED" | "SUSPENDED" | "TERMINATED";
+            /** @enum {string} */
+            role: "HOST" | "MODERATOR" | "MEMBER";
+            /** @enum {string} */
+            status: "ACTIVE" | "LEFT" | "KICKED";
+            /** Format: date-time */
+            joinedAt: string;
+            /** Format: date-time */
+            leftAt?: string;
+            kickReason?: string;
         };
         PageResponseBookRow: {
             content?: components["schemas"]["BookRow"][];
@@ -5584,6 +6865,58 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             hasNext?: boolean;
+        };
+        AdminBookView: {
+            /** Format: int64 */
+            id: number;
+            isbn13?: string;
+            title: string;
+            author?: string;
+            publisher?: string;
+            /** Format: int32 */
+            totalPages?: number;
+            coverUrl?: string;
+            category?: string;
+            source: string;
+            userCreated: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            usage: components["schemas"]["BookUsage"];
+        };
+        PageSuggestionTally: {
+            /** Format: int32 */
+            pages: number;
+            /** Format: int64 */
+            votes: number;
+        };
+        BookMergePreview: {
+            source: components["schemas"]["AdminBookView"];
+            target: components["schemas"]["AdminBookView"];
+            /** Format: int64 */
+            sharedReaders: number;
+            /** Format: int64 */
+            sharedLikes: number;
+            /** Format: int64 */
+            sharedSuggestions: number;
+            blockers: string[];
+            warnings: string[];
+            mergeable: boolean;
+        };
+        AdminRow: {
+            /** Format: int64 */
+            id: number;
+            email: string;
+            name: string;
+            /** @enum {string} */
+            role: "SUPER_ADMIN" | "OPERATOR" | "SUPPORT" | "VIEWER";
+            /** @enum {string} */
+            status: "ACTIVE" | "SUSPENDED";
+            totpEnabled: boolean;
+            /** Format: date-time */
+            lastLoginAt?: string;
+            lastLoginIp?: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         AuditRow: {
             /** Format: int64 */
@@ -5598,6 +6931,14 @@ export interface components {
             ip?: string;
             /** Format: date-time */
             createdAt: string;
+            adminName?: string;
+            beforeData: {
+                [key: string]: unknown;
+            };
+            afterData: {
+                [key: string]: unknown;
+            };
+            userAgent?: string;
         };
         PageResponseAuditRow: {
             content?: components["schemas"]["AuditRow"][];
@@ -5610,6 +6951,22 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
             hasNext?: boolean;
+        };
+        PageResponseAbuseReportRow: {
+            content?: components["schemas"]["AbuseReportRow"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
+        RemovedCountView: {
+            /** Format: int32 */
+            removed: number;
         };
     };
     responses: never;
@@ -5627,6 +6984,10 @@ export type SchemaUpsertMeetingRequest = components['schemas']['UpsertMeetingReq
 export type SchemaBookSummary = components['schemas']['BookSummary'];
 export type SchemaMeetingAttendeeView = components['schemas']['MeetingAttendeeView'];
 export type SchemaMeetingView = components['schemas']['MeetingView'];
+export type SchemaPushCampaignRequest = components['schemas']['PushCampaignRequest'];
+export type SchemaPushCampaignRow = components['schemas']['PushCampaignRow'];
+export type SchemaMaintenanceWindowRequest = components['schemas']['MaintenanceWindowRequest'];
+export type SchemaMaintenanceWindowRow = components['schemas']['MaintenanceWindowRow'];
 export type SchemaInquiryAnswerRequest = components['schemas']['InquiryAnswerRequest'];
 export type SchemaInquiryAdminView = components['schemas']['InquiryAdminView'];
 export type SchemaInquiryImageView = components['schemas']['InquiryImageView'];
@@ -5635,6 +6996,9 @@ export type SchemaFaqAdminView = components['schemas']['FaqAdminView'];
 export type SchemaFaqOrderRequest = components['schemas']['FaqOrderRequest'];
 export type SchemaBannerUpsertRequest = components['schemas']['BannerUpsertRequest'];
 export type SchemaBannerAdminView = components['schemas']['BannerAdminView'];
+export type SchemaAdminPasswordResetRequest = components['schemas']['AdminPasswordResetRequest'];
+export type SchemaAppReleaseConfigRequest = components['schemas']['AppReleaseConfigRequest'];
+export type SchemaAppReleaseConfigView = components['schemas']['AppReleaseConfigView'];
 export type SchemaPubSubEnvelope = components['schemas']['PubSubEnvelope'];
 export type SchemaPubSubMessage = components['schemas']['PubSubMessage'];
 export type SchemaExchangeRequest = components['schemas']['ExchangeRequest'];
@@ -5722,14 +7086,27 @@ export type SchemaEmailCodeVerifyRequest = components['schemas']['EmailCodeVerif
 export type SchemaAttendanceView = components['schemas']['AttendanceView'];
 export type SchemaWalletAdjustRequest = components['schemas']['WalletAdjustRequest'];
 export type SchemaSubscriptionGrantRequest = components['schemas']['SubscriptionGrantRequest'];
+export type SchemaAdminReasonRequest = components['schemas']['AdminReasonRequest'];
 export type SchemaSanctionRequest = components['schemas']['SanctionRequest'];
 export type SchemaOverrideVerificationRequest = components['schemas']['OverrideVerificationRequest'];
+export type SchemaPushTestRequest = components['schemas']['PushTestRequest'];
+export type SchemaPushTestResult = components['schemas']['PushTestResult'];
 export type SchemaResolveRequest = components['schemas']['ResolveRequest'];
 export type SchemaEditorPickCreateRequest = components['schemas']['EditorPickCreateRequest'];
 export type SchemaEditorPickView = components['schemas']['EditorPickView'];
+export type SchemaContentActionRequest = components['schemas']['ContentActionRequest'];
 export type SchemaClubActionRequest = components['schemas']['ClubActionRequest'];
-export type SchemaLoginRequest = components['schemas']['LoginRequest'];
+export type SchemaClubCodeView = components['schemas']['ClubCodeView'];
+export type SchemaAdminBookCreateRequest = components['schemas']['AdminBookCreateRequest'];
+export type SchemaBookRow = components['schemas']['BookRow'];
+export type SchemaBookMergeRequest = components['schemas']['BookMergeRequest'];
+export type SchemaBookMergeResult = components['schemas']['BookMergeResult'];
+export type SchemaBookUsage = components['schemas']['BookUsage'];
+export type SchemaBannerImageView = components['schemas']['BannerImageView'];
+export type SchemaTotpSecretView = components['schemas']['TotpSecretView'];
+export type SchemaTotpConfirmRequest = components['schemas']['TotpConfirmRequest'];
 export type SchemaAdminProfile = components['schemas']['AdminProfile'];
+export type SchemaLoginRequest = components['schemas']['LoginRequest'];
 export type SchemaLoginResponse = components['schemas']['LoginResponse'];
 export type SchemaCreateAdminRequest = components['schemas']['CreateAdminRequest'];
 export type SchemaUpdateReviewRequest = components['schemas']['UpdateReviewRequest'];
@@ -5744,6 +7121,8 @@ export type SchemaUpdateClubPostRequest = components['schemas']['UpdateClubPostR
 export type SchemaOpsFlagRequest = components['schemas']['OpsFlagRequest'];
 export type SchemaEditorPickUpdateRequest = components['schemas']['EditorPickUpdateRequest'];
 export type SchemaUpdateBookRequest = components['schemas']['UpdateBookRequest'];
+export type SchemaAdminPasswordChangeRequest = components['schemas']['AdminPasswordChangeRequest'];
+export type SchemaAdminStatusRequest = components['schemas']['AdminStatusRequest'];
 export type SchemaDailyStat = components['schemas']['DailyStat'];
 export type SchemaStatsSummary = components['schemas']['StatsSummary'];
 export type SchemaUserProfileView = components['schemas']['UserProfileView'];
@@ -5753,15 +7132,18 @@ export type SchemaLibrarySummary = components['schemas']['LibrarySummary'];
 export type SchemaPageResponseReviewCommentView = components['schemas']['PageResponseReviewCommentView'];
 export type SchemaVerificationPreview = components['schemas']['VerificationPreview'];
 export type SchemaPageResponseReviewView = components['schemas']['PageResponseReviewView'];
+export type SchemaPageResponsePlazaItemView = components['schemas']['PageResponsePlazaItemView'];
+export type SchemaPlazaItemView = components['schemas']['PlazaItemView'];
 export type SchemaLegalDocumentView = components['schemas']['LegalDocumentView'];
 export type SchemaBookDetail = components['schemas']['BookDetail'];
 export type SchemaRatingSummary = components['schemas']['RatingSummary'];
+export type SchemaPopularBookView = components['schemas']['PopularBookView'];
+export type SchemaAppConfigView = components['schemas']['AppConfigView'];
+export type SchemaMaintenanceView = components['schemas']['MaintenanceView'];
 export type SchemaLikerView = components['schemas']['LikerView'];
 export type SchemaPageResponseLikerView = components['schemas']['PageResponseLikerView'];
 export type SchemaPageResponsePostCommentView = components['schemas']['PageResponsePostCommentView'];
 export type SchemaPageResponsePostcardView = components['schemas']['PageResponsePostcardView'];
-export type SchemaPageResponsePlazaItemView = components['schemas']['PageResponsePlazaItemView'];
-export type SchemaPlazaItemView = components['schemas']['PlazaItemView'];
 export type SchemaNotificationView = components['schemas']['NotificationView'];
 export type SchemaPageResponseNotificationView = components['schemas']['PageResponseNotificationView'];
 export type SchemaPageResponseVisitorView = components['schemas']['PageResponseVisitorView'];
@@ -5792,29 +7174,55 @@ export type SchemaChatMessagesView = components['schemas']['ChatMessagesView'];
 export type SchemaChatGiftCandidate = components['schemas']['ChatGiftCandidate'];
 export type SchemaPageResponseClubPreview = components['schemas']['PageResponseClubPreview'];
 export type SchemaPageResponseChatSummaryView = components['schemas']['PageResponseChatSummaryView'];
-export type SchemaPopularBookView = components['schemas']['PopularBookView'];
 export type SchemaPageResponseBlockedUserView = components['schemas']['PageResponseBlockedUserView'];
 export type SchemaBannerView = components['schemas']['BannerView'];
 export type SchemaSignupConfigResponse = components['schemas']['SignupConfigResponse'];
 export type SchemaPageResponseUserRow = components['schemas']['PageResponseUserRow'];
 export type SchemaUserRow = components['schemas']['UserRow'];
+export type SchemaAdminConsentRow = components['schemas']['AdminConsentRow'];
+export type SchemaAdminDeviceRow = components['schemas']['AdminDeviceRow'];
+export type SchemaAdminIdentityRow = components['schemas']['AdminIdentityRow'];
+export type SchemaAdminSubscriptionRow = components['schemas']['AdminSubscriptionRow'];
+export type SchemaAdminWalletSummary = components['schemas']['AdminWalletSummary'];
 export type SchemaSanctionRow = components['schemas']['SanctionRow'];
 export type SchemaUserDetailView = components['schemas']['UserDetailView'];
+export type SchemaAdminWalletTransactionRow = components['schemas']['AdminWalletTransactionRow'];
+export type SchemaPageResponseAdminWalletTransactionRow = components['schemas']['PageResponseAdminWalletTransactionRow'];
+export type SchemaAdminBookmarkPurchaseRow = components['schemas']['AdminBookmarkPurchaseRow'];
+export type SchemaPageResponseAdminBookmarkPurchaseRow = components['schemas']['PageResponseAdminBookmarkPurchaseRow'];
 export type SchemaPageResponseReviewRow = components['schemas']['PageResponseReviewRow'];
 export type SchemaReviewRow = components['schemas']['ReviewRow'];
+export type SchemaPageResponsePushCampaignRow = components['schemas']['PageResponsePushCampaignRow'];
+export type SchemaPushCampaignView = components['schemas']['PushCampaignView'];
+export type SchemaPushAudienceView = components['schemas']['PushAudienceView'];
+export type SchemaPageResponsePageSuggestionRow = components['schemas']['PageResponsePageSuggestionRow'];
+export type SchemaPageSuggestionRow = components['schemas']['PageSuggestionRow'];
 export type SchemaOpsFlagRow = components['schemas']['OpsFlagRow'];
 export type SchemaNotificationStats = components['schemas']['NotificationStats'];
 export type SchemaModerationRow = components['schemas']['ModerationRow'];
 export type SchemaPageResponseModerationRow = components['schemas']['PageResponseModerationRow'];
+export type SchemaAbuseReportRow = components['schemas']['AbuseReportRow'];
+export type SchemaAdminContentDetail = components['schemas']['AdminContentDetail'];
+export type SchemaAdminContentRow = components['schemas']['AdminContentRow'];
+export type SchemaModerationDetailView = components['schemas']['ModerationDetailView'];
+export type SchemaPageResponseMaintenanceWindowRow = components['schemas']['PageResponseMaintenanceWindowRow'];
 export type SchemaInquiryRow = components['schemas']['InquiryRow'];
 export type SchemaPageResponseInquiryRow = components['schemas']['PageResponseInquiryRow'];
 export type SchemaDashboardView = components['schemas']['DashboardView'];
+export type SchemaPageResponseAdminContentRow = components['schemas']['PageResponseAdminContentRow'];
 export type SchemaClubRow = components['schemas']['ClubRow'];
 export type SchemaPageResponseClubRow = components['schemas']['PageResponseClubRow'];
-export type SchemaBookRow = components['schemas']['BookRow'];
+export type SchemaAdminClubView = components['schemas']['AdminClubView'];
+export type SchemaAdminClubMemberRow = components['schemas']['AdminClubMemberRow'];
 export type SchemaPageResponseBookRow = components['schemas']['PageResponseBookRow'];
+export type SchemaAdminBookView = components['schemas']['AdminBookView'];
+export type SchemaPageSuggestionTally = components['schemas']['PageSuggestionTally'];
+export type SchemaBookMergePreview = components['schemas']['BookMergePreview'];
+export type SchemaAdminRow = components['schemas']['AdminRow'];
 export type SchemaAuditRow = components['schemas']['AuditRow'];
 export type SchemaPageResponseAuditRow = components['schemas']['PageResponseAuditRow'];
+export type SchemaPageResponseAbuseReportRow = components['schemas']['PageResponseAbuseReportRow'];
+export type SchemaRemovedCountView = components['schemas']['RemovedCountView'];
 export type $defs = Record<string, never>;
 export interface operations {
     setConsent: {
@@ -5982,6 +7390,80 @@ export interface operations {
             };
         };
     };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushCampaignView"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushCampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushCampaignRow"];
+                };
+            };
+        };
+    };
+    updateMaintenance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaintenanceWindowRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MaintenanceWindowRow"];
+                };
+            };
+        };
+    };
     editAnswer: {
         parameters: {
             query?: never;
@@ -6034,7 +7516,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -6104,7 +7586,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -6147,6 +7629,56 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adminId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminPasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateRelease: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: "IOS" | "ANDROID";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppReleaseConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppReleaseConfigView"];
+                };
             };
         };
     };
@@ -8205,7 +9737,7 @@ export interface operations {
             };
         };
     };
-    resetPassword: {
+    resetPassword_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -8451,6 +9983,30 @@ export interface operations {
             };
         };
     };
+    revokeSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     sanction: {
         parameters: {
             query?: never;
@@ -8499,6 +10055,103 @@ export interface operations {
             };
         };
     };
+    list_4: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePushCampaignRow"];
+                };
+            };
+        };
+    };
+    create_8: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushCampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushCampaignRow"];
+                };
+            };
+        };
+    };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushCampaignRow"];
+                };
+            };
+        };
+    };
+    test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushTestRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushTestResult"];
+                };
+            };
+        };
+    };
     resolve: {
         parameters: {
             query?: never;
@@ -8543,7 +10196,80 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    maintenanceWindows: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseMaintenanceWindowRow"];
+                };
+            };
+        };
+    };
+    createMaintenance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaintenanceWindowRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MaintenanceWindowRow"];
+                };
+            };
+        };
+    };
+    cancelMaintenance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MaintenanceWindowRow"];
+                };
+            };
+        };
+    };
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -8563,7 +10289,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -8587,7 +10313,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -8607,7 +10333,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -8628,6 +10354,31 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["EditorPickView"];
                 };
+            };
+        };
+    };
+    act: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER" | "POST_COMMENT" | "REVIEW_COMMENT" | "BOOK_REMARK";
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8678,10 +10429,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
+                    "*/*": components["schemas"]["ClubCodeView"];
                 };
+            };
+        };
+    };
+    kick_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReasonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8709,7 +10483,81 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    books: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseBookRow"];
+                };
+            };
+        };
+    };
+    createBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBookCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookRow"];
+                };
+            };
+        };
+    };
+    merge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookMergeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookMergeResult"];
+                };
+            };
+        };
+    };
+    list_7: {
         parameters: {
             query?: {
                 kind?: "AD" | "NOTICE";
@@ -8731,7 +10579,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -8755,7 +10603,34 @@ export interface operations {
             };
         };
     };
-    issueTotp: {
+    uploadImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BannerImageView"];
+                };
+            };
+        };
+    };
+    prepareTotp: {
         parameters: {
             query?: never;
             header?: never;
@@ -8770,9 +10645,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": {
-                        [key: string]: string;
-                    };
+                    "*/*": components["schemas"]["TotpSecretView"];
+                };
+            };
+        };
+    };
+    confirmTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TotpConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminProfile"];
                 };
             };
         };
@@ -8801,7 +10698,27 @@ export interface operations {
             };
         };
     };
-    create_11: {
+    admins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminRow"][];
+                };
+            };
+        };
+    };
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -8825,7 +10742,7 @@ export interface operations {
             };
         };
     };
-    detail: {
+    detail_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -8867,7 +10784,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -8935,7 +10852,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -9021,7 +10938,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -9119,7 +11036,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -9169,7 +11086,7 @@ export interface operations {
             };
         };
     };
-    detail_1: {
+    detail_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -9213,7 +11130,7 @@ export interface operations {
             };
         };
     };
-    update_6: {
+    update_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -9284,7 +11201,7 @@ export interface operations {
             };
         };
     };
-    update_7: {
+    update_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -9310,6 +11227,28 @@ export interface operations {
             };
         };
     };
+    book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminBookView"];
+                };
+            };
+        };
+    };
     updateBook: {
         parameters: {
             query?: never;
@@ -9322,6 +11261,52 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateBookRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    changeOwnPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminPasswordChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    changeStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                adminId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminStatusRequest"];
             };
         };
         responses: {
@@ -9517,7 +11502,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 readingRecordId?: number;
@@ -9632,6 +11617,145 @@ export interface operations {
             };
         };
     };
+    publicProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UserProfileView"];
+                };
+            };
+        };
+    };
+    publicUserPosts: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
+    publicReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewView"];
+                };
+            };
+        };
+    };
+    publicPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostView"];
+                };
+            };
+        };
+    };
+    publicFeed: {
+        parameters: {
+            query?: {
+                sort?: "HOT" | "NEW";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
+    publicPlazaFeed: {
+        parameters: {
+            query?: {
+                type?: "QUOTE" | "FINISH";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePlazaItemView"];
+                };
+            };
+        };
+    };
     onboardingCategories: {
         parameters: {
             query?: never;
@@ -9697,7 +11821,30 @@ export interface operations {
             };
         };
     };
-    book: {
+    publicSearch: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookSummary"][];
+                };
+            };
+        };
+    };
+    publicBook: {
         parameters: {
             query?: never;
             header?: never;
@@ -9719,7 +11866,7 @@ export interface operations {
             };
         };
     };
-    reviews: {
+    publicReviews: {
         parameters: {
             query?: {
                 verifiedOnly?: boolean;
@@ -9745,7 +11892,31 @@ export interface operations {
             };
         };
     };
-    bookPosts: {
+    publicRemarks: {
+        parameters: {
+            query?: {
+                size?: number;
+            };
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RemarkView"][];
+                };
+            };
+        };
+    };
+    publicBookPosts: {
         parameters: {
             query?: {
                 page?: number;
@@ -9766,6 +11937,73 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponsePostView"];
+                };
+            };
+        };
+    };
+    publicRecommended: {
+        parameters: {
+            query?: {
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookSummary"][];
+                };
+            };
+        };
+    };
+    publicPopular: {
+        parameters: {
+            query?: {
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PopularBookView"][];
+                };
+            };
+        };
+    };
+    publicYes24Curation: {
+        parameters: {
+            query?: {
+                kind?: "BESTSELLER" | "STEADY" | "NEW";
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookSummary"][];
                 };
             };
         };
@@ -9814,6 +12052,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PostView"];
+                };
+            };
+        };
+    };
+    appConfig: {
+        parameters: {
+            query: {
+                platform: "IOS" | "ANDROID";
+                version?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppConfigView"];
                 };
             };
         };
@@ -9962,7 +12223,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 page?: number;
@@ -10008,7 +12269,7 @@ export interface operations {
             };
         };
     };
-    detail_2: {
+    detail_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -10198,7 +12459,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -10584,7 +12845,7 @@ export interface operations {
             };
         };
     };
-    detail_3: {
+    detail_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -10770,7 +13031,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 page?: number;
@@ -10793,7 +13054,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 kind?: "AD" | "NOTICE";
@@ -10884,10 +13145,86 @@ export interface operations {
             };
         };
     };
-    reviews_1: {
+    walletTransactions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAdminWalletTransactionRow"];
+                };
+            };
+        };
+    };
+    subscriptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminSubscriptionRow"][];
+                };
+            };
+        };
+    };
+    userPurchases: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAdminBookmarkPurchaseRow"];
+                };
+            };
+        };
+    };
+    reviews: {
         parameters: {
             query?: {
                 bookId?: number;
+                userId?: number;
+                status?: string;
+                verificationLevel?: "VERIFIED_FULL" | "VERIFIED_PARTIAL" | "UNVERIFIED" | "FLAGGED";
+                reportedOnly?: boolean;
                 page?: number;
                 size?: number;
             };
@@ -10904,6 +13241,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseReviewRow"];
+                };
+            };
+        };
+    };
+    audience: {
+        parameters: {
+            query: {
+                kind: "NOTICE" | "MARKETING";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushAudienceView"];
+                };
+            };
+        };
+    };
+    pageSuggestions: {
+        parameters: {
+            query?: {
+                onlyConflicts?: boolean;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponsePageSuggestionRow"];
                 };
             };
         };
@@ -10952,7 +13335,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: "PENDING" | "IN_REVIEW" | "RESOLVED";
-                sourceType?: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER";
+                sourceType?: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER" | "POST_COMMENT" | "REVIEW_COMMENT" | "BOOK_REMARK";
                 page?: number;
                 size?: number;
             };
@@ -10973,7 +13356,29 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    moderationDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticketId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ModerationDetailView"];
+                };
+            };
+        };
+    };
+    list_13: {
         parameters: {
             query?: {
                 status?: "WAITING" | "ANSWERED";
@@ -10998,7 +13403,7 @@ export interface operations {
             };
         };
     };
-    detail_4: {
+    detail_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -11040,6 +13445,59 @@ export interface operations {
             };
         };
     };
+    contents: {
+        parameters: {
+            query: {
+                type: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER" | "POST_COMMENT" | "REVIEW_COMMENT" | "BOOK_REMARK";
+                userId?: number;
+                bookId?: number;
+                clubId?: number;
+                status?: string;
+                keyword?: string;
+                reportedOnly?: boolean;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAdminContentRow"];
+                };
+            };
+        };
+    };
+    content: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: "REVIEW" | "POST" | "CLUB_POST" | "CLUB" | "USER" | "POST_COMMENT" | "REVIEW_COMMENT" | "BOOK_REMARK";
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminContentDetail"];
+                };
+            };
+        };
+    };
     clubs: {
         parameters: {
             query?: {
@@ -11065,10 +13523,128 @@ export interface operations {
             };
         };
     };
-    books: {
+    club: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminClubView"];
+                };
+            };
+        };
+    };
+    members: {
         parameters: {
             query?: {
-                keyword?: string;
+                status?: "ACTIVE" | "LEFT" | "KICKED";
+            };
+            header?: never;
+            path: {
+                clubId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminClubMemberRow"][];
+                };
+            };
+        };
+    };
+    tally: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageSuggestionTally"][];
+                };
+            };
+        };
+    };
+    clearSuggestions: {
+        parameters: {
+            query: {
+                reason: string;
+            };
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RemovedCountView"];
+                };
+            };
+        };
+    };
+    mergePreview: {
+        parameters: {
+            query: {
+                targetId: number;
+            };
+            header?: never;
+            path: {
+                bookId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BookMergePreview"];
+                };
+            };
+        };
+    };
+    purchases: {
+        parameters: {
+            query?: {
+                orderId?: string;
+                status?: "PENDING" | "PAID" | "CANCELLED";
+                provider?: "APPLE" | "GOOGLE" | "TOSS" | "ADMIN";
                 page?: number;
                 size?: number;
             };
@@ -11084,7 +13660,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PageResponseBookRow"];
+                    "*/*": components["schemas"]["PageResponseAdminBookmarkPurchaseRow"];
                 };
             };
         };
@@ -11114,6 +13690,10 @@ export interface operations {
             query?: {
                 adminId?: number;
                 action?: string;
+                targetType?: string;
+                targetId?: number;
+                from?: string;
+                to?: string;
                 page?: number;
                 size?: number;
             };
@@ -11130,6 +13710,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PageResponseAuditRow"];
+                };
+            };
+        };
+    };
+    releases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AppReleaseConfigView"][];
+                };
+            };
+        };
+    };
+    reportsBy: {
+        parameters: {
+            query: {
+                reporterId: number;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageResponseAbuseReportRow"];
                 };
             };
         };
@@ -11307,6 +13931,28 @@ export interface operations {
             path: {
                 userId: number;
                 sanctionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resetTotp: {
+        parameters: {
+            query: {
+                reason: string;
+            };
+            header?: never;
+            path: {
+                adminId: number;
             };
             cookie?: never;
         };
